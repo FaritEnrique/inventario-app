@@ -1,7 +1,7 @@
 // src/pages/DashboardPage.jsx
 import React from 'react';
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -33,4 +33,6 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
+};
+
+export default DashboardPage;

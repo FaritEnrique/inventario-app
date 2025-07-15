@@ -1,7 +1,8 @@
 // src/pages/HomePage.jsx
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-export default function HomePage() {
+const HomePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white shadow-lg rounded-2xl p-8 text-center">
@@ -25,4 +26,6 @@ export default function HomePage() {
       </div>
     </div>
   );
-}
+};
+
+export default HomePage;

@@ -1,7 +1,7 @@
 // src/components/Header.jsx
 import { Link } from 'react-router-dom';
 
-export default function Header() {
+const Header = () => {
   return (
     <header className="bg-indigo-700 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -16,4 +16,6 @@ export default function Header() {
       </div>
     </header>
   );
-}
+};
+
+export default Header;
