@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Opcional: especificar la versión de Node.js si tienes problemas de compatibilidad
+# Puedes comentar o eliminar esta sección si no es necesaria.
+[build.environment]
+  NODE_VERSION = "18" # O la versión específica de Node.js que estés usando (ej. "20")
+
+# Opcional: reglas de redirección, muy comunes en SPAs como React
+# Esto es para que si alguien refresca la página en una ruta como /dashboard,
+# el servidor sepa devolver siempre el index.html y React Router se encargue de la ruta.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
