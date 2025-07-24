@@ -13,6 +13,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProductosPage from './pages/ProductosPage';
 import MovimientosPage from './pages/MovimientosPage';
 import ReportesPage from './pages/ReportesPage';
+import TipoProductosPage from './pages/TipoProductosPage';
 
 import './index.css';
 
@@ -36,6 +37,7 @@ const App = () => {
             <Route path="productos" element={<ProductosPage />} />
             <Route path="movimientos" element={<MovimientosPage />} />
             <Route path="reportes" element={<ReportesPage />} />
+            <Route path="tipos-producto" element={<TipoProductosPage />} />
             {/* Agrega más rutas como productos, usuarios, etc */}
           </Route>
         </Routes>

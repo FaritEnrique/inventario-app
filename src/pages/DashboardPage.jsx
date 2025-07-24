@@ -13,29 +13,29 @@ const DashboardPage = () => {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1 - Productos */}
-          <Link to="/productos">
-            <div className="bg-white shadow hover:shadow-lg transition rounded-lg p-6 cursor-pointer">
-              <h2 className="text-lg font-semibold text-gray-800">🛒 Productos</h2>
-              <p className="text-sm text-gray-600">Ver y administrar los productos del inventario.</p>
-            </div>
+          {/* Productos */}
+          <Link to="/productos" className="bg-white shadow hover:shadow-md rounded-lg p-6 transition">
+            <h2 className="text-lg font-semibold text-gray-800">Productos</h2>
+            <p className="text-sm text-gray-600">Ver y administrar los productos del inventario.</p>
           </Link>
 
-          {/* Card 2 - Movimientos */}
-          <Link to="/movimientos">
-            <div className="bg-white shadow hover:shadow-lg transition rounded-lg p-6 cursor-pointer">
-              <h2 className="text-lg font-semibold text-gray-800">🔄 Movimientos</h2>
-              <p className="text-sm text-gray-600">Registrar entradas y salidas de stock.</p>
-            </div>
+          {/* Tipo de Productos */}
+          <Link to="/tipos-producto" className="bg-white shadow hover:shadow-md rounded-lg p-6 transition">
+            <h2 className="text-lg font-semibold text-gray-800">Tipos de Producto</h2>
+            <p className="text-sm text-gray-600">Gestionar tipos y prefijos de productos.</p>
           </Link>
 
-          {/* Card 3 - Reportes */}
-          <Link to="/reportes">
-            <div className="bg-white shadow hover:shadow-lg transition rounded-lg p-6 cursor-pointer">
-              <h2 className="text-lg font-semibold text-gray-800">📊 Reportes</h2>
-              <p className="text-sm text-gray-600">Visualizar reportes y estadísticas del sistema.</p>
-            </div>
-          </Link>
+          {/* Movimientos */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-800">Movimientos</h2>
+            <p className="text-sm text-gray-600">Registrar entradas y salidas de stock.</p>
+          </div>
+
+          {/* Reportes */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-800">Reportes</h2>
+            <p className="text-sm text-gray-600">Visualizar reportes y estadísticas del sistema.</p>
+          </div>
         </div>
       </div>
     </div>
