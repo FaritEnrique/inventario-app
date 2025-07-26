@@ -14,6 +14,10 @@ import ProductosPage from './pages/ProductosPage';
 import MovimientosPage from './pages/MovimientosPage';
 import ReportesPage from './pages/ReportesPage';
 import TipoProductosPage from './pages/TipoProductosPage';
+import MarcasPage from './pages/MarcasPage';
+import AreasPage from './pages/AreasPage';
+import PedidosPage from './pages/PedidosPage';
+import UsersPage from './pages/UsersPage';
 
 import './index.css';
 
@@ -38,6 +42,10 @@ const App = () => {
             <Route path="movimientos" element={<MovimientosPage />} />
             <Route path="reportes" element={<ReportesPage />} />
             <Route path="tipos-producto" element={<TipoProductosPage />} />
+            <Route path="marcas" element={<MarcasPage />} />
+            <Route path="/areas" element={<AreasPage />} />
+            <Route path="/pedidos" element={<PedidosPage />} />
+            <Route path="/usuarios" element={<UsersPage />} />
             {/* Agrega más rutas como productos, usuarios, etc */}
           </Route>
         </Routes>
