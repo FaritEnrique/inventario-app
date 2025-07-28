@@ -18,6 +18,10 @@ import MarcasPage from './pages/MarcasPage';
 import AreasPage from './pages/AreasPage';
 import PedidosPage from './pages/PedidosPage';
 import UsersPage from './pages/UsersPage';
+import GestionProductosPage from './pages/GestionProductosPage';
+import GestionMarcasPage from './pages/GestionMarcasPage';
+import GestionTipoProductosPage from './pages/GestionTipoProductosPage';
+import GestionAreasPage from './pages/GestionAreasPage';
 
 import './index.css';
 
@@ -38,6 +42,10 @@ const App = () => {
             <Route index element={<HomePage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="gestion-productos" element={<GestionProductosPage />} />
+            <Route path="gestion-marcas" element={<GestionMarcasPage />} />
+            <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
+            <Route path="gestion-areas" element={<GestionAreasPage />} />
             <Route path="productos" element={<ProductosPage />} />
             <Route path="movimientos" element={<MovimientosPage />} />
             <Route path="reportes" element={<ReportesPage />} />

@@ -1,108 +1,116 @@
-import { useState, useEffect } from 'react';
+// src/hooks/useProductos.js
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import productosApi from '../api/productosApi';
 import { toast } from 'react-toastify';
 
 const useProductos = () => {
   const [productos, setProductos] = useState([]);
-  const [producto, setProducto] = useState(null);
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  // Obtener todos los productos (con búsqueda opcional)
-  const fetchProductos = async (buscar = '') => {
+  const obtenerProductos = useCallback(async (buscar = '') => {
     try {
       setCargando(true);
+      setError(null);
       const data = await productosApi.getTodos(buscar);
-      setProductos(data);
-      setError(null);
+
+      if (import.meta.env.MODE === 'development') {
+        console.log('✅ Productos desde backend:', data);
+      }
+
+      // ✅ Ya no se formatea el precio aquí, ya que no existe en el modelo Producto
+      // El stock ya viene calculado del backend, no necesita parseFloat aquí.
+      const formateados = Array.isArray(data)
+        ? data.map((producto) => ({
+            ...producto,
+            // ✅ ELIMINADO: precio: parseFloat(producto.precio).toFixed(2),
+            // Asegurarse que stock sea un número si viene como string
+            stock: parseFloat(producto.stock),
+          }))
+        : [];
+
+      setProductos(formateados);
     } catch (err) {
+      console.error('❌ Error al obtener productos:', err);
       toast.error('❌ Error al obtener productos');
-      setError('Error al obtener productos');
+      setProductos([]);
+      setError(err.message);
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  // Obtener un producto por ID
-  const fetchProductoPorId = async (id) => {
-    try {
-      setCargando(true);
-      const data = await productosApi.getPorId(id);
-      setProducto(data);
-      setError(null);
-    } catch (err) {
-      toast.error('❌ Producto no encontrado');
-      setError('Producto no encontrado');
-    } finally {
-      setCargando(false);
-    }
-  };
+  useEffect(() => {
+    obtenerProductos();
+  }, [obtenerProductos]);
 
-  // Crear producto
-  const crearProducto = async (nuevoProducto) => {
+  const crearProducto = useCallback(async (nuevoProducto) => {
     try {
-      setCargando(true);
-      const data = await productosApi.crear(nuevoProducto);
-      setProductos([...productos, data]);
-      setError(null);
+      const creado = await productosApi.crear(nuevoProducto);
+      setProductos((prev) => [
+        ...prev,
+        { 
+          ...creado, 
+          // ✅ ELIMINADO: precio: parseFloat(creado.precio).toFixed(2),
+          stock: parseFloat(creado.stock), // Asegurar que stock sea un número
+        },
+      ]);
       toast.success('✅ Producto creado correctamente');
-      return data;
+      return creado;
     } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al crear producto');
+      console.error('❌ Error al crear producto:', err);
+      // ✅ Tu apiFetch ya lanza un error con el mensaje del backend.
+      const msg = err.message || 'Error desconocido';
+      toast.error(`❌ ${msg}`);
       throw err;
-    } finally {
-      setCargando(false);
     }
-  };
+  }, []);
 
-  // Actualizar producto
-  const actualizarProducto = async (id, datos) => {
+  const actualizarProducto = useCallback(async (id, datos) => {
     try {
-      setCargando(true);
       const actualizado = await productosApi.actualizar(id, datos);
       setProductos((prev) =>
-        prev.map((p) => (p.id === id ? actualizado : p))
+        prev.map((p) =>
+          p.id === id
+            ? { 
+                ...actualizado, 
+                // ✅ ELIMINADO: precio: parseFloat(actualizado.precio).toFixed(2),
+                stock: parseFloat(actualizado.stock), // Asegurar que stock sea un número
+              }
+            : p
+        )
       );
       toast.success('✅ Producto actualizado correctamente');
-      setError(null);
       return actualizado;
     } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al actualizar producto');
+      console.error('❌ Error al actualizar producto:', err);
+      const msg = err.message || 'Error desconocido';
+      toast.error(`❌ ${msg}`);
       throw err;
-    } finally {
-      setCargando(false);
     }
-  };
+  }, []);
 
-  // Eliminar producto
-  const eliminarProducto = async (id) => {
+  const eliminarProducto = useCallback(async (id) => {
     try {
-      setCargando(true);
       await productosApi.eliminar(id);
       setProductos((prev) => prev.filter((p) => p.id !== id));
       toast.success('🗑️ Producto eliminado correctamente');
-      setError(null);
     } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al eliminar producto');
+      console.error('❌ Error al eliminar producto:', err);
+      const msg = err.message || 'Error desconocido';
+      toast.error(`❌ ${msg}`);
       throw err;
-    } finally {
-      setCargando(false);
     }
-  };
+  }, []);
 
   return {
     productos,
-    producto,
-    cargando,
-    error,
-    fetchProductos,
-    fetchProductoPorId,
+    fetchProductos: obtenerProductos,
     crearProducto,
     actualizarProducto,
     eliminarProducto,
+    cargando,
+    error,
   };
 };
 

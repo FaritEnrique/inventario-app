@@ -1,101 +1,85 @@
 // src/hooks/useAreas.js
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import areasApi from '../api/areasApi';
 import { toast } from 'react-toastify';
 
 const useAreas = () => {
   const [areas, setAreas] = useState([]);
-  const [area, setArea] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchAreas = async (buscar = '') => {
+  const fetchAreas = useCallback(async (searchQuery = '') => {
+    setCargando(true);
+    setError(null);
     try {
-      setCargando(true);
-      const data = await areasApi.obtenerTodas(buscar); // asegúrate que el método se llame así
+      const data = await areasApi.getAreas(searchQuery);
       setAreas(data);
-      setError(null);
     } catch (err) {
-      toast.error('❌ Error al obtener áreas');
-      setError('Error al obtener áreas');
+      console.error('Error al cargar áreas:', err);
+      setError(err);
+      toast.error('❌ Error al cargar las áreas.');
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const fetchAreaPorId = async (id) => {
+  const createArea = useCallback(async (areaData) => {
+    setCargando(true);
+    setError(null);
     try {
-      setCargando(true);
-      const data = await areasApi.obtenerPorId(id);
-      setArea(data);
-      setError(null);
+      const newArea = await areasApi.createArea(areaData);
+      return newArea;
     } catch (err) {
-      toast.error('❌ Área no encontrada');
-      setError('Área no encontrada');
+      console.error('Error al crear área:', err);
+      setError(err);
+      throw err; // Propagar el error para que el componente lo maneje
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const crearArea = async (nuevaArea) => {
+  const updateArea = useCallback(async (id, areaData) => {
+    setCargando(true);
+    setError(null);
     try {
-      setCargando(true);
-      const data = await areasApi.crear(nuevaArea);
-      setAreas([...areas, data]);
-      toast.success('✅ Área creada correctamente');
-      return data;
+      const updatedArea = await areasApi.updateArea(id, areaData);
+      return updatedArea;
     } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al crear área');
-      throw err;
+      console.error('Error al actualizar área:', err);
+      setError(err);
+      throw err; // Propagar el error para que el componente lo maneje
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const actualizarArea = async (id, datos) => {
+  const deleteArea = useCallback(async (id) => {
+    setCargando(true);
+    setError(null);
     try {
-      setCargando(true);
-      const actualizada = await areasApi.actualizar(id, datos);
-      setAreas((prev) =>
-        prev.map((a) => (a.id === id ? actualizada : a))
-      );
-      toast.success('✅ Área actualizada correctamente');
-      return actualizada;
+      await areasApi.deleteArea(id);
     } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al actualizar área');
-      throw err;
+      console.error('Error al eliminar área:', err);
+      setError(err);
+      throw err; // Propagar el error
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const eliminarArea = async (id) => {
-    try {
-      setCargando(true);
-      await areasApi.eliminar(id);
-      setAreas((prev) => prev.filter((a) => a.id !== id));
-      toast.success('🗑️ Área eliminada correctamente');
-    } catch (err) {
-      toast.error(`❌ ${err.message}`);
-      setError('Error al eliminar área');
-      throw err;
-    } finally {
-      setCargando(false);
-    }
-  };
+  // Efecto inicial para cargar áreas al montar el componente
+  useEffect(() => {
+    fetchAreas();
+  }, [fetchAreas]);
 
   return {
     areas,
-    area,
     cargando,
     error,
     fetchAreas,
-    fetchAreaPorId,
-    crearArea,
-    actualizarArea,
-    eliminarArea,
+    createArea,
+    updateArea,
+    deleteArea,
   };
 };
 

@@ -2,8 +2,14 @@
 import apiFetch from './apiFetch';
 
 const tipoProductoApi = {
-  getTodos: async () => {
-    return await apiFetch('/api/tipos-producto');
+  // MODIFICADO: Ahora acepta un parámetro 'searchTerm'
+  getTodos: async (searchTerm = '') => {
+    let url = '/api/tipos-producto';
+    if (searchTerm) {
+      // Añade el searchTerm como un parámetro de query a la URL
+      url += `?search=${encodeURIComponent(searchTerm)}`;
+    }
+    return await apiFetch(url);
   },
 
   getPorId: async (id) => {

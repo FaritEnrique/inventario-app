@@ -1,7 +1,7 @@
 const baseURL =
   import.meta.env.MODE === 'development'
     ? 'http://localhost:3000'
-    : 'https://backendhuequito-env.eba-fcqriunz.us-east-1.elasticbeanstalk.com';
+    : '';
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
@@ -18,8 +18,7 @@ const apiFetch = async (endpoint, options = {}) => {
       throw new Error(error.message || 'Error al conectar con el servidor');
     }
 
-    if (res.status === 204) return null; // No Content
-
+    if (res.status === 204) return null;
     return await res.json();
   } catch (error) {
     console.error('❌ Error en apiFetch:', error.message);

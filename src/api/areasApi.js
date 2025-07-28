@@ -1,43 +1,58 @@
 // src/api/areasApi.js
-import apiFetch from './apiFetch';
+import apiFetch from './apiFetch'; // Asume que tienes un apiFetch.js configurado
 
 const areasApi = {
-  // Obtener todas las áreas (con búsqueda opcional)
-  obtenerTodas: async (buscar = '') => {
-    const query = buscar ? `?buscar=${encodeURIComponent(buscar)}` : '';
-    return await apiFetch(`/api/areas${query}`);
+  /**
+   * Obtiene todas las áreas, opcionalmente filtradas por búsqueda.
+   * @param {string} [searchQuery=''] - Término de búsqueda para filtrar áreas.
+   * @returns {Promise<Array>} Una promesa que resuelve con un array de objetos de área.
+   */
+  getAreas: async (searchQuery = '') => {
+    const url = searchQuery ? `/api/areas?buscar=${encodeURIComponent(searchQuery)}` : '/api/areas';
+    return apiFetch(url);
   },
 
-  // Obtener una sola área por ID
-  obtenerPorId: async (id) => {
-    return await apiFetch(`/api/areas/${id}`);
+  /**
+   * Obtiene un área por su ID.
+   * @param {number} id - El ID del área.
+   * @returns {Promise<Object>} Una promesa que resuelve con un objeto de área.
+   */
+  getAreaById: async (id) => {
+    return apiFetch(`/api/areas/${id}`);
   },
 
-  // Crear nueva área
-  crear: async (area) => {
-    return await apiFetch('/api/areas', {
+  /**
+   * Crea una nueva área.
+   * @param {Object} areaData - Los datos de la nueva área (codigo, nombre).
+   * @returns {Promise<Object>} Una promesa que resuelve con el área creada.
+   */
+  createArea: async (areaData) => {
+    return apiFetch('/api/areas', {
       method: 'POST',
-      body: JSON.stringify(area),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      body: JSON.stringify(areaData),
     });
   },
 
-  // Actualizar un área existente
-  actualizar: async (id, area) => {
-    return await apiFetch(`/api/areas/${id}`, {
+  /**
+   * Actualiza un área existente.
+   * @param {number} id - El ID del área a actualizar.
+   * @param {Object} areaData - Los datos actualizados del área (codigo, nombre).
+   * @returns {Promise<Object>} Una promesa que resuelve con el área actualizada.
+   */
+  updateArea: async (id, areaData) => {
+    return apiFetch(`/api/areas/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(area),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      body: JSON.stringify(areaData),
     });
   },
 
-  // Eliminar un área
-  eliminar: async (id) => {
-    return await apiFetch(`/api/areas/${id}`, {
+  /**
+   * Elimina un área.
+   * @param {number} id - El ID del área a eliminar.
+   * @returns {Promise<void>} Una promesa que resuelve cuando el área es eliminada.
+   */
+  deleteArea: async (id) => {
+    return apiFetch(`/api/areas/${id}`, {
       method: 'DELETE',
     });
   },
