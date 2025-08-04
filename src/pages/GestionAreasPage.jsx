@@ -1,13 +1,8 @@
 // src/pages/GestionAreas.jsx
 import { useEffect, useState, useCallback } from 'react';
-import useAreas from '../hooks/useAreas'; // Importar el hook de áreas
-import useDebounce from '../hooks/useDebounce'; // Para la búsqueda
+import useAreas from '../hooks/useAreas';
+import useDebounce from '../hooks/useDebounce';
 import { toast } from 'react-toastify';
-import Modal from 'react-modal';
-import { FaSearch } from 'react-icons/fa'; // Icono de lupa
-
-// Configurar el elemento raíz para accesibilidad de react-modal
-Modal.setAppElement('#root');
 
 const devLog = (...args) => {
   if (import.meta.env.MODE === 'development') {
@@ -19,46 +14,57 @@ const initialArea = {
   id: null,
   codigo: '',
   nombre: '',
+  hasBranch: false,
+  branchDescription: '',
 };
 
 const GestionAreasPage = () => {
   const [currentArea, setCurrentArea] = useState(initialArea);
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [areaInDetail, setAreaInDetail] = useState(null);
 
   const { areas, cargando: cargandoAreas, fetchAreas, createArea, updateArea, deleteArea } = useAreas();
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const debouncedSearchQuery = useDebounce(searchQuery, 2000);
 
-  // Carga inicial de áreas y re-carga con búsqueda debounced
   useEffect(() => {
     fetchAreas(debouncedSearchQuery);
   }, [fetchAreas, debouncedSearchQuery]);
 
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setCurrentArea((prevArea) => ({
-      ...prevArea,
-      [name]: value,
-    }));
+    const { name, value, type, checked } = e.target;
+    if (name === 'hasBranch' && !checked) {
+      setCurrentArea((prevArea) => ({
+        ...prevArea,
+        hasBranch: checked,
+        branchDescription: '',
+      }));
+    } else {
+      setCurrentArea((prevArea) => ({
+        ...prevArea,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
   }, []);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    const { codigo, nombre } = currentArea;
+    const { nombre, hasBranch, branchDescription } = currentArea;
 
     // Validaciones básicas del frontend
-    if (!codigo.trim() || !nombre.trim()) {
-      toast.error('❌ Código y Nombre son obligatorios.');
+    if (!nombre.trim()) {
+      toast.error('❌ El nombre es obligatorio.');
+      return;
+    }
+    if (hasBranch && !branchDescription.trim()) {
+      toast.error('❌ La descripción de la sucursal es obligatoria si la opción está marcada.');
       return;
     }
 
     try {
       const dataToSave = {
-        codigo: codigo.trim().toUpperCase(), // Asegurar mayúsculas y sin espacios extra
         nombre: nombre.trim(),
+        branchDescription: hasBranch && branchDescription.trim() ? branchDescription.trim() : null,
       };
 
       if (editMode) {
@@ -68,9 +74,9 @@ const GestionAreasPage = () => {
         await createArea(dataToSave);
         toast.success('✅ Área creada correctamente.');
       }
-      setCurrentArea(initialArea); // Resetear formulario
+      setCurrentArea(initialArea);
       setEditMode(false);
-      fetchAreas(debouncedSearchQuery); // Recargar la lista después de la operación
+      fetchAreas(debouncedSearchQuery);
     } catch (err) {
       console.error('Error al guardar área:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Error desconocido';
@@ -80,9 +86,12 @@ const GestionAreasPage = () => {
   }, [currentArea, editMode, createArea, updateArea, fetchAreas, debouncedSearchQuery]);
 
   const handleEdit = useCallback((area) => {
+    const hasBranch = !!area.branchDescription;
+
     setCurrentArea({
       ...area,
-      codigo: area.codigo, // Mantener el código original para edición
+      hasBranch,
+      branchDescription: area.branchDescription || '',
     });
     setEditMode(true);
   }, []);
@@ -92,8 +101,8 @@ const GestionAreasPage = () => {
       try {
         await deleteArea(id);
         toast.success('🗑️ Área eliminada correctamente.');
-        fetchAreas(debouncedSearchQuery); // Recargar la lista después de eliminar
-        if (currentArea.id === id) { // Si el área eliminada es la que se estaba editando
+        fetchAreas(debouncedSearchQuery);
+        if (currentArea.id === id) {
           setCurrentArea(initialArea);
           setEditMode(false);
         }
@@ -110,17 +119,7 @@ const GestionAreasPage = () => {
     setEditMode(false);
   }, []);
 
-  const handleViewDetails = useCallback((area) => {
-    setAreaInDetail(area);
-    setModalIsOpen(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModalIsOpen(false);
-    setAreaInDetail(null);
-  }, []);
-
-  const cargandoGeneral = cargandoAreas; // Solo cargandoAreas para este componente
+  const cargandoGeneral = cargandoAreas;
 
   devLog('áreas al renderizar:', areas);
 
@@ -134,7 +133,7 @@ const GestionAreasPage = () => {
           {editMode ? 'Actualizar Área' : 'Crear Nueva Área'}
         </h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Campo: Código */}
+          {/* Campo: Código - Autogenerado y de solo lectura */}
           <div>
             <label htmlFor="codigo" className="block text-sm font-medium text-gray-700">Código</label>
             <input
@@ -142,12 +141,13 @@ const GestionAreasPage = () => {
               id="codigo"
               name="codigo"
               value={currentArea.codigo}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm uppercase"
-              required
-              disabled={cargandoGeneral || editMode} // Código no editable en modo edición
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100 cursor-not-allowed"
+              readOnly
+              disabled={cargandoGeneral || !editMode}
             />
-            {editMode && <p className="mt-1 text-xs text-gray-500">El código no se puede cambiar en modo edición.</p>}
+            {!editMode && (
+              <p className="mt-1 text-xs text-gray-500">El código se generará automáticamente al crear el área.</p>
+            )}
           </div>
           {/* Campo: Nombre */}
           <div>
@@ -163,6 +163,39 @@ const GestionAreasPage = () => {
               disabled={cargandoGeneral}
             />
           </div>
+
+          {/* Checkbox para descripción adicional */}
+          <div className="col-span-1 md:col-span-2 flex items-center mt-2">
+            <input
+              id="hasBranch"
+              name="hasBranch"
+              type="checkbox"
+              checked={currentArea.hasBranch}
+              onChange={handleChange}
+              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              disabled={cargandoGeneral}
+            />
+            <label htmlFor="hasBranch" className="ml-2 block text-sm text-gray-900">¿Tiene descripción adicional (sucursal/dependencia)?</label>
+          </div>
+
+          {/* Campo de descripción adicional, visible condicionalmente */}
+          {currentArea.hasBranch && (
+            <div className="col-span-1 md:col-span-2">
+              <label htmlFor="branchDescription" className="block text-sm font-medium text-gray-700">Descripción Adicional (Sucursal/Dependencia)</label>
+              <input
+                type="text"
+                id="branchDescription"
+                name="branchDescription"
+                value={currentArea.branchDescription}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required={currentArea.hasBranch}
+                disabled={cargandoGeneral}
+                placeholder="Ej: Iquitos, Lima, Sucursal 1"
+              />
+              <p className="mt-1 text-xs text-gray-500">Se añadirá al código (Ej: XX-YYY-Iquitos).</p>
+            </div>
+          )}
 
           {/* Botones de acción del formulario */}
           <div className="col-span-2 flex flex-col sm:flex-row gap-4 justify-end mt-4">
@@ -201,7 +234,6 @@ const GestionAreasPage = () => {
             className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={cargandoGeneral}
           />
-          {/* El botón de búsqueda se ha eliminado ya que la funcionalidad es automática con debounce */}
         </form>
       </div>
 
@@ -213,31 +245,26 @@ const GestionAreasPage = () => {
             <tr>
               <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">Código</th>
               <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">Nombre</th>
+              <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">Descripción Adicional</th>
               <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {cargandoGeneral ? (
               <tr>
-                <td colSpan="3" className="text-center py-4 text-gray-500">Cargando datos...</td>
+                <td colSpan="4" className="text-center py-4 text-gray-500">Cargando datos...</td>
               </tr>
             ) : Array.isArray(areas) && areas.length > 0 ? (
               areas.map((area) => (
                 <tr key={area.id}>
                   <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{area.codigo}</td>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{area.nombre}</td>
+                  {/* ✅ Mostrar la descripción adicional */}
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                    {area.branchDescription || 'N/A'}
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 items-center justify-center">
-                      {/* Botón Ver Detalles (solo lupa) */}
-                      <button
-                        onClick={() => handleViewDetails(area)}
-                        className="p-2 bg-green-500 text-white text-xs font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
-                        title="Ver Detalles"
-                        disabled={cargandoGeneral}
-                      >
-                        <FaSearch className="w-4 h-4" />
-                      </button>
-                      {/* Botón Editar */}
                       <button
                         onClick={() => handleEdit(area)}
                         className="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
@@ -246,7 +273,6 @@ const GestionAreasPage = () => {
                       >
                         Editar
                       </button>
-                      {/* Botón Eliminar */}
                       <button
                         onClick={() => handleDelete(area.id)}
                         className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
@@ -261,42 +287,12 @@ const GestionAreasPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="3" className="text-center py-4 text-gray-500">No hay áreas registradas.</td>
+                <td colSpan="4" className="text-center py-4 text-gray-500">No hay áreas registradas.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-
-      {/* Modal de Detalles del Área */}
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Detalles del Área"
-        className="relative bg-white rounded-lg shadow-xl p-6 w-11/12 md:w-3/4 lg:w-1/2 xl:w-1/3 mx-auto my-10 outline-none"
-        overlayClassName="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
-      >
-        {areaInDetail && (
-          <div className="flex flex-col items-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-indigo-500 pb-2 w-full text-center">
-              Detalles de {areaInDetail.nombre}
-            </h2>
-            <div className="text-left w-full space-y-2 text-gray-700 text-sm md:text-base">
-              <p><strong className="font-semibold">ID:</strong> {areaInDetail.id}</p>
-              <p><strong className="font-semibold">Código:</strong> {areaInDetail.codigo}</p>
-              <p><strong className="font-semibold">Nombre:</strong> {areaInDetail.nombre}</p>
-              <p><strong className="font-semibold">Creado:</strong> {new Date(areaInDetail.createdAt).toLocaleDateString()}</p>
-              <p><strong className="font-semibold">Última Actualización:</strong> {new Date(areaInDetail.updatedAt).toLocaleDateString()}</p>
-            </div>
-            <button
-              onClick={closeModal}
-              className="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out"
-            >
-              Cerrar
-            </button>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };

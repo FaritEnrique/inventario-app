@@ -1,5 +1,5 @@
 // src/api/areasApi.js
-import apiFetch from './apiFetch'; // Asume que tienes un apiFetch.js configurado
+import apiFetch from './apiFetch';
 
 const areasApi = {
   /**
@@ -23,7 +23,7 @@ const areasApi = {
 
   /**
    * Crea una nueva área.
-   * @param {Object} areaData - Los datos de la nueva área (codigo, nombre).
+   * @param {Object} areaData - Los datos de la nueva área (nombre, branchDescription opcional).
    * @returns {Promise<Object>} Una promesa que resuelve con el área creada.
    */
   createArea: async (areaData) => {
@@ -36,10 +36,11 @@ const areasApi = {
   /**
    * Actualiza un área existente.
    * @param {number} id - El ID del área a actualizar.
-   * @param {Object} areaData - Los datos actualizados del área (codigo, nombre).
+   * @param {Object} areaData - Los datos actualizados del área (nombre, branchDescription opcional).
    * @returns {Promise<Object>} Una promesa que resuelve con el área actualizada.
    */
   updateArea: async (id, areaData) => {
+    // ✅ areaData ahora contendrá nombre y branchDescription (si existe)
     return apiFetch(`/api/areas/${id}`, {
       method: 'PUT',
       body: JSON.stringify(areaData),

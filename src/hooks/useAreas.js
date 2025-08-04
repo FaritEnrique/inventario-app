@@ -32,7 +32,7 @@ const useAreas = () => {
     } catch (err) {
       console.error('Error al crear área:', err);
       setError(err);
-      throw err; // Propagar el error para que el componente lo maneje
+      throw err;
     } finally {
       setCargando(false);
     }
@@ -47,7 +47,7 @@ const useAreas = () => {
     } catch (err) {
       console.error('Error al actualizar área:', err);
       setError(err);
-      throw err; // Propagar el error para que el componente lo maneje
+      throw err;
     } finally {
       setCargando(false);
     }
@@ -61,13 +61,12 @@ const useAreas = () => {
     } catch (err) {
       console.error('Error al eliminar área:', err);
       setError(err);
-      throw err; // Propagar el error
+      throw err;
     } finally {
       setCargando(false);
     }
   }, []);
 
-  // Efecto inicial para cargar áreas al montar el componente
   useEffect(() => {
     fetchAreas();
   }, [fetchAreas]);

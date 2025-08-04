@@ -1,5 +1,6 @@
 // src/pages/DashboardPage.jsx
-import { MdInventory, MdCategory } from 'react-icons/md';
+import { MdInventory, MdCategory, MdPeople } from 'react-icons/md';
+import { FaRegistered, FaSitemap, FaShoppingCart, FaUserCog,  } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const cardClasses =
@@ -44,24 +45,36 @@ const DashboardPage = () => {
 
           {/* Marcas */}
           <Link to="/gestion-marcas" className={cardClasses}>
+            <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
+              <FaRegistered />
+            </div>
             <h2 className="text-lg font-semibold text-gray-800">Marcas</h2>
             <p className="text-sm text-gray-600">Gestionar marcas asociadas a productos.</p>
           </Link>
 
           {/* Áreas */}
           <Link to="/gestion-areas" className={cardClasses}>
+            <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
+              <FaSitemap />
+            </div>
             <h2 className="text-lg font-semibold text-gray-800">Áreas</h2>
             <p className="text-sm text-gray-600">Gestionar las áreas o unidades de la organización.</p>
           </Link>
 
           {/* Pedidos */}
           <Link to="/pedidos" className={cardClasses}>
+            <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
+              <FaShoppingCart />
+            </div>
             <h2 className="text-lg font-semibold text-gray-800">Pedidos</h2>
             <p className="text-sm text-gray-600">Ver y gestionar pedidos realizados por las áreas.</p>
           </Link>
 
           {/* Usuarios */}
-          <Link to="/usuarios" className={cardClasses}>
+          <Link to="/gestion-usuarios" className={cardClasses}>
+            <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
+              <FaUserCog />
+            </div>
             <h2 className="text-lg font-semibold text-gray-800">Usuarios</h2>
             <p className="text-sm text-gray-600">Gestionar usuarios del sistema.</p>
           </Link>

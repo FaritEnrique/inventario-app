@@ -24,6 +24,7 @@ import GestionTipoProductosPage from './pages/GestionTipoProductosPage';
 import GestionAreasPage from './pages/GestionAreasPage';
 
 import './index.css';
+import GestionUsuariosPage from './pages/GestionUsuariosPage';
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
             <Route path="gestion-marcas" element={<GestionMarcasPage />} />
             <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
             <Route path="gestion-areas" element={<GestionAreasPage />} />
+            <Route path="gestion-usuarios" element={<GestionUsuariosPage />} />
             <Route path="productos" element={<ProductosPage />} />
             <Route path="movimientos" element={<MovimientosPage />} />
             <Route path="reportes" element={<ReportesPage />} />
