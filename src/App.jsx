@@ -4,8 +4,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider, Helmet } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import { AuthProvider } from './context/authContext';
 import LayoutInventario from './components/LayoutInventario';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -32,37 +33,41 @@ const App = () => {
   return (
     <HelmetProvider>
       <BrowserRouter>
-        <Helmet>
-          <title>Sistema de Inventario</title>
-          <meta name="description" content="Sistema web para gestión de inventarios" />
-        </Helmet>
+        <AuthProvider>
+          <Helmet>
+            <title>Sistema de Inventario</title>
+            <meta name="description" content="Sistema web para gestión de inventarios" />
+          </Helmet>
 
-        {/* Notificaciones de toastify */}
-        <ToastContainer position="top-right" autoClose={3000} />
+          {/* Notificaciones de toastify */}
+          <ToastContainer position="top-right" autoClose={3000} />
 
-        <Routes>
-          <Route path="/" element={<LayoutInventario />}>
-            <Route index element={<HomePage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="gestion-productos" element={<GestionProductosPage />} />
-            <Route path="gestion-marcas" element={<GestionMarcasPage />} />
-            <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
-            <Route path="gestion-areas" element={<GestionAreasPage />} />
-            <Route path="gestion-usuarios" element={<GestionUsuariosPage />} />
-            <Route path="productos" element={<ProductosPage />} />
-            <Route path="movimientos" element={<MovimientosPage />} />
-            <Route path="reportes" element={<ReportesPage />} />
-            <Route path="tipos-producto" element={<TipoProductosPage />} />
-            <Route path="marcas" element={<MarcasPage />} />
-            <Route path="/areas" element={<AreasPage />} />
-            <Route path="/pedidos" element={<PedidosPage />} />
-            <Route path="/usuarios" element={<UsersPage />} />
-            <Route path="/solicitar-restablecimiento" element={<SolicitarRestablecimientoPage />} />
-            <Route path="/reset-password" element={<RestablecerContrasenaPage />} />
-            {/* Agrega más rutas como productos, usuarios, etc */}
-          </Route>
-        </Routes>
+          <Routes>
+            <Route path="/" element={<LayoutInventario />}>
+              <Route index element={<HomePage />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="/solicitar-restablecimiento" element={<SolicitarRestablecimientoPage />} />
+              <Route path="/reset-password" element={<RestablecerContrasenaPage />} />
+
+              <Route element={<ProtectedRoute />}>
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="gestion-productos" element={<GestionProductosPage />} />
+                <Route path="gestion-marcas" element={<GestionMarcasPage />} />
+                <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
+                <Route path="gestion-areas" element={<GestionAreasPage />} />
+                <Route path="gestion-usuarios" element={<GestionUsuariosPage />} />
+                <Route path="productos" element={<ProductosPage />} />
+                <Route path="movimientos" element={<MovimientosPage />} />
+                <Route path="reportes" element={<ReportesPage />} />
+                <Route path="tipos-producto" element={<TipoProductosPage />} />
+                <Route path="marcas" element={<MarcasPage />} />
+                <Route path="/areas" element={<AreasPage />} />
+                <Route path="/pedidos" element={<PedidosPage />} />
+                <Route path="/usuarios" element={<UsersPage />} />
+              </Route>
+            </Route>
+          </Routes>
+        </AuthProvider>  
       </BrowserRouter>
     </HelmetProvider>
   );

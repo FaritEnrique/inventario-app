@@ -2,36 +2,27 @@
 import apiFetch from './apiFetch';
 
 const productosApi = {
-  // Obtener todos los productos (con búsqueda opcional)
   getTodos: async (buscar = '') => {
     const query = buscar ? `?buscar=${encodeURIComponent(buscar)}` : '';
-    const res = await apiFetch(`/api/productos${query}`);
-    // El backend ahora devuelve el stock calculado directamente en el objeto producto.
-    // El precio ya no se devuelve.
+    const res = await apiFetch(`productos${query}`);
     return res ?? []; 
   },
 
-  // Obtener un producto por ID
   getPorId: async (id) => {
-    // El backend ahora devuelve el stock calculado directamente en el objeto producto.
-    // El precio ya no se devuelve.
-    return await apiFetch(`/api/productos/${id}`);
+
+    return await apiFetch(`productos/${id}`);
   },
 
-  // Función para obtener el siguiente código autogenerado
   getSiguienteCodigo: async (tipoProductoId) => {
     if (!tipoProductoId) {
       throw new Error('Tipo de producto ID es requerido para obtener el siguiente código.');
     }
-    const res = await apiFetch(`/api/productos/siguiente-codigo/${tipoProductoId}`);
-    return res.codigo; // El backend devuelve { codigo: "ABC-001" }
+    const res = await apiFetch(`productos/siguiente-codigo/${tipoProductoId}`);
+    return res.codigo;
   },
 
-  // Crear un nuevo producto
   crear: async (producto) => {
-    // El frontend ya filtra los campos 'stock', 'precio', 'usaStockMinimo', 'stockMinimo'
-    // El backend los ignorará o establecerá valores por defecto.
-    return await apiFetch('/api/productos', {
+    return await apiFetch('productos', {
       method: 'POST',
       body: JSON.stringify(producto),
       headers: {
@@ -40,11 +31,8 @@ const productosApi = {
     });
   },
 
-  // Actualizar un producto
   actualizar: async (id, producto) => {
-    // El frontend ya filtra los campos 'stock', 'precio', 'usaStockMinimo', 'stockMinimo'
-    // El backend los ignorará.
-    return await apiFetch(`/api/productos/${id}`, {
+    return await apiFetch(`productos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(producto),
       headers: {
@@ -55,7 +43,7 @@ const productosApi = {
 
   // Eliminar un producto
   eliminar: async (id) => {
-    return await apiFetch(`/api/productos/${id}`, {
+    return await apiFetch(`productos/${id}`, {
       method: 'DELETE',
     });
   },

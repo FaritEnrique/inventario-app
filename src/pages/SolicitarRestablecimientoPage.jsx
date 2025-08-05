@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import apiFetch from '../api/apiFetch'; // Asegúrate de tener tu función apiFetch
+import apiFetch from '../api/apiFetch';
 
 const SolicitarRestablecimientoPage = () => {
   const [email, setEmail] = useState('');
@@ -14,14 +14,13 @@ const SolicitarRestablecimientoPage = () => {
     setCargando(true);
 
     try {
-      // Llama a la nueva ruta del backend para solicitar el token
-      await apiFetch('/api/auth/solicitar-restablecimiento', {
+      await apiFetch('auth/solicitar-restablecimiento', { // ✅ Endpoint corregido
         method: 'POST',
         body: JSON.stringify({ email }),
       });
 
       toast.success('Si el correo existe, se ha enviado un enlace para restablecer la contraseña.');
-      navigate('/login'); // Redirige al login después de enviar la solicitud
+      navigate('/login');
     } catch (error) {
       console.error('Error al solicitar restablecimiento:', error);
       toast.error('Ocurrió un error. Por favor, inténtalo de nuevo.');

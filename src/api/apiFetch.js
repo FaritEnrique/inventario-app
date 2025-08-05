@@ -1,21 +1,29 @@
+//src/api/apiFetch.js
 const baseURL =
   import.meta.env.MODE === 'development'
-    ? 'http://localhost:3000'
+    ? 'http://localhost:3000/api'
     : '';
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
-    const res = await fetch(`${baseURL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${baseURL}/${endpoint}`, {
+      headers,
       ...options,
     });
 
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.message || 'Error al conectar con el servidor');
+      throw new Error(error.mensaje || 'Error al conectar con el servidor');
     }
 
     if (res.status === 204) return null;

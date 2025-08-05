@@ -1,27 +1,26 @@
-// src/api/usersApi.js
 import apiFetch from './apiFetch';
 
 const usersApi = {
   obtenerTodos: async () => {
-    return await apiFetch('/api/usuarios');
+    return await apiFetch('usuarios'); // ✅ Endpoint corregido
   },
   obtenerPorId: async (id) => {
-    return await apiFetch(`/api/usuarios/${id}`);
+    return await apiFetch(`usuarios/${id}`); // ✅ Endpoint corregido
   },
-  crear: async (usuario) => { // Cambiado de 'Crear' a 'crear'
-    return apiFetch('/api/usuarios', {
+  crear: async (usuario) => {
+    return apiFetch('usuarios', { // ✅ Endpoint corregido
       method: 'POST',
       body: JSON.stringify(usuario),
     });
   },
   actualizar: async (id, usuario) => {
-    return apiFetch(`/api/usuarios/${id}`, {
+    return apiFetch(`usuarios/${id}`, { // ✅ Endpoint corregido
       method: 'PUT',
       body: JSON.stringify(usuario),
     });
   },
   eliminar: async (id) => {
-    return apiFetch(`/api/usuarios/${id}`, {
+    return apiFetch(`usuarios/${id}`, { // ✅ Endpoint corregido
       method: 'DELETE',
     });
   },

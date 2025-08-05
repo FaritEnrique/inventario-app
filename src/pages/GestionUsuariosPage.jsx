@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import useUsers from '../hooks/useUsers';
+import { toast } from 'react-toastify'; // ✅ Importamos toast de react-toastify
+import 'react-toastify/dist/ReactToastify.css'; // ✅ Asegúrate de tener este CSS importado en tu archivo principal (App.jsx o index.js)
 
 // Configurar el elemento raíz para la accesibilidad del modal
 Modal.setAppElement('#root');
@@ -20,17 +22,15 @@ const GestionUsuariosPage = () => {
   const [cargandoAreas, setCargandoAreas] = useState(true);
   const [errorAreas, setErrorAreas] = useState(null);
 
-  // Estados para el formulario de creación de usuarios
   const [nuevoUsuario, setNuevoUsuario] = useState({
     name: '',
     email: '',
     password: '',
-    areaId: '',
+    areaId: null,
   });
 
   const [ultimoCodigoGenerado, setUltimoCodigoGenerado] = useState(null);
 
-  // Estados para la funcionalidad de edición (modal)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
 
@@ -40,6 +40,7 @@ const GestionUsuariosPage = () => {
       try {
         setCargandoAreas(true);
         setErrorAreas(null);
+        // Usamos fetch directamente por ahora, pero sería ideal usar areasApi.js para consistencia
         const response = await fetch('http://localhost:3000/api/areas');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -51,6 +52,7 @@ const GestionUsuariosPage = () => {
         }
       } catch (err) {
         console.error("Error al cargar áreas desde el backend:", err);
+        toast.error("No se pudieron cargar las áreas desde el servidor."); // ✅ Usamos toast en lugar de setErrorAreas
         setErrorAreas("No se pudieron cargar las áreas desde el servidor.");
       } finally {
         setCargandoAreas(false);
@@ -69,8 +71,8 @@ const GestionUsuariosPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (nuevoUsuario.areaId === '' || isNaN(nuevoUsuario.areaId)) {
-      alert('Por favor, selecciona un área válida para el usuario.');
+    if (nuevoUsuario.areaId === null || isNaN(nuevoUsuario.areaId)) {
+      toast.error('Por favor, selecciona un área válida para el usuario.'); // ✅ Usamos toast
       return;
     }
 
@@ -79,23 +81,16 @@ const GestionUsuariosPage = () => {
       if (usuarioCreado && usuarioCreado.codigoUsuario) {
         setUltimoCodigoGenerado(usuarioCreado.codigoUsuario);
       }
+      toast.success('Usuario creado con éxito!'); // ✅ Mensaje de éxito con toast
       setNuevoUsuario({
         name: '',
         email: '',
         password: '',
-        areaId: areas.length > 0 ? areas[0].id : '',
+        areaId: areas.length > 0 ? areas[0].id : null,
       });
     } catch (error) {
-      let errorMessage = 'Error al crear usuario: ';
-      if (error.response && error.response.data && error.response.data.errores) {
-        errorMessage += error.response.data.errores.join(', ');
-      } else if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Error desconocido.';
-      }
-      alert(errorMessage);
       console.error("Error al crear usuario:", error);
+      toast.error(error.message || 'Error al crear usuario.');
       setUltimoCodigoGenerado(null);
     }
   };
@@ -126,9 +121,10 @@ const GestionUsuariosPage = () => {
         },
       });
       handleCloseModal();
+      toast.success('Usuario actualizado con éxito.'); // ✅ Mensaje de éxito con toast
     } catch (error) {
       console.error('Error al guardar los cambios:', error);
-      alert('No se pudieron guardar los cambios.');
+      toast.error('No se pudieron guardar los cambios.'); // ✅ Mensaje de error con toast
     }
   };
 
@@ -137,7 +133,6 @@ const GestionUsuariosPage = () => {
     setUsuarioAEditar(null);
   };
 
-  // Estilos del modal
   const customStyles = {
     content: {
       top: '50%',

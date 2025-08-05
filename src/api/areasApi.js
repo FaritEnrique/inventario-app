@@ -8,7 +8,7 @@ const areasApi = {
    * @returns {Promise<Array>} Una promesa que resuelve con un array de objetos de área.
    */
   getAreas: async (searchQuery = '') => {
-    const url = searchQuery ? `/api/areas?buscar=${encodeURIComponent(searchQuery)}` : '/api/areas';
+    const url = searchQuery ? `areas?buscar=${encodeURIComponent(searchQuery)}` : 'areas';
     return apiFetch(url);
   },
 
@@ -18,7 +18,7 @@ const areasApi = {
    * @returns {Promise<Object>} Una promesa que resuelve con un objeto de área.
    */
   getAreaById: async (id) => {
-    return apiFetch(`/api/areas/${id}`);
+    return apiFetch(`areas/${id}`);
   },
 
   /**
@@ -27,7 +27,7 @@ const areasApi = {
    * @returns {Promise<Object>} Una promesa que resuelve con el área creada.
    */
   createArea: async (areaData) => {
-    return apiFetch('/api/areas', {
+    return apiFetch('areas', {
       method: 'POST',
       body: JSON.stringify(areaData),
     });
@@ -41,7 +41,7 @@ const areasApi = {
    */
   updateArea: async (id, areaData) => {
     // ✅ areaData ahora contendrá nombre y branchDescription (si existe)
-    return apiFetch(`/api/areas/${id}`, {
+    return apiFetch(`areas/${id}`, {
       method: 'PUT',
       body: JSON.stringify(areaData),
     });
@@ -53,7 +53,7 @@ const areasApi = {
    * @returns {Promise<void>} Una promesa que resuelve cuando el área es eliminada.
    */
   deleteArea: async (id) => {
-    return apiFetch(`/api/areas/${id}`, {
+    return apiFetch(`areas/${id}`, {
       method: 'DELETE',
     });
   },

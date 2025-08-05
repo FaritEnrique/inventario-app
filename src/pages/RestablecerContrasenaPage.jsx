@@ -13,7 +13,6 @@ const RestablecerContrasenaPage = () => {
   const [tokenValido, setTokenValido] = useState(true);
   const navigate = useNavigate();
 
-  // useEffect para verificar si el token existe
   useEffect(() => {
     if (!token) {
       setTokenValido(false);
@@ -35,14 +34,13 @@ const RestablecerContrasenaPage = () => {
 
     setCargando(true);
     try {
-      // Llama a la nueva ruta del backend para restablecer la contraseña
-      await apiFetch('auth/restablecer-contraseña', {
+      await apiFetch('auth/restablecer-contraseña', { // ✅ Endpoint corregido
         method: 'POST',
         body: JSON.stringify({ token, nuevaContraseña: password }),
       });
 
       toast.success('Contraseña restablecida con éxito. Ya puedes iniciar sesión.');
-      navigate('/login'); // Redirige al login después del restablecimiento
+      navigate('/login');
     } catch (error) {
       console.error('Error al restablecer la contraseña:', error);
       toast.error(error.message || 'Error al restablecer la contraseña. El token pudo haber expirado.');
