@@ -22,9 +22,11 @@ import GestionProductosPage from './pages/GestionProductosPage';
 import GestionMarcasPage from './pages/GestionMarcasPage';
 import GestionTipoProductosPage from './pages/GestionTipoProductosPage';
 import GestionAreasPage from './pages/GestionAreasPage';
+import SolicitarRestablecimientoPage from './pages/SolicitarRestablecimientoPage';
+import RestablecerContrasenaPage from './pages/RestablecerContrasenaPage';
+import GestionUsuariosPage from './pages/GestionUsuariosPage';
 
 import './index.css';
-import GestionUsuariosPage from './pages/GestionUsuariosPage';
 
 const App = () => {
   return (
@@ -56,6 +58,8 @@ const App = () => {
             <Route path="/areas" element={<AreasPage />} />
             <Route path="/pedidos" element={<PedidosPage />} />
             <Route path="/usuarios" element={<UsersPage />} />
+            <Route path="/solicitar-restablecimiento" element={<SolicitarRestablecimientoPage />} />
+            <Route path="/reset-password" element={<RestablecerContrasenaPage />} />
             {/* Agrega más rutas como productos, usuarios, etc */}
           </Route>
         </Routes>

@@ -1,6 +1,6 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // <-- ¡Importamos Link!
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
@@ -11,7 +11,7 @@ const LoginPage = () => {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // Autenticación ficticia
+    // Autenticación ficticia (se reemplazará en el futuro por una llamada a la API)
     if (email === 'admin@admin.com' && password === '123456') {
       toast.success('¡Inicio de sesión exitoso!');
       navigate('/dashboard');
@@ -54,6 +54,16 @@ const LoginPage = () => {
             Iniciar Sesión
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          {/* Nuevo enlace para restablecer la contraseña */}
+          <Link
+            to="/solicitar-restablecimiento"
+            className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
       </div>
     </div>
   );
