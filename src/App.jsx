@@ -23,6 +23,7 @@ import GestionProductosPage from './pages/GestionProductosPage';
 import GestionMarcasPage from './pages/GestionMarcasPage';
 import GestionTipoProductosPage from './pages/GestionTipoProductosPage';
 import GestionAreasPage from './pages/GestionAreasPage';
+import GestionRangosPage from './pages/GestionRangosPage';
 import SolicitarRestablecimientoPage from './pages/SolicitarRestablecimientoPage';
 import RestablecerContrasenaPage from './pages/RestablecerContrasenaPage';
 import GestionUsuariosPage from './pages/GestionUsuariosPage';
@@ -39,7 +40,6 @@ const App = () => {
             <meta name="description" content="Sistema web para gestión de inventarios" />
           </Helmet>
 
-          {/* Notificaciones de toastify */}
           <ToastContainer position="top-right" autoClose={3000} />
 
           <Routes>
@@ -56,6 +56,7 @@ const App = () => {
                 <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
                 <Route path="gestion-areas" element={<GestionAreasPage />} />
                 <Route path="gestion-usuarios" element={<GestionUsuariosPage />} />
+                <Route path="gestion-rangos" element={<GestionRangosPage />} />
                 <Route path="productos" element={<ProductosPage />} />
                 <Route path="movimientos" element={<MovimientosPage />} />
                 <Route path="reportes" element={<ReportesPage />} />
@@ -67,7 +68,7 @@ const App = () => {
               </Route>
             </Route>
           </Routes>
-        </AuthProvider>  
+        </AuthProvider>
       </BrowserRouter>
     </HelmetProvider>
   );

@@ -4,7 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../context/authContext';
-import apiFetch from '../api/apiFetch';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -13,6 +15,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
+
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,13 +27,39 @@ const LoginPage = () => {
       toast.success('¡Inicio de sesión exitoso!');
       navigate('/dashboard');
     } else {
-      toast.error(result.error || 'Credenciales incorrectas');
+      // ✅ NUEVO: Limpiamos los campos del formulario al fallar
+      setEmail('');
+      setPassword('');
+
+      if (result.error && result.error.includes('Credenciales')) {
+        setIsErrorModalOpen(true);
+      } else {
+        toast.error(result.error || 'Ocurrió un error inesperado.');
+      }
     }
     setCargando(false);
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const customStyles = {
+    content: {
+      top: '50%',
+      left: '50%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      width: '400px',
+      padding: '20px',
+      borderRadius: '8px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    },
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    },
   };
 
   return (
@@ -91,6 +121,26 @@ const LoginPage = () => {
           </Link>
         </div>
       </div>
+
+      <Modal
+        isOpen={isErrorModalOpen}
+        onRequestClose={() => setIsErrorModalOpen(false)}
+        style={customStyles}
+        contentLabel="Error de Credenciales"
+      >
+        <h3 className="text-xl font-bold mb-4">Error de Credenciales</h3>
+        <p className="text-gray-700">
+          El usuario o la contraseña que estás ingresando no coincide con la que está almacenada en la base de datos para ese usuario. Sólo pueden acceder a la plataforma usuarios autorizados.
+        </p>
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={() => setIsErrorModalOpen(false)}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };

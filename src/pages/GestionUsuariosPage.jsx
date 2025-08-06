@@ -1,12 +1,10 @@
-// src/pages/GestionUsuariosPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import useUsers from '../hooks/useUsers';
-import { toast } from 'react-toastify'; // ✅ Importamos toast de react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // ✅ Asegúrate de tener este CSS importado en tu archivo principal (App.jsx o index.js)
+import apiFetch from '../api/apiFetch'; 
+import { toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css';
 
-// Configurar el elemento raíz para la accesibilidad del modal
 Modal.setAppElement('#root');
 
 const GestionUsuariosPage = () => {
@@ -19,60 +17,67 @@ const GestionUsuariosPage = () => {
   } = useUsers();
 
   const [areas, setAreas] = useState([]);
+  const [rangos, setRangos] = useState([]);
   const [cargandoAreas, setCargandoAreas] = useState(true);
+  const [cargandoRangos, setCargandoRangos] = useState(true);
   const [errorAreas, setErrorAreas] = useState(null);
+  const [errorRangos, setErrorRangos] = useState(null);
 
   const [nuevoUsuario, setNuevoUsuario] = useState({
     name: '',
     email: '',
     password: '',
-    areaId: null,
+    // ✅ Corregido: Inicializamos con '' en lugar de null para evitar la advertencia del select
+    areaId: '', 
+    rangoId: '',
   });
 
   const [ultimoCodigoGenerado, setUltimoCodigoGenerado] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
 
-  // useEffect para cargar las áreas al inicio
   useEffect(() => {
-    const fetchAreas = async () => {
+    const fetchSelectData = async () => {
       try {
         setCargandoAreas(true);
-        setErrorAreas(null);
-        // Usamos fetch directamente por ahora, pero sería ideal usar areasApi.js para consistencia
-        const response = await fetch('http://localhost:3000/api/areas');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setAreas(data);
-        if (data.length > 0) {
-          setNuevoUsuario((prev) => ({ ...prev, areaId: data[0].id }));
-        }
+        setCargandoRangos(true);
+        
+        const areasResponse = await apiFetch('areas');
+        setAreas(areasResponse);
+        
+        const rangosResponse = await apiFetch('rangos');
+        setRangos(rangosResponse);
+        
+        // No pre-seleccionamos nada, el usuario debe elegir.
+        // Esto mantiene los select con el valor por defecto de ''
       } catch (err) {
-        console.error("Error al cargar áreas desde el backend:", err);
-        toast.error("No se pudieron cargar las áreas desde el servidor."); // ✅ Usamos toast en lugar de setErrorAreas
+        console.error("Error al cargar datos desde el backend:", err);
+        toast.error("No se pudieron cargar las áreas y/o rangos del servidor.");
         setErrorAreas("No se pudieron cargar las áreas desde el servidor.");
+        setErrorRangos("No se pudieron cargar los rangos desde el servidor.");
       } finally {
         setCargandoAreas(false);
+        setCargandoRangos(false);
       }
     };
-    fetchAreas();
+    fetchSelectData();
   }, []);
 
-  // Manejadores para el formulario de creación
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = name === 'areaId' && value !== '' ? parseInt(value, 10) : value;
+    const parsedValue = (name === 'areaId' || name === 'rangoId') && value !== '' ? parseInt(value, 10) : value;
     setNuevoUsuario((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (nuevoUsuario.areaId === null || isNaN(nuevoUsuario.areaId)) {
-      toast.error('Por favor, selecciona un área válida para el usuario.'); // ✅ Usamos toast
+    if (nuevoUsuario.areaId === '' || isNaN(nuevoUsuario.areaId)) {
+      toast.error('Por favor, selecciona un área válida para el usuario.');
+      return;
+    }
+    if (nuevoUsuario.rangoId === '' || isNaN(nuevoUsuario.rangoId)) {
+      toast.error('Por favor, selecciona un rango válido para el usuario.');
       return;
     }
 
@@ -81,12 +86,14 @@ const GestionUsuariosPage = () => {
       if (usuarioCreado && usuarioCreado.codigoUsuario) {
         setUltimoCodigoGenerado(usuarioCreado.codigoUsuario);
       }
-      toast.success('Usuario creado con éxito!'); // ✅ Mensaje de éxito con toast
+      toast.success('Usuario creado con éxito!');
+      // ✅ Reiniciamos los campos a cadena vacía
       setNuevoUsuario({
         name: '',
         email: '',
         password: '',
-        areaId: areas.length > 0 ? areas[0].id : null,
+        areaId: '',
+        rangoId: '',
       });
     } catch (error) {
       console.error("Error al crear usuario:", error);
@@ -95,15 +102,19 @@ const GestionUsuariosPage = () => {
     }
   };
 
-  // Manejadores para el modal de edición
   const handleEditClick = (user) => {
-    setUsuarioAEditar({ ...user });
+    // ✅ Corregido: Si el id es nulo, lo establecemos como ''
+    setUsuarioAEditar({ 
+      ...user, 
+      areaId: user.areaId || '',
+      rangoId: user.rangoId || ''
+    });
     setIsModalOpen(true);
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue = name === 'areaId' && value !== '' ? parseInt(value, 10) : value;
+    const parsedValue = (name === 'areaId' || name === 'rangoId') && value !== '' ? parseInt(value, 10) : value;
     setUsuarioAEditar((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
@@ -112,19 +123,17 @@ const GestionUsuariosPage = () => {
     if (!usuarioAEditar) return;
 
     try {
-      await actualizarUsuario({
-        id: usuarioAEditar.id,
-        datos: {
-          name: usuarioAEditar.name,
-          email: usuarioAEditar.email,
-          areaId: usuarioAEditar.areaId,
-        },
+      await actualizarUsuario(usuarioAEditar.id, {
+        name: usuarioAEditar.name,
+        email: usuarioAEditar.email,
+        areaId: usuarioAEditar.areaId,
+        rangoId: usuarioAEditar.rangoId, 
       });
       handleCloseModal();
-      toast.success('Usuario actualizado con éxito.'); // ✅ Mensaje de éxito con toast
+      toast.success('Usuario actualizado con éxito.');
     } catch (error) {
       console.error('Error al guardar los cambios:', error);
-      toast.error('No se pudieron guardar los cambios.'); // ✅ Mensaje de error con toast
+      toast.error('No se pudieron guardar los cambios.');
     }
   };
 
@@ -160,25 +169,45 @@ const GestionUsuariosPage = () => {
         <input name="name" value={nuevoUsuario.name} onChange={handleChange} placeholder="Nombre" className="p-2 border rounded" autoComplete="name" required />
         <input name="email" value={nuevoUsuario.email} onChange={handleChange} placeholder="Email" className="p-2 border rounded" type="email" autoComplete="email" required />
         <input name="password" value={nuevoUsuario.password} onChange={handleChange} placeholder="Contraseña" className="p-2 border rounded" type="password" autoComplete="new-password" required />
-        {cargandoAreas ? (
-          <p className="p-2 border rounded text-gray-500 bg-gray-100">Cargando áreas...</p>
-        ) : errorAreas ? (
-          <p className="p-2 border rounded text-red-500 bg-red-50">Error al cargar áreas: {errorAreas}</p>
+        
+        {/* Selector de Área */}
+        {(cargandoAreas || cargandoRangos) ? (
+          <p className="p-2 border rounded text-gray-500 bg-gray-100 col-span-full">Cargando datos...</p>
+        ) : errorAreas || errorRangos ? (
+          <p className="p-2 border rounded text-red-500 bg-red-50 col-span-full">Error al cargar datos.</p>
         ) : (
-          <select
-            name="areaId"
-            value={nuevoUsuario.areaId}
-            onChange={handleChange}
-            className="p-2 border rounded"
-            required
-          >
-            <option value="">-- Selecciona un Área --</option>
-            {areas.map((area) => (
-              <option key={area.id} value={area.id}>
-                {area.nombre} ({area.codigo})
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              name="areaId"
+              value={nuevoUsuario.areaId}
+              onChange={handleChange}
+              className="p-2 border rounded"
+              required
+            >
+              <option value="">-- Selecciona un Área --</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.nombre} ({area.codigo})
+                </option>
+              ))}
+            </select>
+
+            {/* Selector de Rango */}
+            <select
+              name="rangoId"
+              value={nuevoUsuario.rangoId}
+              onChange={handleChange}
+              className="p-2 border rounded"
+              required
+            >
+              <option value="">-- Selecciona un Rango --</option>
+              {rangos.map((rango) => (
+                <option key={rango.id} value={rango.id}>
+                  {rango.nombre}
+                </option>
+              ))}
+            </select>
+          </>
         )}
         <button type="submit" className="col-span-1 md:col-span-2 bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors">
           Crear Usuario
@@ -217,6 +246,10 @@ const GestionUsuariosPage = () => {
                   </p>
                   <p className="text-sm text-gray-600">
                     Área: <span className="font-semibold text-gray-700">{user.area?.nombre || 'Sin área asignada'}</span>
+                  </p>
+                  {/* Mostramos el Rango del usuario */}
+                  <p className="text-sm text-gray-600">
+                    Rango: <span className="font-semibold text-gray-700">{user.rango?.nombre || 'Sin rango asignado'}</span>
                   </p>
                 </div>
                 <div className="flex gap-2 mt-3 md:mt-0">
@@ -272,8 +305,8 @@ const GestionUsuariosPage = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Área</label>
-            {cargandoAreas ? (
-              <p className="mt-1 p-2 border rounded-md text-gray-500 bg-gray-100">Cargando áreas...</p>
+            {(cargandoAreas || cargandoRangos) ? (
+              <p className="mt-1 p-2 border rounded-md text-gray-500 bg-gray-100">Cargando datos...</p>
             ) : errorAreas ? (
               <p className="mt-1 p-2 border rounded-md text-red-500 bg-red-50">Error: {errorAreas}</p>
             ) : (
@@ -288,6 +321,29 @@ const GestionUsuariosPage = () => {
                 {areas.map((area) => (
                   <option key={area.id} value={area.id}>
                     {area.nombre} ({area.codigo})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Rango</label>
+            {cargandoRangos ? (
+              <p className="mt-1 p-2 border rounded-md text-gray-500 bg-gray-100">Cargando rangos...</p>
+            ) : errorRangos ? (
+              <p className="mt-1 p-2 border rounded-md text-red-500 bg-red-50">Error: {errorRangos}</p>
+            ) : (
+              <select
+                name="rangoId"
+                value={usuarioAEditar?.rangoId || ''}
+                onChange={handleEditChange}
+                className="mt-1 block w-full p-2 border rounded-md"
+                required
+              >
+                <option value="">-- Selecciona un Rango --</option>
+                {rangos.map((rango) => (
+                  <option key={rango.id} value={rango.id}>
+                    {rango.nombre}
                   </option>
                 ))}
               </select>
