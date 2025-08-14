@@ -1,4 +1,3 @@
-// src/pages/DashboardPage.jsx
 import { MdInventory, MdCategory, MdPeople } from "react-icons/md";
 import {
   FaRegistered,
@@ -89,14 +88,19 @@ const dashboardCards = [
 ];
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (!user || !user.area || !user.rango) {
+  console.log("Estado actual del usuario:", user);
+
+  // Añadimos una comprobación de seguridad para evitar el error.
+  // Es mejor usar 'user.rangoNombre' directamente
+  if (loading || !user) {
     return <div>Cargando contenido del panel de control...</div>;
   }
 
-  const isAdministrator = user.rango.nombre === "Administrador";
-  const userArea = user.area.codigo; // Si es administrador, no se filtra nada. De lo contrario, se aplica el filtro por área.
+  // ✅ CORRECCIÓN: Accedemos a las propiedades directamente del objeto 'user'
+  const isAdministrator = user.rangoNombre === "Administrador";
+  const userArea = user.areaNombre;
 
   const filteredCards = isAdministrator
     ? dashboardCards
@@ -108,44 +112,30 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      {" "}
       <div className="max-w-7xl mx-auto">
-        {" "}
         <h1 className="text-3xl font-bold text-indigo-700 mb-4">
           Panel de Control
         </h1>
-        {" "}
         <p className="text-gray-700 text-lg mb-6">
-          ¡Bienvenido al sistema de InventarioApp! Aquí podrás
-          gestionar productos, categorías, movimientos y más.
-          {" "}
+          ¡Bienvenido al sistema de InventarioApp! Aquí podrás gestionar
+          productos, categorías, movimientos y más.
         </p>
-        {" "}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {" "}
           {filteredCards.map((card) => (
             <Link key={card.title} to={card.path} className={cardClasses}>
-              {" "}
               <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
                 {card.icon}
-                {" "}
               </div>
-              {" "}
               <h2 className="text-lg font-semibold text-gray-800 text-center">
                 {card.title}
               </h2>
-              {" "}
               <p className="text-sm text-gray-600 text-center">
                 {card.description}
               </p>
-              {" "}
             </Link>
           ))}
-          {" "}
         </div>
-        {" "}
       </div>
-      {" "}
     </div>
   );
 };

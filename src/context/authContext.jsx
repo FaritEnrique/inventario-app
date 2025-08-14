@@ -9,7 +9,6 @@ import apiFetch from "../api/apiFetch";
 import { toast } from "react-toastify";
 
 const AuthContext = createContext();
-
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 
 export const AuthProvider = ({ children }) => {
@@ -30,32 +29,59 @@ export const AuthProvider = ({ children }) => {
     }, INACTIVITY_TIMEOUT_MS);
   };
 
-  useEffect(() => {
-    // ✅ CAMBIO: Usamos sessionStorage en lugar de localStorage
-    const token = sessionStorage.getItem("token");
-    const storedUser = sessionStorage.getItem("user");
+  const logout = () => {
+    clearTimeout(inactivityTimer.current);
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    setIsAuthenticated(false);
+    setUser(null);
+    setLoading(false);
+  };
 
-    if (token && storedUser) {
+  // ✅ CAMBIO CLAVE: useEffect que maneja la inicialización
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      setLoading(true);
+      const token = sessionStorage.getItem("token");
+      const storedUser = sessionStorage.getItem("user");
+
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setIsAuthenticated(true);
-        setUser(parsedUser);
-        resetInactivityTimer();
+        if (token && storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          // Opcional: puedes agregar aquí una validación extra del token con una llamada a la API
+          // const res = await apiFetch('auth/validate-token');
+          // if (res.valid) { ... }
+          setIsAuthenticated(true);
+          setUser(parsedUser);
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       } catch (error) {
-        console.error("Error parsing user from sessionStorage:", error);
+        console.error("Error al procesar la sesión:", error);
         sessionStorage.removeItem("token");
         sessionStorage.removeItem("user");
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        // ✅ Este bloque garantiza que loading siempre se establezca en false
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+    checkAuthStatus();
+  }, []); // ✅ Dependencia vacía para que se ejecute solo una vez al inicio
 
+  // Este useEffect se encarga únicamente del temporizador de inactividad
+  useEffect(() => {
+    if (isAuthenticated) {
+      resetInactivityTimer();
+    }
     const events = ["mousemove", "keydown", "click", "scroll"];
     const handleActivity = () => {
       if (isAuthenticated) {
         resetInactivityTimer();
       }
     };
-
     events.forEach((event) => window.addEventListener(event, handleActivity));
 
     return () => {
@@ -67,13 +93,15 @@ export const AuthProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   const login = async (email, password) => {
+    setLoading(true);
     try {
       const response = await apiFetch("auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+
       if (response && response.token) {
-        const { token, usuario } = response; // ✅ CAMBIO: Usamos sessionStorage
+        const { token, usuario } = response;
         sessionStorage.setItem("token", token);
         sessionStorage.setItem("user", JSON.stringify(usuario));
 
@@ -88,22 +116,16 @@ export const AuthProvider = ({ children }) => {
       console.error("Error al iniciar sesión:", error);
       const errorMessage = error.message || "Error al iniciar sesión";
       return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const logout = () => {
-    clearTimeout(inactivityTimer.current); // ✅ CAMBIO: Usamos sessionStorage
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
   };
 
   return (
     <AuthContext.Provider
       value={{ isAuthenticated, user, loading, login, logout }}
     >
-      {children}  {" "}
+      {children}
     </AuthContext.Provider>
   );
 };

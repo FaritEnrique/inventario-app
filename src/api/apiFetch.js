@@ -6,7 +6,7 @@ const baseURL =
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
