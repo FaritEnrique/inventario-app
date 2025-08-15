@@ -5,6 +5,7 @@ import {
   FaShoppingCart,
   FaUserCog,
   FaMedal,
+  FaRegAddressCard,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
@@ -85,6 +86,13 @@ const dashboardCards = [
     path: "/gestion-rangos",
     allowedAreas: ["all"],
   },
+  {
+    title: "Gestión de Proveedores",
+    description: "Administrar proveedores del sistema.",
+    icon: <FaRegAddressCard />,
+    path: "/gestion-proveedores",
+    allowedAreas: ["all"],
+  } 
 ];
 
 const DashboardPage = () => {

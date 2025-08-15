@@ -29,6 +29,8 @@ import RestablecerContrasenaPage from './pages/RestablecerContrasenaPage';
 import GestionUsuariosPage from './pages/GestionUsuariosPage';
 
 import './index.css';
+import GestionProveedoresPage from './pages/GestionProveedoresPage';
+import ActualizarSunatPage from './pages/ActualizarSunatPage';
 
 const App = () => {
   return (
@@ -65,6 +67,8 @@ const App = () => {
                 <Route path="/areas" element={<AreasPage />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/usuarios" element={<UsersPage />} />
+                <Route path="gestion-proveedores" element={<GestionProveedoresPage />}/>
+                <Route path="actualizar-sunat" element={<ActualizarSunatPage />} />
               </Route>
             </Route>
           </Routes>
