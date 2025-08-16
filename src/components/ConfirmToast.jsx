@@ -1,4 +1,3 @@
-// src/components/ConfirmToast.jsx
 import React from 'react';
 
 const ConfirmToast = ({ closeToast, message, onConfirm, confirmButtonText, cancelButtonText }) => {

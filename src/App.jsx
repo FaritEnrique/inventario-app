@@ -68,7 +68,6 @@ const App = () => {
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/usuarios" element={<UsersPage />} />
                 <Route path="gestion-proveedores" element={<GestionProveedoresPage />}/>
-                <Route path="actualizar-sunat" element={<ActualizarSunatPage />} />
               </Route>
             </Route>
           </Routes>
