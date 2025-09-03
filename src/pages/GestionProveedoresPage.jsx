@@ -49,11 +49,10 @@ const GestionProveedoresPage = () => {
         if (sunatData) {
           setSelectedProveedor({
             ruc: sunatData.ruc,
-            nombre: sunatData.nombre,
+            razonSocial: sunatData.razonSocial,
             nombreComercial: sunatData.nombreComercial,
             direccion: sunatData.direccion,
             condicion: sunatData.condicion,
-            tipo: sunatData.tipo,
             estado: sunatData.estado,
             departamento: sunatData.departamento,
             provincia: sunatData.provincia,
@@ -61,7 +60,7 @@ const GestionProveedoresPage = () => {
             ubigeo: sunatData.ubigeo,
             contacto: "",
             telefono: "",
-            email: "",
+            correoElectronico: "",
           });
           toast.success(
             "Proveedor encontrado en padrón SUNAT. Puede crearlo en el sistema."
@@ -75,11 +74,10 @@ const GestionProveedoresPage = () => {
       } else {
         setSelectedProveedor({
           ruc: "",
-          nombre: "",
+          razonSocial: "",
           nombreComercial: "",
           direccion: "",
           condicion: "",
-          tipo: "",
           estado: "",
           departamento: "",
           provincia: "",
@@ -87,7 +85,7 @@ const GestionProveedoresPage = () => {
           ubigeo: "",
           contacto: "",
           telefono: "",
-          email: "",
+          correoElectronico: "",
         });
         toast.info(
           "No se encontraron proveedores con ese nombre. Puede crear uno nuevo."
@@ -115,11 +113,10 @@ const GestionProveedoresPage = () => {
   const handleCreateNew = () => {
     setSelectedProveedor({
       ruc: "",
-      nombre: "",
+      razonSocial: "",
       nombreComercial: "",
       direccion: "",
       condicion: "",
-      tipo: "",
       estado: "",
       departamento: "",
       provincia: "",
@@ -127,7 +124,7 @@ const GestionProveedoresPage = () => {
       ubigeo: "",
       contacto: "",
       telefono: "",
-      email: "",
+      correoElectronico: "",
     });
     setSearchQuery("");
   };
@@ -240,14 +237,13 @@ const GestionProveedoresPage = () => {
           <table className="min-w-full leading-normal table-fixed">
             <thead>
               <tr className="bg-gray-100">
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">RUC</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre Comercial</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Dirección</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Condición</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipo</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
-                <th className="w-[12.5%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">RUC</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre Comercial</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Dirección</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Condición</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -258,12 +254,11 @@ const GestionProveedoresPage = () => {
                     onClick={() => handleEdit(proveedor)}
                     className="cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                   >
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.nombre}</td>
+                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.razonSocial}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.ruc || "N/A"}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.nombreComercial || "N/A"}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.direccion || "N/A"}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.condicion || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.tipo || "N/A"}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.estado || "N/A"}</td>
                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm flex gap-2">
                       <button
@@ -289,7 +284,7 @@ const GestionProveedoresPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="px-5 py-5 text-center text-gray-500">
+                  <td colSpan="7" className="px-5 py-5 text-center text-gray-500">
                     No se encontraron proveedores.
                   </td>
                 </tr>

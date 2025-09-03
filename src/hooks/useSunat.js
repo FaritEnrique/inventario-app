@@ -62,17 +62,9 @@ const useSunat = () => {
       // RUC no encontrado -> ok: false, sin error en consola
       if (!response?.ok) return null;
 
-      if (response.data) {
-        const p = response.data;
-        return {
-          ruc: p.ruc,
-          nombre: p.razonSocial || "",
-          nombreComercial: p.nombreComercial || "",
-          direccion: p.direccion || "",
-          condicion: p.condicion || "",
-          tipo: p.tipo || "",
-          estado: p.estado || "",
-        };
+      if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+        // Devuelve el objeto de datos directamente como lo entrega el backend.
+        return response.data;
       }
       return null;
     } catch (err) {

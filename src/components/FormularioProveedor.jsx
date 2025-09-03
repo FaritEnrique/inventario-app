@@ -4,71 +4,46 @@ import useSunat from '../hooks/useSunat';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
 
-// Opciones predefinidas basadas en los criterios de SUNAT
-const ESTADOS = [
-  'ACTIVO',
-  'BAJA PROVISIONAL',
-  'BAJA DEFINITIVA',
-  'SUSPENSION TEMPORAL',
-  'INACTIVO',
-];
-
-const CONDICIONES = [
-  'HABIDO',
-  'NO HABIDO'
-];
-
-const TIPOS = [
-  'PERSONA NATURAL',
-  'PERSONA JURIDICA'
-];
-
 const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
   const { crearProveedor, actualizarProveedor } = useProveedores();
   const { consultarPadronSunat, loading: loadingSunat } = useSunat();
 
   const [formData, setFormData] = useState({
     ruc: '',
-    nombre: '',
+    razonSocial: '',
     nombreComercial: '',
-    estado: '',
-    condicion: '',
     direccion: '',
-    departamento: '',
-    provincia: '',
-    distrito: '',
     ubigeo: '',
     contacto: '',
+    correoElectronico: '',
     telefono: '',
-    email: '',
-    tipo: '',
     activo: true,
   });
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  // Cargar proveedor en edición
+    useEffect(() => {
     if (proveedor) {
+      // Para evitar warnings de "controlled input", nos aseguramos de que el proveedor no sea nulo
+      const p = proveedor || {};
       setFormData({
-        ruc: proveedor.ruc || '',
-        nombre: proveedor.nombre || '',
-        nombreComercial: proveedor.nombreComercial || '',
-        contacto: proveedor.contacto || '',
-        telefono: proveedor.telefono || '',
-        email: proveedor.email || '',
-        activo: proveedor.activo,
-        direccion: proveedor.direccion || '',
-        estado: proveedor.estado || '',
-        condicion: proveedor.condicion || '',
-        departamento: proveedor.departamento || '',
-        provincia: proveedor.provincia || '',
-        distrito: proveedor.distrito || '',
-        ubigeo: proveedor.ubigeo || '',
-        tipo: proveedor.tipo || '',
+        ruc: p.ruc || '',
+        // Usar razonSocial si existe (para editar), si no, usar nombreComercial (para crear desde SUNAT)
+        razonSocial: p.razonSocial || p.nombreComercial || '',
+        nombreComercial: p.nombreComercial || '',
+        contacto: p.contacto || '',
+        telefono: p.telefono || '',
+        correoElectronico: p.correoElectronico || '',
+        direccion: p.direccion || '',
+        ubigeo: p.ubigeo || '',
+        // Asegurar que 'activo' siempre tenga un valor booleano
+        activo: p.activo !== undefined ? p.activo : true,
       });
     }
   }, [proveedor]);
 
+  // Consultar SUNAT automáticamente si es nuevo proveedor
   useEffect(() => {
     const fetchSunatData = async () => {
       if (!proveedor && formData.ruc && formData.ruc.length === 11) {
@@ -76,20 +51,14 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
         if (datos) {
           setFormData((prev) => ({
             ...prev,
-            nombre: datos.nombre || prev.nombre,
+            razonSocial: datos.razonSocial || prev.razonSocial,
             nombreComercial: datos.nombreComercial || prev.nombreComercial,
-            estado: datos.estado || prev.estado,
-            condicion: datos.condicion || prev.condicion,
             direccion: datos.direccion || prev.direccion,
-            departamento: datos.departamento || prev.departamento,
-            provincia: datos.provincia || prev.provincia,
-            distrito: datos.distrito || prev.distrito,
             ubigeo: datos.ubigeo || prev.ubigeo,
-            tipo: datos.tipo || prev.tipo,
           }));
-          toast.success("Datos cargados desde SUNAT");
+          toast.success('Datos cargados desde SUNAT');
         } else {
-          toast.info("No se encontró información para este RUC");
+          toast.info('No se encontró información para este RUC, puedes ingresarlo manualmente');
         }
       }
     };
@@ -97,10 +66,10 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
   }, [formData.ruc, proveedor, consultarPadronSunat]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -109,15 +78,17 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
     setLoading(true);
 
     try {
-      const dataToSave = { ...formData, nombre: formData.nombre };
       if (proveedor?.id) {
-        await actualizarProveedor(proveedor.id, dataToSave);
+        await actualizarProveedor(proveedor.id, formData);
+        toast.success('Proveedor actualizado correctamente');
       } else {
-        await crearProveedor(dataToSave);
+        await crearProveedor(formData);
+        toast.success('Proveedor creado correctamente');
       }
       onSuccess();
     } catch (error) {
       console.error('Error en el formulario:', error);
+      toast.error('Error al guardar proveedor');
     } finally {
       setLoading(false);
     }
@@ -132,9 +103,11 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-
+          {/* RUC */}
           <div>
-            <label htmlFor="ruc" className="block text-sm font-medium text-gray-700 mb-1">RUC</label>
+            <label htmlFor="ruc" className="block text-sm font-medium text-gray-700 mb-1">
+              RUC
+            </label>
             <input
               type="text"
               name="ruc"
@@ -142,28 +115,36 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
               autoComplete="off"
               value={formData.ruc}
               onChange={handleChange}
-              readOnly={!!proveedor?.id && !!formData.nombre}
-              className={`w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${!!proveedor?.id && !!formData.nombre ? 'cursor-not-allowed' : 'bg-white'}`}
+              readOnly={!!proveedor?.id} 
+              className={`w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                !!proveedor?.id ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+              }`}
               required
             />
           </div>
 
+          {/* Razón Social */}
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label htmlFor="razonSocial" className="block text-sm font-medium text-gray-700 mb-1">
+              Razón Social
+            </label>
             <input
               type="text"
-              name="nombre"
-              id="nombre"
+              name="razonSocial"
+              id="razonSocial"
               autoComplete="organization"
-              value={formData.nombre}
+              value={formData.razonSocial}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
             />
           </div>
 
+          {/* Nombre Comercial */}
           <div>
-            <label htmlFor="nombreComercial" className="block text-sm font-medium text-gray-700 mb-1">Nombre Comercial</label>
+            <label htmlFor="nombreComercial" className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre Comercial
+            </label>
             <input
               type="text"
               name="nombreComercial"
@@ -175,8 +156,11 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
             />
           </div>
 
+          {/* Contacto */}
           <div>
-            <label htmlFor="contacto" className="block text-sm font-medium text-gray-700 mb-1">Contacto</label>
+            <label htmlFor="contacto" className="block text-sm font-medium text-gray-700 mb-1">
+              Contacto
+            </label>
             <input
               type="text"
               name="contacto"
@@ -188,8 +172,11 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
             />
           </div>
 
+          {/* Teléfono */}
           <div>
-            <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+            <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-1">
+              Teléfono
+            </label>
             <input
               type="tel"
               name="telefono"
@@ -201,21 +188,27 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
             />
           </div>
 
+          {/* Correo */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="correoElectronico" className="block text-sm font-medium text-gray-700 mb-1">
+              Correo Electrónico
+            </label>
             <input
               type="email"
-              name="email"
-              id="email"
+              name="correoElectronico"
+              id="correoElectronico"
               autoComplete="email"
-              value={formData.email}
+              value={formData.correoElectronico}
               onChange={handleChange}
               className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
             />
           </div>
 
+          {/* Dirección */}
           <div className="md:col-span-2">
-            <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+            <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-1">
+              Dirección
+            </label>
             <input
               type="text"
               name="direccion"
@@ -227,56 +220,38 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
             />
           </div>
 
+          {/* Ubigeo */}
           <div>
-            <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              name="estado"
-              id="estado"
-              value={formData.estado}
+            <label htmlFor="ubigeo" className="block text-sm font-medium text-gray-700 mb-1">
+              Ubigeo
+            </label>
+            <input
+              type="text"
+              name="ubigeo"
+              id="ubigeo"
+              value={formData.ubigeo}
               onChange={handleChange}
               className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <option value="">Seleccione un estado</option>
-              {ESTADOS.map(estado => (
-                <option key={estado} value={estado}>{estado}</option>
-              ))}
-            </select>
+            />
           </div>
 
-          <div>
-            <label htmlFor="condicion" className="block text-sm font-medium text-gray-700 mb-1">Condición</label>
-            <select
-              name="condicion"
-              id="condicion"
-              value={formData.condicion}
+          {/* Activo */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="activo"
+              id="activo"
+              checked={formData.activo}
               onChange={handleChange}
-              className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <option value="">Seleccione una condición</option>
-              {CONDICIONES.map(condicion => (
-                <option key={condicion} value={condicion}>{condicion}</option>
-              ))}
-            </select>
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="activo" className="text-sm font-medium text-gray-700">
+              Activo
+            </label>
           </div>
-
-          <div>
-            <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Proveedor</label>
-            <select
-              name="tipo"
-              id="tipo"
-              value={formData.tipo}
-              onChange={handleChange}
-              className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <option value="">Seleccione un tipo</option>
-              {TIPOS.map(tipo => (
-                <option key={tipo} value={tipo}>{tipo}</option>
-              ))}
-            </select>
-          </div>
-
         </div>
 
+        {/* Botones */}
         <div className="flex justify-end mt-6 space-x-3">
           <button
             type="button"
@@ -290,7 +265,7 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
             disabled={loading}
             className="px-6 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Guardando...' : (proveedor?.id ? 'Actualizar' : 'Crear')}
+            {loading ? 'Guardando...' : proveedor?.id ? 'Actualizar' : 'Crear'}
           </button>
         </div>
       </form>
