@@ -1,230 +1,152 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { toast } from "react-toastify";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
+import useDebounce from "../hooks/useDebounce";
 import Loader from "../components/Loader";
 import FormularioProveedor from "../components/FormularioProveedor";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
-import ConfirmToast from "../components/ConfirmToast";
 
 const RUC_REGEX = /^\d{11}$/;
 
 const GestionProveedoresPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProveedor, setSelectedProveedor] = useState(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
-  const { proveedores, loading, fetchProveedores, actualizarEstadoProveedor } =
-    useProveedores();
-  const {
-    consultarPadronSunat,
-    actualizarPadronSunat,
-    actualizando,
-    loading: sunatLoading,
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const { 
+    proveedores, 
+    loading: proveedoresLoading, 
+    fetchProveedores, 
+    actualizarEstadoProveedor 
+  } = useProveedores();
+  
+  const { 
+    consultarPadronSunat, 
+    loading: sunatLoading 
   } = useSunat();
 
-  const handleSearch = async (e) => {
+  useEffect(() => {
+    // Actualiza la lista de proveedores en base a la búsqueda debounced
+    fetchProveedores(debouncedSearchQuery);
+  }, [debouncedSearchQuery]);
+
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
     const query = searchQuery.trim();
     if (!query) {
-      toast.warn("Ingrese un nombre o RUC para buscar.");
+      fetchProveedores(); // Cargar todos si la búsqueda está vacía
       return;
     }
 
-    setSelectedProveedor(null);
-
     const isRuc = RUC_REGEX.test(query);
 
-    const resultados = await fetchProveedores(query);
-    if (resultados?.length === 1) {
-      setSelectedProveedor(resultados[0]);
-      toast.success("Proveedor encontrado en su base de datos.");
-    } else if (resultados?.length > 1) {
-      toast.info(
-        `Se encontraron ${resultados.length} proveedores. Por favor, seleccione uno de la lista.`
-      );
-    } else {
-      if (isRuc) {
-        const sunatData = await consultarPadronSunat(query);
-        if (sunatData) {
-          setSelectedProveedor({
-            ruc: sunatData.ruc,
-            razonSocial: sunatData.razonSocial,
-            nombreComercial: sunatData.nombreComercial,
-            direccion: sunatData.direccion,
-            condicion: sunatData.condicion,
-            estado: sunatData.estado,
-            departamento: sunatData.departamento,
-            provincia: sunatData.provincia,
-            distrito: sunatData.distrito,
-            ubigeo: sunatData.ubigeo,
-            contacto: "",
-            telefono: "",
-            correoElectronico: "",
-          });
-          toast.success(
-            "Proveedor encontrado en padrón SUNAT. Puede crearlo en el sistema."
-          );
-        } else {
-          setSelectedProveedor({ ruc: query });
-          toast.info(
-            "No se encontró información para este RUC. Por favor, ingrese los datos manualmente."
-          );
-        }
+    // Siempre limpiar el formulario y la selección anterior al iniciar una búsqueda
+    setIsFormVisible(false);
+    setSelectedProveedor(null);
+
+    const localResults = await fetchProveedores(query);
+
+    if (localResults.length > 0) {
+      // Si hay resultados locales, los mostramos en la tabla.
+      // Si es un solo resultado y es RUC, podríamos mostrar el form, pero
+      // por consistencia, dejaremos que el usuario haga clic en "Editar".
+      toast.info(`Se encontraron ${localResults.length} coincidencias locales.`);
+    } else if (isRuc) {
+      // Si no hay resultados locales y es un RUC, buscar en SUNAT
+      const sunatData = await consultarPadronSunat(query);
+      if (sunatData) {
+        setSelectedProveedor(sunatData);
+        setIsFormVisible(true);
+        toast.success("Proveedor encontrado en SUNAT. Completa los datos para registrarlo.");
       } else {
-        setSelectedProveedor({
-          ruc: "",
-          razonSocial: "",
-          nombreComercial: "",
-          direccion: "",
-          condicion: "",
-          estado: "",
-          departamento: "",
-          provincia: "",
-          distrito: "",
-          ubigeo: "",
-          contacto: "",
-          telefono: "",
-          correoElectronico: "",
-        });
-        toast.info(
-          "No se encontraron proveedores con ese nombre. Puede crear uno nuevo."
-        );
+        toast.warn("El RUC no fue encontrado ni en tu base de datos ni en SUNAT.");
       }
+    } else {
+      // No es RUC y no se encontró por nombre
+      toast.info("Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC.");
     }
+  };
+
+  const handleEdit = (proveedor) => {
+    setSelectedProveedor(proveedor);
+    setIsFormVisible(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeactivate = (id) => {
     toast.dark(
-      ({ closeToast, toastProps }) => (
+      ({ closeToast }) => (
         <ConfirmDeleteToast
           closeToast={closeToast}
-          toastProps={toastProps}
-          message="¿Estás seguro de que deseas desactivar este proveedor? Se ocultará de la lista principal."
-          onConfirm={() => actualizarEstadoProveedor(id, false)}
+          message="¿Estás seguro de que deseas desactivar este proveedor?"
+          onConfirm={async () => {
+            await actualizarEstadoProveedor(id, false);
+            fetchProveedores(debouncedSearchQuery); // Refrescar lista
+          }}
         />
       ),
       { autoClose: false, closeButton: false }
     );
   };
 
-  const handleEdit = (proveedor) => setSelectedProveedor(proveedor);
-
-  const handleCreateNew = () => {
-    setSelectedProveedor({
-      ruc: "",
-      razonSocial: "",
-      nombreComercial: "",
-      direccion: "",
-      condicion: "",
-      estado: "",
-      departamento: "",
-      provincia: "",
-      distrito: "",
-      ubigeo: "",
-      contacto: "",
-      telefono: "",
-      correoElectronico: "",
-    });
-    setSearchQuery("");
-  };
-
   const handleFormSuccess = () => {
+    setIsFormVisible(false);
     setSelectedProveedor(null);
-    fetchProveedores();
+    setSearchQuery(''); // Limpiar búsqueda
+    fetchProveedores(); // Cargar todos los proveedores
   };
 
-  const handleFormCancel = () => setSelectedProveedor(null);
-
-  const handleActualizarClick = () => {
-    if (actualizando) {
-      toast.warn("Ya hay una actualización en curso. Espere a que finalice.");
-      return;
-    }
-
-    toast(
-      ({ closeToast }) => (
-        <ConfirmToast
-          closeToast={closeToast}
-          message="La actualización manual del padrón SUNAT consume recursos y se ejecuta automáticamente. Úsela solo si es estrictamente necesario."
-          confirmButtonText="Sí, actualizar"
-          cancelButtonText="No"
-          onConfirm={async () => {
-            await actualizarPadronSunat();
-          }}
-        />
-      ),
-      { autoClose: false }
-    );
+  const handleFormCancel = () => {
+    setIsFormVisible(false);
+    setSelectedProveedor(null);
   };
 
-  if (loading) return <Loader />;
+  const loading = proveedoresLoading || sunatLoading;
 
   return (
     <>
       <Helmet>
         <title>Gestión de Proveedores | Sistema de Inventario</title>
       </Helmet>
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Gestión de Proveedores</h1>
+      <div className="container mx-auto p-4 md:p-6 lg:p-8">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Proveedores</h1>
 
-        {/* Búsqueda y botones */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2">
-          <form onSubmit={handleSearch} className="flex flex-grow md:mr-2">
-            <input
-              type="text"
-              className="max-w-80 flex-grow border p-2 rounded-l-md"
-              placeholder="Buscar por nombre o RUC..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded-r-md flex items-center justify-center"
-              disabled={sunatLoading}
-            >
-              {sunatLoading ? <Loader size="sm" /> : "Buscar"}
-            </button>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <form onSubmit={handleSearchSubmit}>
+            <label htmlFor="search-proveedor" className="block text-md font-medium text-gray-700 mb-2">
+              Buscar o Registrar Proveedor
+            </label>
+            <div className="flex">
+              <input
+                id="search-proveedor"
+                type="text"
+                className="flex-grow border p-3 rounded-l-md focus:ring-2 focus:ring-blue-500 transition-shadow"
+                placeholder="Ingresa un RUC o nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-3 rounded-r-md hover:bg-blue-700 transition-colors flex items-center justify-center font-semibold"
+                disabled={loading}
+              >
+                {loading ? <Loader size="sm" /> : "Buscar / Registrar"}
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Busca un proveedor existente por RUC/nombre o ingresa uno nuevo para registrarlo.
+            </p>
           </form>
-          <div className="flex flex-col md:flex-row gap-2">
-            <button
-              onClick={handleActualizarClick}
-              disabled={actualizando || sunatLoading}
-              className={`px-4 py-2 rounded text-white font-bold flex items-center justify-center ${
-                actualizando || sunatLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-yellow-500 hover:bg-yellow-600"
-              }`}
-            >
-              {actualizando ? (
-                <>
-                  <Loader size="sm" />
-                  <span className="ml-2">Actualizando...</span>
-                </>
-              ) : (
-                "Actualizar padrón SUNAT"
-              )}
-            </button>
-            <button
-              onClick={handleCreateNew}
-              className="bg-green-500 text-white p-2 rounded-md"
-            >
-              Crear Proveedor
-            </button>
-          </div>
         </div>
 
-        {/* Formulario de creación/edición */}
-        {selectedProveedor && (
-          <div
-            className="bg-white shadow-xl border-2 border-blue-400 rounded-lg p-6 mb-4 transform transition-all duration-500 ease-out opacity-0 animate-slideIn"
-            style={{ opacity: 1 }}
-          >
-            <h2 className="text-xl font-semibold mb-4">
-              Llenar Formulario
-            </h2>
+        {isFormVisible && (
+          <div className="mb-6">
             <FormularioProveedor
-              key={selectedProveedor?.id || "new"}
+              key={selectedProveedor?.id || 'new'}
               proveedor={selectedProveedor}
               onSuccess={handleFormSuccess}
               onCancel={handleFormCancel}
@@ -232,61 +154,45 @@ const GestionProveedoresPage = () => {
           </div>
         )}
 
-        {/* Tabla de proveedores con click en fila */}
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-          <table className="min-w-full leading-normal table-fixed">
+        <div className="bg-white shadow-lg rounded-lg overflow-x-auto">
+          <h2 className="text-xl font-semibold p-5 border-b">Proveedores Registrados</h2>
+          <table className="min-w-full leading-normal">
             <thead>
               <tr className="bg-gray-100">
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">RUC</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre Comercial</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Dirección</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Condición</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
-                <th className="w-[14.28%] px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Razón Social</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">RUC</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Representante</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Contacto</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Teléfono</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
+                <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {proveedores.length > 0 ? (
-                proveedores.map((proveedor) => (
-                  <tr
-                    key={proveedor.id}
-                    onClick={() => handleEdit(proveedor)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.razonSocial}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.ruc || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.nombreComercial || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.direccion || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.condicion || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{proveedor.estado || "N/A"}</td>
-                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(proveedor);
-                        }}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeactivate(proveedor.id);
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Desactivar
-                      </button>
+                proveedores.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50">
+                    <td className="px-5 py-4 border-b text-sm">{p.razonSocial}</td>
+                    <td className="px-5 py-4 border-b text-sm">{p.ruc || "N/A"}</td>
+                    <td className="px-5 py-4 border-b text-sm">{p.representante || "N/A"}</td>
+                    <td className="px-5 py-4 border-b text-sm">{p.contacto || "N/A"}</td>
+                    <td className="px-5 py-4 border-b text-sm">{p.telefono || "N/A"}</td>
+                    <td className="px-5 py-4 border-b text-sm">
+                      <span className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
+                        p.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {p.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 border-b text-sm flex gap-3">
+                      <button onClick={() => handleEdit(p)} className="text-indigo-600 hover:text-indigo-900 font-medium">Editar</button>
+                      <button onClick={() => handleDeactivate(p.id)} className="text-red-600 hover:text-red-900 font-medium">Desactivar</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-5 py-5 text-center text-gray-500">
-                    No se encontraron proveedores.
-                  </td>
+                  <td colSpan="7" className="text-center py-10 text-gray-500">No se encontraron proveedores.</td>
                 </tr>
               )}
             </tbody>

@@ -1,5 +1,4 @@
-// src/hooks/useSunat.js
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import sunatApi from "../api/sunatApi";
 
@@ -8,10 +7,22 @@ const useSunat = () => {
   const [loading, setLoading] = useState(false);
   const [actualizando, setActualizando] = useState(false);
 
-  /**
-   * 1. Actualizar el padrón SUNAT
-   */
-  const actualizarPadronSunat = async () => {
+  const obtenerUltimaActualizacion = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await sunatApi.obtenerUltimaActualizacion();
+      setUltimaActualizacion(data?.ultimaActualizacion || null);
+      return data;
+    } catch (err) {
+      toast.error("Error al obtener última actualización del padrón SUNAT.");
+      console.error(err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const actualizarPadronSunat = useCallback(async () => {
     if (actualizando) {
       toast.warn("Ya hay una actualización en curso. Espere a que finalice.");
       return;
@@ -29,53 +40,29 @@ const useSunat = () => {
     } finally {
       setActualizando(false);
     }
-  };
+  }, [actualizando, obtenerUltimaActualizacion]);
 
-  /**
-   * 2. Obtener última actualización
-   */
-  const obtenerUltimaActualizacion = async () => {
-    setLoading(true);
-    try {
-      const data = await sunatApi.obtenerUltimaActualizacion();
-      setUltimaActualizacion(data?.ultimaActualizacion || null);
-      return data;
-    } catch (err) {
-      toast.error("Error al obtener última actualización del padrón SUNAT.");
-      console.error(err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * 3. Consultar padrón SUNAT por RUC
-   */
-  const consultarPadronSunat = async (ruc) => {
+  const consultarPadronSunat = useCallback(async (ruc) => {
     if (!ruc || !/^\d{11}$/.test(ruc)) return null;
 
     setLoading(true);
     try {
       const response = await sunatApi.consultarPadronSunat(ruc);
 
-      // RUC no encontrado -> ok: false, sin error en consola
       if (!response?.ok) return null;
 
       if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
-        // Devuelve el objeto de datos directamente como lo entrega el backend.
         return response.data;
       }
       return null;
     } catch (err) {
-      // Solo errores de conexión reales se loguean
       console.error("Error consultando SUNAT:", err);
       toast.error("No se pudo conectar con SUNAT. Verifica tu conexión.");
       return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     ultimaActualizacion,

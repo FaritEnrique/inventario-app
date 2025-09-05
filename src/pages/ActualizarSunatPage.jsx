@@ -20,7 +20,7 @@ const ActualizarSunatPage = () => {
           onConfirm={async () => {
             setLoading(true);
             try {
-              const response = await apiFetch('actualizar-sunat');
+              const response = await apiFetch('sunat/actualizar', { method: 'POST' });
               toast.success(response.mensaje || 'Actualización del padrón SUNAT iniciada correctamente. El proceso puede tomar unos minutos.');
             } catch (error) {
               toast.error(`Error al iniciar la actualización: ${error.message}`);
