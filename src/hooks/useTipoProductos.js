@@ -22,13 +22,13 @@ const useTipoProductos = () => {
       setCargando(true);
       setError(null);
       const data = await tipoProductoApi.getTodos(searchTerm);
-      devLog('Datos de tipos de producto recibidos:', data); // Log para depuración
+      
       setTiposProducto(data || []); // ✅ Asegura que siempre sea un array
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Error desconocido al obtener tipos de producto';
       toast.error(`❌ ${msg}`);
       setError(msg);
-      devLog('Error en fetchTiposProducto:', err); // Log para depuración
+      
       setTiposProducto([]); // ✅ Asegura que sea un array vacío en caso de error
     } finally {
       setCargando(false);

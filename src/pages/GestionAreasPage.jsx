@@ -7,7 +7,7 @@ import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 
 const devLog = (...args) => {
   if (import.meta.env.MODE === "development") {
-    console.log("[DEV_LOG_COMPONENT]", ...args);
+    
   }
 };
 

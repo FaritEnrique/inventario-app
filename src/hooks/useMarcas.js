@@ -12,7 +12,7 @@ const useMarcas = () => {
   // Función auxiliar para logs condicionales en desarrollo
   const devLog = (...args) => {
     if (import.meta.env.MODE === 'development') {
-      console.log('[DEV_LOG_USE_MARCAS]', ...args);
+      
     }
   };
 

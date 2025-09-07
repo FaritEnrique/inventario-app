@@ -21,7 +21,12 @@ const apiFetch = async (endpoint, options = {}) => {
 
     if (!res.ok && res.status !== 404) {
       const error = await res.json();
-      throw new Error(error.mensaje || "Error al conectar con el servidor");
+      // Incluir los errores de validación si existen
+      const errorMessage = error.mensaje || error.message || "Error al conectar con el servidor";
+      const validationErrors = error.errores || [];
+      const fullError = new Error(errorMessage);
+      fullError.validationErrors = validationErrors; // Adjuntar los errores de validación
+      throw fullError;
     }
 
     if (res.status === 204) return null;

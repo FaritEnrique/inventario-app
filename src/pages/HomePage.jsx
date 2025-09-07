@@ -28,6 +28,7 @@ const HomePage = () => {
     name: '',
     email: '',
     password: '',
+    cargo: '',
   });
 
   useEffect(() => {
@@ -107,6 +108,18 @@ const HomePage = () => {
                 value={nuevoUsuario.email}
                 onChange={handleChange}
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="cargo" className="block text-sm font-medium text-gray-700">Cargo</label>
+              <input
+                id="cargo"
+                type="text"
+                name="cargo"
+                value={nuevoUsuario.cargo}
+                onChange={handleChange}
+                className="mt-1 block w-full p-2 border border-gray-400 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>

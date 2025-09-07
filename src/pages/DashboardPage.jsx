@@ -30,21 +30,6 @@ const dashboardCards = [
     allowedAreas: ["all"],
   },
   {
-    title: "Gestión de Tipos de Producto",
-    description:
-      "Organiza, crea y administra las categorías y clasificaciones de tus productos.",
-    icon: <MdCategory />,
-    path: "/gestion-tipo-producto",
-    allowedAreas: ["03-ADMI-Iquitos", "01-CONT"],
-  },
-  {
-    title: "Marcas",
-    description: "Gestionar marcas asociadas a productos.",
-    icon: <FaRegistered />,
-    path: "/gestion-marcas",
-    allowedAreas: ["03-ADMI-Iquitos", "01-CONT"],
-  },
-  {
     title: "Áreas",
     description: "Gestionar las áreas o unidades de la organización.",
     icon: <FaSitemap />,
@@ -92,13 +77,11 @@ const dashboardCards = [
     icon: <FaRegAddressCard />,
     path: "/gestion-proveedores",
     allowedAreas: ["all"],
-  } 
+  },
 ];
 
 const DashboardPage = () => {
   const { user, loading } = useAuth();
-
-  console.log("Estado actual del usuario:", user);
 
   // Añadimos una comprobación de seguridad para evitar el error.
   // Es mejor usar 'user.rangoNombre' directamente
@@ -119,25 +102,25 @@ const DashboardPage = () => {
       );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-indigo-700 mb-4">
+    <div className="min-h-screen p-6 bg-gray-100">
+      <div className="mx-auto max-w-7xl">
+        <h1 className="mb-4 text-3xl font-bold text-indigo-700">
           Panel de Control
         </h1>
-        <p className="text-gray-700 text-lg mb-6">
+        <p className="mb-6 text-lg text-gray-700">
           ¡Bienvenido al sistema de InventarioApp! Aquí podrás gestionar
           productos, categorías, movimientos y más.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredCards.map((card) => (
             <Link key={card.title} to={card.path} className={cardClasses}>
-              <div className="w-14 h-14 border-2 border-blue-600 flex items-center justify-center mb-3 text-indigo-600 text-3xl rounded-full bg-indigo-100 mx-auto">
+              <div className="flex items-center justify-center mx-auto mb-3 text-3xl text-indigo-600 bg-indigo-100 border-2 border-blue-600 rounded-full w-14 h-14">
                 {card.icon}
               </div>
-              <h2 className="text-lg font-semibold text-gray-800 text-center">
+              <h2 className="text-lg font-semibold text-center text-gray-800">
                 {card.title}
               </h2>
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-center text-gray-600">
                 {card.description}
               </p>
             </Link>

@@ -14,9 +14,7 @@ const useProductos = () => {
       setError(null);
       const data = await productosApi.getTodos(buscar);
 
-      if (import.meta.env.MODE === 'development') {
-        console.log('✅ Productos desde backend:', data);
-      }
+      
 
       // ✅ Ya no se formatea el precio aquí, ya que no existe en el modelo Producto
       // El stock ya viene calculado del backend, no necesita parseFloat aquí.
