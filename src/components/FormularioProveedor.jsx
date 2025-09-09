@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
 import useDebounce from "../hooks/useDebounce";
 import Loader from "../components/Loader";
-import { toast } from "react-toastify";
 import Modal from "./Modal";
 import ProveedorPrintPreview from "./ProveedorPrintPreview";
 
 // --- Funciones Auxiliares (Fuera del Componente) ---
 
 const getInitialFormData = () => ({
+  procedencia: "NACIONAL",
   ruc: "",
   razonSocial: "",
   estado: "",
@@ -35,7 +36,6 @@ const getInitialFormData = () => ({
   activo: true,
 });
 
-// CORREGIDO: Mapeo completo de los datos de SUNAT
 const mapSunatDataToFormData = (sunatData) => ({
   ruc: sunatData.ruc || "",
   razonSocial: sunatData.razonSocial || "",
@@ -58,17 +58,26 @@ const mapSunatDataToFormData = (sunatData) => ({
 });
 
 const areAllFieldsFilled = (data) => {
-  const fieldsToVerify = Object.keys(getInitialFormData());
-  return fieldsToVerify.every(field => {
+  const mandatoryFields = [
+    "razonSocial",
+    "direccion",
+    "telefono",
+    "correoElectronico",
+  ];
+  return mandatoryFields.every((field) => {
     const value = data[field];
-    if (typeof value === 'boolean') return true;
-    return value !== null && value !== '' && value !== undefined;
+    return value ? value.trim() !== "" : value !== null && value !== undefined;
   });
 };
 
 // --- Componente Principal ---
 
-const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
+const FormularioProveedor = ({
+  proveedor,
+  onSuccess,
+  onCancel,
+  disableRucField,
+}) => {
   const { crearProveedor, actualizarProveedor } = useProveedores();
   const { consultarPadronSunat, loading: loadingSunat } = useSunat();
 
@@ -76,6 +85,8 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [isPrintable, setIsPrintable] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [isProcedenciaDisabled, setIsProcedenciaDisabled] = useState(false);
 
   const debouncedRuc = useDebounce(formData.ruc, 500);
 
@@ -84,8 +95,20 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
       const initialState = getInitialFormData();
       const finalState = { ...initialState, ...proveedor };
       setFormData(finalState);
+
+      // Lógica para habilitar la corrección de datos inconsistentes
+      if (proveedor.procedencia === 'NACIONAL' && !proveedor.ruc) {
+        toast.warn(
+          "Este proveedor nacional no tiene RUC. Por favor, asigne un RUC o cambie su procedencia a Extranjero.",
+          { autoClose: 8000 }
+        );
+        setIsProcedenciaDisabled(false); // Habilitar el select para corregir
+      } else {
+        setIsProcedenciaDisabled(!!proveedor.id); // Deshabilitar si es un proveedor existente y consistente
+      }
     } else {
       setFormData(getInitialFormData());
+      setIsProcedenciaDisabled(false); // Habilitar para nuevos proveedores
     }
   }, [proveedor]);
 
@@ -99,7 +122,13 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
 
   useEffect(() => {
     const fetchSunatData = async () => {
-      if (!proveedor?.id && debouncedRuc && debouncedRuc.length === 11) {
+      if (
+        formData.procedencia === 'NACIONAL' &&
+        !disableRucField &&
+        !proveedor?.id &&
+        debouncedRuc &&
+        debouncedRuc.length === 11
+      ) {
         const datos = await consultarPadronSunat(debouncedRuc);
         if (datos) {
           const mappedData = mapSunatDataToFormData(datos);
@@ -113,70 +142,103 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
       }
     };
     fetchSunatData();
-  }, [debouncedRuc, proveedor?.id, consultarPadronSunat]);
+  }, [debouncedRuc, proveedor?.id, consultarPadronSunat, disableRucField, formData.procedencia]);
 
-  // CORREGIDO: Restaurada la lógica de mayúsculas/minúsculas
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === "checkbox" ? checked : value;
 
-    if (typeof finalValue === 'string') {
-      if (name === 'correoElectronico') {
+    if (name === 'procedencia' && finalValue === 'EXTRANJERO') {
+      setFormData((prev) => ({
+        ...getInitialFormData(),
+        procedencia: 'EXTRANJERO',
+        razonSocial: prev.razonSocial,
+        direccion: prev.direccion,
+        telefono: prev.telefono,
+        correoElectronico: prev.correoElectronico,
+        representante: prev.representante,
+        contacto: prev.contacto,
+        activo: prev.activo,
+      }));
+      return;
+    }
+
+    if (name === "ruc") {
+      const sanitizedValue = finalValue.replace(/[^0-9]/g, "");
+      if (sanitizedValue.length > 11) return;
+      finalValue = sanitizedValue;
+
+      if (sanitizedValue.length === 11 && !/^(10|20)\d{9}$/.test(sanitizedValue)) {
+        setValidationErrors((prev) => ({ ...prev, ruc: "RUC inválido. Debe empezar con 10 o 20." }));
+      } else if (validationErrors.ruc) {
+        setValidationErrors((prev) => ({ ...prev, ruc: undefined }));
+      }
+    } else if (typeof finalValue === "string") {
+      if (name === "correoElectronico") {
         finalValue = finalValue.toLowerCase();
-      } else {
+      } else if (name !== 'procedencia') {
         finalValue = finalValue.toUpperCase();
       }
     }
 
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: finalValue,
-    }));
+    setFormData((prevData) => ({ ...prevData, [name]: finalValue }));
+
+    if (name !== 'ruc' && validationErrors[name]) {
+      setValidationErrors((prevErrors) => ({ ...prevErrors, [name]: undefined }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.razonSocial.trim()) {
+      errors.razonSocial = "El Nombre o Razón Social es obligatorio.";
+    }
+    if (!formData.direccion.trim()) {
+      errors.direccion = "La Dirección es obligatoria.";
+    }
+    if (!formData.telefono.trim()) {
+      errors.telefono = "El Teléfono es obligatorio.";
+    }
+
+    if (formData.procedencia === 'NACIONAL' && !/^(10|20)\d{9}$/.test(formData.ruc)) {
+      errors.ruc = "El RUC es obligatorio para proveedores nacionales y debe ser válido.";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.razonSocial.trim()) {
-      toast.error("La Razón Social es obligatoria.");
+    if (!validateForm()) {
       setLoading(false);
+      toast.error("Por favor, complete todos los campos obligatorios.");
       return;
     }
 
-    // Prepara el objeto de datos para el envío
-    const proveedorData = {};
-    for (const [key, value] of Object.entries(formData)) {
-      if (value === "") {
-        proveedorData[key] = null; // Convierte strings vacíos a null
-      } else {
-        proveedorData[key] = value;
-      }
-    }
-
-    // Limpia el número de teléfono para que coincida con la validación del backend
-    if (proveedorData.telefono) {
-      proveedorData.telefono = proveedorData.telefono.replace(/\s/g, '');
-    }
-
-    // NOTA: No se convierte nroTrabajadores a Int, el schema de Joi espera un String.
-
     try {
+      const payload = { ...formData };
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === "") payload[key] = null;
+      });
+
+      if (payload.telefono) {
+        payload.telefono = payload.telefono.replace(/\s/g, "");
+      }
+
       if (proveedor?.id) {
-        await actualizarProveedor(proveedor.id, proveedorData);
+        await actualizarProveedor(proveedor.id, payload);
         toast.success("Proveedor actualizado correctamente");
       } else {
-        await crearProveedor(proveedorData);
+        await crearProveedor(payload);
         toast.success("Proveedor creado correctamente");
       }
       onSuccess();
     } catch (error) {
       console.error("Error en el formulario:", error);
-      if (error.validationErrors && error.validationErrors.length > 0) {
-        error.validationErrors.forEach(err => toast.error(err));
-      } else {
-        toast.error(error.message || "Error al guardar proveedor");
-      }
+      toast.error(error.message || "Error al guardar proveedor");
     } finally {
       setLoading(false);
     }
@@ -184,12 +246,7 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
 
   const renderInputField = (label, name, options = {}) => (
     <div>
-      <label
-        htmlFor={name}
-        className="block mb-1 text-sm font-medium text-gray-700"
-      >
-        {label}
-      </label>
+      <label htmlFor={name} className="block mb-1 text-sm font-medium text-gray-700">{label}</label>
       <input
         type={options.type || "text"}
         name={name}
@@ -198,11 +255,35 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
         value={formData[name] || ""}
         onChange={handleChange}
         readOnly={options.readOnly || false}
+        disabled={options.disabled || false}
         required={options.required || false}
-        className={`w-full px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
-          options.readOnly ? "bg-gray-200 cursor-not-allowed" : "bg-white"
+        className={`w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
+          validationErrors[name]
+            ? "border-red-500 focus:ring-red-500"
+            : "border-gray-300 focus:ring-blue-500"
+        } ${
+          options.read_only || options.disabled
+            ? "bg-gray-200 cursor-not-allowed"
+            : "bg-white"
         }`}
       />
+      {validationErrors[name] && <p className="mt-1 text-xs text-red-500">{validationErrors[name]}</p>}
+    </div>
+  );
+
+  const renderSelectField = (label, name, options, fieldOptions = {}) => (
+    <div>
+      <label htmlFor={name} className="block mb-1 text-sm font-medium text-gray-700">{label}</label>
+      <select
+        name={name}
+        id={name}
+        value={formData[name]}
+        onChange={handleChange}
+        disabled={fieldOptions.disabled || false}
+        className={`w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${validationErrors[name] ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"} ${fieldOptions.disabled ? "bg-gray-200 cursor-not-allowed" : "bg-white"}`}>
+        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+      {validationErrors[name] && <p className="mt-1 text-xs text-red-500">{validationErrors[name]}</p>}
     </div>
   );
 
@@ -216,42 +297,48 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
 
         <form onSubmit={handleSubmit} noValidate className="space-y-8">
           <fieldset className="p-4 border border-gray-300 rounded-lg">
-            <legend className="px-2 text-lg font-semibold text-gray-700">
-              Datos de Gestión Interna
-            </legend>
+            <legend className="px-2 text-lg font-semibold text-gray-700">Datos de Gestión Interna</legend>
             <div className="grid grid-cols-1 gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-3">
-              {renderInputField("RUC", "ruc", { readOnly: !!proveedor?.id })}
-              {renderInputField("Razón Social", "razonSocial", { required: true })}
-              {renderInputField("Dirección Completa", "direccion")}
+              {renderSelectField("Procedencia", "procedencia", 
+                [{value: 'NACIONAL', label: 'Nacional'}, {value: 'EXTRANJERO', label: 'Extranjero'}],
+                { disabled: isProcedenciaDisabled }
+              )}
+              {formData.procedencia === 'NACIONAL' && renderInputField("RUC", "ruc", {
+                readOnly: !!proveedor?.id,
+                disabled: disableRucField,
+                required: true,
+              })}
+              {renderInputField("Nombre / Razón Social", "razonSocial", { required: true })}
+              {renderInputField("Dirección Completa", "direccion", { required: true })}
               {renderInputField("Teléfono", "telefono", { type: "tel", required: true })}
               {renderInputField("Representante", "representante")}
               {renderInputField("Persona de Contacto", "contacto")}
-              {renderInputField("Correo Electrónico", "correoElectronico", { type: "email", required: true })}
+              {renderInputField("Correo Electrónico", "correoElectronico", { type: "email" })}
             </div>
           </fieldset>
 
-          <fieldset className="p-4 border border-gray-300 rounded-lg">
-            <legend className="px-2 text-lg font-semibold text-gray-700">
-              Datos Obtenidos de SUNAT
-            </legend>
-            <div className="grid grid-cols-1 gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {renderInputField("Estado", "estado", { readOnly: true })}
-              {renderInputField("Condición", "condicion", { readOnly: true })}
-              {renderInputField("Tipo", "tipo", { readOnly: true })}
-              {renderInputField("Act. CIIU3 Principal", "actividadCIIU3Principal", { readOnly: true })}
-              {renderInputField("Act. CIIU3 Secundaria", "actividadCIIU3Secundaria", { readOnly: true })}
-              {renderInputField("Act. CIIU4 Principal", "actividadCIIU4Principal", { readOnly: true })}
-              {renderInputField("Nro. Trabajadores", "nroTrabajadores", { readOnly: true })}
-              {renderInputField("Periodo Publicación", "periodoPublicacion", { readOnly: true })}
-              {renderInputField("Tipo Facturación", "tipoFacturacion", { readOnly: true })}
-              {renderInputField("Tipo Contabilidad", "tipoContabilidad", { readOnly: true })}
-              {renderInputField("Comercio Exterior", "comercioExterior", { readOnly: true })}
-              {renderInputField("Ubigeo", "ubigeo", { readOnly: true })}
-              {renderInputField("Departamento", "departamento", { readOnly: true })}
-              {renderInputField("Provincia", "provincia", { readOnly: true })}
-              {renderInputField("Distrito", "distrito", { readOnly: true })}
-            </div>
-          </fieldset>
+          {formData.procedencia === 'NACIONAL' && (
+            <fieldset className="p-4 border border-gray-300 rounded-lg">
+              <legend className="px-2 text-lg font-semibold text-gray-700">Datos Obtenidos de SUNAT (Solo Nacional)</legend>
+              <div className="grid grid-cols-1 gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {renderInputField("Estado", "estado", { readOnly: true })}
+                {renderInputField("Condición", "condicion", { readOnly: true })}
+                {renderInputField("Tipo", "tipo", { readOnly: true })}
+                {renderInputField("Act. CIIU3 Principal", "actividadCIIU3Principal", { readOnly: true })}
+                {renderInputField("Act. CIIU3 Secundaria", "actividadCIIU3Secundaria", { readOnly: true })}
+                {renderInputField("Act. CIIU4 Principal", "actividadCIIU4Principal", { readOnly: true })}
+                {renderInputField("Nro. Trabajadores", "nroTrabajadores", { readOnly: true })}
+                {renderInputField("Periodo Publicación", "periodoPublicacion", { readOnly: true })}
+                {renderInputField("Tipo Facturación", "tipoFacturacion", { readOnly: true })}
+                {renderInputField("Tipo Contabilidad", "tipoContabilidad", { readOnly: true })}
+                {renderInputField("Comercio Exterior", "comercioExterior", { readOnly: true })}
+                {renderInputField("Ubigeo", "ubigeo", { readOnly: true })}
+                {renderInputField("Departamento", "departamento", { readOnly: true })}
+                {renderInputField("Provincia", "provincia", { readOnly: true })}
+                {renderInputField("Distrito", "distrito", { readOnly: true })}
+              </div>
+            </fieldset>
+          )}
 
           <div className="pt-6 mt-6 border-t">
             <div className="flex items-center space-x-2">
@@ -263,9 +350,7 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
                 onChange={handleChange}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="activo" className="text-sm font-medium text-gray-700">
-                Proveedor Activo
-              </label>
+              <label htmlFor="activo" className="text-sm font-medium text-gray-700">Proveedor Activo</label>
             </div>
           </div>
 
@@ -297,16 +382,8 @@ const FormularioProveedor = ({ proveedor, onSuccess, onCancel }) => {
         </form>
       </div>
 
-      <Modal 
-        isOpen={showPrintPreview} 
-        onClose={() => setShowPrintPreview(false)} 
-        title="Vista Previa de Impresión"
-        maxWidth="max-w-4xl"
-      >
-        <ProveedorPrintPreview 
-            proveedor={formData} 
-            onCancel={() => setShowPrintPreview(false)} 
-        />
+      <Modal isOpen={showPrintPreview} onClose={() => setShowPrintPreview(false)} title="Vista Previa de Impresión" maxWidth="max-w-4xl">
+        <ProveedorPrintPreview proveedor={formData} onCancel={() => setShowPrintPreview(false)} />
       </Modal>
     </>
   );

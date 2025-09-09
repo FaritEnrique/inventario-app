@@ -1,20 +1,25 @@
-import React from 'react';
+// src/components/Modal.jsx
+import React from "react";
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
-      <div className={`relative mx-auto border shadow-lg rounded-md bg-white w-full ${maxWidth}`}>
-        <div className="flex justify-between items-center p-4 border-b">
+    <div className="fixed inset-0 z-50 flex items-center justify-center w-full h-full p-4 overflow-y-auto bg-gray-600 bg-opacity-50">
+      <div
+        className={`relative mx-auto border shadow-lg rounded-md bg-white w-full ${maxWidth}`}
+      >
+        <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-3xl leading-none font-light">
+          <button
+            onClick={onClose}
+            className="text-3xl font-light leading-none text-gray-500 hover:text-gray-800"
+          >
             &times;
           </button>
         </div>
-        <div className="p-4">
-          {children}
-        </div>
+        {/* Espacio adicional en la parte superior del contenido */}
+        <div className="px-4 pt-6 pb-4 overflow-y-auto max-h-[80vh]">{children}</div>
       </div>
     </div>
   );

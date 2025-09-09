@@ -8,12 +8,13 @@ import Loader from "../components/Loader";
 import FormularioProveedor from "../components/FormularioProveedor";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 
-const RUC_REGEX = /^\d{11}$/;
+const RUC_REGEX = /^(10|20)\d{9}$/;
 
 const GestionProveedoresPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProveedor, setSelectedProveedor] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false); // New state
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -31,9 +32,33 @@ const GestionProveedoresPage = () => {
     fetchProveedores(debouncedSearchQuery);
   }, [debouncedSearchQuery]);
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    // If the input contains non-digit characters, it's a name search, don't limit length.
+    if (/[^0-9]/.test(value)) {
+      setSearchQuery(value);
+      return;
+    }
+    // If it contains only digits, it's a RUC search, limit to 11 digits.
+    if (value.length <= 11) {
+      setSearchQuery(value);
+    }
+  };
+
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     const query = searchQuery.trim();
+
+    // Validación de formato de RUC antes de cualquier otra cosa
+    const isNumericQuery = /^\d+$/.test(query);
+    if (isNumericQuery && query.length === 11 && !RUC_REGEX.test(query)) {
+      toast.error("El RUC debe tener 11 dígitos y empezar con 10 o 20.");
+      return; // Detener la ejecución si el formato es inválido
+    }
+
+    // Resetear el estado de deshabilitación del RUC al iniciar una búsqueda normal
+    setIsRucDisabledForNewForm(false); // Reset on normal search
+
     if (!query) {
       fetchProveedores(); // Cargar todos si la búsqueda está vacía
       return;
@@ -64,8 +89,10 @@ const GestionProveedoresPage = () => {
           "Proveedor encontrado en SUNAT. Completa los datos para registrarlo."
         );
       } else {
-        toast.warn(
-          "El RUC no fue encontrado ni en tu base de datos ni en SUNAT."
+        setSelectedProveedor(null); // Para asegurar que el formulario se trate como una nueva creación
+        setIsFormVisible(true); // Mostrar el formulario
+        toast.info(
+          "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC."
         );
       }
     } else {
@@ -76,9 +103,19 @@ const GestionProveedoresPage = () => {
     }
   };
 
+  // New handler for "Crear sin RUC" button
+  const handleCreateWithoutRuc = () => {
+    setSelectedProveedor(null);
+    setIsFormVisible(true);
+    setIsRucDisabledForNewForm(true); // Disable RUC field
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.info("Formulario para nuevo proveedor sin RUC. El campo RUC está deshabilitado.");
+  };
+
   const handleEdit = (proveedor) => {
     setSelectedProveedor(proveedor);
     setIsFormVisible(true);
+    setIsRucDisabledForNewForm(false); // Ensure RUC is not disabled when editing
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -101,6 +138,7 @@ const GestionProveedoresPage = () => {
   const handleFormSuccess = () => {
     setIsFormVisible(false);
     setSelectedProveedor(null);
+    setIsRucDisabledForNewForm(false); // Reset state
     setSearchQuery(""); // Limpiar búsqueda
     fetchProveedores(); // Cargar todos los proveedores
   };
@@ -108,6 +146,7 @@ const GestionProveedoresPage = () => {
   const handleFormCancel = () => {
     setIsFormVisible(false);
     setSelectedProveedor(null);
+    setIsRucDisabledForNewForm(false); // Reset state
   };
 
   const loading = proveedoresLoading || sunatLoading;
@@ -137,7 +176,7 @@ const GestionProveedoresPage = () => {
                 className="flex-grow p-3 transition-shadow border border-gray-500 max-w-96 rounded-l-md focus:ring-2 focus:ring-blue-500"
                 placeholder="Ingresa un RUC o nombre..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
               />
               <button
                 type="submit"
@@ -152,6 +191,15 @@ const GestionProveedoresPage = () => {
               para registrarlo.
             </p>
           </form>
+          {/* New button for creating without RUC */}
+          <div className="mt-4">
+            <button
+              onClick={handleCreateWithoutRuc}
+              className="px-6 py-3 font-semibold text-white transition-colors bg-purple-600 rounded-md hover:bg-purple-700"
+            >
+              Crear sin RUC
+            </button>
+          </div>
         </div>
 
         {isFormVisible && (
@@ -161,6 +209,7 @@ const GestionProveedoresPage = () => {
               proveedor={selectedProveedor}
               onSuccess={handleFormSuccess}
               onCancel={handleFormCancel}
+              disableRucField={isRucDisabledForNewForm} // Pass new prop
             />
           </div>
         )}

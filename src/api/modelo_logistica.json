@@ -1,0 +1,675 @@
+{
+  "name": "Modelo de Logística",
+  "comment": "Modelo de MongoDB generado a partir del esquema de Prisma.",
+  "data": {
+    "collections": [
+      {
+        "name": "User",
+        "comment": "Modelos de gestión de usuarios y accesos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true, "comment": "Clave primaria" },
+          { "name": "name", "type": "String", "required": true },
+          { "name": "email", "type": "String", "required": true },
+          { "name": "password", "type": "String", "required": true },
+          { "name": "resetToken", "type": "String", "required": false },
+          { "name": "resetExpires", "type": "Date", "required": false },
+          { "name": "areaId", "type": "ObjectId", "required": false },
+          { "name": "codigoUsuario", "type": "String", "required": false },
+          { "name": "rangoId", "type": "ObjectId", "required": false },
+          { "name": "activo", "type": "Boolean", "required": true },
+          { "name": "cargo", "type": "String", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "email_index", "fields": ["email"], "unique": true },
+          { "name": "codigoUsuario_index", "fields": ["codigoUsuario"], "unique": true }
+        ]
+      },
+      {
+        "name": "Area",
+        "comment": "Modelos de gestión de usuarios y accesos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "nombre", "type": "String", "required": true },
+          { "name": "branchDescription", "type": "String", "required": false },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "Rango",
+        "comment": "Modelos de gestión de usuarios y accesos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "nombre", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "nombre_index", "fields": ["nombre"], "unique": true }
+        ]
+      },
+      {
+        "name": "Producto",
+        "comment": "Modelos de productos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "nombre", "type": "String", "required": true },
+          { "name": "descripcion", "type": "String", "required": false },
+          { "name": "unidadMedida", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true },
+          { "name": "imagenUrl", "type": "String", "required": false },
+          { "name": "marcaId", "type": "ObjectId", "required": false },
+          { "name": "tipoProductoId", "type": "ObjectId", "required": true },
+          { "name": "createdAt", "type": "Date", "required": true },
+          { "name": "updatedAt", "type": "Date", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "Marca",
+        "comment": "Modelos de productos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "nombre", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "nombre_index", "fields": ["nombre"], "unique": true }
+        ]
+      },
+      {
+        "name": "TipoProducto",
+        "comment": "Modelos de productos",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "nombre", "type": "String", "required": true },
+          { "name": "prefijo", "type": "String", "required": true },
+          { "name": "frecuenciaReposicion", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "nombre_index", "fields": ["nombre"], "unique": true },
+          { "name": "prefijo_index", "fields": ["prefijo"], "unique": true }
+        ]
+      },
+      {
+        "name": "TipoProductoMarca",
+        "comment": "Tabla intermedia para la relación N:M entre TipoProducto y Marca",
+        "fields": [
+          { "name": "marcaId", "type": "ObjectId", "required": true },
+          { "name": "tipoProductoId", "type": "ObjectId", "required": true }
+        ]
+      },
+      {
+        "name": "Requerimiento",
+        "comment": "Modelos del flujo de trabajo",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "fecha", "type": "Date", "required": true },
+          { "name": "areaId", "type": "ObjectId", "required": true },
+          { "name": "userId", "type": "ObjectId", "required": true },
+          { "name": "prioridad", "type": "String", "required": true },
+          { "name": "detalleUso", "type": "String", "required": false },
+          { "name": "estado", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "ItemRequerimiento",
+        "comment": "Modelos del flujo de trabajo",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "requerimientoId", "type": "ObjectId", "required": true },
+          { "name": "productoId", "type": "ObjectId", "required": true },
+          { "name": "cantidadRequerida", "type": "Number", "required": true },
+          { "name": "stockAlMomento", "type": "Number", "required": false },
+          { "name": "estado", "type": "String", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true }
+        ]
+      },
+      {
+        "name": "SolicitudCotizacion",
+        "comment": "Modelos para el flujo de cotizaciones",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "proveedorId", "type": "ObjectId", "required": true },
+          { "name": "requerimientoId", "type": "ObjectId", "required": true },
+          { "name": "elaboradorId", "type": "ObjectId", "required": true },
+          { "name": "fechaEmision", "type": "Date", "required": true },
+          { "name": "cuerpoSolicitud", "type": "String", "required": false },
+          { "name": "estado", "type": "String", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "AccesoTemporalCotizacion",
+        "comment": "Modelos para el flujo de cotizaciones",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "solicitudId", "type": "ObjectId", "required": true },
+          { "name": "token", "type": "String", "required": true },
+          { "name": "fechaCreacion", "type": "Date", "required": true },
+          { "name": "fechaExpiracion", "type": "Date", "required": true },
+          { "name": "usado", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "solicitudId_index", "fields": ["solicitudId"], "unique": true },
+          { "name": "token_index", "fields": ["token"], "unique": true }
+        ]
+      },
+      {
+        "name": "ItemSolicitudCotizacion",
+        "comment": "Tabla intermedia para la relación N:M entre SolicitudCotizacion e ItemRequerimiento",
+        "fields": [
+          { "name": "solicitudId", "type": "ObjectId", "required": true },
+          { "name": "itemRequerimientoId", "type": "ObjectId", "required": true }
+        ]
+      },
+      {
+        "name": "Cotizacion",
+        "comment": "Modelos para el flujo de cotizaciones",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "solicitudId", "type": "ObjectId", "required": true },
+          { "name": "proveedorId", "type": "ObjectId", "required": true },
+          { "name": "fechaEmision", "type": "Date", "required": true },
+          { "name": "estado", "type": "String", "required": true },
+          { "name": "garantia", "type": "String", "required": false },
+          { "name": "tiempoEntregaDias", "type": "Number", "required": false },
+          { "name": "lugarEntrega", "type": "String", "required": false },
+          { "name": "formaPago", "type": "String", "required": false }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "ItemCotizacion",
+        "comment": "Modelos para el flujo de cotizaciones",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "cotizacionId", "type": "ObjectId", "required": true },
+          { "name": "itemRequerimientoId", "type": "ObjectId", "required": true },
+          { "name": "cantidadOfrecida", "type": "Number", "required": true },
+          { "name": "precioUnidad", "type": "Number", "required": true },
+          { "name": "precioTotal", "type": "Number", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true }
+        ]
+      },
+      {
+        "name": "Proveedor",
+        "comment": "Proveedores (operativo) + maestro Sunat",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "createdAt", "type": "Date", "required": true },
+          { "name": "updatedAt", "type": "Date", "required": true },
+          { "name": "ruc", "type": "String", "required": true },
+          { "name": "razonSocial", "type": "String", "required": false },
+          { "name": "direccion", "type": "String", "required": false },
+          { "name": "telefono", "type": "String", "required": false },
+          { "name": "representante", "type": "String", "required": false },
+          { "name": "contacto", "type": "String", "required": false },
+          { "name": "correoElectronico", "type": "String", "required": false },
+          { "name": "activo", "type": "Boolean", "required": true },
+          { "name": "estado", "type": "String", "required": false },
+          { "name": "condicion", "type": "String", "required": false },
+          { "name": "tipo", "type": "String", "required": false },
+          { "name": "actividadCIIU3Principal", "type": "String", "required": false },
+          { "name": "actividadCIIU3Secundaria", "type": "String", "required": false },
+          { "name": "actividadCIIU4Principal", "type": "String", "required": false },
+          { "name": "nroTrabajadores", "type": "String", "required": false },
+          { "name": "periodoPublicacion", "type": "String", "required": false },
+          { "name": "tipoFacturacion", "type": "String", "required": false },
+          { "name": "tipoContabilidad", "type": "String", "required": false },
+          { "name": "comercioExterior", "type": "String", "required": false },
+          { "name": "ubigeo", "type": "String", "required": false },
+          { "name": "departamento", "type": "String", "required": false },
+          { "name": "provincia", "type": "String", "required": false },
+          { "name": "distrito", "type": "String", "required": false }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "ruc_index", "fields": ["ruc"], "unique": true }
+        ]
+      },
+      {
+        "name": "ProveedoresSunat",
+        "comment": "Proveedores (operativo) + maestro Sunat",
+        "fields": [
+          { "name": "ruc", "type": "String", "required": true },
+          { "name": "estado", "type": "String", "required": false },
+          { "name": "condicion", "type": "String", "required": false },
+          { "name": "tipo", "type": "String", "required": false },
+          { "name": "actividadCIIU3Principal", "type": "String", "required": false },
+          { "name": "actividadCIIU3Secundaria", "type": "String", "required": false },
+          { "name": "actividadCIIU4Principal", "type": "String", "required": false },
+          { "name": "nroTrabajadores", "type": "String", "required": false },
+          { "name": "tipoFacturacion", "type": "String", "required": false },
+          { "name": "tipoContabilidad", "type": "String", "required": false },
+          { "name": "comercioExterior", "type": "String", "required": false },
+          { "name": "ubigeo", "type": "String", "required": false },
+          { "name": "departamento", "type": "String", "required": false },
+          { "name": "provincia", "type": "String", "required": false },
+          { "name": "distrito", "type": "String", "required": false },
+          { "name": "periodoPublicacion", "type": "String", "required": false }
+        ],
+        "indexes": [
+          { "name": "ruc_index", "fields": ["ruc"], "unique": true }
+        ]
+      },
+      {
+        "name": "ProveedorEspecializacion",
+        "comment": "Tablas intermedias",
+        "fields": [
+          { "name": "proveedorId", "type": "ObjectId", "required": true },
+          { "name": "tipoProductoId", "type": "ObjectId", "required": true }
+        ]
+      },
+      {
+        "name": "ItemRequerimientoOrdenCompra",
+        "comment": "Tablas intermedias",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "ordenCompraId", "type": "ObjectId", "required": true },
+          { "name": "itemRequerimientoId", "type": "ObjectId", "required": true },
+          { "name": "cantidad", "type": "Number", "required": true },
+          { "name": "precioUnidad", "type": "Number", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true }
+        ]
+      },
+      {
+        "name": "MovimientoStockNota",
+        "comment": "Tablas intermedias",
+        "fields": [
+          { "name": "movimientoId", "type": "ObjectId", "required": true },
+          { "name": "notaIngresoId", "type": "ObjectId", "required": false },
+          { "name": "notaSalidaId", "type": "ObjectId", "required": false }
+        ],
+        "indexes": [
+          { "name": "movimientoId_index", "fields": ["movimientoId"], "unique": true }
+        ]
+      },
+      {
+        "name": "Evaluacion",
+        "comment": "Modelos de interacción",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "itemId", "type": "ObjectId", "required": true },
+          { "name": "comentario", "type": "String", "required": false },
+          { "name": "fechaEvaluacion", "type": "Date", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true }
+        ]
+      },
+      {
+        "name": "OrdenCompra",
+        "comment": "Modelos de interacción",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "proveedorId", "type": "ObjectId", "required": true },
+          { "name": "fechaEmision", "type": "Date", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "NotaIngreso",
+        "comment": "Modelos de interacción",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "ordenCompraId", "type": "ObjectId", "required": true },
+          { "name": "fechaRecepcion", "type": "Date", "required": true },
+          { "name": "responsableId", "type": "ObjectId", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "NotaSalida",
+        "comment": "Modelos de interacción",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "codigo", "type": "String", "required": true },
+          { "name": "itemRequerimientoId", "type": "ObjectId", "required": true },
+          { "name": "fechaSalida", "type": "Date", "required": true },
+          { "name": "responsableId", "type": "ObjectId", "required": true },
+          { "name": "activo", "type": "Boolean", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true },
+          { "name": "codigo_index", "fields": ["codigo"], "unique": true }
+        ]
+      },
+      {
+        "name": "MovimientoStock",
+        "comment": "Modelos de interacción",
+        "fields": [
+          { "name": "id", "type": "ObjectId", "required": true },
+          { "name": "productoId", "type": "ObjectId", "required": true },
+          { "name": "tipo", "type": "String", "required": true },
+          { "name": "cantidad", "type": "Number", "required": true },
+          { "name": "motivo", "type": "String", "required": false },
+          { "name": "fecha", "type": "Date", "required": true }
+        ],
+        "indexes": [
+          { "name": "id_index", "fields": ["id"], "unique": true }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "User-Area",
+        "from_collection": "User",
+        "from_field": "areaId",
+        "to_collection": "Area",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "User-Rango",
+        "from_collection": "User",
+        "from_field": "rangoId",
+        "to_collection": "Rango",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Producto-Marca",
+        "from_collection": "Producto",
+        "from_field": "marcaId",
+        "to_collection": "Marca",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Producto-TipoProducto",
+        "from_collection": "Producto",
+        "from_field": "tipoProductoId",
+        "to_collection": "TipoProducto",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "TipoProductoMarca-Marca",
+        "from_collection": "TipoProductoMarca",
+        "from_field": "marcaId",
+        "to_collection": "Marca",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "TipoProductoMarca-TipoProducto",
+        "from_collection": "TipoProductoMarca",
+        "from_field": "tipoProductoId",
+        "to_collection": "TipoProducto",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Requerimiento-Area",
+        "from_collection": "Requerimiento",
+        "from_field": "areaId",
+        "to_collection": "Area",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Requerimiento-User",
+        "from_collection": "Requerimiento",
+        "from_field": "userId",
+        "to_collection": "User",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemRequerimiento-Requerimiento",
+        "from_collection": "ItemRequerimiento",
+        "from_field": "requerimientoId",
+        "to_collection": "Requerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemRequerimiento-Producto",
+        "from_collection": "ItemRequerimiento",
+        "from_field": "productoId",
+        "to_collection": "Producto",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "SolicitudCotizacion-Proveedor",
+        "from_collection": "SolicitudCotizacion",
+        "from_field": "proveedorId",
+        "to_collection": "Proveedor",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "SolicitudCotizacion-Requerimiento",
+        "from_collection": "SolicitudCotizacion",
+        "from_field": "requerimientoId",
+        "to_collection": "Requerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "SolicitudCotizacion-User",
+        "from_collection": "SolicitudCotizacion",
+        "from_field": "elaboradorId",
+        "to_collection": "User",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "AccesoTemporalCotizacion-SolicitudCotizacion",
+        "from_collection": "AccesoTemporalCotizacion",
+        "from_field": "solicitudId",
+        "to_collection": "SolicitudCotizacion",
+        "to_field": "id",
+        "type": "one_to_one"
+      },
+      {
+        "name": "ItemSolicitudCotizacion-SolicitudCotizacion",
+        "from_collection": "ItemSolicitudCotizacion",
+        "from_field": "solicitudId",
+        "to_collection": "SolicitudCotizacion",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemSolicitudCotizacion-ItemRequerimiento",
+        "from_collection": "ItemSolicitudCotizacion",
+        "from_field": "itemRequerimientoId",
+        "to_collection": "ItemRequerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Cotizacion-SolicitudCotizacion",
+        "from_collection": "Cotizacion",
+        "from_field": "solicitudId",
+        "to_collection": "SolicitudCotizacion",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Cotizacion-Proveedor",
+        "from_collection": "Cotizacion",
+        "from_field": "proveedorId",
+        "to_collection": "Proveedor",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemCotizacion-Cotizacion",
+        "from_collection": "ItemCotizacion",
+        "from_field": "cotizacionId",
+        "to_collection": "Cotizacion",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemCotizacion-ItemRequerimiento",
+        "from_collection": "ItemCotizacion",
+        "from_field": "itemRequerimientoId",
+        "to_collection": "ItemRequerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ProveedorEspecializacion-Proveedor",
+        "from_collection": "ProveedorEspecializacion",
+        "from_field": "proveedorId",
+        "to_collection": "Proveedor",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ProveedorEspecializacion-TipoProducto",
+        "from_collection": "ProveedorEspecializacion",
+        "from_field": "tipoProductoId",
+        "to_collection": "TipoProducto",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemRequerimientoOrdenCompra-OrdenCompra",
+        "from_collection": "ItemRequerimientoOrdenCompra",
+        "from_field": "ordenCompraId",
+        "to_collection": "OrdenCompra",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "ItemRequerimientoOrdenCompra-ItemRequerimiento",
+        "from_collection": "ItemRequerimientoOrdenCompra",
+        "from_field": "itemRequerimientoId",
+        "to_collection": "ItemRequerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "MovimientoStockNota-MovimientoStock",
+        "from_collection": "MovimientoStockNota",
+        "from_field": "movimientoId",
+        "to_collection": "MovimientoStock",
+        "to_field": "id",
+        "type": "one_to_one"
+      },
+      {
+        "name": "MovimientoStockNota-NotaIngreso",
+        "from_collection": "MovimientoStockNota",
+        "from_field": "notaIngresoId",
+        "to_collection": "NotaIngreso",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "MovimientoStockNota-NotaSalida",
+        "from_collection": "MovimientoStockNota",
+        "from_field": "notaSalidaId",
+        "to_collection": "NotaSalida",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "Evaluacion-ItemRequerimiento",
+        "from_collection": "Evaluacion",
+        "from_field": "itemId",
+        "to_collection": "ItemRequerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "OrdenCompra-Proveedor",
+        "from_collection": "OrdenCompra",
+        "from_field": "proveedorId",
+        "to_collection": "Proveedor",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "NotaIngreso-OrdenCompra",
+        "from_collection": "NotaIngreso",
+        "from_field": "ordenCompraId",
+        "to_collection": "OrdenCompra",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "NotaIngreso-User",
+        "from_collection": "NotaIngreso",
+        "from_field": "responsableId",
+        "to_collection": "User",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "NotaSalida-ItemRequerimiento",
+        "from_collection": "NotaSalida",
+        "from_field": "itemRequerimientoId",
+        "to_collection": "ItemRequerimiento",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "NotaSalida-User",
+        "from_collection": "NotaSalida",
+        "from_field": "responsableId",
+        "to_collection": "User",
+        "to_field": "id",
+        "type": "many_to_one"
+      },
+      {
+        "name": "MovimientoStock-Producto",
+        "from_collection": "MovimientoStock",
+        "from_field": "productoId",
+        "to_collection": "Producto",
+        "to_field": "id",
+        "type": "many_to_one"
+      }
+    ]
+  }
+}
