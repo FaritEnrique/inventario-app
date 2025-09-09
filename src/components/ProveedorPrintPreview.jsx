@@ -8,43 +8,103 @@ const PrintField = ({ label, value }) => (
 );
 
 const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => { // Make it async
+    const printArea = document.getElementById('print-area');
+    if (!printArea) {
+      console.error("Print area not found!");
+      return;
+    }
+
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      alert("No hay sesión activa. Por favor, inicia sesión.");
+      return;
+    }
+
+    try {
+      // 1. Find the main stylesheet link and fetch its content
+      // Assuming the main compiled CSS is loaded via a <link> tag
+      const mainStylesheetLink = document.querySelector('link[rel="stylesheet"]');
+      let compiledCss = '';
+      if (mainStylesheetLink && mainStylesheetLink.href) {
+        try {
+          const cssResponse = await fetch(mainStylesheetLink.href);
+          if (cssResponse.ok) {
+            compiledCss = await cssResponse.text();
+          } else {
+            console.warn("Failed to load main stylesheet:", mainStylesheetLink.href, cssResponse.statusText);
+          }
+        } catch (e) {
+          console.error("Error fetching main stylesheet:", e);
+        }
+      } else {
+        console.warn("Main stylesheet link not found or has no href.");
+      }
+
+      // 2. Construct the full HTML document
+      const fullHtmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Documento de Proveedor</title>
+          <style>
+            ${compiledCss}
+            /* Override any conflicting styles and apply print-specific ones */
+            @page {
+              size: A4;
+              margin: 0; /* Anulamos márgenes de la impresora */
+            }
+            body {
+              margin: 0;
+              padding: 0;
+            }
+            #print-area {
+              padding: 2.5mm 3mm !important; /* Top/Bottom 2.5mm, Left/Right 3mm */
+              box-sizing: border-box !important;
+            }
+            #print-area h2 { /* Target the main title */
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            /* Ensure columns-2 and gap-x-12 work */
+            .columns-2 { column-count: 2 !important; }
+            .gap-x-12 { column-gap: 3rem !important; } /* 3rem = 48px */
+          </style>
+        </head>
+        <body>
+          ${printArea.outerHTML}
+        </body>
+        </html>
+      `;
+
+      // 3. Send the full HTML document to the backend
+      const response = await fetch('http://localhost:3000/api/pdf/generate-from-html', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ htmlContent: fullHtmlContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const pdfBlob = await response.blob();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+      URL.revokeObjectURL(pdfUrl);
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error al generar el PDF. Por favor, inténtalo de nuevo.");
+    }
   };
 
   return (
     <div className="text-gray-900 bg-white">
-      {/* Esta hoja simula un A4 y contiene los estilos de impresión */}
-      <style>
-        {`
-          @page {
-            size: A4;
-            margin: 0; /* Anulamos márgenes de la impresora */
-          }
-          @media print {
-            html, body {
-              width: 210mm;
-              height: 297mm;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            body * {
-              visibility: hidden;
-            }
-            #print-area, #print-area * {
-              visibility: visible;
-            }
-            #print-area {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              padding: 0 2.5mm; /* 0 arriba/abajo, 2.5mm a los lados */
-              box-sizing: border-box;
-            }
-          }
-        `}
-      </style>
+      {/* Removed the inline <style> block */}
 
       <div id="print-area" className="px-20">
         <h2 className="text-3xl font-bold text-center text-gray-800">
