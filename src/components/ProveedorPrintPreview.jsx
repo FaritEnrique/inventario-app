@@ -22,24 +22,8 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
     }
 
     try {
-      // 1. Find the main stylesheet link and fetch its content
-      // Assuming the main compiled CSS is loaded via a <link> tag
-      const mainStylesheetLink = document.querySelector('link[rel="stylesheet"]');
-      let compiledCss = '';
-      if (mainStylesheetLink && mainStylesheetLink.href) {
-        try {
-          const cssResponse = await fetch(mainStylesheetLink.href);
-          if (cssResponse.ok) {
-            compiledCss = await cssResponse.text();
-          } else {
-            console.warn("Failed to load main stylesheet:", mainStylesheetLink.href, cssResponse.statusText);
-          }
-        } catch (e) {
-          console.error("Error fetching main stylesheet:", e);
-        }
-      } else {
-        console.warn("Main stylesheet link not found or has no href.");
-      }
+      // 1. Hardcode Tailwind CSS CDN link
+      const tailwindCssLink = '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
 
       // 2. Construct the full HTML document
       const fullHtmlContent = `
@@ -47,16 +31,21 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
         <html>
         <head>
           <title>Documento de Proveedor</title>
+          ${tailwindCssLink}
           <style>
-            ${compiledCss}
+            body {
+              font-family: sans-serif; /* Basic font */
+              margin: 0;
+              padding: 0;
+            }
             /* Override any conflicting styles and apply print-specific ones */
             @page {
               size: A4;
               margin: 0; /* Anulamos márgenes de la impresora */
             }
             body {
-              margin: 0;
-              padding: 0;
+              margin: 0 !important;
+              padding: 0 !important;
             }
             #print-area {
               padding: 2.5mm 3mm !important; /* Top/Bottom 2.5mm, Left/Right 3mm */
