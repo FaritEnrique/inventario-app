@@ -219,7 +219,9 @@ const FormularioProveedor = ({
     }
 
     try {
-      const payload = { ...formData };
+      // eslint-disable-next-line no-unused-vars
+      const { id, createdAt, updatedAt, ...payload } = formData;
+
       Object.keys(payload).forEach(key => {
         if (payload[key] === "") payload[key] = null;
       });
@@ -238,7 +240,16 @@ const FormularioProveedor = ({
       onSuccess();
     } catch (error) {
       console.error("Error en el formulario:", error);
-      toast.error(error.message || "Error al guardar proveedor");
+      // Extraer errores de validación adjuntos en el objeto de error
+      if (error.validationErrors && Array.isArray(error.validationErrors) && error.validationErrors.length > 0) {
+        // Si hay un array de errores de validación, móstrarlos en el toast
+        // Unimos los errores para mostrarlos en un solo toast
+        const errorMessage = `Validación fallida: ${error.validationErrors.join('. ')}`;
+        toast.error(errorMessage, { autoClose: 5000 });
+      } else {
+        // Fallback al mensaje de error general si no hay detalles de validación
+        toast.error(error.message || "Error al guardar proveedor");
+      }
     } finally {
       setLoading(false);
     }
