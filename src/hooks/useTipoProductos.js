@@ -4,32 +4,22 @@ import tipoProductoApi from '../api/tipoProductoApi';
 import { toast } from 'react-toastify';
 
 const useTipoProductos = () => {
-  // ✅ Cambiado de 'tipos' a 'tiposProducto' para que coincida con la desestructuración en GestionProductosPage
   const [tiposProducto, setTiposProducto] = useState([]);
   const [tipo, setTipo] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
-
-  // Función auxiliar para logs condicionales en desarrollo (puedes moverla a un archivo de utilidades si la usas mucho)
-  const devLog = (...args) => {
-    if (import.meta.env.MODE === 'development') {
-      console.log('[DEV_LOG_USE_TIPOS_PRODUCTO]', ...args);
-    }
-  };
 
   const fetchTiposProducto = useCallback(async (searchTerm = '') => {
     try {
       setCargando(true);
       setError(null);
       const data = await tipoProductoApi.getTodos(searchTerm);
-      
-      setTiposProducto(data || []); // ✅ Asegura que siempre sea un array
+      setTiposProducto(data || []);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Error desconocido al obtener tipos de producto';
       toast.error(`❌ ${msg}`);
       setError(msg);
-      
-      setTiposProducto([]); // ✅ Asegura que sea un array vacío en caso de error
+      setTiposProducto([]);
     } finally {
       setCargando(false);
     }
@@ -41,10 +31,6 @@ const useTipoProductos = () => {
       setError(null);
       const data = await tipoProductoApi.getPorId(id);
       setTipo(data);
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Error desconocido al obtener el tipo de producto para editar';
-      toast.error(`❌ ${msg}`);
-      setError(msg);
     } finally {
       setCargando(false);
     }
@@ -54,12 +40,11 @@ const useTipoProductos = () => {
     try {
       setCargando(true);
       const data = await tipoProductoApi.crear(nuevoTipo);
-      setTiposProducto((prevTipos) => [...prevTipos, data]); // ✅ Usa setTiposProducto
+      setTiposProducto((prevTipos) => [...prevTipos, data]);
       toast.success('✅ Tipo de producto creado');
       return data;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Error desconocido al crear tipo';
-      toast.error(`❌ ${msg}`);
       setError(msg);
       throw err;
     } finally {
@@ -71,7 +56,7 @@ const useTipoProductos = () => {
     try {
       setCargando(true);
       const actualizado = await tipoProductoApi.actualizar(id, datos);
-      setTiposProducto((prevTipos) => prevTipos.map((t) => (t.id === id ? actualizado : t))); // ✅ Usa setTiposProducto
+      setTiposProducto((prevTipos) => prevTipos.map((t) => (t.id === id ? actualizado : t)));
       setTipo(null);
       toast.success('✅ Tipo de producto actualizado');
       return actualizado;
@@ -85,11 +70,27 @@ const useTipoProductos = () => {
     }
   }, []);
 
+  const reactivarTipo = useCallback(async (id) => {
+    try {
+      setCargando(true);
+      const reactivado = await tipoProductoApi.reactivar(id);
+      toast.success('✅ Tipo de producto reactivado');
+      return reactivado;
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Error desconocido al reactivar tipo';
+      toast.error(`❌ ${msg}`);
+      setError(msg);
+      throw err;
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
   const eliminarTipo = useCallback(async (id) => {
     try {
       setCargando(true);
       await tipoProductoApi.eliminar(id);
-      setTiposProducto((prevTipos) => prevTipos.filter((t) => t.id !== id)); // ✅ Usa setTiposProducto
+      setTiposProducto((prevTipos) => prevTipos.filter((t) => t.id !== id));
       setTipo(null);
       toast.success('🗑️ Tipo de producto eliminado');
     } catch (err) {
@@ -106,21 +107,21 @@ const useTipoProductos = () => {
     setTipo(null);
   }, []);
 
-  // ✅ Añadimos useEffect para la carga inicial de los tipos
   useEffect(() => {
     fetchTiposProducto();
-  }, [fetchTiposProducto]); // Dependencia del useCallback
+  }, [fetchTiposProducto]);
 
   return {
-    tiposProducto, // ✅ Exporta el nombre correcto
+    tiposProducto,
     tipo,
     cargando,
     error,
-    fetchTiposProducto, // Lo mantienes por si quieres refetch con un searchTerm
+    fetchTiposProducto,
     fetchTipoPorId,
     crearTipo,
     actualizarTipo,
     eliminarTipo,
+    reactivarTipo,
     clearTipo,
   };
 };

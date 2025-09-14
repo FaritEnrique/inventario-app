@@ -30,6 +30,12 @@ const marcasApi = {
       method: 'DELETE',
     });
   },
+
+  reactivar: async (id) => {
+    return await apiFetch(`marcas/${id}/reactivate`, {
+      method: 'PATCH',
+    });
+  },
 };
 
 export default marcasApi;

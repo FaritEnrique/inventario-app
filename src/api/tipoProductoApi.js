@@ -33,6 +33,12 @@ const tipoProductoApi = {
       method: 'DELETE',
     });
   },
+
+  reactivar: async (id) => {
+    return await apiFetch(`tipos-producto/${id}/reactivate`, {
+      method: 'PATCH',
+    });
+  },
 };
 
 export default tipoProductoApi;

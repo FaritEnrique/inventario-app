@@ -8,6 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
+import ConfirmToast from "../components/ConfirmToast";
 
 const GestionMarcasPage = () => {
   const {
@@ -20,6 +21,7 @@ const GestionMarcasPage = () => {
     crearMarca,
     actualizarMarca,
     eliminarMarca,
+    reactivarMarca,
   } = useMarcas();
 
   const [nombreMarca, setNombreMarca] = useState("");
@@ -44,7 +46,7 @@ const GestionMarcasPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!nombreMarca.trim()) {
-      alert("El nombre de la marca no puede estar vacío.");
+      toast.error("El nombre de la marca no puede estar vacío.");
       return;
     }
 
@@ -57,8 +59,46 @@ const GestionMarcasPage = () => {
       setNombreMarca("");
       setMarcaSeleccionadaId(null);
       fetchMarcas(debouncedSearchTerm);
+      toast.success(
+        `✅ Marca ${
+          marcaSeleccionadaId ? "actualizada" : "creada"
+        } correctamente.`
+      );
     } catch (err) {
-      console.error("Error en la operación de marca:", err);
+      if (err.response?.data?.reactivate) {
+        const { message, id: reactivateId } = err.response.data;
+        toast.warn(
+          ({ closeToast }) => (
+            <ConfirmToast
+              closeToast={closeToast}
+              message={message}
+              onConfirm={async () => {
+                try {
+                  await reactivarMarca(reactivateId);
+                  setNombreMarca("");
+                  setMarcaSeleccionadaId(null);
+                  fetchMarcas(debouncedSearchTerm);
+                } catch (reactivateErr) {
+                  console.error("Error al reactivar:", reactivateErr);
+                  toast.error(
+                    reactivateErr.message || "No se pudo reactivar la marca."
+                  );
+                }
+              }}
+              confirmButtonText="Reactivar"
+            />
+          ),
+          {
+            autoClose: false,
+            closeOnClick: false,
+            draggable: false,
+          }
+        );
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || "Error en la operación.";
+        toast.error(`❌ ${errorMessage}`);
+        console.error("Error en la operación de marca:", err);
+      }
     }
   };
 
@@ -140,6 +180,8 @@ const GestionMarcasPage = () => {
             Nombre de la Marca:
             <input
               type="text"
+              id="nombreMarca"
+              name="nombreMarca"
               value={nombreMarca}
               onChange={(e) => setNombreMarca(e.target.value)}
               disabled={cargando}
@@ -179,6 +221,8 @@ const GestionMarcasPage = () => {
         </h2>
         <input
           type="text"
+          id="busquedaMarca"
+          name="busquedaMarca"
           placeholder="Buscar por nombre de marca..."
           value={searchTermInput}
           onChange={(e) => setSearchTermInput(e.target.value)}

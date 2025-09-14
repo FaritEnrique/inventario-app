@@ -20,12 +20,13 @@ const apiFetch = async (endpoint, options = {}) => {
     });
 
     if (!res.ok && res.status !== 404) {
-      const error = await res.json();
-      // Incluir los errores de validación si existen
-      const errorMessage = error.mensaje || error.message || "Error al conectar con el servidor";
-      const validationErrors = error.errores || [];
+      const data = await res.json(); // Get the full data object
+      const errorMessage = data.mensaje || data.message || "Error al conectar con el servidor";
+      const validationErrors = data.errores || [];
+      
       const fullError = new Error(errorMessage);
-      fullError.validationErrors = validationErrors; // Adjuntar los errores de validación
+      fullError.response = { data, status: res.status }; // Attach the full data and status
+      fullError.validationErrors = validationErrors; // Keep this for existing logic
       throw fullError;
     }
 

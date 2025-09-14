@@ -3,7 +3,9 @@ import { useEffect, useState, useCallback } from "react";
 import useProductos from "../hooks/useProductos";
 import useMarcas from "../hooks/useMarcas";
 import useTipoProductos from "../hooks/useTipoProductos";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import productosApi from "../api/productosApi";
 import Modal from "react-modal";
 import { FaSearch } from "react-icons/fa";
@@ -204,31 +206,48 @@ const GestionProductosPage = () => {
   }, []);
 
   const handleEliminar = useCallback(
-    async (id) => {
-      if (
-        confirm(
-          "¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer."
-        )
-      ) {
-        try {
-          await eliminarProducto(id);
-          toast.success("🗑️ Producto eliminado correctamente.");
-          fetchProductos(debouncedBusqueda); // Volver a cargar productos después de eliminar
-          if (productoActual.id === id) {
-            setProductoActual(initialProducto);
-            setModoEdicion(false);
-          }
-        } catch (err) {
-          console.error("Error al eliminar producto:", err);
-          toast.error(
-            `❌ Error al eliminar producto: ${
-              err.message || "Error desconocido"
-            }`
-          );
+    (id) => {
+      const producto = productos.find((p) => p.id === id);
+      if (!producto) return;
+
+      toast.warn(
+        ({ closeToast, toastProps }) => (
+          <ConfirmDeleteToast
+            closeToast={closeToast}
+            toastProps={toastProps}
+            message={`¿Estás seguro de que deseas eliminar el producto "${producto.nombre}"? Esta acción no se puede deshacer.`}
+            onConfirm={async () => {
+              try {
+                await eliminarProducto(id);
+                toast.success("🗑️ Producto eliminado correctamente.");
+                fetchProductos(debouncedBusqueda);
+                if (productoActual.id === id) {
+                  setProductoActual(initialProducto);
+                  setModoEdicion(false);
+                }
+              } catch (err) {
+                console.error("Error al eliminar producto:", err);
+                toast.error(
+                  `❌ Error al eliminar producto: ${
+                    err.message || "Error desconocido"
+                  }`
+                );
+              }
+            }}
+          />
+        ),
+        {
+          position: "top-center",
+          autoClose: false,
+          closeButton: false,
+          hideProgressBar: true,
+          closeOnClick: false,
+          draggable: false,
+          pauseOnHover: false,
         }
-      }
+      );
     },
-    [eliminarProducto, fetchProductos, productoActual, debouncedBusqueda]
+    [productos, eliminarProducto, fetchProductos, debouncedBusqueda, productoActual.id]
   );
 
   const handleClearForm = useCallback(() => {
@@ -618,7 +637,7 @@ const GestionProductosPage = () => {
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
         contentLabel="Detalles del Producto"
-        className="relative w-11/12 p-6 mx-auto my-10 bg-white rounded-lg shadow-xl outline-none md:w-3/4 lg:w-1/2 xl:w-1/3"
+        className="relative w-11/12 p-6 mx-auto my-10 bg-white rounded-lg shadow-xl outline-none md:w-3/4 lg:w-1/2 xl:w-1/3 max-h-[80vh] overflow-y-auto"
         overlayClassName="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
       >
         {productoEnDetalle && (
@@ -689,6 +708,7 @@ const GestionProductosPage = () => {
           </div>
         )}
       </Modal>
+      <ToastContainer />
     </div>
   );
 };

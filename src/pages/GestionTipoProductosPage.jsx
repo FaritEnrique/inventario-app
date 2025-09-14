@@ -7,6 +7,7 @@ import { TbArrowBackUpDouble } from "react-icons/tb";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
+import ConfirmToast from "../components/ConfirmToast";
 
 const devLog = (...args) => {
   if (import.meta.env.MODE === "development") {
@@ -34,6 +35,7 @@ const GestionTipoProductosPage = () => {
     crearTipo,
     actualizarTipo,
     eliminarTipo,
+    reactivarTipo,
     clearTipo,
   } = useTipoProductos();
 
@@ -69,15 +71,15 @@ const GestionTipoProductosPage = () => {
     async (e) => {
       e.preventDefault();
       if (!nombreTipo.trim()) {
-        alert("El nombre del tipo de producto no puede estar vacío.");
+        toast.error("El nombre del tipo de producto no puede estar vacío.");
         return;
       }
       if (!prefijoTipo.trim()) {
-        alert("El prefijo no puede estar vacío.");
+        toast.error("El prefijo no puede estar vacío.");
         return;
       }
       if (!/^[A-Z]{2}$/.test(prefijoTipo)) {
-        alert(
+        toast.error(
           'El prefijo debe tener exactamente 2 letras mayúsculas (ej. "FE").'
         );
         return;
@@ -102,7 +104,41 @@ const GestionTipoProductosPage = () => {
         clearTipo();
         fetchTiposProducto(debouncedSearchTerm);
       } catch (err) {
-        console.error("Error en la operación de tipo de producto:", err);
+        if (err.response?.data?.reactivate) {
+          const { message, id: reactivateId } = err.response.data;
+          toast.warn(
+            ({ closeToast }) => (
+              <ConfirmToast
+                closeToast={closeToast}
+                message={message}
+                onConfirm={async () => {
+                  try {
+                    await reactivarTipo(reactivateId);
+                    setNombreTipo("");
+                    setPrefijoTipo("");
+                    setFrecuenciaReposicionTipo("mensual");
+                    setTipoSeleccionadoId(null);
+                    clearTipo();
+                    fetchTiposProducto(debouncedSearchTerm);
+                  } catch (reactivateErr) {
+                    console.error("Error al reactivar:", reactivateErr);
+                    toast.error(reactivateErr.message || "No se pudo reactivar el tipo de producto.");
+                  }
+                }}
+                confirmButtonText="Reactivar"
+              />
+            ),
+            {
+              autoClose: false,
+              closeOnClick: false,
+              draggable: false,
+            }
+          );
+        } else {
+          const errorMessage = err.response?.data?.message || err.message || "Error en la operación.";
+          toast.error(`❌ ${errorMessage}`);
+          console.error("Error en la operación de tipo de producto:", err);
+        }
       }
     },
     [
@@ -112,6 +148,7 @@ const GestionTipoProductosPage = () => {
       tipoSeleccionadoId,
       actualizarTipo,
       crearTipo,
+      reactivarTipo,
       clearTipo,
       fetchTiposProducto,
       debouncedSearchTerm,
@@ -139,10 +176,12 @@ const GestionTipoProductosPage = () => {
             onConfirm={async () => {
               try {
                 await eliminarTipo(id);
-                fetchTipos(debouncedSearchTerm);
+                fetchTiposProducto(debouncedSearchTerm);
               } catch (err) {
                 console.error("Error al eliminar el tipo de producto:", err);
-                toast.error("Error al eliminar la marca.");
+                toast.error(
+                  err.message || "Error al eliminar el tipo de producto."
+                );
               }
             }}
           />

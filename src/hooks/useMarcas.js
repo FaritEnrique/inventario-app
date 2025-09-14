@@ -1,35 +1,25 @@
 // src/hooks/useMarcas.js
-import { useState, useEffect, useCallback } from 'react'; // ✅ Importa useEffect
+import { useState, useEffect, useCallback } from 'react';
 import marcasApi from '../api/marcasApi';
 import { toast } from 'react-toastify';
 
 const useMarcas = () => {
-  const [marcas, setMarcas] = useState([]); // ✅ Correcto, inicializado como array
+  const [marcas, setMarcas] = useState([]);
   const [marca, setMarca] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
 
-  // Función auxiliar para logs condicionales en desarrollo
-  const devLog = (...args) => {
-    if (import.meta.env.MODE === 'development') {
-      
-    }
-  };
-
   const fetchMarcas = useCallback(async (buscar = '') => {
     try {
-      devLog('Fetching marcas with search term (useMarcas):', buscar);
       setCargando(true);
-      setError(null); // ✅ Resetear error al inicio de la fetch
-      const data = await marcasApi.getTodas(buscar); // O getTodos, según tu API
-      devLog('Datos de marcas recibidos:', data);
-      setMarcas(data || []); // ✅ Asegura que siempre sea un array
+      setError(null);
+      const data = await marcasApi.getTodas(buscar);
+      setMarcas(data || []);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Error desconocido al obtener marcas';
       toast.error(`❌ ${msg}`);
       setError(msg);
-      devLog('Error en fetchMarcas:', err);
-      setMarcas([]); // ✅ Asegura que sea un array vacío en caso de error
+      setMarcas([]);
     } finally {
       setCargando(false);
     }
@@ -38,7 +28,7 @@ const useMarcas = () => {
   const fetchMarcaPorId = useCallback(async (id) => {
     try {
       setCargando(true);
-      setError(null); // ✅ Resetear error al inicio de la fetch
+      setError(null);
       const data = await marcasApi.getPorId(id);
       setMarca(data);
     } catch (err) {
@@ -58,7 +48,21 @@ const useMarcas = () => {
       toast.success('✅ Marca creada correctamente');
       return data;
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Error desconocido al crear marca';
+      setError(err.response?.data?.message || err.message || 'Error desconocido al crear marca');
+      throw err;
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  const reactivarMarca = useCallback(async (id) => {
+    try {
+      setCargando(true);
+      const reactivada = await marcasApi.reactivar(id);
+      toast.success('✅ Marca reactivada correctamente');
+      return reactivada;
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Error desconocido al reactivar marca';
       toast.error(`❌ ${msg}`);
       setError(msg);
       throw err;
@@ -102,10 +106,9 @@ const useMarcas = () => {
     }
   }, []);
 
-  // ✅ Añadimos useEffect para la carga inicial de las marcas
   useEffect(() => {
     fetchMarcas();
-  }, [fetchMarcas]); // Dependencia del useCallback
+  }, [fetchMarcas]);
 
   return {
     marcas,
@@ -117,6 +120,7 @@ const useMarcas = () => {
     crearMarca,
     actualizarMarca,
     eliminarMarca,
+    reactivarMarca,
   };
 };
 
