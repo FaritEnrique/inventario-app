@@ -4,19 +4,15 @@ const baseURL =
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
-    const token = sessionStorage.getItem("token");
     const headers = {
       "Content-Type": "application/json",
       ...(options.headers || {}),
     };
 
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const res = await fetch(`${baseURL}/${endpoint}`, {
       headers,
       ...options,
+      credentials: "include", // Importante para enviar cookies
     });
 
     if (!res.ok && res.status !== 404) {

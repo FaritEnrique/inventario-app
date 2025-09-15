@@ -1,8 +1,9 @@
 // src/pages/RestablecerContrasenaPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify'; // Cambiado de react-hot-toast a react-toastify
 import apiFetch from '../api/apiFetch';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Importar iconos
 
 const RestablecerContrasenaPage = () => {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,8 @@ const RestablecerContrasenaPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [cargando, setCargando] = useState(false);
   const [tokenValido, setTokenValido] = useState(true);
+  const [showPassword, setShowPassword] = useState(false); // Estado para visibilidad de contraseña
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para visibilidad de confirmación
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +37,7 @@ const RestablecerContrasenaPage = () => {
 
     setCargando(true);
     try {
-      await apiFetch('auth/restablecer-contraseña', { // ✅ Endpoint corregido
+      await apiFetch('auth/restablecer-contrasena', { // ✅ Endpoint corregido
         method: 'POST',
         body: JSON.stringify({ token, nuevaContraseña: password }),
       });
@@ -65,25 +68,39 @@ const RestablecerContrasenaPage = () => {
       <div className="w-full max-w-md bg-white p-8 rounded shadow">
         <h2 className="text-2xl font-semibold text-center mb-6 text-indigo-700">Nueva Contraseña</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="relative">
             <label className="block text-sm mb-1 font-medium text-gray-700">Nueva Contraseña</label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 mt-6"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-sm mb-1 font-medium text-gray-700">Confirmar Contraseña</label>
             <input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 mt-6"
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
           <button
             type="submit"

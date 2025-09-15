@@ -29,42 +29,56 @@ export const AuthProvider = ({ children }) => {
     }, INACTIVITY_TIMEOUT_MS);
   };
 
-  const logout = () => {
+  const logout = async () => {
     clearTimeout(inactivityTimer.current);
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
-    setLoading(false);
+    try {
+      await apiFetch("auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Error al cerrar sesión en el backend:", error);
+    } finally {
+      sessionStorage.removeItem("user");
+      setIsAuthenticated(false);
+      setUser(null);
+      setLoading(false);
+    }
   };
 
   // ✅ CAMBIO CLAVE: useEffect que maneja la inicialización
   useEffect(() => {
     const checkAuthStatus = async () => {
       setLoading(true);
-      const token = sessionStorage.getItem("token");
       const storedUser = sessionStorage.getItem("user");
 
+      if (!storedUser) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        if (token && storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          // Opcional: puedes agregar aquí una validación extra del token con una llamada a la API
-          // const res = await apiFetch('auth/validate-token');
-          // if (res.valid) { ... }
+        const res = await apiFetch("auth/validate-token");
+
+        if (res.valid && res.usuario) {
           setIsAuthenticated(true);
-          setUser(parsedUser);
+          setUser(res.usuario);
+          sessionStorage.setItem("user", JSON.stringify(res.usuario)); // Keep user data in session storage
         } else {
+          // If token is not valid, or no user data, just clear session and set auth state
+          sessionStorage.removeItem("user");
           setIsAuthenticated(false);
           setUser(null);
         }
       } catch (error) {
-        console.error("Error al procesar la sesión:", error);
-        sessionStorage.removeItem("token");
+        // Solo loguear errores inesperados, no el 401 esperado cuando no hay token
+        if (error.response?.status !== 401) {
+          console.error("Error al validar token o procesar la sesión:", error);
+        }
+        // En caso de cualquier error o 401, asegurar que la sesión se limpie
         sessionStorage.removeItem("user");
         setIsAuthenticated(false);
         setUser(null);
       } finally {
-        // ✅ Este bloque garantiza que loading siempre se establezca en false
         setLoading(false);
       }
     };
@@ -100,9 +114,8 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response && response.token) {
-        const { token, usuario } = response;
-        sessionStorage.setItem("token", token);
+      if (response && response.usuario) {
+        const { usuario } = response;
         sessionStorage.setItem("user", JSON.stringify(usuario));
 
         setIsAuthenticated(true);
