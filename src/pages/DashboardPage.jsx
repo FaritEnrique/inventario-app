@@ -37,10 +37,10 @@ const dashboardCards = [
     allowedAreas: ["03-ADMI-Iquitos"],
   },
   {
-    title: "Pedidos",
-    description: "Ver y gestionar pedidos realizados por las áreas.",
+    title: "Requerimientos",
+    description: "Crear, ver y gestionar requerimientos de las áreas.",
     icon: <FaShoppingCart />,
-    path: "/pedidos",
+    path: "/requerimientos",
     allowedAreas: ["all"],
   },
   {

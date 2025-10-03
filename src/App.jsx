@@ -17,7 +17,7 @@ import ReportesPage from "./pages/ReportesPage";
 import TipoProductosPage from "./pages/TipoProductosPage";
 import MarcasPage from "./pages/MarcasPage";
 import AreasPage from "./pages/AreasPage";
-import PedidosPage from "./pages/PedidosPage";
+import RequerimientosPage from "./pages/RequerimientosPage";
 import UsersPage from "./pages/UsersPage";
 import GestionProductosPage from "./pages/GestionProductosPage";
 import GestionMarcasPage from "./pages/GestionMarcasPage";
@@ -87,7 +87,7 @@ const App = () => {
                 <Route path="tipos-producto" element={<TipoProductosPage />} />
                 <Route path="marcas" element={<MarcasPage />} />
                 <Route path="/areas" element={<AreasPage />} />
-                <Route path="/pedidos" element={<PedidosPage />} />
+                <Route path="/requerimientos" element={<RequerimientosPage />} />
                 <Route path="/usuarios" element={<UsersPage />} />
                 <Route
                   path="gestion-proveedores"
