@@ -1,165 +1,70 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  AiOutlineArrowLeft,
+  AiOutlinePlus,
+  AiOutlineDelete,
+} from "react-icons/ai";
+import productosApi from "../api/productosApi";
+import useTipoProductos from "../hooks/useTipoProductos";
+import useMarcas from "../hooks/useMarcas";
+import useProductos from "../hooks/useProductos";
+import useAreas from "../hooks/useAreas";
+import useRequerimientos from "../hooks/useRequerimientos";
 
-const ArrowBackIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="lucide lucide-arrow-left-from-line"
-  >
-    <path d="M9 18V6" />
-    <path d="M2 12h16" />
-    <path d="m15 15 3-3-3-3" />
-    <path d="M22 18V6" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="lucide lucide-plus"
-  >
-    <path d="M5 12h14" />
-    <path d="M12 5v14" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="lucide lucide-trash"
-  >
-    <path d="M3 6h18" />
-    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-  </svg>
-);
-
-// Mocks de la API y el hook
-const mockProductos = [
-  {
-    id: "prod-1",
-    codigo: "P-001",
-    nombre: "Tornillos de 3mm",
-    unidadMedida: "Und",
-  },
-  {
-    id: "prod-2",
-    codigo: "P-002",
-    nombre: "Cemento x 5kg",
-    unidadMedida: "Und",
-  },
-  {
-    id: "prod-3",
-    codigo: "P-003",
-    nombre: "Lámpara LED",
-    unidadMedida: "Und",
-  },
-  {
-    id: "prod-4",
-    codigo: "P-004",
-    nombre: "Cable de red (metro)",
-    unidadMedida: "Mts",
-  },
-];
-
-const mockProductosApi = {
-  getProductos: (query) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filtered = mockProductos.filter(
-          (p) =>
-            p.nombre.toLowerCase().includes(query.toLowerCase()) ||
-            p.codigo.toLowerCase().includes(query.toLowerCase())
-        );
-        resolve(filtered);
-      }, 500);
-    });
-  },
-};
-
-const mockRequerimientosApi = {
-  crear: (requerimiento) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simular un código generado en el backend
-        const nuevoRequerimiento = {
-          ...requerimiento,
-          codigo: "REQ-" + Math.floor(Math.random() * 10000),
-        };
-        resolve(nuevoRequerimiento);
-      }, 1000);
-    });
-  },
-};
-
+// Hook de debounce
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
 };
 
-// --- Reemplazando `react-toastify` con un sistema de mensajes en la UI
+// Toast simple
 const useToast = () => {
   const [message, setMessage] = useState(null);
   const [type, setType] = useState(null);
 
-  const showToast = (msg, msgType) => {
+  const showToast = useCallback((msg, msgType) => {
     setMessage(msg);
     setType(msgType);
     setTimeout(() => {
       setMessage(null);
       setType(null);
     }, 3000);
-  };
+  }, []);
 
-  const toast = {
-    success: (msg) => showToast(msg, "success"),
-    error: (msg) => showToast(msg, "error"),
-    warn: (msg) => showToast(msg, "warn"),
+  return {
+    message,
+    type,
+    toast: {
+      success: (msg) => showToast(msg, "success"),
+      error: (msg) => showToast(msg, "error"),
+      warn: (msg) => showToast(msg, "warn"),
+    },
   };
-
-  return { message, type, toast };
 };
-// --- Fin de Mocks ---
 
 const initialRequerimiento = {
-  // El código se genera en el backend, no se incluye aquí
   areaId: "",
-  userId: "tu-id-de-usuario-aqui", // ⚠️ IMPORTANTE: Reemplaza esto con el ID del usuario autenticado
+  userId: "tu-id-de-usuario-aqui",
   solicitante: "",
   actividad: "",
   prioridad: "Normal",
-  detalleUso: "", // Corregido: coincide con el backend
+  detalleUso: "",
   items: [],
   estado: "Pendiente",
+};
+
+const initialProducto = {
+  nombre: "",
+  codigo: "",
+  unidadMedida: "",
+  tipoProductoId: null,
+  marcaId: null,
+  descripcion: "",
+  imagenUrl: "",
 };
 
 const CrearRequerimientoPage = () => {
@@ -168,17 +73,26 @@ const CrearRequerimientoPage = () => {
   const [busquedaProducto, setBusquedaProducto] = useState("");
   const [cargando, setCargando] = useState(false);
   const [cargandoProductos, setCargandoProductos] = useState(false);
-  const { message, type, toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [modalProductoAbierto, setModalProductoAbierto] = useState(false);
+  const [productoActual, setProductoActual] = useState(initialProducto);
+
+  const { areas, cargando: cargandoAreas, error: errorAreas } = useAreas();
+  const { tiposProducto, cargando: cargandoTipos } = useTipoProductos();
+  const { marcas, cargando: cargandoMarcas } = useMarcas();
+  const { crearProducto } = useProductos();
+  const { prioridades } = useRequerimientos();
+
+  const { message, type, toast } = useToast();
 
   const debouncedBusqueda = useDebounce(busquedaProducto, 500);
 
-  // Cargar productos al escribir en el campo de búsqueda
+  // Buscar productos
   useEffect(() => {
     const fetchProductos = async () => {
       setCargandoProductos(true);
       try {
-        const data = await mockProductosApi.getProductos(debouncedBusqueda);
+        const data = await productosApi.getTodos(debouncedBusqueda);
         setProductos(data);
       } catch (error) {
         console.error("Error al buscar productos:", error);
@@ -186,41 +100,27 @@ const CrearRequerimientoPage = () => {
         setCargandoProductos(false);
       }
     };
-    if (debouncedBusqueda) {
-      fetchProductos();
-    } else {
-      setProductos([]);
-    }
+    if (debouncedBusqueda) fetchProductos();
+    else setProductos([]);
   }, [debouncedBusqueda]);
 
+  // Handlers
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setRequerimiento((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setRequerimiento((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleAddItem = useCallback(
     (producto) => {
-      const itemExistente = requerimiento.items.find(
-        (item) => item.productoId === producto.id
-      );
-
-      if (itemExistente) {
+      if (requerimiento.items.some((i) => i.productoId === producto.id)) {
         toast.warn("Este producto ya ha sido agregado.");
         return;
       }
-
       setRequerimiento((prev) => ({
         ...prev,
         items: [
           ...prev.items,
-          {
-            productoId: producto.id,
-            cantidad: 1,
-            producto: producto,
-          },
+          { productoId: producto.id, cantidad: 1, producto },
         ],
       }));
       setBusquedaProducto("");
@@ -236,39 +136,17 @@ const CrearRequerimientoPage = () => {
   }, []);
 
   const handleItemQuantityChange = useCallback((e, productoId) => {
-    const { value } = e.target;
+    const value = Number(e.target.value);
     setRequerimiento((prev) => ({
       ...prev,
       items: prev.items.map((item) =>
-        item.productoId === productoId
-          ? { ...item, cantidad: Number(value) }
-          : item
+        item.productoId === productoId ? { ...item, cantidad: value } : item
       ),
     }));
   }, []);
 
-  const handleConfirmSubmission = useCallback(async () => {
-    setShowConfirmation(false);
-    setCargando(true);
-    try {
-      const nuevoRequerimiento = await mockRequerimientosApi.crear(
-        requerimiento
-      );
-
-      toast.success(
-        `✅ Requerimiento ${nuevoRequerimiento.codigo} creado correctamente!`
-      );
-      setRequerimiento(initialRequerimiento);
-    } catch (error) {
-      console.error("Error al crear el requerimiento:", error);
-      toast.error("❌ Error al crear el requerimiento.");
-    } finally {
-      setCargando(false);
-    }
-  }, [requerimiento, toast]);
-
   const handleSubmit = useCallback(
-    async (e) => {
+    (e) => {
       e.preventDefault();
       if (requerimiento.items.length === 0) {
         toast.error("❌ Debe agregar al menos un ítem al requerimiento.");
@@ -276,10 +154,70 @@ const CrearRequerimientoPage = () => {
       }
       setShowConfirmation(true);
     },
-    [requerimiento, toast]
+    [requerimiento.items, toast]
   );
 
-  const getMessageClass = () => {
+  const handleConfirmSubmission = useCallback(async () => {
+    setShowConfirmation(false);
+    setCargando(true);
+    try {
+      await productosApi.crearRequerimiento(requerimiento);
+      toast.success("✅ Requerimiento creado correctamente!");
+      setRequerimiento(initialRequerimiento);
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Error al crear el requerimiento.");
+    } finally {
+      setCargando(false);
+    }
+  }, [requerimiento, toast]);
+
+  const abrirModalProducto = () => {
+    setProductoActual(initialProducto);
+    setModalProductoAbierto(true);
+  };
+
+  const cerrarModalProducto = () => {
+    setModalProductoAbierto(false);
+    setProductoActual(initialProducto);
+  };
+
+  const handleCrearProducto = async () => {
+    const {
+      nombre,
+      unidadMedida,
+      tipoProductoId,
+      marcaId,
+      descripcion,
+      imagenUrl,
+    } = productoActual;
+
+    if (!nombre || !unidadMedida || !tipoProductoId) {
+      toast.error("❌ Completa los campos obligatorios");
+      return;
+    }
+
+    try {
+      const nuevoProducto = {
+        nombre,
+        unidadMedida,
+        tipoProductoId,
+        marcaId: marcaId || null,
+        descripcion: descripcion || null,
+        imagenUrl: imagenUrl || null,
+      };
+      const creado = await crearProducto(nuevoProducto);
+      toast.success("✅ Producto creado correctamente");
+      cerrarModalProducto();
+      setProductos((prev) => [...prev, creado]);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message || err.message || "Error al crear producto";
+      toast.error(`❌ ${msg}`);
+    }
+  };
+
+  const messageClass = useMemo(() => {
     switch (type) {
       case "success":
         return "bg-green-500 text-white";
@@ -290,17 +228,20 @@ const CrearRequerimientoPage = () => {
       default:
         return "";
     }
-  };
+  }, [type]);
 
   return (
     <div className="min-h-screen p-6 font-sans antialiased bg-gray-100">
+      {/* Toast */}
       {message && (
         <div
-          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl text-center ${getMessageClass()}`}
+          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl text-center ${messageClass}`}
         >
           {message}
         </div>
       )}
+
+      {/* Confirmación Requerimiento */}
       {showConfirmation && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
           <div className="max-w-sm p-6 text-center bg-white rounded-lg shadow-xl">
@@ -310,16 +251,14 @@ const CrearRequerimientoPage = () => {
             </p>
             <div className="flex justify-center space-x-4">
               <button
-                type="button"
                 onClick={handleConfirmSubmission}
-                className="px-4 py-2 font-semibold text-white bg-green-500 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="px-4 py-2 font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600"
               >
                 Sí, Confirmar
               </button>
               <button
-                type="button"
                 onClick={() => setShowConfirmation(false)}
-                className="px-4 py-2 font-semibold text-gray-800 bg-gray-200 rounded-lg shadow hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className="px-4 py-2 font-semibold text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300"
               >
                 Cancelar
               </button>
@@ -327,20 +266,15 @@ const CrearRequerimientoPage = () => {
           </div>
         </div>
       )}
-      <div className="max-w-5xl p-6 mx-auto bg-white shadow-lg rounded-xl">
-        {/* Reemplazado el texto del logo con un espacio para imagen */}
-        <img
-          src="https://placehold.co/400x100/A0A0A0/FFFFFF?text=Logo+Aqui"
-          alt="Logo de la Empresa"
-          className="mx-auto mb-4 rounded-lg shadow-sm"
-        />
 
+      {/* Formulario */}
+      <div className="max-w-5xl p-6 mx-auto bg-white shadow-lg rounded-xl">
         <div className="flex items-center justify-end w-full mb-4">
           <a
             href="/gestion-requerimientos"
             className="flex items-center space-x-2 text-sky-500 hover:text-indigo-500"
           >
-            <ArrowBackIcon />
+            <AiOutlineArrowLeft size={24} />
             <span className="text-lg font-semibold">
               Volver a Requerimientos
             </span>
@@ -348,63 +282,47 @@ const CrearRequerimientoPage = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label
-                htmlFor="solicitante"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Nombre del Solicitante
-              </label>
-              <input
-                type="text"
-                id="solicitante"
-                name="solicitante"
-                value={requerimiento.solicitante}
-                onChange={handleChange}
-                className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                required
-              />
+          <h2 className="mb-4 text-2xl font-bold text-gray-700">
+            Crear Nuevo Requerimiento
+          </h2>
+
+          <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end">
+            {/* Área */}
+            <div className="flex-1">
+              {cargandoAreas ? (
+                <p className="text-sm text-gray-500">Cargando áreas...</p>
+              ) : errorAreas ? (
+                <p className="text-sm text-red-500">
+                  Error cargando áreas: {errorAreas}
+                </p>
+              ) : (
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="areaId"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Área
+                  </label>
+                  <select
+                    id="areaId"
+                    name="areaId"
+                    value={requerimiento.areaId}
+                    onChange={handleChange}
+                    className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  >
+                    <option value="">Selecciona un área</option>
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-            <div>
-              <label
-                htmlFor="areaId"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Área Solicitante
-              </label>
-              <select
-                id="areaId"
-                name="areaId"
-                value={requerimiento.areaId}
-                onChange={handleChange}
-                className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                required
-              >
-                <option value="">-- Selecciona un Área --</option>
-                <option value="area-1">Operaciones</option>
-                <option value="area-2">Recursos Humanos</option>
-                <option value="area-3">Contabilidad</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="actividad"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Actividad
-              </label>
-              <input
-                type="text"
-                id="actividad"
-                name="actividad"
-                value={requerimiento.actividad}
-                onChange={handleChange}
-                className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                required
-              />
-            </div>
-            <div>
+
+            {/* Prioridad */}
+            <div className="flex-1">
               <label
                 htmlFor="prioridad"
                 className="block text-sm font-medium text-gray-700"
@@ -417,35 +335,22 @@ const CrearRequerimientoPage = () => {
                 value={requerimiento.prioridad}
                 onChange={handleChange}
                 className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                required
               >
-                <option value="Normal">Normal</option>
-                <option value="Urgente">Urgente</option>
-                <option value="Emergencia">Emergencia</option>
+                <option value="">Selecciona prioridad</option>
+                {prioridades.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
               </select>
-            </div>
-            <div className="col-span-1 md:col-span-2 lg:col-span-3">
-              <label
-                htmlFor="detalleUso"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Descripción del Uso
-              </label>
-              <textarea
-                id="detalleUso"
-                name="detalleUso"
-                value={requerimiento.detalleUso}
-                onChange={handleChange}
-                rows="3"
-                className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                required
-              ></textarea>
             </div>
           </div>
 
+          {/* Ítems */}
           <h3 className="pb-2 mt-8 mb-4 text-xl font-semibold text-gray-700 border-b-2 border-blue-600">
             Ítems del Requerimiento
           </h3>
+
           <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end">
             <div className="flex-grow">
               <label
@@ -457,19 +362,27 @@ const CrearRequerimientoPage = () => {
               <input
                 type="text"
                 id="busquedaProducto"
-                name="busquedaProducto"
                 placeholder="Escribe para buscar..."
                 value={busquedaProducto}
                 onChange={(e) => setBusquedaProducto(e.target.value)}
                 className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={abrirModalProducto}
+                className="px-4 py-2 text-white bg-indigo-600 rounded-md shadow hover:bg-indigo-700"
+              >
+                Crear Producto <AiOutlinePlus className="inline ml-1" />
+              </button>
+            </div>
           </div>
 
+          {/* Resultados de búsqueda */}
           {cargandoProductos && (
             <p className="text-sm text-gray-500">Buscando productos...</p>
           )}
-
           {busquedaProducto && productos.length > 0 && (
             <div className="p-4 mb-4 border rounded-md shadow-inner bg-gray-50">
               <p className="mb-2 text-sm font-semibold">
@@ -489,7 +402,7 @@ const CrearRequerimientoPage = () => {
                       onClick={() => handleAddItem(p)}
                       className="p-1 text-xs text-white bg-green-500 rounded-full hover:bg-green-600"
                     >
-                      <PlusIcon />
+                      <AiOutlinePlus />
                     </button>
                   </li>
                 ))}
@@ -497,6 +410,7 @@ const CrearRequerimientoPage = () => {
             </div>
           )}
 
+          {/* Tabla de ítems */}
           {requerimiento.items.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full table-auto">
@@ -541,10 +455,10 @@ const CrearRequerimientoPage = () => {
                         <input
                           type="number"
                           value={item.cantidad}
+                          min="1"
                           onChange={(e) =>
                             handleItemQuantityChange(e, item.productoId)
                           }
-                          min="1"
                           className="w-16 p-1 text-sm text-center border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
                         />
                       </td>
@@ -554,7 +468,7 @@ const CrearRequerimientoPage = () => {
                           onClick={() => handleRemoveItem(item.productoId)}
                           className="p-1 text-white bg-red-500 rounded-full hover:bg-red-600"
                         >
-                          <TrashIcon />
+                          <AiOutlineDelete />
                         </button>
                       </td>
                     </tr>
@@ -564,17 +478,203 @@ const CrearRequerimientoPage = () => {
             </div>
           )}
 
-          <div className="flex justify-end col-span-1 mt-6">
+          <div className="flex justify-end mt-6">
             <button
               type="submit"
               disabled={cargando || requerimiento.items.length === 0}
-              className="px-6 py-3 font-semibold text-white transition duration-200 ease-in-out bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-6 py-3 font-semibold text-white transition duration-200 ease-in-out bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {cargando ? "Guardando..." : "Crear Requerimiento"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Modal Crear Producto */}
+      {modalProductoAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+            <h2 className="mb-4 text-xl font-bold text-gray-700">
+              Crear Producto
+            </h2>
+            <div className="flex flex-col gap-3">
+              {/* Nombre */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoNombre"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  id="productoNombre"
+                  name="nombre"
+                  value={productoActual.nombre}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      nombre: e.target.value,
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Unidad de Medida */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoUnidadMedida"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Unidad de Medida *
+                </label>
+                <input
+                  type="text"
+                  id="productoUnidadMedida"
+                  name="unidadMedida"
+                  value={productoActual.unidadMedida}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      unidadMedida: e.target.value,
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Descripción */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoDescripcion"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Descripción (opcional)
+                </label>
+                <input
+                  type="text"
+                  id="productoDescripcion"
+                  name="descripcion"
+                  value={productoActual.descripcion || ""}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      descripcion: e.target.value,
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* URL de Imagen */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoImagenUrl"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  URL de Imagen (opcional)
+                </label>
+                <input
+                  type="text"
+                  id="productoImagenUrl"
+                  name="imagenUrl"
+                  value={productoActual.imagenUrl || ""}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      imagenUrl: e.target.value,
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Tipo de Producto */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoTipo"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Tipo de Producto *
+                </label>
+                <select
+                  id="productoTipo"
+                  name="tipoProductoId"
+                  value={productoActual.tipoProductoId || ""}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      tipoProductoId: Number(e.target.value),
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="" disabled>
+                    {cargandoTipos
+                      ? "Cargando tipos..."
+                      : "Selecciona Tipo de Producto"}
+                  </option>
+                  {tiposProducto.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Marca */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="productoMarca"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Marca (opcional)
+                </label>
+                <select
+                  id="productoMarca"
+                  name="marcaId"
+                  value={productoActual.marcaId || ""}
+                  onChange={(e) =>
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      marcaId: Number(e.target.value) || null,
+                    }))
+                  }
+                  className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="">
+                    {cargandoMarcas ? "Cargando marcas..." : "Selecciona Marca"}
+                  </option>
+                  {marcas.map((marca) => (
+                    <option key={marca.id} value={marca.id}>
+                      {marca.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botones */}
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={cerrarModalProducto}
+                  className="px-4 py-2 font-semibold text-gray-800 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCrearProducto}
+                  className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                >
+                  Crear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

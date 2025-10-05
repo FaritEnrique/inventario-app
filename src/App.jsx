@@ -81,13 +81,13 @@ const App = () => {
                   path="crear-requerimiento"
                   element={<CrearRequerimientoPage />}
                 />
+                <Route path="requerimientos" element={<RequerimientosPage />} />
                 <Route path="productos" element={<ProductosPage />} />
                 <Route path="movimientos" element={<MovimientosPage />} />
                 <Route path="reportes" element={<ReportesPage />} />
                 <Route path="tipos-producto" element={<TipoProductosPage />} />
                 <Route path="marcas" element={<MarcasPage />} />
                 <Route path="/areas" element={<AreasPage />} />
-                <Route path="/requerimientos" element={<RequerimientosPage />} />
                 <Route path="/usuarios" element={<UsersPage />} />
                 <Route
                   path="gestion-proveedores"

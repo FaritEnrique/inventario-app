@@ -23,6 +23,9 @@ const requerimientosApi = {
     apiFetch(`requerimientos/${id}`, {
       method: 'DELETE',
     }),
+  
+  obtenerPrioridades: () => apiFetch('requerimientos/prioridades'),
+
 };
 
 export default requerimientosApi;

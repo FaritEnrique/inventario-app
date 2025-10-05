@@ -1,10 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import requerimientosApi from '../api/requerimientosApi';
 
 const useRequerimientos = () => {
   const [requerimientos, setRequerimientos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+
+  const [prioridades, setPrioridades] = useState([]);
+  const [cargandoPrioridades, setCargandoPrioridades] = useState(false);
+  const [errorPrioridades, setErrorPrioridades] = useState(null);
 
   const fetchRequerimientos = useCallback(async (buscar = '') => {
     setCargando(true);
@@ -50,6 +54,25 @@ const useRequerimientos = () => {
     setRequerimientos((prev) => prev.filter((req) => req.id !== id));
   };
 
+  const fetchPrioridades = useCallback(async () => {
+    setCargandoPrioridades(true);
+    try {
+      const data = await requerimientosApi.obtenerPrioridades();
+      // Si la API devuelve null o algo inesperado, asignamos array vacío
+      setPrioridades(Array.isArray(data) ? data : []);
+      setErrorPrioridades(null);
+    } catch (err) {
+      setErrorPrioridades(err.message);
+      setPrioridades([]); // Reseteamos en caso de error
+    } finally {
+      setCargandoPrioridades(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPrioridades();
+  }, [fetchPrioridades]);
+
   return {
     requerimientos,
     cargando,
@@ -59,6 +82,10 @@ const useRequerimientos = () => {
     crearRequerimiento,
     actualizarRequerimiento,
     eliminarRequerimiento,
+    prioridades,
+    cargandoPrioridades,
+    errorPrioridades,
+    fetchPrioridades,
   };
 };
 

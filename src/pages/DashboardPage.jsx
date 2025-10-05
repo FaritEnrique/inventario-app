@@ -3,6 +3,7 @@ import {
   FaRegistered,
   FaSitemap,
   FaShoppingCart,
+  FaOpencart,
   FaUserCog,
   FaMedal,
   FaRegAddressCard,
@@ -41,6 +42,13 @@ const dashboardCards = [
     description: "Crear, ver y gestionar requerimientos de las áreas.",
     icon: <FaShoppingCart />,
     path: "/requerimientos",
+    allowedAreas: ["all"],
+  },
+  {
+    title: "Crear Requerimiento",
+    description: "Crear un nuevo requerimiento para las áreas.",
+    icon: <FaOpencart />,
+    path: "/crear-requerimiento",
     allowedAreas: ["all"],
   },
   {
