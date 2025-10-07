@@ -22,22 +22,20 @@ const productosApi = {
   },
 
   crear: async (producto) => {
+    const isFormData = producto instanceof FormData;
     return await apiFetch('productos', {
       method: 'POST',
-      body: JSON.stringify(producto),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      body: isFormData ? producto : JSON.stringify(producto),
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
     });
   },
 
   actualizar: async (id, producto) => {
+    const isFormData = producto instanceof FormData;
     return await apiFetch(`productos/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(producto),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      body: isFormData ? producto : JSON.stringify(producto),
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
     });
   },
 

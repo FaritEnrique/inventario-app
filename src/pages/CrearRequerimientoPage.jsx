@@ -10,6 +10,7 @@ import useMarcas from "../hooks/useMarcas";
 import useProductos from "../hooks/useProductos";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
+import imageCompression from "browser-image-compression";
 
 // Hook de debounce
 const useDebounce = (value, delay) => {
@@ -497,6 +498,7 @@ const CrearRequerimientoPage = () => {
             <h2 className="mb-4 text-xl font-bold text-gray-700">
               Crear Producto
             </h2>
+
             <div className="flex flex-col gap-3">
               {/* Nombre */}
               <div className="flex flex-col">
@@ -567,25 +569,44 @@ const CrearRequerimientoPage = () => {
                 />
               </div>
 
-              {/* URL de Imagen */}
+              {/* Imagen */}
               <div className="flex flex-col">
                 <label
-                  htmlFor="productoImagenUrl"
+                  htmlFor="productoImagen"
                   className="text-sm font-medium text-gray-700"
                 >
-                  URL de Imagen (opcional)
+                  Imagen (opcional)
                 </label>
                 <input
-                  type="text"
-                  id="productoImagenUrl"
-                  name="imagenUrl"
-                  value={productoActual.imagenUrl || ""}
-                  onChange={(e) =>
-                    setProductoActual((prev) => ({
-                      ...prev,
-                      imagenUrl: e.target.value,
-                    }))
-                  }
+                  type="file"
+                  id="productoImagen"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      try {
+                        const options = {
+                          maxSizeMB: 0.5,
+                          maxWidthOrHeight: 1024,
+                          useWebWorker: true,
+                        };
+                        const compressedFile = await imageCompression(
+                          file,
+                          options
+                        );
+                        setProductoActual((prev) => ({
+                          ...prev,
+                          imagenFile: compressedFile,
+                        }));
+                      } catch (error) {
+                        console.error("Error al comprimir la imagen", error);
+                        setProductoActual((prev) => ({
+                          ...prev,
+                          imagenFile: file,
+                        }));
+                      }
+                    }
+                  }}
                   className="p-2 border rounded-md focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
@@ -665,7 +686,41 @@ const CrearRequerimientoPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleCrearProducto}
+                  onClick={async () => {
+                    // Validación
+                    const { nombre, unidadMedida, tipoProductoId, imagenFile } =
+                      productoActual;
+                    if (!nombre || !unidadMedida || !tipoProductoId) {
+                      toast.error("❌ Completa los campos obligatorios");
+                      return;
+                    }
+
+                    try {
+                      const formData = new FormData();
+                      formData.append("nombre", nombre);
+                      formData.append("unidadMedida", unidadMedida);
+                      formData.append("tipoProductoId", tipoProductoId);
+                      if (productoActual.descripcion)
+                        formData.append(
+                          "descripcion",
+                          productoActual.descripcion
+                        );
+                      if (productoActual.marcaId)
+                        formData.append("marcaId", productoActual.marcaId);
+                      if (imagenFile) formData.append("imagen", imagenFile);
+
+                      const creado = await crearProducto(formData); // backend debe manejar FormData
+                      toast.success("✅ Producto creado correctamente");
+                      cerrarModalProducto();
+                      setProductos((prev) => [...prev, creado]);
+                    } catch (err) {
+                      const msg =
+                        err.response?.data?.message ||
+                        err.message ||
+                        "Error al crear producto";
+                      toast.error(`❌ ${msg}`);
+                    }
+                  }}
                   className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
                 >
                   Crear

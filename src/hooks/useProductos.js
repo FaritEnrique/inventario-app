@@ -1,5 +1,5 @@
 // src/hooks/useProductos.js
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import productosApi from '../api/productosApi';
 import { toast } from 'react-toastify';
 
@@ -8,21 +8,16 @@ const useProductos = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
+  // 📦 Obtener todos los productos
   const obtenerProductos = useCallback(async (buscar = '') => {
     try {
       setCargando(true);
       setError(null);
       const data = await productosApi.getTodos(buscar);
 
-      
-
-      // ✅ Ya no se formatea el precio aquí, ya que no existe en el modelo Producto
-      // El stock ya viene calculado del backend, no necesita parseFloat aquí.
       const formateados = Array.isArray(data)
         ? data.map((producto) => ({
             ...producto,
-            // ✅ ELIMINADO: precio: parseFloat(producto.precio).toFixed(2),
-            // Asegurarse que stock sea un número si viene como string
             stock: parseFloat(producto.stock),
           }))
         : [];
@@ -42,44 +37,42 @@ const useProductos = () => {
     obtenerProductos();
   }, [obtenerProductos]);
 
+  // 🆕 Crear producto
   const crearProducto = useCallback(async (nuevoProducto) => {
     try {
       const creado = await productosApi.crear(nuevoProducto);
       setProductos((prev) => [
         ...prev,
-        { 
-          ...creado, 
-          // ✅ ELIMINADO: precio: parseFloat(creado.precio).toFixed(2),
-          stock: parseFloat(creado.stock), // Asegurar que stock sea un número
-        },
+        { ...creado, stock: parseFloat(creado.stock) },
       ]);
       toast.success('✅ Producto creado correctamente');
       return creado;
     } catch (err) {
       console.error('❌ Error al crear producto:', err);
-      // ✅ Tu apiFetch ya lanza un error con el mensaje del backend.
       const msg = err.message || 'Error desconocido';
       toast.error(`❌ ${msg}`);
       throw err;
     }
   }, []);
 
+  // ✏️ Actualizar producto
   const actualizarProducto = useCallback(async (id, datos) => {
     try {
-      const actualizado = await productosApi.actualizar(id, datos);
+      const respuesta = await productosApi.actualizar(id, datos);
+
+      // ✅ El backend devuelve { message, producto }
+      const { message, producto } = respuesta;
+
       setProductos((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { 
-                ...actualizado, 
-                // ✅ ELIMINADO: precio: parseFloat(actualizado.precio).toFixed(2),
-                stock: parseFloat(actualizado.stock), // Asegurar que stock sea un número
-              }
+            ? { ...producto, stock: parseFloat(producto.stock) }
             : p
         )
       );
-      toast.success('✅ Producto actualizado correctamente');
-      return actualizado;
+
+      toast.success(`✅ ${message || 'Producto actualizado correctamente'}`);
+      return producto;
     } catch (err) {
       console.error('❌ Error al actualizar producto:', err);
       const msg = err.message || 'Error desconocido';
@@ -88,6 +81,7 @@ const useProductos = () => {
     }
   }, []);
 
+  // 🗑️ Eliminar producto
   const eliminarProducto = useCallback(async (id) => {
     try {
       await productosApi.eliminar(id);

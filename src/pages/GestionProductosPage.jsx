@@ -14,6 +14,7 @@ import { MdCategory } from "react-icons/md";
 import { FaRegistered } from "react-icons/fa";
 import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
+import imageCompression from "browser-image-compression";
 
 Modal.setAppElement("#root");
 
@@ -130,65 +131,50 @@ const GestionProductosPage = () => {
 
       if (!nombre.trim() || !unidadMedida.trim() || !tipoProductoId) {
         toast.error(
-          "❌ Los campos Nombre, Unidad de Medida y Tipo de Producto son obligatorios y deben ser válidos."
+          "❌ Los campos obligatorios deben completarse correctamente"
         );
-        return;
-      }
-      if (!modoEdicion && !tipoProductoId) {
-        toast.error("❌ Seleccione un tipo de producto válido para continuar.");
         return;
       }
 
       try {
-        const datosParaGuardar = {
-          ...productoActual,
-          marcaId: productoActual.marcaId
-            ? parseInt(productoActual.marcaId)
-            : null,
-          tipoProductoId: parseInt(tipoProductoId),
-        };
+        const formData = new FormData();
+        formData.append("nombre", nombre);
+        formData.append("unidadMedida", unidadMedida);
+        formData.append("tipoProductoId", tipoProductoId);
+        if (productoActual.descripcion)
+          formData.append("descripcion", productoActual.descripcion);
+        if (productoActual.marcaId)
+          formData.append("marcaId", productoActual.marcaId);
+        formData.append("activo", productoActual.activo);
+
+        if (productoActual.imagenFile) {
+          formData.append("imagen", productoActual.imagenFile);
+        }
 
         if (modoEdicion) {
-          const {
-            codigo,
-            stock,
-            precio,
-            usaStockMinimo,
-            stockMinimo,
-            ...datosLimpios
-          } = datosParaGuardar;
-          await actualizarProducto(productoActual.id, datosLimpios);
+          await actualizarProducto(productoActual.id, formData, true);
+          toast.success("✅ Producto actualizado correctamente");
         } else {
-          const {
-            codigo,
-            stock,
-            precio,
-            usaStockMinimo,
-            stockMinimo,
-            ...datosLimpiosParaCrear
-          } = datosParaGuardar;
-          await crearProducto(datosLimpiosParaCrear);
+          await crearProducto(formData);
+          toast.success("✅ Producto creado correctamente");
         }
+
         setProductoActual(initialProducto);
         setModoEdicion(false);
         fetchProductos(debouncedBusqueda);
-        toast.success(
-          `✅ Producto ${
-            modoEdicion ? "actualizado" : "registrado"
-          } correctamente.`
-        );
       } catch (err) {
-        console.error("Error al guardar producto:", err);
-        toast.error(
-          `❌ Error al guardar producto: ${err.message || "Error desconocido"}`
-        );
+        const msg =
+          err.response?.data?.message ||
+          err.message ||
+          "Error al guardar producto";
+        toast.error(`❌ ${msg}`);
       }
     },
     [
       productoActual,
       modoEdicion,
-      actualizarProducto,
       crearProducto,
+      actualizarProducto,
       fetchProductos,
       debouncedBusqueda,
     ]
@@ -247,7 +233,13 @@ const GestionProductosPage = () => {
         }
       );
     },
-    [productos, eliminarProducto, fetchProductos, debouncedBusqueda, productoActual.id]
+    [
+      productos,
+      eliminarProducto,
+      fetchProductos,
+      debouncedBusqueda,
+      productoActual.id,
+    ]
   );
 
   const handleClearForm = useCallback(() => {
@@ -266,6 +258,8 @@ const GestionProductosPage = () => {
   }, []);
 
   const cargandoGeneral = cargandoProductos || cargandoMarcas || cargandoTipos;
+
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   return (
     <div className="max-w-5xl p-6 mx-auto">
@@ -329,6 +323,8 @@ const GestionProductosPage = () => {
                 ))}
             </select>
           </div>
+
+          {/* Código */}
           <div>
             <label
               htmlFor="codigo"
@@ -345,20 +341,9 @@ const GestionProductosPage = () => {
               readOnly
               disabled={cargandoGeneral || modoEdicion}
             />
-            {!modoEdicion && !productoActual.tipoProductoId && (
-              <p className="mt-1 text-xs text-gray-500">
-                Seleccione un tipo de producto para generar el código
-                automáticamente.
-              </p>
-            )}
-            {!modoEdicion &&
-              productoActual.tipoProductoId &&
-              productoActual.codigo && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Código autogenerado. Se confirmará al guardar.
-                </p>
-              )}
           </div>
+
+          {/* Nombre */}
           <div>
             <label
               htmlFor="nombre"
@@ -377,23 +362,8 @@ const GestionProductosPage = () => {
               disabled={cargandoGeneral}
             />
           </div>
-          <div>
-            <label
-              htmlFor="descripcion"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Descripción
-            </label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={productoActual.descripcion || ""}
-              onChange={handleChange}
-              rows="2"
-              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              disabled={cargandoGeneral}
-            ></textarea>
-          </div>
+
+          {/* Unidad de Medida */}
           <div>
             <label
               htmlFor="unidadMedida"
@@ -412,43 +382,70 @@ const GestionProductosPage = () => {
               disabled={cargandoGeneral}
             />
           </div>
-          <div>
+
+          {/* Descripción */}
+          <div className="md:col-span-2">
             <label
-              htmlFor="stock"
+              htmlFor="descripcion"
               className="block text-sm font-medium text-gray-700"
             >
-              Stock Actual
+              Descripción (opcional)
             </label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              value={productoActual.stock}
-              className="block w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md shadow-sm cursor-not-allowed"
-              readOnly
-              disabled={cargandoGeneral}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              El stock se actualiza mediante movimientos de almacén.
-            </p>
-          </div>
-          <div>
-            <label
-              htmlFor="imagenUrl"
-              className="block text-sm font-medium text-gray-700"
-            >
-              URL de Imagen
-            </label>
-            <input
-              type="text"
-              id="imagenUrl"
-              name="imagenUrl"
-              value={productoActual.imagenUrl || ""}
+            <textarea
+              id="descripcion"
+              name="descripcion"
+              value={productoActual.descripcion || ""}
               onChange={handleChange}
+              rows="2"
               className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               disabled={cargandoGeneral}
+            ></textarea>
+          </div>
+
+          {/* Imagen */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="productoImagen"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Imagen (opcional)
+            </label>
+            <input
+              type="file"
+              id="productoImagen"
+              accept="image/*"
+              onChange={async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  try {
+                    const options = {
+                      maxSizeMB: 0.5,
+                      maxWidthOrHeight: 1024,
+                      useWebWorker: true,
+                    };
+                    const compressedFile = await imageCompression(
+                      file,
+                      options
+                    );
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      imagenFile: compressedFile,
+                    }));
+                    toast.info("📸 Imagen comprimida lista para subir");
+                  } catch (error) {
+                    console.error("Error al comprimir la imagen", error);
+                    setProductoActual((prev) => ({
+                      ...prev,
+                      imagenFile: file,
+                    }));
+                  }
+                }
+              }}
+              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
+
+          {/* Marca */}
           <div>
             <label
               htmlFor="marcaId"
@@ -474,7 +471,7 @@ const GestionProductosPage = () => {
             </select>
           </div>
 
-          {/* Checkbox: Activo */}
+          {/* Activo */}
           <div className="flex items-center mt-2">
             <input
               id="activo"
@@ -492,20 +489,15 @@ const GestionProductosPage = () => {
               Activo
             </label>
           </div>
+
+          {/* Botones */}
           <div className="flex flex-col justify-end col-span-2 gap-4 mt-4 sm:flex-row">
             <button
               type="submit"
-              disabled={
-                cargandoGeneral ||
-                (!modoEdicion && !productoActual.tipoProductoId)
-              }
+              disabled={cargandoGeneral}
               className="px-6 py-3 font-semibold text-white transition duration-200 ease-in-out bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {cargandoGeneral
-                ? "Guardando..."
-                : modoEdicion
-                ? "Actualizar Producto"
-                : "Crear Producto"}
+              {modoEdicion ? "Actualizar Producto" : "Crear Producto"}
             </button>
             {modoEdicion && (
               <button
@@ -647,7 +639,7 @@ const GestionProductosPage = () => {
             </h2>
             {productoEnDetalle.imagenUrl ? (
               <img
-                src={productoEnDetalle.imagenUrl}
+                src={`${apiUrl}${productoEnDetalle.imagenUrl}`}
                 alt={`Imagen de ${productoEnDetalle.nombre}`}
                 className="object-cover w-48 h-48 mb-4 rounded-lg shadow-md"
                 onError={(e) => {
