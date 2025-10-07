@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Modal from "react-modal";
 import useUsers from "../hooks/useUsers";
 import apiFetch from "../api/apiFetch";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AuthContext } from "../context/authContext";
+import ConfirmToast from "../components/ConfirmToast";
 
 Modal.setAppElement("#root");
 
@@ -16,43 +18,37 @@ const GestionUsuariosPage = () => {
     actualizarUsuario,
   } = useUsers();
 
+  const { user: currentUser } = useContext(AuthContext);
+
   const [areas, setAreas] = useState([]);
   const [rangos, setRangos] = useState([]);
   const [cargandoAreas, setCargandoAreas] = useState(true);
   const [cargandoRangos, setCargandoRangos] = useState(true);
-  const [errorAreas, setErrorAreas] = useState(null);
-  const [errorRangos, setErrorRangos] = useState(null);
+
+  const roles = [
+    'GERENTE_GENERAL',
+    'GERENTE_ADMINISTRACION',
+    'GERENTE_FUNCIONAL',
+    'ADMINISTRADOR_SISTEMA',
+    'JEFE_AREA',
+    'OTROS'
+  ];
 
   const [nuevoUsuario, setNuevoUsuario] = useState({
-    name: "",
-    email: "",
-    password: "",
-    areaId: "",
-    rangoId: "",
-    activo: false, // ✅ CORRECCIÓN: Estado activo por defecto para nuevos usuarios
-    cargo: "", // Nuevo campo para el cargo
+    name: "", email: "", password: "", areaId: "", rangoId: "", activo: true, cargo: "", rol: "OTROS",
   });
 
-  const [ultimoCodigoGenerado, setUltimoCodigoGenerado] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
 
   useEffect(() => {
     const fetchSelectData = async () => {
       try {
-        setCargandoAreas(true);
-        setCargandoRangos(true);
-
-        const areasResponse = await apiFetch("areas");
+        const [areasResponse, rangosResponse] = await Promise.all([apiFetch("areas"), apiFetch("rangos")]);
         setAreas(areasResponse);
-
-        const rangosResponse = await apiFetch("rangos");
         setRangos(rangosResponse);
       } catch (err) {
-        console.error("Error al cargar datos desde el backend:", err);
-        toast.error("No se pudieron cargar las áreas y/o rangos del servidor.");
-        setErrorAreas("No se pudieron cargar las áreas desde el servidor.");
-        setErrorRangos("No se pudieron cargar los rangos desde el servidor.");
+        toast.error("No se pudieron cargar las áreas y/o rangos.");
       } finally {
         setCargandoAreas(false);
         setCargandoRangos(false);
@@ -61,67 +57,43 @@ const GestionUsuariosPage = () => {
     fetchSelectData();
   }, []);
 
+  const showConfirmToast = ({ message, onConfirm }) => {
+    toast(<ConfirmToast message={message} onConfirm={onConfirm} />, {
+      position: "top-center", autoClose: false, closeOnClick: false, draggable: false, closeButton: true, style: { width: '450px' }
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === "checkbox" ? checked : value; // ✅ CORRECCIÓN: Manejar el checkbox
-    const parsedValue =
-      (name === "areaId" || name === "rangoId") && newValue !== ""
-        ? parseInt(newValue, 10)
-        : newValue;
+    const val = type === "checkbox" ? checked : value;
+    const parsedValue = (name === "areaId" || name === "rangoId") && val !== "" ? parseInt(val, 10) : val;
     setNuevoUsuario((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (nuevoUsuario.areaId === "" || isNaN(nuevoUsuario.areaId)) {
-      toast.error("Por favor, selecciona un área válida para el usuario.");
+    if (!nuevoUsuario.areaId || !nuevoUsuario.rangoId) {
+      toast.error("Por favor, selecciona un área y un rango válidos.");
       return;
     }
-    if (nuevoUsuario.rangoId === "" || isNaN(nuevoUsuario.rangoId)) {
-      toast.error("Por favor, selecciona un rango válido para el usuario.");
-      return;
-    }
-
     try {
-      const usuarioCreado = await crearUsuario(nuevoUsuario); // ✅ Envía el objeto completo, incluido 'activo'
-      if (usuarioCreado && usuarioCreado.codigoUsuario) {
-        setUltimoCodigoGenerado(usuarioCreado.codigoUsuario);
-      }
+      await crearUsuario(nuevoUsuario);
       toast.success("Usuario creado con éxito!");
-      setNuevoUsuario({
-        name: "",
-        email: "",
-        password: "",
-        areaId: "",
-        rangoId: "",
-        activo: false, // ✅ Reiniciamos el estado activo
-        cargo: "", // Nuevo campo para el cargo
-      });
+      setNuevoUsuario({ name: "", email: "", password: "", areaId: "", rangoId: "", activo: true, cargo: "", rol: "OTROS" });
     } catch (error) {
-      console.error("Error al crear usuario:", error);
       toast.error(error.message || "Error al crear usuario.");
-      setUltimoCodigoGenerado(null);
     }
   };
 
   const handleEditClick = (user) => {
-    setUsuarioAEditar({
-      ...user,
-      areaId: user.areaId || "",
-      rangoId: user.rangoId || "",
-      cargo: user.cargo || "", // Añadir el campo cargo
-    });
+    setUsuarioAEditar({ ...user, areaId: user.areaId || "", rangoId: user.rangoId || "", cargo: user.cargo || "", rol: user.rol || 'OTROS' });
     setIsModalOpen(true);
   };
 
   const handleEditChange = (e) => {
-    const { name, value, type, checked } = e.target; // ✅ CORRECCIÓN: Manejar el checkbox
-    const newValue = type === "checkbox" ? checked : value;
-    const parsedValue =
-      (name === "areaId" || name === "rangoId") && newValue !== ""
-        ? parseInt(newValue, 10)
-        : newValue;
+    const { name, value, type, checked } = e.target;
+    const val = type === "checkbox" ? checked : value;
+    const parsedValue = (name === "areaId" || name === "rangoId") && val !== "" ? parseInt(val, 10) : val;
     setUsuarioAEditar((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
@@ -129,20 +101,33 @@ const GestionUsuariosPage = () => {
     e.preventDefault();
     if (!usuarioAEditar) return;
 
-    try {
-      await actualizarUsuario(usuarioAEditar.id, {
-        name: usuarioAEditar.name,
-        email: usuarioAEditar.email,
-        areaId: usuarioAEditar.areaId,
-        rangoId: usuarioAEditar.rangoId,
-        activo: usuarioAEditar.activo, // ✅ CORRECCIÓN: Envía el campo 'activo'
-        cargo: usuarioAEditar.cargo, // Envía el campo cargo
+    const payload = { name: usuarioAEditar.name, email: usuarioAEditar.email, areaId: usuarioAEditar.areaId, rangoId: usuarioAEditar.rangoId, activo: usuarioAEditar.activo, cargo: usuarioAEditar.cargo, rol: usuarioAEditar.rol };
+
+    if (payload.rol === 'ADMINISTRADOR_SISTEMA' && usuarioAEditar.rol !== 'ADMINISTRADOR_SISTEMA') {
+      const message = currentUser.rol === 'GERENTE_GENERAL'
+        ? `Estás nombrando a ${usuarioAEditar.name} como nuevo Administrador del Sistema. El administrador actual (si existe) será reemplazado. ¿Continuar?`
+        : `Estás a punto de transferir tu rol de Administrador a ${usuarioAEditar.name}. Perderás tus privilegios. ¿Continuar?`;
+
+      showConfirmToast({
+        message,
+        onConfirm: async () => {
+          try {
+            await actualizarUsuario(usuarioAEditar.id, payload);
+            handleCloseModal();
+            toast.success("Usuario actualizado y rol transferido con éxito.");
+          } catch (error) {
+            toast.error(error.message || "No se pudo actualizar el usuario.");
+          }
+        },
       });
-      handleCloseModal();
-      toast.success("Usuario actualizado con éxito.");
-    } catch (error) {
-      console.error("Error al guardar los cambios:", error);
-      toast.error("No se pudieron guardar los cambios.");
+    } else {
+      try {
+        await actualizarUsuario(usuarioAEditar.id, payload);
+        handleCloseModal();
+        toast.success("Usuario actualizado con éxito.");
+      } catch (error) {
+        toast.error(error.message || "No se pudieron guardar los cambios.");
+      }
     }
   };
 
@@ -150,379 +135,90 @@ const GestionUsuariosPage = () => {
     setIsModalOpen(false);
     setUsuarioAEditar(null);
   };
-
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      width: "400px",
-      padding: "20px",
-      borderRadius: "8px",
-      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    },
-    overlay: {
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
-    },
+  
+  const handleDelete = (userId) => {
+    showConfirmToast({
+      message: '¿Estás seguro de que quieres eliminar este usuario?',
+      onConfirm: async () => {
+        try {
+          await eliminarUsuario(userId);
+          toast.success('Usuario eliminado correctamente');
+        } catch (error) {
+          toast.error(error.message || 'Error al eliminar el usuario');
+        }
+      }
+    });
   };
+
+  const customStyles = { content: { top: '50%', left: '50%', right: 'auto', bottom: 'auto', marginRight: '-50%', transform: 'translate(-50%, -50%)', width: '450px', padding: '20px', borderRadius: '8px' } };
+  const canManageAdminRole = currentUser?.rol === 'GERENTE_GENERAL' || currentUser?.rol === 'ADMINISTRADOR_SISTEMA';
 
   return (
     <div className="p-6">
       <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
 
-      {/* Formulario de Creación de Usuarios */}
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2"
-      >
-        <input
-          name="name"
-          value={nuevoUsuario.name}
-          onChange={handleChange}
-          placeholder="Nombre"
-          className="p-2 border rounded"
-          autoComplete="name"
-          required
-        />
-        <input
-          name="email"
-          value={nuevoUsuario.email}
-          onChange={handleChange}
-          placeholder="Email"
-          className="p-2 border rounded"
-          type="email"
-          autoComplete="email"
-          required
-        />
-        <input
-          name="password"
-          value={nuevoUsuario.password}
-          onChange={handleChange}
-          placeholder="Contraseña"
-          className="p-2 border rounded"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-        <input
-          name="cargo"
-          value={nuevoUsuario.cargo}
-          onChange={handleChange}
-          placeholder="Cargo"
-          className="p-2 border rounded"
-          required
-        />
-
-        {/* Selector de Área */}
-        {cargandoAreas || cargandoRangos ? (
-          <p className="p-2 text-gray-500 bg-gray-100 border rounded col-span-full">
-            Cargando datos...
-          </p>
-        ) : errorAreas || errorRangos ? (
-          <p className="p-2 text-red-500 border rounded bg-red-50 col-span-full">
-            Error al cargar datos.
-          </p>
-        ) : (
-          <>
-            <select
-              name="areaId"
-              value={nuevoUsuario.areaId}
-              onChange={handleChange}
-              className="p-2 border rounded"
-              required
-            >
-              <option value="">-- Selecciona un Área --</option>
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.nombre} ({area.codigo})
-                </option>
-              ))}
-            </select>
-
-            {/* Selector de Rango */}
-            <select
-              name="rangoId"
-              value={nuevoUsuario.rangoId}
-              onChange={handleChange}
-              className="p-2 border rounded"
-              required
-            >
-              <option value="">-- Selecciona un Rango --</option>
-              {rangos.map((rango) => (
-                <option key={rango.id} value={rango.id}>
-                  {rango.nombre}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-
-        {/* ✅ CORRECCIÓN: Checkbox para el estado activo */}
-        <div className="flex items-center col-span-1 md:col-span-2">
-          <input
-            type="checkbox"
-            id="activo-crear"
-            name="activo"
-            checked={nuevoUsuario.activo}
-            onChange={handleChange}
-            className="mr-2"
-          />
-          <label htmlFor="activo-crear" className="text-sm text-gray-700">
-            Usuario Activo
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          className="col-span-1 p-2 text-white transition-colors bg-blue-600 rounded md:col-span-2 hover:bg-blue-700"
-        >
-          Crear Usuario
-        </button>
+      {/* Formulario de Creación */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+        <input name="name" value={nuevoUsuario.name} onChange={handleChange} placeholder="Nombre" className="p-2 border rounded" required />
+        <input name="email" value={nuevoUsuario.email} onChange={handleChange} placeholder="Email" className="p-2 border rounded" type="email" required />
+        <input name="password" value={nuevoUsuario.password} onChange={handleChange} placeholder="Contraseña" className="p-2 border rounded" type="password" required />
+        <input name="cargo" value={nuevoUsuario.cargo} onChange={handleChange} placeholder="Cargo" className="p-2 border rounded" required />
+        <select name="areaId" value={nuevoUsuario.areaId} onChange={handleChange} className="p-2 border rounded" required><option value="">-- Área --</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}</select>
+        <select name="rangoId" value={nuevoUsuario.rangoId} onChange={handleChange} className="p-2 border rounded" required><option value="">-- Rango --</option>{rangos.map((rango) => <option key={rango.id} value={rango.id}>{rango.nombre}</option>)}</select>
+        <select name="rol" value={nuevoUsuario.rol} onChange={handleChange} className="p-2 border rounded" required><option value="">-- Rol --</option>{roles.map((rol) => <option key={rol} value={rol} disabled={rol === 'ADMINISTRADOR_SISTEMA'}>{rol}</option>)}</select>
+        <div className="flex items-center md:col-span-3"><input type="checkbox" id="activo-crear" name="activo" checked={nuevoUsuario.activo} onChange={handleChange} className="mr-2" /><label htmlFor="activo-crear">Usuario Activo</label></div>
+        <button type="submit" className="col-span-1 p-2 text-white bg-blue-600 rounded md:col-span-3">Crear Usuario</button>
       </form>
 
-      {/* Mensaje de éxito al crear usuario */}
-      {ultimoCodigoGenerado && (
-        <div className="p-3 mb-4 text-center text-green-700 bg-green-100 border border-green-400 rounded-md">
-          <p className="font-semibold">¡Usuario creado con éxito!</p>
-          <p>
-            El código de usuario asignado es:{" "}
-            <span className="text-lg font-bold text-green-900">
-              {ultimoCodigoGenerado}
-            </span>
-          </p>
-        </div>
-      )}
-
-      <hr className="my-6" />
-
       {/* Lista de Usuarios */}
-      {cargandoUsuarios ? (
-        <p>Cargando usuarios...</p>
-      ) : (
+      {cargandoUsuarios ? <p>Cargando...</p> : (
         <ul className="space-y-2">
-          {usuarios.length === 0 ? (
-            <p className="text-gray-600">No hay usuarios registrados.</p>
-          ) : (
-            usuarios.map((user) => (
-              <li
-                key={user.id}
-                className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center"
-              >
-                <div>
-                  <p className="text-gray-800">
-                    <strong>{user.name}</strong> - {user.email}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Código:{" "}
-                    <span className="font-semibold text-blue-700">
-                      {user.codigoUsuario || "N/A"}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Área:{" "}
-                    <span className="font-semibold text-gray-700">
-                      {user.area?.nombre || "Sin área asignada"}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Rango:{" "}
-                    <span className="font-semibold text-gray-700">
-                      {user.rango?.nombre || "Sin rango asignado"}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Cargo:{" "}
-                    <span className="font-semibold text-gray-700">
-                      {user.cargo || "N/A"}
-                    </span>
-                  </p>
-                  {/* ✅ CORRECCIÓN: Muestra el estado activo */}
-                  <p className="text-sm text-gray-600">
-                    Estado:{" "}
-                    <span
-                      className={`font-semibold ${
-                        user.activo ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {user.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex gap-2 mt-3 md:mt-0">
-                  <button
-                    onClick={() => handleEditClick(user)}
-                    className="px-4 py-2 text-sm text-white transition-colors bg-green-500 rounded hover:bg-green-600"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => eliminarUsuario(user.id)}
-                    className="px-4 py-2 text-sm text-white transition-colors bg-red-500 rounded hover:bg-red-600"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
+          {usuarios.map((user) => (
+            <li key={user.id} className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center">
+              <div>
+                <p><strong>{user.name}</strong> - {user.email}</p>
+                <p className="text-sm">Rol: <span className="font-semibold text-purple-700">{user.rol || "N/A"}</span></p>
+                <p className="text-sm">Cargo: <span className="font-semibold text-gray-700">{user.cargo || "N/A"}</span></p>
+                <p className="text-sm">Área: <span className="font-semibold text-gray-700">{user.area?.nombre || "N/A"}</span></p>
+                <p className="text-sm">Estado: <span className={`font-semibold ${user.activo ? "text-green-600" : "text-red-600"}`}>{user.activo ? "Activo" : "Inactivo"}</span></p>
+              </div>
+              <div className="flex gap-2 mt-3 md:mt-0">
+                <button onClick={() => handleEditClick(user)} className="px-4 py-2 text-sm text-white bg-green-500 rounded">Editar</button>
+                <button onClick={() => handleDelete(user.id)} className="px-4 py-2 text-sm text-white bg-red-500 rounded">Eliminar</button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 
       {/* Modal de Edición */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={handleCloseModal}
-        style={customStyles}
-        contentLabel="Editar Usuario"
-      >
-        <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
-        <form onSubmit={handleSaveEdit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={usuarioAEditar?.name || ""}
-              onChange={handleEditChange}
-              className="block w-full p-2 mt-1 border rounded-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={usuarioAEditar?.email || ""}
-              onChange={handleEditChange}
-              className="block w-full p-2 mt-1 border rounded-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Área
-            </label>
-            {cargandoAreas || cargandoRangos ? (
-              <p className="p-2 mt-1 text-gray-500 bg-gray-100 border rounded-md">
-                Cargando datos...
-              </p>
-            ) : errorAreas ? (
-              <p className="p-2 mt-1 text-red-500 border rounded-md bg-red-50">
-                Error: {errorAreas}
-              </p>
-            ) : (
-              <select
-                name="areaId"
-                value={usuarioAEditar?.areaId || ""}
-                onChange={handleEditChange}
-                className="block w-full p-2 mt-1 border rounded-md"
-                required
-              >
-                <option value="">-- Selecciona un Área --</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.nombre} ({area.codigo})
+      {usuarioAEditar && (
+        <Modal isOpen={isModalOpen} onRequestClose={handleCloseModal} style={customStyles}>
+          <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <div><label>Nombre</label><input type="text" name="name" value={usuarioAEditar.name} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required /></div>
+            <div><label>Email</label><input type="email" name="email" value={usuarioAEditar.email} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required /></div>
+            <div><label>Cargo</label><input type="text" name="cargo" value={usuarioAEditar.cargo} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required /></div>
+            <select name="areaId" value={usuarioAEditar.areaId} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required><option value="">-- Área --</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}</select>
+            <select name="rangoId" value={usuarioAEditar.rangoId} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required><option value="">-- Rango --</option>{rangos.map((rango) => <option key={rango.id} value={rango.id}>{rango.nombre}</option>)}</select>
+            <div>
+              <label>Rol</label>
+              <select name="rol" value={usuarioAEditar.rol} onChange={handleEditChange} className="block w-full p-2 mt-1 border rounded-md" required>
+                {roles.map((rol) => (
+                  <option key={rol} value={rol} disabled={rol === 'ADMINISTRADOR_SISTEMA' && !canManageAdminRole && usuarioAEditar.rol !== 'ADMINISTRADOR_SISTEMA'}>
+                    {rol}
                   </option>
                 ))}
               </select>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Rango
-            </label>
-            {cargandoRangos ? (
-              <p className="p-2 mt-1 text-gray-500 bg-gray-100 border rounded-md">
-                Cargando rangos...
-              </p>
-            ) : errorRangos ? (
-              <p className="p-2 mt-1 text-red-500 border rounded-md bg-red-50">
-                Error: {errorRangos}
-              </p>
-            ) : (
-              <select
-                name="rangoId"
-                value={usuarioAEditar?.rangoId || ""}
-                onChange={handleEditChange}
-                className="block w-full p-2 mt-1 border rounded-md"
-                required
-              >
-                <option value="">-- Selecciona un Rango --</option>
-                {rangos.map((rango) => (
-                  <option key={rango.id} value={rango.id}>
-                    {rango.nombre}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Código de Usuario
-            </label>
-            <input
-              type="text"
-              name="codigoUsuario"
-              value={usuarioAEditar?.codigoUsuario || "N/A"}
-              readOnly
-              className="block w-full p-2 mt-1 bg-gray-100 border rounded-md cursor-not-allowed"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Cargo
-            </label>
-            <input
-              type="text"
-              name="cargo"
-              value={usuarioAEditar?.cargo || ""}
-              onChange={handleEditChange}
-              className="block w-full p-2 mt-1 border rounded-md"
-              required
-            />
-          </div>
-          {/* ✅ CORRECCIÓN: Checkbox para el estado activo en el modal */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="activo-editar"
-              name="activo"
-              checked={usuarioAEditar?.activo || false}
-              onChange={handleEditChange}
-              className="mr-2"
-            />
-            <label
-              htmlFor="activo-editar"
-              className="text-sm font-medium text-gray-700"
-            >
-              Usuario Activo
-            </label>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              Guardar Cambios
-            </button>
-          </div>
-        </form>
-      </Modal>
+            </div>
+            <div className="flex items-center"><input type="checkbox" id="activo-editar" name="activo" checked={usuarioAEditar.activo} onChange={handleEditChange} className="mr-2" /><label htmlFor="activo-editar">Usuario Activo</label></div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm bg-gray-200 rounded-md">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md">Guardar Cambios</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
