@@ -2,14 +2,17 @@
 import apiFetch from './apiFetch';
 
 const productosApi = {
-  getTodos: async (buscar = '') => {
-    const query = buscar ? `?buscar=${encodeURIComponent(buscar)}` : '';
-    const res = await apiFetch(`productos${query}`);
-    return res ?? []; 
+  getTodos: async (buscar = '', page = 1, limit = 10) => {
+    const params = new URLSearchParams();
+    if (buscar) params.append('buscar', buscar);
+    params.append('page', page);
+    params.append('limit', limit);
+
+    const res = await apiFetch(`productos?${params.toString()}`);
+    return res ?? { productos: [], total: 0, page, limit };
   },
 
   getPorId: async (id) => {
-
     return await apiFetch(`productos/${id}`);
   },
 
@@ -39,7 +42,6 @@ const productosApi = {
     });
   },
 
-  // Eliminar un producto
   eliminar: async (id) => {
     return await apiFetch(`productos/${id}`, {
       method: 'DELETE',

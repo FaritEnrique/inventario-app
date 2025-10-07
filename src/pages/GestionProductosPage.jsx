@@ -1,5 +1,5 @@
 // src/pages/GestionProductosPage.jsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import useProductos from "../hooks/useProductos";
 import useMarcas from "../hooks/useMarcas";
 import useTipoProductos from "../hooks/useTipoProductos";
@@ -8,10 +8,9 @@ import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import productosApi from "../api/productosApi";
 import Modal from "react-modal";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaRegistered } from "react-icons/fa";
 import { TbArrowBackUpDouble } from "react-icons/tb";
 import { MdCategory } from "react-icons/md";
-import { FaRegistered } from "react-icons/fa";
 import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
 import imageCompression from "browser-image-compression";
@@ -37,11 +36,6 @@ const cards = [
   },
 ];
 
-const devLog = (...args) => {
-  if (import.meta.env.MODE === "development") {
-  }
-};
-
 const initialProducto = {
   id: null,
   codigo: "",
@@ -49,6 +43,7 @@ const initialProducto = {
   descripcion: "",
   unidadMedida: "",
   stock: 0,
+  imagenFile: null,
   imagenUrl: "",
   marcaId: "",
   tipoProductoId: "",
@@ -56,6 +51,7 @@ const initialProducto = {
 };
 
 const GestionProductosPage = () => {
+  const fileInputRef = useRef(null);
   const [productoActual, setProductoActual] = useState(initialProducto);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -64,6 +60,13 @@ const GestionProductosPage = () => {
 
   const {
     productos,
+    total,
+    page,
+    limit,
+    desde,
+    hasta,
+    setPage,
+    setLimit,
     fetchProductos,
     crearProducto,
     actualizarProducto,
@@ -80,8 +83,8 @@ const GestionProductosPage = () => {
   const debouncedBusqueda = useDebounce(busqueda, 2000);
 
   useEffect(() => {
-    fetchProductos(debouncedBusqueda);
-  }, [fetchProductos, debouncedBusqueda]); // Depende de fetchProductos y del valor debounced de la búsqueda
+    fetchProductos(debouncedBusqueda, page, limit);
+  }, [fetchProductos, debouncedBusqueda, page, limit]);
 
   useEffect(() => {
     fetchMarcas();
@@ -159,9 +162,20 @@ const GestionProductosPage = () => {
           toast.success("✅ Producto creado correctamente");
         }
 
-        setProductoActual(initialProducto);
+        if (
+          productoActual.imagenUrl &&
+          !productoActual.imagenUrl.startsWith("http")
+        ) {
+          URL.revokeObjectURL(productoActual.imagenUrl);
+        }
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        setProductoActual({ ...initialProducto, imagenFile: null });
         setModoEdicion(false);
-        fetchProductos(debouncedBusqueda);
+        fetchProductos(debouncedBusqueda, page, limit);
       } catch (err) {
         const msg =
           err.response?.data?.message ||
@@ -177,6 +191,8 @@ const GestionProductosPage = () => {
       actualizarProducto,
       fetchProductos,
       debouncedBusqueda,
+      page,
+      limit,
     ]
   );
 
@@ -205,8 +221,7 @@ const GestionProductosPage = () => {
             onConfirm={async () => {
               try {
                 await eliminarProducto(id);
-                toast.success("🗑️ Producto eliminado correctamente.");
-                fetchProductos(debouncedBusqueda);
+                fetchProductos(debouncedBusqueda, page, limit);
                 if (productoActual.id === id) {
                   setProductoActual(initialProducto);
                   setModoEdicion(false);
@@ -239,13 +254,25 @@ const GestionProductosPage = () => {
       fetchProductos,
       debouncedBusqueda,
       productoActual.id,
+      page,
+      limit,
     ]
   );
 
   const handleClearForm = useCallback(() => {
-    setProductoActual(initialProducto);
+    if (
+      productoActual.imagenUrl &&
+      !productoActual.imagenUrl.startsWith("http")
+    ) {
+      URL.revokeObjectURL(productoActual.imagenUrl);
+    }
+    setProductoActual({ ...initialProducto });
     setModoEdicion(false);
-  }, []);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [productoActual.imagenUrl]);
 
   const handleVerDetalles = useCallback((producto) => {
     setProductoEnDetalle(producto);
@@ -258,7 +285,6 @@ const GestionProductosPage = () => {
   }, []);
 
   const cargandoGeneral = cargandoProductos || cargandoMarcas || cargandoTipos;
-
   const apiUrl = import.meta.env.VITE_API_URL;
 
   return (
@@ -266,6 +292,8 @@ const GestionProductosPage = () => {
       <h1 className="text-2xl font-bold text-center text-indigo-700">
         Gestión de Productos
       </h1>
+
+      {/* Tarjetas de gestión */}
       <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
         <div className="flex items-center justify-end w-full mb-2">
           <Link
@@ -291,6 +319,10 @@ const GestionProductosPage = () => {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Formulario Crear/Actualizar */}
+      <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
         <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
           {modoEdicion ? "Actualizar Producto" : "Crear Nuevo Producto"}
         </h2>
@@ -298,6 +330,7 @@ const GestionProductosPage = () => {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2"
         >
+          {/* Tipo Producto */}
           <div>
             <label
               htmlFor="tipoProductoId"
@@ -312,15 +345,37 @@ const GestionProductosPage = () => {
               onChange={handleChange}
               className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
-              disabled={cargandoGeneral || modoEdicion}
             >
-              <option value="">Seleccionar tipo de producto</option>
-              {Array.isArray(tiposProducto) &&
-                tiposProducto.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre} ({t.prefijo})
-                  </option>
-                ))}
+              <option value="">Seleccione un tipo</option>
+              {tiposProducto.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Marca */}
+          <div>
+            <label
+              htmlFor="marcaId"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Marca
+            </label>
+            <select
+              id="marcaId"
+              name="marcaId"
+              value={productoActual.marcaId}
+              onChange={handleChange}
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            >
+              <option value="">Seleccione una marca</option>
+              {marcas.map((marca) => (
+                <option key={marca.id} value={marca.id}>
+                  {marca.nombre}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -337,9 +392,8 @@ const GestionProductosPage = () => {
               id="codigo"
               name="codigo"
               value={productoActual.codigo}
-              className="block w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md shadow-sm cursor-not-allowed"
               readOnly
-              disabled={cargandoGeneral || modoEdicion}
+              className="block w-full p-2 mt-1 bg-gray-100 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
 
@@ -357,9 +411,8 @@ const GestionProductosPage = () => {
               name="nombre"
               value={productoActual.nombre}
               onChange={handleChange}
-              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
-              disabled={cargandoGeneral}
             />
           </div>
 
@@ -377,9 +430,26 @@ const GestionProductosPage = () => {
               name="unidadMedida"
               value={productoActual.unidadMedida}
               onChange={handleChange}
-              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
-              disabled={cargandoGeneral}
+            />
+          </div>
+
+          {/* Stock */}
+          <div>
+            <label
+              htmlFor="stock"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Stock
+            </label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              value={productoActual.stock}
+              onChange={handleChange}
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
 
@@ -389,242 +459,202 @@ const GestionProductosPage = () => {
               htmlFor="descripcion"
               className="block text-sm font-medium text-gray-700"
             >
-              Descripción (opcional)
+              Descripción
             </label>
             <textarea
               id="descripcion"
               name="descripcion"
-              value={productoActual.descripcion || ""}
+              value={productoActual.descripcion}
               onChange={handleChange}
-              rows="2"
-              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              disabled={cargandoGeneral}
-            ></textarea>
+              rows={3}
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
           </div>
 
           {/* Imagen */}
           <div className="md:col-span-2">
             <label
-              htmlFor="productoImagen"
+              htmlFor="imagenFile"
               className="block text-sm font-medium text-gray-700"
             >
-              Imagen (opcional)
+              Imagen
             </label>
             <input
+              ref={fileInputRef}
               type="file"
-              id="productoImagen"
+              id="imagenFile"
               accept="image/*"
               onChange={async (e) => {
-                if (e.target.files && e.target.files[0]) {
-                  const file = e.target.files[0];
+                const file = e.target.files[0];
+                if (file) {
                   try {
-                    const options = {
+                    const compressedFile = await imageCompression(file, {
                       maxSizeMB: 0.5,
-                      maxWidthOrHeight: 1024,
+                      maxWidthOrHeight: 800,
                       useWebWorker: true,
-                    };
-                    const compressedFile = await imageCompression(
-                      file,
-                      options
-                    );
+                    });
                     setProductoActual((prev) => ({
                       ...prev,
                       imagenFile: compressedFile,
+                      imagenUrl: URL.createObjectURL(compressedFile),
                     }));
-                    toast.info("📸 Imagen comprimida lista para subir");
                   } catch (error) {
-                    console.error("Error al comprimir la imagen", error);
-                    setProductoActual((prev) => ({
-                      ...prev,
-                      imagenFile: file,
-                    }));
+                    console.error("Error al comprimir la imagen:", error);
+                    toast.error("❌ Error al comprimir la imagen");
                   }
                 }
               }}
-              className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full mt-1"
             />
-          </div>
-
-          {/* Marca */}
-          <div>
-            <label
-              htmlFor="marcaId"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Marca
-            </label>
-            <select
-              id="marcaId"
-              name="marcaId"
-              value={productoActual.marcaId}
-              onChange={handleChange}
-              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              disabled={cargandoGeneral}
-            >
-              <option value="">Seleccionar marca (Opcional)</option>
-              {Array.isArray(marcas) &&
-                marcas.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nombre}
-                  </option>
-                ))}
-            </select>
+            {productoActual.imagenUrl && (
+              <img
+                src={productoActual.imagenUrl}
+                alt="Preview"
+                className="object-contain w-32 h-32 mt-2 border rounded"
+              />
+            )}
           </div>
 
           {/* Activo */}
-          <div className="flex items-center mt-2">
+          <div className="flex items-center space-x-2">
             <input
+              type="checkbox"
               id="activo"
               name="activo"
-              type="checkbox"
               checked={productoActual.activo}
               onChange={handleChange}
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              disabled={cargandoGeneral}
             />
             <label
               htmlFor="activo"
-              className="block ml-2 text-sm text-gray-900"
+              className="text-sm font-medium text-gray-700"
             >
               Activo
             </label>
           </div>
 
           {/* Botones */}
-          <div className="flex flex-col justify-end col-span-2 gap-4 mt-4 sm:flex-row">
+          <div className="flex space-x-2 md:col-span-2">
             <button
               type="submit"
-              disabled={cargandoGeneral}
-              className="px-6 py-3 font-semibold text-white transition duration-200 ease-in-out bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700"
             >
-              {modoEdicion ? "Actualizar Producto" : "Crear Producto"}
+              {modoEdicion ? "Actualizar" : "Crear"}
             </button>
-            {modoEdicion && (
-              <button
-                type="button"
-                onClick={handleClearForm}
-                disabled={cargandoGeneral}
-                className="px-6 py-3 font-semibold text-white transition duration-200 ease-in-out bg-gray-600 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Cancelar Edición
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleClearForm}
+              className="px-4 py-2 font-semibold text-white bg-gray-600 rounded hover:bg-gray-700"
+            >
+              Limpiar
+            </button>
           </div>
         </form>
       </div>
 
-      {/* Formulario de Búsqueda */}
-      <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
-          Buscar Productos
-        </h2>
-        <form className="flex flex-col gap-4 sm:flex-row">
-          <input
-            type="text"
-            id="busquedaProducto"
-            name="busquedaProducto"
-            placeholder="Buscar por código o nombre..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            disabled={cargandoGeneral}
-          />
-        </form>
-      </div>
-      <div className="p-6 overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
-          Listado de Productos
-        </h2>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              <th
-                scope="col"
-                className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-300"
-              >
-                Código
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-300"
-              >
-                Nombre
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-300"
-              >
-                Stock
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-2 text-xs font-medium tracking-wider text-center text-gray-500 uppercase border-b border-gray-300"
-              >
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {cargandoGeneral ? (
-              <tr>
-                <td colSpan="4" className="py-4 text-center text-gray-500">
-                  Cargando datos...
-                </td>
-              </tr>
-            ) : Array.isArray(productos) && productos.length > 0 ? (
-              productos.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {p.codigo}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
-                    {p.nombre}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
-                    {p.stock}
-                  </td>
-                  <td className="px-4 py-2 text-sm font-medium text-right whitespace-nowrap">
-                    <div className="flex flex-col items-center justify-center space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-                      <button
-                        onClick={() => handleVerDetalles(p)}
-                        className="p-2 text-xs font-semibold text-white transition duration-150 ease-in-out bg-green-500 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        title="Ver Detalles"
-                        disabled={cargandoGeneral}
-                      >
-                        <FaSearch className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEditar(p)}
-                        className="px-3 py-1 text-xs font-semibold text-white transition duration-150 ease-in-out bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        title="Editar Producto"
-                        disabled={cargandoGeneral}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleEliminar(p.id)}
-                        className="px-3 py-1 text-xs font-semibold text-white transition duration-150 ease-in-out bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        title="Eliminar Producto"
-                        disabled={cargandoGeneral}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="py-4 text-center text-gray-500">
-                  No hay productos registrados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Buscador */}
+      <div className="flex items-center gap-2 mb-4">
+        <FaSearch size={18} className="text-gray-500" />
+        <input
+          type="text"
+          placeholder="Buscar producto..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+        />
       </div>
 
-      {/* Modal de Detalles del Producto */}
+      {/* Tabla de Productos */}
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+        {cargandoGeneral ? (
+          <p className="p-6 text-center text-gray-500">Cargando productos...</p>
+        ) : productos.length === 0 ? (
+          <p className="p-6 text-center text-gray-500">
+            No hay productos registrados.
+          </p>
+        ) : (
+          <table className="w-full border-collapse table-auto">
+            <thead>
+              <tr className="bg-indigo-100">
+                <th className="px-4 py-2 border">Item</th>
+                <th className="px-4 py-2 border">Código</th>
+                <th className="px-4 py-2 text-left border">Nombre</th>
+                <th className="px-4 py-2 border">Tipo</th>
+                <th className="px-4 py-2 border">Marca</th>
+                <th className="px-4 py-2 border">Stock</th>
+                <th className="px-4 py-2 border">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productos.map((producto, index) => (
+                <tr key={producto.id} className="text-center">
+                  <td className="px-4 py-2 border">{desde + index}</td>
+                  <td className="px-4 py-2 border">{producto.codigo}</td>
+                  <td className="px-4 py-2 text-left border">
+                    {producto.nombre}
+                  </td>
+                  <td className="px-4 py-2 border">
+                    {producto.tipoProducto?.nombre}
+                  </td>
+                  <td className="px-4 py-2 border">
+                    {producto.marca?.nombre || "-"}
+                  </td>
+                  <td className="px-4 py-2 border">{producto.stock}</td>
+                  <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
+                    <button
+                      onClick={() => handleVerDetalles(producto)}
+                      className="px-2 py-1 text-sm font-semibold text-white bg-green-500 rounded hover:bg-green-600"
+                    >
+                      <FaSearch className="w-4 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleEditar(producto)}
+                      className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(producto.id)}
+                      className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Paginación */}
+      {total > limit && (
+        <div className="flex items-center justify-between p-4 mt-4 bg-white border border-gray-200 rounded-lg shadow-lg">
+          <div>
+            <p>
+              Mostrando {desde} a {hasta} de {total} productos
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
+            >
+              Anterior
+            </button>
+            <button
+              disabled={hasta >= total}
+              onClick={() => setPage(page + 1)}
+              className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detalle Producto */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
@@ -700,7 +730,8 @@ const GestionProductosPage = () => {
           </div>
         )}
       </Modal>
-      <ToastContainer />
+
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 };

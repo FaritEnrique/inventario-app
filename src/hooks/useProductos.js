@@ -7,22 +7,28 @@ const useProductos = () => {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [desde, setDesde] = useState(1);
+  const [hasta, setHasta] = useState(0);
 
-  // 📦 Obtener todos los productos
-  const obtenerProductos = useCallback(async (buscar = '') => {
+  const obtenerProductos = useCallback(async (buscar = '', pageNumber = page, limitNumber = limit) => {
     try {
       setCargando(true);
       setError(null);
-      const data = await productosApi.getTodos(buscar);
+      const data = await productosApi.getTodos(buscar, pageNumber, limitNumber);
 
-      const formateados = Array.isArray(data)
-        ? data.map((producto) => ({
-            ...producto,
-            stock: parseFloat(producto.stock),
-          }))
+      const formateados = Array.isArray(data.productos)
+        ? data.productos.map((producto) => ({ ...producto, stock: parseFloat(producto.stock) }))
         : [];
 
       setProductos(formateados);
+      setTotal(data.total);
+      setPage(data.page);
+      setLimit(data.limit);
+      setDesde(data.desde);
+      setHasta(data.hasta);
     } catch (err) {
       console.error('❌ Error al obtener productos:', err);
       toast.error('❌ Error al obtener productos');
@@ -31,57 +37,40 @@ const useProductos = () => {
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     obtenerProductos();
   }, [obtenerProductos]);
 
-  // 🆕 Crear producto
   const crearProducto = useCallback(async (nuevoProducto) => {
     try {
       const creado = await productosApi.crear(nuevoProducto);
-      setProductos((prev) => [
-        ...prev,
-        { ...creado, stock: parseFloat(creado.stock) },
-      ]);
+      setProductos((prev) => [...prev, { ...creado, stock: parseFloat(creado.stock) }]);
       toast.success('✅ Producto creado correctamente');
       return creado;
     } catch (err) {
       console.error('❌ Error al crear producto:', err);
-      const msg = err.message || 'Error desconocido';
-      toast.error(`❌ ${msg}`);
+      toast.error(`❌ ${err.message || 'Error desconocido'}`);
       throw err;
     }
   }, []);
 
-  // ✏️ Actualizar producto
   const actualizarProducto = useCallback(async (id, datos) => {
     try {
-      const respuesta = await productosApi.actualizar(id, datos);
-
-      // ✅ El backend devuelve { message, producto }
-      const { message, producto } = respuesta;
-
+      const { message, producto } = await productosApi.actualizar(id, datos);
       setProductos((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? { ...producto, stock: parseFloat(producto.stock) }
-            : p
-        )
+        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
       );
-
       toast.success(`✅ ${message || 'Producto actualizado correctamente'}`);
       return producto;
     } catch (err) {
       console.error('❌ Error al actualizar producto:', err);
-      const msg = err.message || 'Error desconocido';
-      toast.error(`❌ ${msg}`);
+      toast.error(`❌ ${err.message || 'Error desconocido'}`);
       throw err;
     }
   }, []);
 
-  // 🗑️ Eliminar producto
   const eliminarProducto = useCallback(async (id) => {
     try {
       await productosApi.eliminar(id);
@@ -89,14 +78,20 @@ const useProductos = () => {
       toast.success('🗑️ Producto eliminado correctamente');
     } catch (err) {
       console.error('❌ Error al eliminar producto:', err);
-      const msg = err.message || 'Error desconocido';
-      toast.error(`❌ ${msg}`);
+      toast.error(`❌ ${err.message || 'Error desconocido'}`);
       throw err;
     }
   }, []);
 
   return {
     productos,
+    total,
+    page,
+    limit,
+    desde,
+    hasta,
+    setPage,
+    setLimit,
     fetchProductos: obtenerProductos,
     crearProducto,
     actualizarProducto,
