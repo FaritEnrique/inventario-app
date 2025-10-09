@@ -112,15 +112,12 @@ const CrearPrimerUsuarioPage = () => {
     setLoading(true);
     setError(null);
     try {
-      // Separar nombre completo en nombre y apellido
       const [nombre, ...rest] = formData.name.trim().split(" ");
-      const apellido = rest.join(" ");
 
       await apiFetch("usuarios/primer-usuario", {
         method: "POST",
         body: JSON.stringify({
           nombre,
-          apellido,
           email: formData.email,
           password: formData.password,
           cargo: formData.cargo,
@@ -179,7 +176,7 @@ const CrearPrimerUsuarioPage = () => {
               type="text"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Nombre Completo"
+              placeholder=" Nombre Completo "
               icon={<UserCircleIcon className="w-5 h-5 text-gray-400" />}
               autoComplete="name"
             />

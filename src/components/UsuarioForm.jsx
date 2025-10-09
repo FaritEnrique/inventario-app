@@ -75,7 +75,7 @@ const UsuarioForm = ({
         name="name"
         value={form.name}
         onChange={handleChange}
-        placeholder="Nombre"
+        placeholder=" Nombre Completo "
         className="p-2 border rounded md:col-span-1"
         required
       />

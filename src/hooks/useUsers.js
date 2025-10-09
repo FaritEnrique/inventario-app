@@ -1,3 +1,4 @@
+// src/hooks/useUsers.js
 import { useEffect, useState, useCallback } from 'react';
 import usersApi from '../api/usersApi';
 import apiFetch from '../api/apiFetch';
@@ -7,14 +8,18 @@ const useUsers = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
+  // Paginación y búsqueda
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
 
+  // Helper para normalizar respuesta (backend puede devolver array o objeto)
   const _normalizeListResponse = (res) => {
     if (Array.isArray(res)) {
       return { usuarios: res, totalPages: 1, currentPage: 1 };
     }
+    // si el backend ya devuelve { usuarios, totalPages, currentPage } — lo usamos
+    // else intentamos mapear variantes comunes
     return {
       usuarios: res.usuarios || res.data || res,
       totalPages: res.totalPages || Math.max(1, Math.ceil((res.totalItems || (Array.isArray(res) ? res.length : (res.data?.length || 0))) / 10)),
@@ -44,9 +49,12 @@ const useUsers = () => {
   );
 
   useEffect(() => {
+    // carga inicial con page y search actuales
     cargarUsuarios(page, search);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // solo on mount
 
+  // crear usuario: si no hay token asumimos crear primer usuario (ruta pública)
   const crearUsuario = useCallback(
     async (usuario) => {
       setCargando(true);
@@ -55,6 +63,7 @@ const useUsers = () => {
         const token = localStorage.getItem('token');
         let nuevo;
         if (!token) {
+          // ruta pública para primer usuario
           nuevo = await apiFetch('usuarios/primer-usuario', {
             method: 'POST',
             body: JSON.stringify(usuario),
@@ -62,6 +71,7 @@ const useUsers = () => {
         } else {
           nuevo = await usersApi.crear(usuario);
         }
+        // refetch para mantener consistencia (o podemos optimizar insert)
         await cargarUsuarios(page, search);
         return nuevo;
       } catch (err) {
@@ -81,6 +91,7 @@ const useUsers = () => {
       setError(null);
       try {
         const actualizado = await usersApi.actualizar(id, datos);
+        // actualizar localmente sin recargar toda la lista
         setUsuarios((prev) => prev.map((u) => (u.id === id ? actualizado : u)));
         return actualizado;
       } catch (err) {
@@ -118,6 +129,7 @@ const useUsers = () => {
       setError(null);
       try {
         const updated = await usersApi.toggleActivo(id, activo);
+        // si backend retorna el usuario actualizado, lo aplicamos; si no, recargamos
         if (updated && updated.id) {
           setUsuarios((prev) => prev.map((u) => (u.id === id ? updated : u)));
         } else {
