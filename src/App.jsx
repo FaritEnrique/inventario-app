@@ -1,12 +1,12 @@
-// src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { HelmetProvider, Helmet } from "react-helmet-async";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { AuthProvider } from "./context/authContext";
+import { AuthProvider, useAuth } from "./context/authContext";
 import LayoutInventario from "./components/LayoutInventario";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Loader from "./components/Loader";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -28,9 +28,80 @@ import SolicitarRestablecimientoPage from "./pages/SolicitarRestablecimientoPage
 import RestablecerContrasenaPage from "./pages/RestablecerContrasenaPage";
 import GestionUsuariosPage from "./pages/GestionUsuariosPage";
 import CrearRequerimientoPage from "./pages/CrearRequerimientoPage";
+import CrearPrimerUsuarioPage from "./pages/CrearPrimerUsuarioPage";
 
 import "./index.css";
 import GestionProveedoresPage from "./pages/GestionProveedoresPage";
+
+const AppRoutes = () => {
+  const { loading, needsInitialSetup } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (needsInitialSetup) {
+    return (
+      <Routes>
+        <Route path="/crear-primer-usuario" element={<CrearPrimerUsuarioPage />} />
+        <Route path="*" element={<Navigate to="/crear-primer-usuario" state={{ from: location }} replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<LayoutInventario />}>
+        <Route index element={<HomePage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route
+          path="/solicitar-restablecimiento"
+          element={<SolicitarRestablecimientoPage />}
+        />
+        <Route
+          path="/reset-password"
+          element={<RestablecerContrasenaPage />}
+        />
+        <Route element={<ProtectedRoute />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route
+            path="gestion-productos"
+            element={<GestionProductosPage />}
+          />
+          <Route path="gestion-marcas" element={<GestionMarcasPage />} />
+          <Route
+            path="gestion-tipo-producto"
+            element={<GestionTipoProductosPage />}
+          />
+          <Route path="gestion-areas" element={<GestionAreasPage />} />
+          <Route
+            path="gestion-usuarios"
+            element={<GestionUsuariosPage />}
+          />
+          <Route path="gestion-rangos" element={<GestionRangosPage />} />
+          <Route
+            path="crear-requerimiento"
+            element={<CrearRequerimientoPage />}
+          />
+          <Route path="requerimientos" element={<RequerimientosPage />} />
+          <Route path="productos" element={<ProductosPage />} />
+          <Route path="movimientos" element={<MovimientosPage />} />
+          <Route path="reportes" element={<ReportesPage />} />
+          <Route path="tipos-producto" element={<TipoProductosPage />} />
+          <Route path="marcas" element={<MarcasPage />} />
+          <Route path="/areas" element={<AreasPage />} />
+          <Route path="/usuarios" element={<UsersPage />} />
+          <Route
+            path="gestion-proveedores"
+            element={<GestionProveedoresPage />}
+          />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
 
 const App = () => {
   return (
@@ -44,58 +115,8 @@ const App = () => {
               content="Sistema web para gestión de inventarios"
             />
           </Helmet>
-
           <ToastContainer position="top-right" autoClose={3000} />
-
-          <Routes>
-            <Route path="/" element={<LayoutInventario />}>
-              <Route index element={<HomePage />} />
-              <Route path="login" element={<LoginPage />} />
-              <Route
-                path="/solicitar-restablecimiento"
-                element={<SolicitarRestablecimientoPage />}
-              />
-              <Route
-                path="/reset-password"
-                element={<RestablecerContrasenaPage />}
-              />
-              // Ruta protegida
-              <Route element={<ProtectedRoute />}>
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route
-                  path="gestion-productos"
-                  element={<GestionProductosPage />}
-                />
-                <Route path="gestion-marcas" element={<GestionMarcasPage />} />
-                <Route
-                  path="gestion-tipo-producto"
-                  element={<GestionTipoProductosPage />}
-                />
-                <Route path="gestion-areas" element={<GestionAreasPage />} />
-                <Route
-                  path="gestion-usuarios"
-                  element={<GestionUsuariosPage />}
-                />
-                <Route path="gestion-rangos" element={<GestionRangosPage />} />
-                <Route
-                  path="crear-requerimiento"
-                  element={<CrearRequerimientoPage />}
-                />
-                <Route path="requerimientos" element={<RequerimientosPage />} />
-                <Route path="productos" element={<ProductosPage />} />
-                <Route path="movimientos" element={<MovimientosPage />} />
-                <Route path="reportes" element={<ReportesPage />} />
-                <Route path="tipos-producto" element={<TipoProductosPage />} />
-                <Route path="marcas" element={<MarcasPage />} />
-                <Route path="/areas" element={<AreasPage />} />
-                <Route path="/usuarios" element={<UsersPage />} />
-                <Route
-                  path="gestion-proveedores"
-                  element={<GestionProveedoresPage />}
-                />
-              </Route>
-            </Route>
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
     </HelmetProvider>

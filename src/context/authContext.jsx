@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [needsInitialSetup, setNeedsInitialSetup] = useState(false);
   const inactivityTimer = useRef(null);
 
   const resetInactivityTimer = () => {
@@ -43,10 +44,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ CAMBIO CLAVE: useEffect que maneja la inicialización
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const checkAppStatus = async () => {
       setLoading(true);
+      try {
+        const { count } = await apiFetch("usuarios/count");
+        if (count === 0) {
+          setNeedsInitialSetup(true);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error al verificar el estado inicial de la aplicación:", error);
+        // Opcional: manejar el error de forma más visible para el usuario
+      }
+
       const storedUser = sessionStorage.getItem("user");
 
       if (!storedUser) {
@@ -62,19 +74,16 @@ export const AuthProvider = ({ children }) => {
         if (res.valid && res.usuario) {
           setIsAuthenticated(true);
           setUser(res.usuario);
-          sessionStorage.setItem("user", JSON.stringify(res.usuario)); // Keep user data in session storage
+          sessionStorage.setItem("user", JSON.stringify(res.usuario));
         } else {
-          // If token is not valid, or no user data, just clear session and set auth state
           sessionStorage.removeItem("user");
           setIsAuthenticated(false);
           setUser(null);
         }
       } catch (error) {
-        // Solo loguear errores inesperados, no el 401 esperado cuando no hay token
         if (error.response?.status !== 401) {
-          console.error("Error al validar token o procesar la sesión:", error);
+          console.error("Error al validar el token:", error);
         }
-        // En caso de cualquier error o 401, asegurar que la sesión se limpie
         sessionStorage.removeItem("user");
         setIsAuthenticated(false);
         setUser(null);
@@ -82,10 +91,10 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    checkAuthStatus();
-  }, []); // ✅ Dependencia vacía para que se ejecute solo una vez al inicio
 
-  // Este useEffect se encarga únicamente del temporizador de inactividad
+    checkAppStatus();
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       resetInactivityTimer();
@@ -134,9 +143,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const completeInitialSetup = () => {
+    setNeedsInitialSetup(false);
+  };
+
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, loading, login, logout }}
+      value={{
+        isAuthenticated,
+        user,
+        loading,
+        login,
+        logout,
+        needsInitialSetup,
+        completeInitialSetup,
+      }}
     >
       {children}
     </AuthContext.Provider>

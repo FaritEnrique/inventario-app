@@ -15,7 +15,7 @@ const apiFetch = async (endpoint, options = {}) => {
       credentials: "include", // Importante para enviar cookies
     });
 
-    if (!res.ok && res.status !== 404) {
+    if (!res.ok) {
       const data = await res.json(); // Get the full data object
       const errorMessage = data.mensaje || data.message || "Error al conectar con el servidor";
       const validationErrors = data.errores || [];
@@ -27,9 +27,6 @@ const apiFetch = async (endpoint, options = {}) => {
     }
 
     if (res.status === 204) return null;
-    if (res.status === 404) {
-      return { ok: false, status: 404 };
-    }
 
     return await res.json();
   } catch (error) {

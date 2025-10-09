@@ -5,7 +5,6 @@ import {
   FaShoppingCart,
   FaOpencart,
   FaUserCog,
-  FaMedal,
   FaRegAddressCard,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -21,7 +20,7 @@ const dashboardCards = [
       "Crear, ver, actualizar y borrar los productos del inventario.",
     icon: <MdInventory />,
     path: "/gestion-productos",
-    allowedAreas: ["03-ADMI-Iquitos", "01-CONT"],
+    allowedAreas: ["all"],
   },
   {
     title: "Productos",
@@ -35,7 +34,7 @@ const dashboardCards = [
     description: "Gestionar las áreas o unidades de la organización.",
     icon: <FaSitemap />,
     path: "/gestion-areas",
-    allowedAreas: ["03-ADMI-Iquitos"],
+    allowedAreas: ["all"],
   },
   {
     title: "Requerimientos",
@@ -56,7 +55,7 @@ const dashboardCards = [
     description: "Gestionar usuarios del sistema.",
     icon: <FaUserCog />,
     path: "/gestion-usuarios",
-    allowedAreas: ["03-ADMI-Iquitos"],
+    allowedAreas: ["all"],
   },
   {
     title: "Movimientos",
@@ -70,13 +69,6 @@ const dashboardCards = [
     description: "Visualizar reportes y estadísticas del sistema.",
     icon: <FaSitemap />,
     path: "/reportes",
-    allowedAreas: ["all"],
-  },
-  {
-    title: "Rangos",
-    description: "Creación, actualizar, borrar y listar rangos de usuarios.",
-    icon: <FaMedal />,
-    path: "/gestion-rangos",
     allowedAreas: ["all"],
   },
   {
