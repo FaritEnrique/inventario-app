@@ -1,6 +1,19 @@
 // src/api/usersApi.js
 import apiFetch from './apiFetch';
 
+const serializeUserPayload = (usuario = {}) => {
+  const payload = { ...usuario };
+
+  if ("name" in payload && !("nombre" in payload)) {
+    payload.nombre = payload.name;
+  }
+
+  delete payload.name;
+  delete payload.rangoId;
+
+  return payload;
+};
+
 const usersApi = {
   // obtenerTodos acepta un objeto opcional { page, search }
   obtenerTodos: async ({ page = 1, search = '' } = {}) => {
@@ -19,14 +32,14 @@ const usersApi = {
   crear: async (usuario) => {
     return apiFetch('usuarios', {
       method: 'POST',
-      body: JSON.stringify(usuario),
+      body: JSON.stringify(serializeUserPayload(usuario)),
     });
   },
 
   actualizar: async (id, usuario) => {
     return apiFetch(`usuarios/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(usuario),
+      body: JSON.stringify(serializeUserPayload(usuario)),
     });
   },
 

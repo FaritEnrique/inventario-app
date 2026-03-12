@@ -25,7 +25,7 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const [nuevoUsuario, setNuevoUsuario] = useState({
-    name: '',
+    nombre: '',
     email: '',
     password: '',
     cargo: '',
@@ -88,12 +88,12 @@ const HomePage = () => {
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+              <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
               <input
-                id="name"
+                id="nombre"
                 type="text"
-                name="name"
-                value={nuevoUsuario.name}
+                name="nombre"
+                value={nuevoUsuario.nombre}
                 onChange={handleChange}
                 className="mt-1 block w-full p-2 border border-gray-400 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 required

@@ -1,13 +1,12 @@
-// src/pages/GestionUsuariosPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
-import useUsers from "../hooks/useUsers";
-import apiFetch from "../api/apiFetch";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/authContext";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
 import UsuarioForm from "../components/UsuarioForm";
+import { useAuth } from "../context/authContext";
 import useDebounce from "../hooks/useDebounce";
+import useUsers from "../hooks/useUsers";
+import areasApi from "../api/areasApi";
 
 Modal.setAppElement("#root");
 
@@ -24,14 +23,9 @@ const GestionUsuariosPage = () => {
     setSearch,
     cargarUsuarios,
   } = useUsers();
-
   const { user: currentUser } = useAuth();
 
   const [areas, setAreas] = useState([]);
-  const [rangos, setRangos] = useState([]);
-  const [cargandoAreas, setCargandoAreas] = useState(true);
-  const [cargandoRangos, setCargandoRangos] = useState(true);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,26 +33,21 @@ const GestionUsuariosPage = () => {
 
   useEffect(() => {
     setSearch(debouncedSearchTerm);
-    setPage(1); // Reset page when searching
+    setPage(1);
   }, [debouncedSearchTerm, setSearch, setPage]);
 
   useEffect(() => {
-    const fetchSelectData = async () => {
+    const fetchAreas = async () => {
       try {
-        const [areasResponse, rangosResponse] = await Promise.all([
-          apiFetch("areas"),
-          apiFetch("rangos"),
-        ]);
-        setAreas(areasResponse || []);
-        setRangos(rangosResponse || []);
-      } catch (err) {
-        toast.error("No se pudieron cargar las áreas y/o rangos.");
-      } finally {
-        setCargandoAreas(false);
-        setCargandoRangos(false);
+        const response = await areasApi.getAreas();
+        setAreas(response || []);
+      } catch (error) {
+        console.error("Error al cargar areas:", error);
+        toast.error("No se pudieron cargar las areas.");
       }
     };
-    fetchSelectData();
+
+    fetchAreas();
   }, []);
 
   const canManageAdminRole =
@@ -68,7 +57,7 @@ const GestionUsuariosPage = () => {
   const handleCrear = async (usuario) => {
     try {
       await crearUsuario(usuario);
-      toast.success("Usuario creado con éxito!");
+      toast.success("Usuario creado con exito.");
       cargarUsuarios();
     } catch (error) {
       console.error(error);
@@ -84,9 +73,10 @@ const GestionUsuariosPage = () => {
 
   const handleSaveEdit = async (datos) => {
     if (!usuarioAEditar) return;
+
     try {
       await actualizarUsuario(usuarioAEditar.id, datos);
-      toast.success("Usuario actualizado con éxito.");
+      toast.success("Usuario actualizado con exito.");
       setIsModalOpen(false);
       setUsuarioAEditar(null);
       cargarUsuarios();
@@ -99,7 +89,7 @@ const GestionUsuariosPage = () => {
   const handleDeactivate = (userId, userName) => {
     toast.info(
       <ConfirmDeleteToast2
-        message={`¿Estás seguro de que quieres desactivar a ${userName}? El usuario no podrá acceder al sistema.`}
+        message={`Estas seguro de que quieres desactivar a ${userName}? El usuario no podra acceder al sistema.`}
         onConfirm={async () => {
           try {
             await eliminarUsuario(userId);
@@ -117,12 +107,11 @@ const GestionUsuariosPage = () => {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
+      <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
 
       <div className="mb-6">
         <UsuarioForm
           areas={areas}
-          rangos={rangos}
           onSave={handleCrear}
           onCancel={() => {}}
           disableAdminRole={!canManageAdminRole}
@@ -132,10 +121,10 @@ const GestionUsuariosPage = () => {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Buscar por nombre, código o email..."
-          className="w-full px-3 py-2 border rounded"
+          placeholder="Buscar por nombre, codigo o email..."
+          className="w-full rounded border px-3 py-2"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(event) => setSearchTerm(event.target.value)}
         />
       </div>
 
@@ -147,14 +136,14 @@ const GestionUsuariosPage = () => {
             {usuarios.map((user) => (
               <li
                 key={user.id}
-                className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center"
+                className="flex flex-col items-start justify-between rounded border bg-white p-4 shadow-sm md:flex-row md:items-center"
               >
                 <div>
                   <p>
                     <strong>{user.name || user.nombre}</strong> - {user.email}
                   </p>
                   <p className="text-sm">
-                    Código:{" "}
+                    Codigo:{" "}
                     <span className="font-semibold text-blue-700">
                       {user.codigoUsuario || "N/A"}
                     </span>
@@ -172,7 +161,7 @@ const GestionUsuariosPage = () => {
                     </span>
                   </p>
                   <p className="text-sm">
-                    Área:{" "}
+                    Area:{" "}
                     <span className="font-semibold text-gray-700">
                       {user.area?.nombre || "N/A"}
                     </span>
@@ -188,10 +177,10 @@ const GestionUsuariosPage = () => {
                     </span>
                   </p>
                 </div>
-                <div className="flex gap-2 mt-3 md:mt-0">
+                <div className="mt-3 flex gap-2 md:mt-0">
                   <button
                     onClick={() => handleEditClick(user)}
-                    className="px-4 py-2 text-white bg-green-500 rounded"
+                    className="rounded bg-green-500 px-4 py-2 text-white"
                   >
                     Editar
                   </button>
@@ -199,7 +188,7 @@ const GestionUsuariosPage = () => {
                     onClick={() =>
                       handleDeactivate(user.id, user.name || user.nombre)
                     }
-                    className="px-4 py-2 text-white bg-red-500 rounded"
+                    className="rounded bg-red-500 px-4 py-2 text-white"
                   >
                     Desactivar
                   </button>
@@ -208,21 +197,21 @@ const GestionUsuariosPage = () => {
             ))}
           </ul>
 
-          <div className="flex items-center justify-between mt-6">
+          <div className="mt-6 flex items-center justify-between">
             <button
               onClick={() => setPage(page - 1)}
               disabled={page <= 1}
-              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+              className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
             >
               Anterior
             </button>
             <span>
-              Página {page} de {totalPages}
+              Pagina {page} de {totalPages}
             </span>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages}
-              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+              className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
             >
               Siguiente
             </button>
@@ -248,7 +237,6 @@ const GestionUsuariosPage = () => {
               rol: usuarioAEditar.rol,
             }}
             areas={areas}
-            rangos={rangos}
             onSave={handleSaveEdit}
             onCancel={() => setIsModalOpen(false)}
             disableAdminRole={!canManageAdminRole}
