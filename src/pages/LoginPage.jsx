@@ -66,18 +66,19 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-8 rounded shadow">
         <h2 className="text-2xl font-semibold text-center mb-6 text-indigo-700">Iniciar Sesión</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
             <label htmlFor="email" className="block text-sm mb-1 font-medium text-gray-700">Correo electrónico</label>
             <input
               id="email"
               type="email"
+              name="login-email"
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               placeholder="ejemplo@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="off"
             />
           </div>
           <div>
@@ -86,12 +87,13 @@ const LoginPage = () => {
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
+                name="login-password"
                 className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 pr-10"
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                autoComplete="current-password"
+                autoComplete="off"
               />
               <button
                 type="button"

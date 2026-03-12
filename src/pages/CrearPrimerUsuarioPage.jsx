@@ -52,7 +52,11 @@ const CrearPrimerUsuarioPage = () => {
           Este formulario solo se usa una vez para inicializar el sistema.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          autoComplete="off"
+        >
           <div>
             <label
               htmlFor="nombre"
@@ -66,6 +70,7 @@ const CrearPrimerUsuarioPage = () => {
               value={form.nombre}
               onChange={handleChange}
               className="mt-1 block w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="off"
               required
             />
           </div>
@@ -84,6 +89,7 @@ const CrearPrimerUsuarioPage = () => {
               value={form.email}
               onChange={handleChange}
               className="mt-1 block w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="off"
               required
             />
           </div>
@@ -101,6 +107,7 @@ const CrearPrimerUsuarioPage = () => {
               value={form.cargo}
               onChange={handleChange}
               className="mt-1 block w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="off"
             />
           </div>
 
@@ -119,6 +126,7 @@ const CrearPrimerUsuarioPage = () => {
                 value={form.password}
                 onChange={handleChange}
                 className="block w-full rounded-lg border border-gray-300 p-2 pr-10 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                autoComplete="new-password"
                 required
               />
               <button
