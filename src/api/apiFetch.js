@@ -1,6 +1,23 @@
 //src/api/apiFetch.js
-const baseURL =
-  import.meta.env.MODE === "development" ? "http://localhost:3000/api" : "";
+const normalizeBaseUrl = (rawUrl) => {
+  const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
+
+  if (!trimmedUrl) {
+    return "/api";
+  }
+
+  return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
+};
+
+const baseURL = normalizeBaseUrl(
+  import.meta.env.VITE_API_URL ||
+    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "")
+);
+
+export const buildApiUrl = (endpoint) => {
+  const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
+  return `${baseURL}/${normalizedEndpoint}`;
+};
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
@@ -9,20 +26,26 @@ const apiFetch = async (endpoint, options = {}) => {
       ...(options.headers || {}),
     };
 
-    const res = await fetch(`${baseURL}/${endpoint}`, {
+    const res = await fetch(buildApiUrl(endpoint), {
       headers,
       ...options,
-      credentials: "include", // Importante para enviar cookies
+      credentials: "include",
     });
 
     if (!res.ok) {
-      const data = await res.json(); // Get the full data object
-      const errorMessage = data.mensaje || data.message || "Error al conectar con el servidor";
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await res.json()
+        : {
+            message: `Respuesta no JSON del servidor (${res.status} ${res.statusText})`,
+          };
+      const errorMessage =
+        data.mensaje || data.message || "Error al conectar con el servidor";
       const validationErrors = data.errores || [];
-      
+
       const fullError = new Error(errorMessage);
-      fullError.response = { data, status: res.status }; // Attach the full data and status
-      fullError.validationErrors = validationErrors; // Keep this for existing logic
+      fullError.response = { data, status: res.status };
+      fullError.validationErrors = validationErrors;
       throw fullError;
     }
 
@@ -30,7 +53,7 @@ const apiFetch = async (endpoint, options = {}) => {
 
     return await res.json();
   } catch (error) {
-    console.error("❌ Error en apiFetch:", error.message);
+    console.error("Error en apiFetch:", error.message);
     throw error;
   }
 };

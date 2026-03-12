@@ -1,4 +1,5 @@
 import React from "react";
+import { buildApiUrl } from "../api/apiFetch";
 
 const PrintField = ({ label, value }) => (
   <div className="py-2 break-inside-avoid">
@@ -67,7 +68,7 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
       `;
 
       // 3. Send the full HTML document to the backend
-      const response = await fetch('http://localhost:3000/api/pdf/generate-from-html', {
+      const response = await fetch(buildApiUrl('pdf/generate-from-html'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
