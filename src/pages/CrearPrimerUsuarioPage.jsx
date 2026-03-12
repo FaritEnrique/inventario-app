@@ -1,246 +1,265 @@
-// src/pages/CrearPrimerUsuarioPage.jsx
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/GestionUsuariosPage.jsx
+import React, { useState, useEffect } from "react";
+import Modal from "react-modal";
+import useUsers from "../hooks/useUsers";
 import apiFetch from "../api/apiFetch";
+import areasApi from "../api/areasApi"; // 💡 Importación de areasApi
 import { toast } from "react-toastify";
-import {
-  EyeIcon,
-  EyeSlashIcon,
-  UserCircleIcon,
-  EnvelopeIcon,
-  LockClosedIcon,
-  BriefcaseIcon,
-} from "@heroicons/react/24/outline";
-import ImagenInventario from "/images/ImagenInventario.png";
 import { useAuth } from "../context/authContext";
+import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
+import UsuarioForm from "../components/UsuarioForm";
+import useDebounce from "../hooks/useDebounce";
 
-// Sub-componente para campos de entrada genéricos
-const InputGroup = ({
-  id,
-  name,
-  type,
-  value,
-  onChange,
-  placeholder,
-  icon,
-  autoComplete,
-  required = true,
-}) => (
-  <div className="relative">
-    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-      {icon}
-    </div>
-    <input
-      id={id}
-      name={name}
-      type={type}
-      required={required}
-      className="w-full py-2.5 pl-10 pr-4 transition-all border border-gray-300 rounded-lg shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      autoComplete={autoComplete}
-    />
-  </div>
-);
+Modal.setAppElement("#root");
 
-// Sub-componente para campos de contraseña
-const PasswordInput = ({
-  id,
-  name,
-  value,
-  onChange,
-  placeholder,
-  show,
-  toggleShow,
-  autoComplete,
-}) => (
-  <div className="relative">
-    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-      <LockClosedIcon className="w-5 h-5 text-gray-400" />
-    </div>
-    <input
-      id={id}
-      name={name}
-      type={show ? "text" : "password"}
-      required
-      className="w-full py-2.5 pl-10 pr-10 transition-all border border-gray-300 rounded-lg shadow-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      autoComplete={autoComplete}
-    />
-    <button
-      type="button"
-      onClick={toggleShow}
-      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-blue-500"
-    >
-      {show ? (
-        <EyeSlashIcon className="w-6 h-6" />
-      ) : (
-        <EyeIcon className="w-6 h-6" />
-      )}
-    </button>
-  </div>
-);
+const GestionUsuariosPage = () => {
+  const {
+    usuarios,
+    cargando: cargandoUsuarios,
+    crearUsuario,
+    eliminarUsuario,
+    actualizarUsuario,
+    page,
+    totalPages,
+    setPage,
+    setSearch,
+    cargarUsuarios,
+  } = useUsers();
 
-const CrearPrimerUsuarioPage = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    cargo: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate();
-  const { completeInitialSetup } = useAuth();
+  const { user: currentUser } = useAuth();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [areas, setAreas] = useState([]);
+  const [rangos, setRangos] = useState([]);
+  const [cargandoAreas, setCargandoAreas] = useState(true);
+  const [cargandoRangos, setCargandoRangos] = useState(true);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [usuarioAEditar, setUsuarioAEditar] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setSearch(debouncedSearchTerm);
+    setPage(1); // Reset page when searching
+  }, [debouncedSearchTerm, setSearch, setPage]);
+
+  useEffect(() => {
+    const fetchSelectData = async () => {
+      try {
+        const [areasResponse, rangosResponse] = await Promise.all([
+          areasApi.getAreas(), // 🎯 SOLUCIÓN: Usar la función específica
+          apiFetch("rangos"),
+        ]);
+        setAreas(areasResponse || []);
+        setRangos(rangosResponse || []);
+      } catch (err) {
+        // Mejor manejo del error en la consola
+        console.error("Error al cargar áreas y/o rangos:", err);
+        toast.error("❌ No se pudieron cargar las áreas y/o rangos.");
+      } finally {
+        setCargandoAreas(false);
+        setCargandoRangos(false);
+      }
+    };
+    fetchSelectData();
+  }, []); // Dependencias: [] para cargar solo al montar el componente
+
+  const canManageAdminRole =
+    currentUser?.rol === "GERENTE_GENERAL" ||
+    currentUser?.rol === "ADMINISTRADOR_SISTEMA";
+
+  const handleCrear = async (usuario) => {
+    try {
+      await crearUsuario(usuario);
+      toast.success("Usuario creado con éxito!");
+      cargarUsuarios();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Error al crear usuario.");
+      throw error;
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Las contraseñas no coinciden.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const [nombre, ...rest] = formData.name.trim().split(" ");
+  const handleEditClick = (user) => {
+    setUsuarioAEditar(user);
+    setIsModalOpen(true);
+  };
 
-      await apiFetch("usuarios/primer-usuario", {
-        method: "POST",
-        body: JSON.stringify({
-          nombre,
-          email: formData.email,
-          password: formData.password,
-          cargo: formData.cargo,
-        }),
-      });
-      toast.success(
-        "¡Usuario administrador creado con éxito! Ahora puedes iniciar sesión."
-      );
-      completeInitialSetup();
-      navigate("/login");
-    } catch (err) {
-      const errorMessage =
-        err.message || "Ocurrió un error al crear el usuario.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+  const handleSaveEdit = async (datos) => {
+    if (!usuarioAEditar) return;
+    try {
+      await actualizarUsuario(usuarioAEditar.id, datos);
+      toast.success("Usuario actualizado con éxito.");
+      setIsModalOpen(false);
+      setUsuarioAEditar(null);
+      cargarUsuarios();
+    } catch (error) {
+      toast.error(error.message || "No se pudieron guardar los cambios.");
+      throw error;
     }
+  };
+
+  const handleDeactivate = (userId, userName) => {
+    toast.info(
+      <ConfirmDeleteToast2
+        message={`¿Estás seguro de que quieres desactivar a ${userName}? El usuario no podrá acceder al sistema.`}
+        onConfirm={async () => {
+          try {
+            await eliminarUsuario(userId);
+            toast.success("Usuario desactivado correctamente");
+            cargarUsuarios();
+          } catch (error) {
+            toast.error(error.message || "Error al desactivar el usuario");
+          }
+        }}
+        closeToast={() => toast.dismiss()}
+      />,
+      { autoClose: false }
+    );
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-2 bg-gray-200 md:p-4">
-      <div className="flex flex-col w-full max-w-4xl mx-auto overflow-hidden bg-white shadow-2xl rounded-2xl md:flex-row">
-        {/* Columna Izquierda: Bienvenida */}
-        <div className="flex flex-col items-center justify-center w-full p-6 text-center text-white bg-blue-600 md:w-1/2 sm:p-8 md:items-start md:text-left">
-          <h1 className="mb-3 text-3xl font-bold text-center md:text-4xl">
-            Bienvenido al Sistema de Logística
-          </h1>
-          <p className="mb-4 text-base text-blue-100 md:text-lg">
-            Para comenzar, configuremos la cuenta del administrador principal.
-          </p>
-          <div className="w-full p-2 md:p-4">
-            <img
-              src={ImagenInventario}
-              alt="Ilustración de Inventario"
-              className="object-cover w-full h-auto rounded-lg shadow-lg"
-            />
-          </div>
-        </div>
+    <div className="p-6">
+      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
 
-        {/* Columna Derecha: Formulario */}
-        <div className="w-full p-6 md:w-1/2 sm:p-8">
-          <div className="flex flex-col items-center mb-4">
-            <h2 className="text-2xl font-bold text-center text-blue-700 md:text-3xl">
-              Crear Cuenta de Administrador del Sistema
-            </h2>
-            <p className="mt-2 text-sm text-gray-600 md:text-base">
-              Esta cuenta tendrá todos los permisos.
-            </p>
-          </div>
-
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <InputGroup
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder=" Nombre Completo "
-              icon={<UserCircleIcon className="w-5 h-5 text-gray-400" />}
-              autoComplete="name"
-            />
-            <InputGroup
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Correo Electrónico"
-              icon={<EnvelopeIcon className="w-5 h-5 text-gray-400" />}
-              autoComplete="email"
-            />
-            <InputGroup
-              id="cargo"
-              name="cargo"
-              type="text"
-              value={formData.cargo}
-              onChange={handleChange}
-              placeholder="Cargo (Ej: Administrador de TI)"
-              icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />}
-              autoComplete="organization-title"
-            />
-            <PasswordInput
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Contraseña"
-              show={showPassword}
-              toggleShow={() => setShowPassword(!showPassword)}
-              autoComplete="new-password"
-            />
-            <PasswordInput
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirmar Contraseña"
-              show={showConfirmPassword}
-              toggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
-              autoComplete="new-password"
-            />
-
-            {error && (
-              <p className="p-2 text-sm text-center text-red-600 bg-red-100 rounded-lg">
-                {error}
-              </p>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-4 py-2.5 mt-3 font-semibold text-white transition-all duration-300 transform bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 hover:scale-105"
-              >
-                {loading ? "Creando Usuario..." : "Crear Usuario"}
-              </button>
-            </div>
-          </form>
-        </div>
+      <div className="mb-6">
+        <UsuarioForm
+          areas={areas}
+          rangos={rangos}
+          onSave={handleCrear}
+          onCancel={() => {}}
+          disableAdminRole={!canManageAdminRole}
+        />
       </div>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por nombre, código o email..."
+          className="w-full px-3 py-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {cargandoUsuarios ? (
+        <p>Cargando...</p>
+      ) : (
+        <>
+          <ul className="space-y-2">
+            {usuarios.map((user) => (
+              <li
+                key={user.id}
+                className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center"
+              >
+                <div>
+                  <p>
+                    <strong>{user.name || user.nombre}</strong> - {user.email}
+                  </p>
+                  <p className="text-sm">
+                    Código:{" "}
+                    <span className="font-semibold text-blue-700">
+                      {user.codigoUsuario || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Rol:{" "}
+                    <span className="font-semibold text-purple-700">
+                      {user.rol || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Cargo:{" "}
+                    <span className="font-semibold text-gray-700">
+                      {user.cargo || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Área:{" "}
+                    <span className="font-semibold text-gray-700">
+                      {user.area?.nombre || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Estado:{" "}
+                    <span
+                      className={`font-semibold ${
+                        user.activo ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {user.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex gap-2 mt-3 md:mt-0">
+                  <button
+                    onClick={() => handleEditClick(user)}
+                    className="px-4 py-2 text-white bg-green-500 rounded"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDeactivate(user.id, user.name || user.nombre)
+                    }
+                    className="px-4 py-2 text-white bg-red-500 rounded"
+                  >
+                    Desactivar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center justify-between mt-6">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+            >
+              Anterior
+            </button>
+            <span>
+              Página {page} de {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+            >
+              Siguiente
+            </button>
+          </div>
+        </>
+      )}
+
+      {usuarioAEditar && (
+        <Modal
+          isOpen={isModalOpen}
+          onRequestClose={() => setIsModalOpen(false)}
+          style={{ content: { width: "450px", margin: "auto" } }}
+        >
+          <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
+          <UsuarioForm
+            initialValues={{
+              name: usuarioAEditar.name ?? usuarioAEditar.nombre,
+              email: usuarioAEditar.email,
+              cargo: usuarioAEditar.cargo,
+              areaId: usuarioAEditar.areaId,
+              rangoId: usuarioAEditar.rangoId,
+              activo: usuarioAEditar.activo,
+              rol: usuarioAEditar.rol,
+            }}
+            areas={areas}
+            rangos={rangos}
+            onSave={handleSaveEdit}
+            onCancel={() => setIsModalOpen(false)}
+            disableAdminRole={!canManageAdminRole}
+          />
+        </Modal>
+      )}
     </div>
   );
 };
 
-export default CrearPrimerUsuarioPage;
+export default GestionUsuariosPage;

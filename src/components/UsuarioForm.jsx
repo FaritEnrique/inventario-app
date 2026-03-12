@@ -1,4 +1,3 @@
-// src/components/UsuarioForm.jsx
 import React, { useEffect, useState } from "react";
 
 const rolesList = [
@@ -10,10 +9,18 @@ const rolesList = [
   "OTROS",
 ];
 
+// 🎯 SOLUCIÓN: Definición de los Rangos fijos (ENUM de Prisma)
+const rangosFijos = [
+  { id: 1, nombre: "UNICO" },
+  { id: 2, nombre: "DOBLE" },
+  { id: 3, nombre: "MULTIPLE" },
+];
+// ----------------------------------------
+
 const UsuarioForm = ({
   initialValues = null,
   areas = [],
-  rangos = [],
+  // 💡 Ya no se necesita 'rangos' como prop
   onCancel = () => {},
   onSave = async () => {},
   disableAdminRole = false,
@@ -24,7 +31,7 @@ const UsuarioForm = ({
     password: "",
     cargo: "",
     areaId: "",
-    rangoId: "",
+    rangoId: "", // Mantener el estado
     activo: true,
     rol: "OTROS",
   });
@@ -59,7 +66,7 @@ const UsuarioForm = ({
       !form.email?.trim() ||
       !form.cargo?.trim() ||
       !form.areaId ||
-      !form.rangoId
+      !form.rangoId // Validar que se seleccionó un rango
     ) {
       return alert("Por favor completa los campos obligatorios.");
     }
@@ -127,7 +134,8 @@ const UsuarioForm = ({
         required
       >
         <option value="">-- Rango --</option>
-        {rangos.map((r) => (
+        {/* 🎯 Usando la constante rangosFijos */}
+        {rangosFijos.map((r) => (
           <option key={r.id} value={r.id}>
             {r.nombre}
           </option>

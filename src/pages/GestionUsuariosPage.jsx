@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/authContext";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
 import UsuarioForm from "../components/UsuarioForm";
+import useDebounce from "../hooks/useDebounce";
 
 Modal.setAppElement("#root");
 
@@ -17,12 +18,11 @@ const GestionUsuariosPage = () => {
     crearUsuario,
     eliminarUsuario,
     actualizarUsuario,
-    toggleActivo,
-    cargarUsuarios,
     page,
     totalPages,
     setPage,
     setSearch,
+    cargarUsuarios,
   } = useUsers();
 
   const { user: currentUser } = useAuth();
@@ -34,6 +34,13 @@ const GestionUsuariosPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setSearch(debouncedSearchTerm);
+    setPage(1); // Reset page when searching
+  }, [debouncedSearchTerm, setSearch, setPage]);
 
   useEffect(() => {
     const fetchSelectData = async () => {
@@ -62,6 +69,7 @@ const GestionUsuariosPage = () => {
     try {
       await crearUsuario(usuario);
       toast.success("Usuario creado con éxito!");
+      cargarUsuarios();
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Error al crear usuario.");
@@ -81,39 +89,30 @@ const GestionUsuariosPage = () => {
       toast.success("Usuario actualizado con éxito.");
       setIsModalOpen(false);
       setUsuarioAEditar(null);
+      cargarUsuarios();
     } catch (error) {
       toast.error(error.message || "No se pudieron guardar los cambios.");
       throw error;
     }
   };
 
-  const handleDelete = (userId, userName) => {
+  const handleDeactivate = (userId, userName) => {
     toast.info(
       <ConfirmDeleteToast2
-        message={`¿Estás seguro de que quieres eliminar a ${userName}? Esta acción requiere confirmación.`}
+        message={`¿Estás seguro de que quieres desactivar a ${userName}? El usuario no podrá acceder al sistema.`}
         onConfirm={async () => {
           try {
             await eliminarUsuario(userId);
-            toast.success("Usuario eliminado correctamente");
+            toast.success("Usuario desactivado correctamente");
+            cargarUsuarios();
           } catch (error) {
-            toast.error(error.message || "Error al eliminar el usuario");
+            toast.error(error.message || "Error al desactivar el usuario");
           }
         }}
         closeToast={() => toast.dismiss()}
       />,
       { autoClose: false }
     );
-  };
-
-  const handleToggleActivo = async (user) => {
-    try {
-      await toggleActivo(user.id, !user.activo);
-      toast.success(
-        `Estado actualizado: ${user.activo ? "Inactivado" : "Activado"}`
-      );
-    } catch (err) {
-      toast.error(err.message || "No se pudo actualizar estado");
-    }
   };
 
   return (
@@ -130,73 +129,105 @@ const GestionUsuariosPage = () => {
         />
       </div>
 
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por nombre, código o email..."
+          className="w-full px-3 py-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       {cargandoUsuarios ? (
         <p>Cargando...</p>
       ) : (
-        <ul className="space-y-2">
-          {usuarios.map((user) => (
-            <li
-              key={user.id}
-              className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center"
-            >
-              <div>
-                <p>
-                  <strong>{user.name || user.nombre}</strong> - {user.email}
-                </p>
-                <p className="text-sm">
-                  Rol:{" "}
-                  <span className="font-semibold text-purple-700">
-                    {user.rol || "N/A"}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  Cargo:{" "}
-                  <span className="font-semibold text-gray-700">
-                    {user.cargo || "N/A"}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  Área:{" "}
-                  <span className="font-semibold text-gray-700">
-                    {user.area?.nombre || "N/A"}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  Estado:{" "}
-                  <span
-                    className={`font-semibold ${
-                      user.activo ? "text-green-600" : "text-red-600"
-                    }`}
+        <>
+          <ul className="space-y-2">
+            {usuarios.map((user) => (
+              <li
+                key={user.id}
+                className="flex flex-col items-start justify-between p-4 bg-white border rounded shadow-sm md:flex-row md:items-center"
+              >
+                <div>
+                  <p>
+                    <strong>{user.name || user.nombre}</strong> - {user.email}
+                  </p>
+                  <p className="text-sm">
+                    Código:{" "}
+                    <span className="font-semibold text-blue-700">
+                      {user.codigoUsuario || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Rol:{" "}
+                    <span className="font-semibold text-purple-700">
+                      {user.rol || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Cargo:{" "}
+                    <span className="font-semibold text-gray-700">
+                      {user.cargo || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Área:{" "}
+                    <span className="font-semibold text-gray-700">
+                      {user.area?.nombre || "N/A"}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    Estado:{" "}
+                    <span
+                      className={`font-semibold ${
+                        user.activo ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {user.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex gap-2 mt-3 md:mt-0">
+                  <button
+                    onClick={() => handleEditClick(user)}
+                    className="px-4 py-2 text-white bg-green-500 rounded"
                   >
-                    {user.activo ? "Activo" : "Inactivo"}
-                  </span>
-                </p>
-              </div>
-              <div className="flex gap-2 mt-3 md:mt-0">
-                <button
-                  onClick={() => handleEditClick(user)}
-                  className="px-4 py-2 text-white bg-green-500 rounded"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() =>
-                    handleDelete(user.id, user.name || user.nombre)
-                  }
-                  className="px-4 py-2 text-white bg-red-500 rounded"
-                >
-                  Eliminar
-                </button>
-                <button
-                  onClick={() => handleToggleActivo(user)}
-                  className="px-4 py-2 text-white bg-gray-600 rounded"
-                >
-                  {user.activo ? "Inactivar" : "Activar"}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                    Editar
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDeactivate(user.id, user.name || user.nombre)
+                    }
+                    className="px-4 py-2 text-white bg-red-500 rounded"
+                  >
+                    Desactivar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center justify-between mt-6">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+            >
+              Anterior
+            </button>
+            <span>
+              Página {page} de {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="px-4 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
+            >
+              Siguiente
+            </button>
+          </div>
+        </>
       )}
 
       {usuarioAEditar && (

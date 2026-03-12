@@ -13,46 +13,41 @@ const useUsers = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
 
-  // Helper para normalizar respuesta (backend puede devolver array o objeto)
-  const _normalizeListResponse = (res) => {
-    if (Array.isArray(res)) {
-      return { usuarios: res, totalPages: 1, currentPage: 1 };
-    }
-    // si el backend ya devuelve { usuarios, totalPages, currentPage } — lo usamos
-    // else intentamos mapear variantes comunes
-    return {
-      usuarios: res.usuarios || res.data || res,
-      totalPages: res.totalPages || Math.max(1, Math.ceil((res.totalItems || (Array.isArray(res) ? res.length : (res.data?.length || 0))) / 10)),
-      currentPage: res.currentPage || res.page || page,
-    };
-  };
-
-  const cargarUsuarios = useCallback(
-    async (p = 1, q = '') => {
-      setCargando(true);
-      setError(null);
-      try {
-        const res = await usersApi.obtenerTodos({ page: p, search: q });
-        const normalized = _normalizeListResponse(res);
-        setUsuarios(normalized.usuarios || []);
-        setTotalPages(normalized.totalPages || 1);
-        setPage(normalized.currentPage || p);
-        setSearch(q);
-      } catch (err) {
-        console.error('Error cargando usuarios:', err);
-        setError(err);
-      } finally {
-        setCargando(false);
+  const cargarUsuarios = useCallback(async () => {
+    setCargando(true);
+    setError(null);
+    try {
+      const res = await usersApi.obtenerTodos({ page, search });
+      
+      let normalized;
+      if (Array.isArray(res)) {
+        normalized = { usuarios: res, totalPages: 1, currentPage: 1 };
+      } else {
+        normalized = {
+          usuarios: res.usuarios || res.data || res,
+          totalPages: res.totalPages || Math.max(1, Math.ceil((res.totalItems || (Array.isArray(res) ? res.length : (res.data?.length || 0))) / 10)),
+          currentPage: res.currentPage || res.page || page,
+        };
       }
-    },
-    []
-  );
+
+      setUsuarios(normalized.usuarios || []);
+      setTotalPages(normalized.totalPages || 1);
+      // Opcional: si la API devuelve una página diferente, ajústala.
+      // if (normalized.currentPage !== page) {
+      //   setPage(normalized.currentPage);
+      // }
+
+    } catch (err) {
+      console.error('Error cargando usuarios:', err);
+      setError(err);
+    } finally {
+      setCargando(false);
+    }
+  }, [page, search]);
 
   useEffect(() => {
-    // carga inicial con page y search actuales
-    cargarUsuarios(page, search);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // solo on mount
+    cargarUsuarios();
+  }, [cargarUsuarios]);
 
   // crear usuario: si no hay token asumimos crear primer usuario (ruta pública)
   const crearUsuario = useCallback(
