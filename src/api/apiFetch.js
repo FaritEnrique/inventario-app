@@ -3,16 +3,17 @@ const normalizeBaseUrl = (rawUrl) => {
   const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
 
   if (!trimmedUrl) {
-    return "/api";
+    throw new Error("VITE_API_URL no esta configurada");
   }
 
   return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
 };
 
-const baseURL = normalizeBaseUrl(
+const rawBaseUrl =
   import.meta.env.VITE_API_URL ||
-    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "")
-);
+  (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
+
+const baseURL = normalizeBaseUrl(rawBaseUrl);
 
 export const buildApiUrl = (endpoint) => {
   const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
