@@ -1,12 +1,12 @@
 import React, {
   createContext,
   useContext,
-  useState,
   useEffect,
   useRef,
+  useState,
 } from "react";
-import apiFetch from "../api/apiFetch";
 import { toast } from "react-toastify";
+import apiFetch from "../api/apiFetch";
 
 const AuthContext = createContext();
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
@@ -18,28 +18,40 @@ export const AuthProvider = ({ children }) => {
   const [needsInitialSetup, setNeedsInitialSetup] = useState(false);
   const inactivityTimer = useRef(null);
 
+  const clearSessionState = () => {
+    sessionStorage.removeItem("user");
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  const applySessionState = (usuario) => {
+    sessionStorage.setItem("user", JSON.stringify(usuario));
+    setIsAuthenticated(true);
+    setUser(usuario);
+  };
+
   const resetInactivityTimer = () => {
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current);
     }
+
     inactivityTimer.current = setTimeout(() => {
       logout();
       toast.error(
-        "Tu sesión ha expirado por inactividad. Por favor, vuelve a iniciar sesión."
+        "Tu sesion ha expirado por inactividad. Por favor, vuelve a iniciar sesion."
       );
     }, INACTIVITY_TIMEOUT_MS);
   };
 
   const logout = async () => {
     clearTimeout(inactivityTimer.current);
+
     try {
       await apiFetch("auth/logout", { method: "POST" });
     } catch (error) {
-      console.error("Error al cerrar sesión en el backend:", error);
+      console.error("Error al cerrar sesion en el backend:", error);
     } finally {
-      sessionStorage.removeItem("user");
-      setIsAuthenticated(false);
-      setUser(null);
+      clearSessionState();
       setLoading(false);
     }
   };
@@ -47,46 +59,45 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAppStatus = async () => {
       setLoading(true);
+
       try {
         const { count } = await apiFetch("usuarios/count");
         if (count === 0) {
           setNeedsInitialSetup(true);
+          clearSessionState();
           setLoading(false);
           return;
         }
+        setNeedsInitialSetup(false);
       } catch (error) {
-        console.error("Error al verificar el estado inicial de la aplicación:", error);
-        // Opcional: manejar el error de forma más visible para el usuario
+        console.error(
+          "Error al verificar el estado inicial de la aplicacion:",
+          error
+        );
       }
 
       const storedUser = sessionStorage.getItem("user");
-
-      if (!storedUser) {
-        setIsAuthenticated(false);
-        setUser(null);
-        setLoading(false);
-        return;
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          sessionStorage.removeItem("user");
+        }
       }
 
       try {
-        const res = await apiFetch("auth/validate-token");
+        const response = await apiFetch("auth/validate-token");
 
-        if (res.valid && res.usuario) {
-          setIsAuthenticated(true);
-          setUser(res.usuario);
-          sessionStorage.setItem("user", JSON.stringify(res.usuario));
+        if (response.valid && response.usuario) {
+          applySessionState(response.usuario);
         } else {
-          sessionStorage.removeItem("user");
-          setIsAuthenticated(false);
-          setUser(null);
+          clearSessionState();
         }
       } catch (error) {
         if (error.response?.status !== 401) {
           console.error("Error al validar el token:", error);
         }
-        sessionStorage.removeItem("user");
-        setIsAuthenticated(false);
-        setUser(null);
+        clearSessionState();
       } finally {
         setLoading(false);
       }
@@ -99,12 +110,14 @@ export const AuthProvider = ({ children }) => {
     if (isAuthenticated) {
       resetInactivityTimer();
     }
+
     const events = ["mousemove", "keydown", "click", "scroll"];
     const handleActivity = () => {
       if (isAuthenticated) {
         resetInactivityTimer();
       }
     };
+
     events.forEach((event) => window.addEventListener(event, handleActivity));
 
     return () => {
@@ -117,27 +130,26 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     setLoading(true);
+
     try {
       const response = await apiFetch("auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      if (response && response.usuario) {
-        const { usuario } = response;
-        sessionStorage.setItem("user", JSON.stringify(usuario));
-
-        setIsAuthenticated(true);
-        setUser(usuario);
+      if (response?.usuario) {
+        applySessionState(response.usuario);
         resetInactivityTimer();
         return { success: true };
-      } else {
-        return { success: false, error: "Credenciales inválidas" };
       }
+
+      return { success: false, error: "Credenciales invalidas" };
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      const errorMessage = error.message || "Error al iniciar sesión";
-      return { success: false, error: errorMessage };
+      console.error("Error al iniciar sesion:", error);
+      return {
+        success: false,
+        error: error.message || "Error al iniciar sesion",
+      };
     } finally {
       setLoading(false);
     }

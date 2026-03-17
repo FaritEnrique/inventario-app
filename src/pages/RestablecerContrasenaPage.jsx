@@ -69,12 +69,13 @@ const RestablecerContrasenaPage = () => {
         <h2 className="text-2xl font-semibold text-center mb-6 text-indigo-700">Nueva Contraseña</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
-            <label className="block text-sm mb-1 font-medium text-gray-700">Nueva Contraseña</label>
+            <label htmlFor="restablecer-password" className="block text-sm mb-1 font-medium text-gray-700">Nueva Contraseña</label>
             <input
+              id="restablecer-password"
               type={showPassword ? "text" : "password"}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="restablecer-contrasena-page-input-73" onChange={(e) => setPassword(e.target.value)}
               required
             />
             <button
@@ -86,12 +87,13 @@ const RestablecerContrasenaPage = () => {
             </button>
           </div>
           <div className="relative">
-            <label className="block text-sm mb-1 font-medium text-gray-700">Confirmar Contraseña</label>
+            <label htmlFor="restablecer-confirm-password" className="block text-sm mb-1 font-medium text-gray-700">Confirmar Contraseña</label>
             <input
+              id="restablecer-confirm-password"
               type={showConfirmPassword ? "text" : "password"}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              name="restablecer-contrasena-page-input-90" onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
             <button

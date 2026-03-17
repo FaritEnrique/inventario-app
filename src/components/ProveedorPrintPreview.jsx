@@ -2,31 +2,25 @@ import React from "react";
 import { buildApiUrl } from "../api/apiFetch";
 
 const PrintField = ({ label, value }) => (
-  <div className="py-2 break-inside-avoid">
+  <div className="break-inside-avoid py-2">
     <p className="text-sm font-semibold text-gray-600">{label}</p>
-    <p className="text-gray-800 text-md">{value || "No especificado"}</p>
+    <p className="text-md text-gray-800">{value || "No especificado"}</p>
   </div>
 );
 
 const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
-  const handlePrint = async () => { // Make it async
-    const printArea = document.getElementById('print-area');
+  const handlePrint = async () => {
+    const printArea = document.getElementById("print-area");
+
     if (!printArea) {
       console.error("Print area not found!");
       return;
     }
 
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      alert("No hay sesión activa. Por favor, inicia sesión.");
-      return;
-    }
-
     try {
-      // 1. Hardcode Tailwind CSS CDN link
-      const tailwindCssLink = '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
+      const tailwindCssLink =
+        '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
 
-      // 2. Construct the full HTML document
       const fullHtmlContent = `
         <!DOCTYPE html>
         <html>
@@ -35,30 +29,28 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
           ${tailwindCssLink}
           <style>
             body {
-              font-family: sans-serif; /* Basic font */
+              font-family: sans-serif;
               margin: 0;
               padding: 0;
             }
-            /* Override any conflicting styles and apply print-specific ones */
             @page {
               size: A4;
-              margin: 0; /* Anulamos márgenes de la impresora */
+              margin: 0;
             }
             body {
               margin: 0 !important;
               padding: 0 !important;
             }
             #print-area {
-              padding: 2.5mm 3mm !important; /* Top/Bottom 2.5mm, Left/Right 3mm */
+              padding: 2.5mm 3mm !important;
               box-sizing: border-box !important;
             }
-            #print-area h2 { /* Target the main title */
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+            #print-area h2 {
+              margin-top: 0 !important;
+              padding-top: 0 !important;
             }
-            /* Ensure columns-2 and gap-x-12 work */
             .columns-2 { column-count: 2 !important; }
-            .gap-x-12 { column-gap: 3rem !important; } /* 3rem = 48px */
+            .gap-x-12 { column-gap: 3rem !important; }
           </style>
         </head>
         <body>
@@ -67,13 +59,12 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
         </html>
       `;
 
-      // 3. Send the full HTML document to the backend
-      const response = await fetch(buildApiUrl('pdf/generate-from-html'), {
-        method: 'POST',
+      const response = await fetch(buildApiUrl("pdf/generate-from-html"), {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ htmlContent: fullHtmlContent }),
       });
 
@@ -83,50 +74,50 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
 
       const pdfBlob = await response.blob();
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
+      window.open(pdfUrl, "_blank");
       URL.revokeObjectURL(pdfUrl);
-
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Error al generar el PDF. Por favor, inténtalo de nuevo.");
+      alert("Error al generar el PDF. Por favor, intentalo de nuevo.");
     }
   };
 
   return (
-    <div className="text-gray-900 bg-white">
-      {/* Removed the inline <style> block */}
-
+    <div className="bg-white text-gray-900">
       <div id="print-area" className="px-20">
-        <h2 className="text-3xl font-bold text-center text-gray-800">
+        <h2 className="text-center text-3xl font-bold text-gray-800">
           Datos de Proveedor
         </h2>
 
-        <h3 className="pb-2 mb-4 text-xl font-semibold text-gray-700 border-b">
-          Datos de Gestión Interna
+        <h3 className="mb-4 border-b pb-2 text-xl font-semibold text-gray-700">
+          Datos de Gestion Interna
         </h3>
         <div className="columns-2 gap-x-12">
           <PrintField label="RUC" value={proveedor.ruc} />
-          <PrintField label="Razón Social" value={proveedor.razonSocial} />
-          <PrintField label="Dirección Completa" value={proveedor.direccion} />
-          <PrintField label="Teléfono" value={proveedor.telefono} />
+          <PrintField label="Razon Social" value={proveedor.razonSocial} />
+          <PrintField label="Direccion Completa" value={proveedor.direccion} />
+          <PrintField label="Telefono" value={proveedor.telefono} />
           <PrintField label="Representante" value={proveedor.representante} />
-          <PrintField label="Persona de Contacto" value={proveedor.contacto} />
           <PrintField
-            label="Correo Electrónico"
+            label="Persona de Contacto"
+            value={proveedor.contacto}
+          />
+          <PrintField
+            label="Correo Electronico"
             value={proveedor.correoElectronico}
           />
           <PrintField
             label="Proveedor Activo"
-            value={proveedor.activo ? "Sí" : "No"}
+            value={proveedor.activo ? "Si" : "No"}
           />
         </div>
 
-        <h3 className="pb-2 mt-4 mb-4 text-xl font-semibold text-gray-700 border-b">
+        <h3 className="mb-4 mt-4 border-b pb-2 text-xl font-semibold text-gray-700">
           Datos Obtenidos de SUNAT
         </h3>
         <div className="columns-2 gap-x-12">
           <PrintField label="Estado" value={proveedor.estado} />
-          <PrintField label="Condición" value={proveedor.condicion} />
+          <PrintField label="Condicion" value={proveedor.condicion} />
           <PrintField label="Tipo" value={proveedor.tipo} />
           <PrintField
             label="Act. CIIU3 Principal"
@@ -145,11 +136,11 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
             value={proveedor.nroTrabajadores}
           />
           <PrintField
-            label="Periodo Publicación"
+            label="Periodo Publicacion"
             value={proveedor.periodoPublicacion}
           />
           <PrintField
-            label="Tipo Facturación"
+            label="Tipo Facturacion"
             value={proveedor.tipoFacturacion}
           />
           <PrintField
@@ -167,19 +158,18 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
         </div>
       </div>
 
-      {/* Botones de acción - se ocultan al imprimir */}
-      <div className="flex justify-end p-4 bg-gray-100 border-t print:hidden">
+      <div className="print:hidden flex justify-end border-t bg-gray-100 p-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2 mr-4 text-sm font-semibold text-gray-700 transition-colors duration-200 bg-gray-200 rounded-md hover:bg-gray-300"
+          className="mr-4 rounded-md bg-gray-200 px-6 py-2 text-sm font-semibold text-gray-700 transition-colors duration-200 hover:bg-gray-300"
         >
           Cerrar
         </button>
         <button
           type="button"
           onClick={handlePrint}
-          className="px-6 py-2 text-sm font-semibold text-white transition-colors duration-200 bg-blue-600 rounded-md hover:bg-blue-700"
+          className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700"
         >
           Imprimir
         </button>

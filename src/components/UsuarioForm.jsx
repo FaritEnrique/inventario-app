@@ -9,18 +9,9 @@ const rolesList = [
   "OTROS",
 ];
 
-// 🎯 SOLUCIÓN: Definición de los Rangos fijos (ENUM de Prisma)
-const rangosFijos = [
-  { id: 1, nombre: "UNICO" },
-  { id: 2, nombre: "DOBLE" },
-  { id: 3, nombre: "MULTIPLE" },
-];
-// ----------------------------------------
-
 const UsuarioForm = ({
   initialValues = null,
   areas = [],
-  // 💡 Ya no se necesita 'rangos' como prop
   onCancel = () => {},
   onSave = async () => {},
   disableAdminRole = false,
@@ -31,7 +22,6 @@ const UsuarioForm = ({
     password: "",
     cargo: "",
     areaId: "",
-    rangoId: "", // Mantener el estado
     activo: true,
     rol: "OTROS",
   });
@@ -43,7 +33,6 @@ const UsuarioForm = ({
         ...initialValues,
         password: "",
         areaId: initialValues.areaId ?? "",
-        rangoId: initialValues.rangoId ?? "",
         activo:
           typeof initialValues.activo === "boolean"
             ? initialValues.activo
@@ -65,8 +54,7 @@ const UsuarioForm = ({
       !form.name?.trim() ||
       !form.email?.trim() ||
       !form.cargo?.trim() ||
-      !form.areaId ||
-      !form.rangoId // Validar que se seleccionó un rango
+      !form.areaId
     ) {
       return alert("Por favor completa los campos obligatorios.");
     }
@@ -123,21 +111,6 @@ const UsuarioForm = ({
         {areas.map((a) => (
           <option key={a.id} value={a.id}>
             {a.nombre}
-          </option>
-        ))}
-      </select>
-      <select
-        name="rangoId"
-        value={form.rangoId}
-        onChange={handleChange}
-        className="p-2 border rounded md:col-span-1"
-        required
-      >
-        <option value="">-- Rango --</option>
-        {/* 🎯 Usando la constante rangosFijos */}
-        {rangosFijos.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.nombre}
           </option>
         ))}
       </select>

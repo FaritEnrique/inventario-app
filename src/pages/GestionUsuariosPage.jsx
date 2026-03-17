@@ -17,10 +17,13 @@ const GestionUsuariosPage = () => {
     crearUsuario,
     eliminarUsuario,
     actualizarUsuario,
+    toggleActivo,
     page,
     totalPages,
     setPage,
     setSearch,
+    includeInactive,
+    setIncludeInactive,
     cargarUsuarios,
   } = useUsers();
   const { user: currentUser } = useAuth();
@@ -105,6 +108,16 @@ const GestionUsuariosPage = () => {
     );
   };
 
+  const handleReactivate = async (userId, userName) => {
+    try {
+      await toggleActivo(userId, true);
+      toast.success(`${userName} fue reactivado correctamente`);
+      cargarUsuarios();
+    } catch (error) {
+      toast.error(error.message || "Error al reactivar el usuario");
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
@@ -124,8 +137,23 @@ const GestionUsuariosPage = () => {
           placeholder="Buscar por nombre, codigo o email..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
+          name="gestion-usuarios-page-input-135" onChange={(event) => setSearchTerm(event.target.value)}
         />
+      </div>
+
+      <div className="mb-4 flex items-center gap-2">
+        <input
+          id="includeInactive"
+          type="checkbox"
+          checked={includeInactive}
+          onChange={(event) => {
+            setIncludeInactive(event.target.checked);
+            setPage(1);
+          }}
+        />
+        <label htmlFor="includeInactive" className="text-sm text-gray-700">
+          Mostrar usuarios inactivos
+        </label>
       </div>
 
       {cargandoUsuarios ? (
@@ -184,14 +212,25 @@ const GestionUsuariosPage = () => {
                   >
                     Editar
                   </button>
-                  <button
-                    onClick={() =>
-                      handleDeactivate(user.id, user.name || user.nombre)
-                    }
-                    className="rounded bg-red-500 px-4 py-2 text-white"
-                  >
-                    Desactivar
-                  </button>
+                  {user.activo ? (
+                    <button
+                      onClick={() =>
+                        handleDeactivate(user.id, user.name || user.nombre)
+                      }
+                      className="rounded bg-red-500 px-4 py-2 text-white"
+                    >
+                      Desactivar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        handleReactivate(user.id, user.name || user.nombre)
+                      }
+                      className="rounded bg-blue-600 px-4 py-2 text-white"
+                    >
+                      Reactivar
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -232,7 +271,6 @@ const GestionUsuariosPage = () => {
               email: usuarioAEditar.email,
               cargo: usuarioAEditar.cargo,
               areaId: usuarioAEditar.areaId,
-              rangoId: usuarioAEditar.rangoId,
               activo: usuarioAEditar.activo,
               rol: usuarioAEditar.rol,
             }}

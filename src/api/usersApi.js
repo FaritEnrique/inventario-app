@@ -16,10 +16,11 @@ const serializeUserPayload = (usuario = {}) => {
 
 const usersApi = {
   // obtenerTodos acepta un objeto opcional { page, search }
-  obtenerTodos: async ({ page = 1, search = '' } = {}) => {
+  obtenerTodos: async ({ page = 1, search = '', includeInactive = false } = {}) => {
     const q = [];
     if (page) q.push(`page=${page}`);
     if (search) q.push(`search=${encodeURIComponent(search)}`);
+    if (includeInactive) q.push('includeInactive=true');
     const query = q.length ? `?${q.join('&')}` : '';
     // backend puede devolver array o { usuarios, totalPages, currentPage, totalItems }
     return apiFetch(`usuarios${query}`);

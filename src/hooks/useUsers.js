@@ -8,6 +8,7 @@ const useUsers = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   const cargarUsuarios = useCallback(async () => {
     const storedUser = sessionStorage.getItem("user");
@@ -22,7 +23,7 @@ const useUsers = () => {
     setError(null);
 
     try {
-      const res = await usersApi.obtenerTodos({ page, search });
+      const res = await usersApi.obtenerTodos({ page, search, includeInactive });
 
       const normalized = Array.isArray(res)
         ? { usuarios: res, totalPages: 1, currentPage: 1 }
@@ -50,7 +51,7 @@ const useUsers = () => {
     } finally {
       setCargando(false);
     }
-  }, [page, search]);
+  }, [page, search, includeInactive]);
 
   useEffect(() => {
     cargarUsuarios();
@@ -140,8 +141,10 @@ const useUsers = () => {
     page,
     totalPages,
     search,
+    includeInactive,
     setPage,
     setSearch,
+    setIncludeInactive,
     cargarUsuarios,
     crearUsuario,
     actualizarUsuario,

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import solicitudesCotizacionApi from '../api/solicitudesCotizacionApi';
-import { toast } from 'react-toastify';
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import solicitudesCotizacionApi from "../api/solicitudesCotizacionApi";
 
-const useSolicitudesCotizacion = () => {
+const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -14,27 +14,32 @@ const useSolicitudesCotizacion = () => {
       setSolicitudes(data);
       setError(null);
     } catch (err) {
-      console.error('Error cargando solicitudes de cotización:', err);
-      setError('No se pudieron cargar las solicitudes de cotización.');
-      toast.error('Error al cargar solicitudes de cotización.');
+      console.error("Error cargando solicitudes de cotizacion:", err);
+      setError("No se pudieron cargar las solicitudes de cotizacion.");
+      toast.error("Error al cargar solicitudes de cotizacion.");
     } finally {
       setCargando(false);
     }
   };
 
   useEffect(() => {
-    cargarSolicitudes();
-  }, []);
+    if (autoLoad) {
+      cargarSolicitudes();
+    } else {
+      setCargando(false);
+    }
+  }, [autoLoad]);
 
   const crearSolicitud = async (solicitud) => {
     try {
       const nuevaSolicitud = await solicitudesCotizacionApi.crear(solicitud);
       setSolicitudes((prev) => [...prev, nuevaSolicitud]);
-      toast.success('Solicitud de cotización creada con éxito!');
+      toast.success("Solicitud de cotizacion creada con exito.");
       return nuevaSolicitud;
     } catch (err) {
-      console.error('Error creando solicitud de cotización:', err);
-      const errorMessage = err.message || 'Error al crear solicitud de cotización.';
+      console.error("Error creando solicitud de cotizacion:", err);
+      const errorMessage =
+        err.message || "Error al crear solicitud de cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -42,15 +47,21 @@ const useSolicitudesCotizacion = () => {
 
   const actualizarSolicitud = async (id, datos) => {
     try {
-      const solicitudActualizada = await solicitudesCotizacionApi.actualizar(id, datos);
-      setSolicitudes((prev) =>
-        prev.map((s) => (s.id === id ? solicitudActualizada : s))
+      const solicitudActualizada = await solicitudesCotizacionApi.actualizar(
+        id,
+        datos
       );
-      toast.success('Solicitud de cotización actualizada con éxito!');
+      setSolicitudes((prev) =>
+        prev.map((solicitud) =>
+          solicitud.id === id ? solicitudActualizada : solicitud
+        )
+      );
+      toast.success("Solicitud de cotizacion actualizada con exito.");
       return solicitudActualizada;
     } catch (err) {
-      console.error('Error actualizando solicitud de cotización:', err);
-      const errorMessage = err.message || 'Error al actualizar solicitud de cotización.';
+      console.error("Error actualizando solicitud de cotizacion:", err);
+      const errorMessage =
+        err.message || "Error al actualizar solicitud de cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -59,11 +70,14 @@ const useSolicitudesCotizacion = () => {
   const eliminarSolicitud = async (id) => {
     try {
       await solicitudesCotizacionApi.eliminar(id);
-      setSolicitudes((prev) => prev.filter((s) => s.id !== id));
-      toast.success('Solicitud de cotización eliminada con éxito!');
+      setSolicitudes((prev) =>
+        prev.filter((solicitud) => solicitud.id !== id)
+      );
+      toast.success("Solicitud de cotizacion eliminada con exito.");
     } catch (err) {
-      console.error('Error eliminando solicitud de cotización:', err);
-      const errorMessage = err.message || 'Error al eliminar solicitud de cotización.';
+      console.error("Error eliminando solicitud de cotizacion:", err);
+      const errorMessage =
+        err.message || "Error al eliminar solicitud de cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }

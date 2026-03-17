@@ -65,7 +65,7 @@ const GestionRangosPage = () => {
                             className="flex-1 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Nombre del Rango"
                             value={nombreRango}
-                            onChange={(e) => setNombreRango(e.target.value)}
+                            name="gestion-rangos-page-input-63" onChange={(e) => setNombreRango(e.target.value)}
                             required
                         />
                         <button

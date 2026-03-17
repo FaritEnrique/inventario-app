@@ -42,6 +42,7 @@ const initialProducto = {
   nombre: "",
   descripcion: "",
   unidadMedida: "",
+  valorReferencial: 0,
   stock: 0,
   imagenFile: null,
   imagenUrl: "",
@@ -122,7 +123,9 @@ const GestionProductosPage = () => {
         type === "checkbox"
           ? checked
           : type === "number"
-          ? parseFloat(value)
+          ? value === ""
+            ? ""
+            : parseFloat(value)
           : value,
     }));
   }, []);
@@ -144,6 +147,10 @@ const GestionProductosPage = () => {
         formData.append("nombre", nombre);
         formData.append("unidadMedida", unidadMedida);
         formData.append("tipoProductoId", tipoProductoId);
+        formData.append(
+          "valorReferencial",
+          Number(productoActual.valorReferencial || 0)
+        );
         if (productoActual.descripcion)
           formData.append("descripcion", productoActual.descripcion);
         if (productoActual.marcaId)
@@ -200,6 +207,7 @@ const GestionProductosPage = () => {
     setProductoActual({
       ...producto,
       stock: parseFloat(producto.stock),
+      valorReferencial: Number(producto.valorReferencial || 0),
       marcaId: producto.marcaId ? String(producto.marcaId) : "",
       tipoProductoId: String(producto.tipoProductoId),
       activo: typeof producto.activo === "boolean" ? producto.activo : true,
@@ -435,22 +443,48 @@ const GestionProductosPage = () => {
             />
           </div>
 
+          <div>
+            <label
+              htmlFor="valorReferencial"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Valor referencial
+            </label>
+            <input
+              type="number"
+              id="valorReferencial"
+              name="valorReferencial"
+              min="0"
+              step="0.01"
+              value={productoActual.valorReferencial}
+              onChange={handleChange}
+              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Se usa como base para requerimientos cuando aun no hay historial de compra.
+            </p>
+          </div>
+
           {/* Stock */}
           <div>
             <label
               htmlFor="stock"
               className="block text-sm font-medium text-gray-700"
             >
-              Stock
+              Stock actual
             </label>
             <input
               type="number"
               id="stock"
               name="stock"
               value={productoActual.stock}
-              onChange={handleChange}
+              readOnly
+              disabled
               className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              El stock se muestra como referencia y no se edita desde este formulario.
+            </p>
           </div>
 
           {/* Descripción */}
@@ -559,7 +593,7 @@ const GestionProductosPage = () => {
           type="text"
           placeholder="Buscar producto..."
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          name="gestion-productos-page-input-592" onChange={(e) => setBusqueda(e.target.value)}
           className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
@@ -581,6 +615,7 @@ const GestionProductosPage = () => {
                 <th className="px-4 py-2 text-left border">Nombre</th>
                 <th className="px-4 py-2 border">Tipo</th>
                 <th className="px-4 py-2 border">Marca</th>
+                <th className="px-4 py-2 border">Valor referencial</th>
                 <th className="px-4 py-2 border">Stock</th>
                 <th className="px-4 py-2 border">Acciones</th>
               </tr>
@@ -598,6 +633,9 @@ const GestionProductosPage = () => {
                   </td>
                   <td className="px-4 py-2 border">
                     {producto.marca?.nombre || "-"}
+                  </td>
+                  <td className="px-4 py-2 border">
+                    S/ {Number(producto.valorReferencial || 0).toFixed(2)}
                   </td>
                   <td className="px-4 py-2 border">{producto.stock}</td>
                   <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
@@ -695,6 +733,10 @@ const GestionProductosPage = () => {
               <p>
                 <strong className="font-semibold">Unidad de Medida:</strong>{" "}
                 {productoEnDetalle.unidadMedida}
+              </p>
+              <p>
+                <strong className="font-semibold">Valor Referencial:</strong>{" "}
+                S/ {Number(productoEnDetalle.valorReferencial || 0).toFixed(2)}
               </p>
               <p>
                 <strong className="font-semibold">Stock Actual:</strong>{" "}

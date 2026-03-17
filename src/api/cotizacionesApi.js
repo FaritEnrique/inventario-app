@@ -19,6 +19,11 @@ const cotizacionesApi = {
       body: JSON.stringify(cotizacion),
     });
   },
+  adjudicar: async (id) => {
+    return apiFetch(`cotizaciones/${id}/adjudicar`, {
+      method: 'POST',
+    });
+  },
   eliminar: async (id) => {
     return apiFetch(`cotizaciones/${id}`, {
       method: 'DELETE',

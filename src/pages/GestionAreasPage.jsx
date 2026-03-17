@@ -140,7 +140,7 @@ const GestionAreasPage = () => {
           type="text"
           placeholder="Nombre del área (Nivel Gerencia)"
           value={formData.nombre}
-          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+          name="gestion-areas-page-input-139" onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
           className="p-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 dark:placeholder-gray-400"
           required
         />
@@ -148,6 +148,7 @@ const GestionAreasPage = () => {
           type="text"
           placeholder="Subdivisión (opcional, ej: Logística)"
           value={formData.branchDescription}
+          name="gestion-areas-page-input-147"
           onChange={(e) =>
             setFormData({ ...formData, branchDescription: e.target.value })
           }
@@ -176,7 +177,7 @@ const GestionAreasPage = () => {
         type="text"
         placeholder="🔍 Buscar área por código o nombre..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        name="gestion-areas-page-input-175" onChange={(e) => setSearch(e.target.value)}
         className="w-full p-3 mb-6 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 dark:placeholder-gray-400"
       />
 

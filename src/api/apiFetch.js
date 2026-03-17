@@ -22,10 +22,14 @@ export const buildApiUrl = (endpoint) => {
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
+    const isFormData = options.body instanceof FormData;
     const headers = {
-      "Content-Type": "application/json",
       ...(options.headers || {}),
     };
+
+    if (!isFormData && !("Content-Type" in headers)) {
+      headers["Content-Type"] = "application/json";
+    }
 
     const res = await fetch(buildApiUrl(endpoint), {
       headers,

@@ -1,24 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
-import requerimientosApi from '../api/requerimientosApi';
+import { useCallback, useEffect, useState } from "react";
+import requerimientosApi from "../api/requerimientosApi";
 
 const useRequerimientos = () => {
   const [requerimientos, setRequerimientos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
-
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    currentPage: 1,
+    totalItems: 0,
+  });
   const [prioridades, setPrioridades] = useState([]);
   const [cargandoPrioridades, setCargandoPrioridades] = useState(false);
-  const [errorPrioridades, setErrorPrioridades] = useState(null);
 
-  const fetchRequerimientos = useCallback(async (buscar = '') => {
+  const fetchRequerimientos = useCallback(async (options = {}) => {
     setCargando(true);
     try {
-      const data = await requerimientosApi.obtenerTodos(buscar);
-      // Assuming the API returns { data: [...] }
-      setRequerimientos(data.data || []);
+      const data = await requerimientosApi.obtenerTodos(options);
+      setRequerimientos(Array.isArray(data?.data) ? data.data : []);
+      setPagination({
+        totalPages: data?.totalPages || 1,
+        currentPage: data?.currentPage || 1,
+        totalItems: data?.totalItems || 0,
+      });
       setError(null);
+      return data;
     } catch (err) {
       setError(err.message);
+      throw err;
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  const fetchTray = useCallback(async (nivel, options = {}) => {
+    setCargando(true);
+    try {
+      const data = await requerimientosApi.obtenerBandeja(nivel, options);
+      setError(null);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setCargando(false);
     }
@@ -32,59 +55,63 @@ const useRequerimientos = () => {
       return data;
     } catch (err) {
       setError(err.message);
+      throw err;
     } finally {
       setCargando(false);
     }
   }, []);
 
-  const crearRequerimiento = async (datos) => {
+  const crearRequerimiento = useCallback(async (datos) => {
     const nuevo = await requerimientosApi.crear(datos);
-    setRequerimientos((prev) => [...prev, nuevo]);
-  };
+    return nuevo;
+  }, []);
 
-  const actualizarRequerimiento = async (id, datos) => {
-    const actualizado = await requerimientosApi.actualizar(id, datos);
-    setRequerimientos((prev) => 
-      prev.map((req) => (req.id === id ? actualizado : req))
-    );
-  };
+  const actualizarRequerimiento = useCallback(async (id, datos) => {
+    return requerimientosApi.actualizar(id, datos);
+  }, []);
 
-  const eliminarRequerimiento = async (id) => {
-    await requerimientosApi.eliminar(id);
-    setRequerimientos((prev) => prev.filter((req) => req.id !== id));
-  };
+  const eliminarRequerimiento = useCallback(async (id) => {
+    return requerimientosApi.eliminar(id);
+  }, []);
+
+  const procesarAprobacion = useCallback(async (id, datos) => {
+    return requerimientosApi.procesarAprobacion(id, datos);
+  }, []);
+
+  const buscarCatalogoProductos = useCallback(async (options = {}) => {
+    return requerimientosApi.buscarCatalogoProductos(options);
+  }, []);
 
   const fetchPrioridades = useCallback(async () => {
     setCargandoPrioridades(true);
     try {
       const data = await requerimientosApi.obtenerPrioridades();
-      // Si la API devuelve null o algo inesperado, asignamos array vacío
       setPrioridades(Array.isArray(data) ? data : []);
-      setErrorPrioridades(null);
-    } catch (err) {
-      setErrorPrioridades(err.message);
-      setPrioridades([]); // Reseteamos en caso de error
+      return data;
     } finally {
       setCargandoPrioridades(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPrioridades();
+    fetchPrioridades().catch(() => {});
   }, [fetchPrioridades]);
 
   return {
     requerimientos,
     cargando,
     error,
+    pagination,
+    prioridades,
+    cargandoPrioridades,
     fetchRequerimientos,
+    fetchTray,
     getRequerimientoById,
     crearRequerimiento,
     actualizarRequerimiento,
     eliminarRequerimiento,
-    prioridades,
-    cargandoPrioridades,
-    errorPrioridades,
+    procesarAprobacion,
+    buscarCatalogoProductos,
     fetchPrioridades,
   };
 };
