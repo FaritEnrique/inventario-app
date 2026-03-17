@@ -21,15 +21,10 @@ Frontend del sistema de inventario, abastecimiento y compras construido con Reac
 
 ### Requerimientos
 
-Estado actual:
-
-- modulo visible y conectado
-- listado operativo
-- creacion operativa
-- edicion operativa
-- detalle operativo
-- bandejas de aprobacion activas
-- impresion simple operativa
+- Modulo visible y conectado
+- Listado, creacion, detalle y edicion operativos
+- Bandejas de aprobacion activas
+- Guidance y empty states ajustados para actor efectivo
 
 Rutas activas:
 
@@ -42,42 +37,35 @@ Rutas activas:
 - `/requerimientos/bandeja/gerencia-administracion`
 - `/requerimientos/bandeja/gerencia-general`
 
-Archivos clave:
+### Logistica / Cotizaciones
 
-- `src/App.jsx`
-- `src/pages/RequerimientosPage.jsx`
-- `src/pages/CrearRequerimientoPage.jsx`
-- `src/pages/EditarRequerimientoPage.jsx`
-- `src/pages/RequerimientoDetallePage.jsx`
-- `src/pages/RequerimientosBandejaPage.jsx`
-- `src/hooks/useRequerimientos.js`
-- `src/api/requerimientosApi.js`
+- Bandeja de jefatura operativa
+- Bandeja de operador operativa
+- Detalle logístico operativo
+- Comparativo embebido operativo
+- Adjudicacion conectada al flujo principal
 
-### Cotizaciones
+La pagina separada de comparacion ya no forma parte del circuito activo.
 
-Estado actual:
+### Inventario / Abastecimiento
 
-- APIs frontend existentes
-- hooks existentes
-- sin paginas ni rutas activas todavia
+- Ordenes de compra: listado y detalle documental
+- Nota de ingreso: listado y detalle documental
+- Nota de salida: listado y detalle documental
+- Reservas: listado, detalle, liberar y despachar
+- Recepciones, stock, movimientos, kardex y operaciones: operativos
 
-Archivos base ya presentes:
+### Cuenta del usuario
 
-- `src/api/solicitudesCotizacionApi.js`
-- `src/api/cotizacionesApi.js`
-- `src/hooks/useSolicitudesCotizacion.js`
-- `src/hooks/useCotizaciones.js`
-
-Lectura recomendada del estado actual:
-
-- la capa tecnica existe
-- el modulo visual todavia no esta cerrado
-- antes de agregar pantallas conviene alinear semantica y contratos backend
+- Solicitar restablecimiento
+- Restablecer contrasena por token
+- Cambiar contrasena autenticado desde dashboard
 
 ## Estructura relevante
 
 ```text
 inventario-app/
+  public/
   src/
     api/
     components/
@@ -89,21 +77,43 @@ inventario-app/
 
 ## Navegacion y permisos
 
-- `Requerimientos` ya usa guardas de ruta para bandejas
-- la autoridad real sigue siendo el backend
-- los helpers de permisos de UI deben mantenerse alineados con los permisos efectivos del backend
+- El dashboard es el hub principal actual
+- La autoridad real sigue siendo el backend
+- Los helpers de permisos en UI no deben abrir permisos nuevos ni duplicar reglas frágiles
 
-## Objetivo de la siguiente etapa
+## Variables de entorno
 
-Para `Cotizaciones`, la siguiente fase razonable no es redisenar la app sino:
+En desarrollo local:
 
-1. cerrar semantica backend
-2. cerrar contratos y permisos
-3. exponer frontend operativo minimo
-4. agregar comparacion y adjudicacion
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+## Despliegue en Netlify
+
+El frontend esta pensado para desplegarse como SPA.
+
+Se usa `BrowserRouter`, por lo que Netlify necesita fallback de rutas a `index.html`.
+
+Eso ya queda cubierto con:
+
+- `public/_redirects`
+
+Contenido:
+
+```txt
+/* /index.html 200
+```
+
+Esto es importante para rutas como:
+
+- `/reset-password`
+- `/dashboard`
+- `/ordenes-compra/:id`
+- cualquier otra ruta directa abierta desde navegador o desde un enlace de correo
 
 ## Recomendaciones de trabajo
 
 - reutilizar hooks y APIs existentes antes de crear nuevas capas
-- mantener coherencia entre badges, permisos, rutas y respuestas backend
-- validar `npm run build` despues de cualquier cambio de modulo
+- validar `npm run build` despues de tocar rutas, layout o bundling
+- mantener sobria la navegacion principal; no saturar el header con acciones secundarias
