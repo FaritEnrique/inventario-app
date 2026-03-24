@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { toast } from "react-toastify";
 import apiFetch from "../api/apiFetch";
+import { normalizeSessionUser } from "../utils/userRoles";
 
 const AuthContext = createContext();
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
@@ -25,9 +26,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const applySessionState = (usuario) => {
-    sessionStorage.setItem("user", JSON.stringify(usuario));
+    const normalizedUser = normalizeSessionUser(usuario);
+    sessionStorage.setItem("user", JSON.stringify(normalizedUser));
     setIsAuthenticated(true);
-    setUser(usuario);
+    setUser(normalizedUser);
   };
 
   const resetInactivityTimer = () => {
@@ -79,8 +81,8 @@ export const AuthProvider = ({ children }) => {
       const storedUser = sessionStorage.getItem("user");
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
-        } catch (error) {
+          setUser(normalizeSessionUser(JSON.parse(storedUser)));
+        } catch {
           sessionStorage.removeItem("user");
         }
       }
@@ -176,6 +178,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

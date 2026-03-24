@@ -1,0 +1,72 @@
+const toArray = (value) => (Array.isArray(value) ? value : []);
+
+const normalizeAreaId = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+};
+
+export const getActiveUserRangos = (user) =>
+  toArray(user?.userRangos || user?.rangos)
+    .filter((rango) => rango && rango.activo !== false && rango.rol)
+    .map((rango) => ({
+      ...rango,
+      areaId: normalizeAreaId(rango.areaId),
+    }));
+
+export const getActiveRoleAssignments = (user) => {
+  const assignments = [];
+
+  if (user?.rol) {
+    assignments.push({
+      rol: user.rol,
+      areaId: normalizeAreaId(user?.areaId || user?.area?.id),
+      source: "primary",
+    });
+  }
+
+  for (const rango of getActiveUserRangos(user)) {
+    assignments.push({
+      rol: rango.rol,
+      areaId: rango.areaId,
+      source: "rango",
+    });
+  }
+
+  return assignments.filter((assignment, index, collection) => {
+    const key = `${assignment.source}:${assignment.rol}:${assignment.areaId ?? "none"}`;
+    return (
+      collection.findIndex(
+        (current) =>
+          `${current.source}:${current.rol}:${current.areaId ?? "none"}` === key
+      ) === index
+    );
+  });
+};
+
+export const getActiveRoles = (user) =>
+  [...new Set(getActiveRoleAssignments(user).map((assignment) => assignment.rol))];
+
+export const hasRole = (user, role) =>
+  Boolean(role) && getActiveRoles(user).includes(role);
+
+export const hasAnyRole = (user, roles = []) =>
+  toArray(roles).some((role) => hasRole(user, role));
+
+export const hasAreaRole = (user, role, areaId) => {
+  const normalizedAreaId = normalizeAreaId(areaId);
+  if (!role || !normalizedAreaId) return false;
+
+  return getActiveRoleAssignments(user).some(
+    (assignment) =>
+      assignment.rol === role && assignment.areaId === normalizedAreaId
+  );
+};
+
+export const normalizeSessionUser = (user) => {
+  if (!user) return null;
+
+  return {
+    ...user,
+    userRangos: getActiveUserRangos(user),
+  };
+};

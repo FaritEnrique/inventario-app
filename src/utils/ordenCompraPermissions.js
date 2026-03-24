@@ -1,8 +1,10 @@
-const privilegedAreaRoles = new Set([
+import { hasAnyRole } from "./userRoles";
+
+const privilegedAreaRoles = [
   "ADMINISTRADOR_SISTEMA",
   "GERENTE_GENERAL",
   "GERENTE_ADMINISTRACION",
-]);
+];
 
 const normalize = (value) =>
   String(value || "")
@@ -33,10 +35,10 @@ export const canViewOrdenesCompra = (user) =>
   Boolean(user?.id && user?.activo !== false);
 
 export const canApproveOrdenCompra = (user) =>
-  user?.rol === "ADMINISTRADOR_SISTEMA" || user?.rol === "GERENTE_GENERAL";
+  hasAnyRole(user, ["ADMINISTRADOR_SISTEMA", "GERENTE_GENERAL"]);
 
 export const canManageOrdenCompraLifecycle = (user) =>
-  privilegedAreaRoles.has(user?.rol) || isAdministracionArea(user);
+  hasAnyRole(user, privilegedAreaRoles) || isAdministracionArea(user);
 
 export default {
   canViewOrdenesCompra,

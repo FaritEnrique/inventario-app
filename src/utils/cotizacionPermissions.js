@@ -1,3 +1,5 @@
+import { hasRole } from "./userRoles";
+
 const technicalOverrideRoles = new Set(["ADMINISTRADOR_SISTEMA"]);
 
 const normalize = (value) =>
@@ -20,7 +22,7 @@ const isLogisticaScope = (rawValues = []) => {
 };
 
 export const isPrivilegedLogisticaRole = (user) =>
-  technicalOverrideRoles.has(user?.rol);
+  technicalOverrideRoles.has(user?.rol) || hasRole(user, "ADMINISTRADOR_SISTEMA");
 
 export const isLogisticaAreaUser = (user) =>
   isLogisticaScope([
@@ -32,10 +34,10 @@ export const isLogisticaAreaUser = (user) =>
   ]);
 
 export const isLogisticaJefatura = (user) =>
-  user?.rol === "JEFE_AREA" && isLogisticaAreaUser(user);
+  hasRole(user, "JEFE_AREA") && isLogisticaAreaUser(user);
 
 export const isLogisticaOperador = (user) =>
-  user?.rol === "OTROS" && isLogisticaAreaUser(user);
+  hasRole(user, "OPERADOR") && isLogisticaAreaUser(user);
 
 export const canAccessCotizaciones = (user) =>
   isPrivilegedLogisticaRole(user) ||
@@ -46,7 +48,7 @@ export const canViewAllCotizacionesLogistica = (user) =>
   isPrivilegedLogisticaRole(user) || isLogisticaJefatura(user);
 
 export const canAssignCotizacionesLogistica = (user) =>
-  user?.rol === "ADMINISTRADOR_SISTEMA" || isLogisticaJefatura(user);
+  hasRole(user, "ADMINISTRADOR_SISTEMA") || isLogisticaJefatura(user);
 
 export const canAdjudicateCotizacionesLogistica = (user) =>
   canAssignCotizacionesLogistica(user);

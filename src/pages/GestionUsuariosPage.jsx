@@ -7,8 +7,22 @@ import { useAuth } from "../context/authContext";
 import useDebounce from "../hooks/useDebounce";
 import useUsers from "../hooks/useUsers";
 import areasApi from "../api/areasApi";
+import {
+  canAssignSystemAdminRole,
+  canCreateUsers,
+  canEditUsers,
+  canToggleUserStatus,
+} from "../utils/userManagementPermissions";
 
 Modal.setAppElement("#root");
+
+const getUserErrorMessage = (error, fallbackMessage) => {
+  if (Array.isArray(error?.validationErrors) && error.validationErrors.length) {
+    return error.validationErrors.join(" ");
+  }
+
+  return error?.message || fallbackMessage;
+};
 
 const GestionUsuariosPage = () => {
   const {
@@ -53,9 +67,10 @@ const GestionUsuariosPage = () => {
     fetchAreas();
   }, []);
 
-  const canManageAdminRole =
-    currentUser?.rol === "GERENTE_GENERAL" ||
-    currentUser?.rol === "ADMINISTRADOR_SISTEMA";
+  const canCreate = canCreateUsers(currentUser);
+  const canEdit = canEditUsers(currentUser);
+  const canToggleStatus = canToggleUserStatus(currentUser);
+  const canAssignAdminRole = canAssignSystemAdminRole(currentUser);
 
   const handleCrear = async (usuario) => {
     try {
@@ -64,12 +79,13 @@ const GestionUsuariosPage = () => {
       cargarUsuarios();
     } catch (error) {
       console.error(error);
-      toast.error(error.message || "Error al crear usuario.");
+      toast.error(getUserErrorMessage(error, "Error al crear usuario."));
       throw error;
     }
   };
 
   const handleEditClick = (user) => {
+    if (!canEdit) return;
     setUsuarioAEditar(user);
     setIsModalOpen(true);
   };
@@ -84,12 +100,16 @@ const GestionUsuariosPage = () => {
       setUsuarioAEditar(null);
       cargarUsuarios();
     } catch (error) {
-      toast.error(error.message || "No se pudieron guardar los cambios.");
+      toast.error(
+        getUserErrorMessage(error, "No se pudieron guardar los cambios.")
+      );
       throw error;
     }
   };
 
   const handleDeactivate = (userId, userName) => {
+    if (!canToggleStatus) return;
+
     toast.info(
       <ConfirmDeleteToast2
         message={`Estas seguro de que quieres desactivar a ${userName}? El usuario no podra acceder al sistema.`}
@@ -99,7 +119,9 @@ const GestionUsuariosPage = () => {
             toast.success("Usuario desactivado correctamente");
             cargarUsuarios();
           } catch (error) {
-            toast.error(error.message || "Error al desactivar el usuario");
+            toast.error(
+              getUserErrorMessage(error, "Error al desactivar el usuario")
+            );
           }
         }}
         closeToast={() => toast.dismiss()}
@@ -109,27 +131,36 @@ const GestionUsuariosPage = () => {
   };
 
   const handleReactivate = async (userId, userName) => {
+    if (!canToggleStatus) return;
+
     try {
       await toggleActivo(userId, true);
       toast.success(`${userName} fue reactivado correctamente`);
       cargarUsuarios();
     } catch (error) {
-      toast.error(error.message || "Error al reactivar el usuario");
+      toast.error(
+        getUserErrorMessage(error, "Error al reactivar el usuario")
+      );
     }
   };
 
   return (
     <div className="p-6">
       <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
-
-      <div className="mb-6">
-        <UsuarioForm
-          areas={areas}
-          onSave={handleCrear}
-          onCancel={() => {}}
-          disableAdminRole={!canManageAdminRole}
-        />
+      <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Solo `ADMINISTRADOR_SISTEMA` y `GERENTE_ADMINISTRACION` pueden crear, editar y cambiar el estado de usuarios.
       </div>
+
+      {canCreate ? (
+        <div className="mb-6">
+          <UsuarioForm
+            areas={areas}
+            onSave={handleCrear}
+            onCancel={() => {}}
+            disableAdminRole={!canAssignAdminRole}
+          />
+        </div>
+      ) : null}
 
       <div className="mb-4">
         <input
@@ -137,7 +168,8 @@ const GestionUsuariosPage = () => {
           placeholder="Buscar por nombre, codigo o email..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
-          name="gestion-usuarios-page-input-135" onChange={(event) => setSearchTerm(event.target.value)}
+          name="gestion-usuarios-page-input-135"
+          onChange={(event) => setSearchTerm(event.target.value)}
         />
       </div>
 
@@ -194,6 +226,25 @@ const GestionUsuariosPage = () => {
                       {user.area?.nombre || "N/A"}
                     </span>
                   </p>
+                  {Array.isArray(user.userRangos) &&
+                  user.userRangos.some((rango) => rango.activo !== false) ? (
+                    <p className="text-sm">
+                      Rangos adicionales:{" "}
+                      <span className="font-semibold text-slate-700">
+                        {user.userRangos
+                          .filter((rango) => rango.activo !== false)
+                          .map((rango) => {
+                            const areaNombre =
+                              areas.find(
+                                (area) =>
+                                  String(area.id) === String(rango.areaId)
+                              )?.nombre || `Area ${rango.areaId}`;
+                            return `${rango.rol} (${areaNombre})`;
+                          })
+                          .join(" | ")}
+                      </span>
+                    </p>
+                  ) : null}
                   <p className="text-sm">
                     Estado:{" "}
                     <span
@@ -205,33 +256,39 @@ const GestionUsuariosPage = () => {
                     </span>
                   </p>
                 </div>
-                <div className="mt-3 flex gap-2 md:mt-0">
-                  <button
-                    onClick={() => handleEditClick(user)}
-                    className="rounded bg-green-500 px-4 py-2 text-white"
-                  >
-                    Editar
-                  </button>
-                  {user.activo ? (
-                    <button
-                      onClick={() =>
-                        handleDeactivate(user.id, user.name || user.nombre)
-                      }
-                      className="rounded bg-red-500 px-4 py-2 text-white"
-                    >
-                      Desactivar
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() =>
-                        handleReactivate(user.id, user.name || user.nombre)
-                      }
-                      className="rounded bg-blue-600 px-4 py-2 text-white"
-                    >
-                      Reactivar
-                    </button>
-                  )}
-                </div>
+                {canEdit || canToggleStatus ? (
+                  <div className="mt-3 flex gap-2 md:mt-0">
+                    {canEdit ? (
+                      <button
+                        onClick={() => handleEditClick(user)}
+                        className="rounded bg-green-500 px-4 py-2 text-white"
+                      >
+                        Editar
+                      </button>
+                    ) : null}
+                    {canToggleStatus ? (
+                      user.activo ? (
+                        <button
+                          onClick={() =>
+                            handleDeactivate(user.id, user.name || user.nombre)
+                          }
+                          className="rounded bg-red-500 px-4 py-2 text-white"
+                        >
+                          Desactivar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleReactivate(user.id, user.name || user.nombre)
+                          }
+                          className="rounded bg-blue-600 px-4 py-2 text-white"
+                        >
+                          Reactivar
+                        </button>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -258,11 +315,11 @@ const GestionUsuariosPage = () => {
         </>
       )}
 
-      {usuarioAEditar && (
+      {usuarioAEditar && canEdit ? (
         <Modal
           isOpen={isModalOpen}
           onRequestClose={() => setIsModalOpen(false)}
-          style={{ content: { width: "450px", margin: "auto" } }}
+          style={{ content: { width: "720px", maxWidth: "95vw", margin: "auto" } }}
         >
           <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
           <UsuarioForm
@@ -273,14 +330,17 @@ const GestionUsuariosPage = () => {
               areaId: usuarioAEditar.areaId,
               activo: usuarioAEditar.activo,
               rol: usuarioAEditar.rol,
+              rangos: (usuarioAEditar.userRangos || []).filter(
+                (rango) => rango.activo !== false
+              ),
             }}
             areas={areas}
             onSave={handleSaveEdit}
             onCancel={() => setIsModalOpen(false)}
-            disableAdminRole={!canManageAdminRole}
+            disableAdminRole={!canAssignAdminRole}
           />
         </Modal>
-      )}
+      ) : null}
     </div>
   );
 };

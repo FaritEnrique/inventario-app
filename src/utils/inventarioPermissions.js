@@ -1,10 +1,12 @@
+import { hasAnyRole, hasRole } from "./userRoles";
+
 const privilegedRoles = new Set([
   "ADMINISTRADOR_SISTEMA",
   "GERENTE_GENERAL",
   "GERENTE_ADMINISTRACION",
 ]);
 
-const warehouseRoleCandidates = new Set(["JEFE_AREA", "OTROS"]);
+const warehouseRoleCandidates = new Set(["JEFE_AREA", "OPERADOR"]);
 const operationsManagerRoles = new Set(["GERENTE_FUNCIONAL", "GERENTE_GENERAL"]);
 
 const normalize = (value) =>
@@ -42,30 +44,30 @@ const isOperationsContext = (user = {}) => {
 };
 
 export const canOperateInventory = (user = {}) => {
-  if (privilegedRoles.has(user.rol)) return true;
-  if (warehouseRoleCandidates.has(user.rol) && isWarehouseContext(user)) {
+  if (hasAnyRole(user, [...privilegedRoles])) return true;
+  if (isWarehouseContext(user) && hasAnyRole(user, [...warehouseRoleCandidates])) {
     return true;
   }
-  if (operationsManagerRoles.has(user.rol) && isOperationsContext(user)) {
+  if (isOperationsContext(user) && hasAnyRole(user, [...operationsManagerRoles])) {
     return true;
   }
   return false;
 };
 
 export const canAdjustInventory = (user = {}) => {
-  if (privilegedRoles.has(user.rol)) return true;
-  if (isWarehouseContext(user) && warehouseRoleCandidates.has(user.rol)) {
+  if (hasAnyRole(user, [...privilegedRoles])) return true;
+  if (isWarehouseContext(user) && hasAnyRole(user, [...warehouseRoleCandidates])) {
     return true;
   }
-  if (operationsManagerRoles.has(user.rol) && isOperationsContext(user)) {
+  if (isOperationsContext(user) && hasAnyRole(user, [...operationsManagerRoles])) {
     return true;
   }
   return false;
 };
 
 export const canApprovePedidoInterno = (user = {}) => {
-  if (privilegedRoles.has(user.rol)) return true;
-  return user.rol === "JEFE_AREA";
+  if (hasAnyRole(user, [...privilegedRoles])) return true;
+  return hasRole(user, "JEFE_AREA");
 };
 
 export const canViewWarehouseTray = (user = {}) => canOperateInventory(user);

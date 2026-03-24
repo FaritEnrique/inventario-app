@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import { getActiveRoles } from "../utils/userRoles";
 
 const Header = () => {
   const { isAuthenticated, logout, user } = useAuth();
@@ -29,8 +30,13 @@ const Header = () => {
   ];
 
   const navigationLinks = isAuthenticated ? authenticatedLinks : publicLinks;
+  const activeRoles = getActiveRoles(user);
+  const roleSummary =
+    activeRoles.length > 1
+      ? `${user?.rol || activeRoles[0]} +${activeRoles.length - 1} rango(s)`
+      : user?.rol;
   const summaryText = isAuthenticated
-    ? [user?.cargo, user?.rol, user?.areaNombre].filter(Boolean).join(" | ")
+    ? [user?.cargo, roleSummary, user?.areaNombre].filter(Boolean).join(" | ")
     : "Gestiona requerimientos, inventario y seguimiento logistico desde una sola plataforma.";
 
   return (

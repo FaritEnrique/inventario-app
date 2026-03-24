@@ -1,23 +1,27 @@
-﻿export const canViewAllRequerimientos = (user) =>
-  ["ADMINISTRADOR_SISTEMA", "GERENTE_ADMINISTRACION", "GERENTE_GENERAL"].includes(
-    user?.rol
-  );
+import { hasAnyRole, hasRole } from "./userRoles";
+
+export const canViewAllRequerimientos = (user) =>
+  hasAnyRole(user, [
+    "ADMINISTRADOR_SISTEMA",
+    "GERENTE_ADMINISTRACION",
+    "GERENTE_GENERAL",
+  ]);
 
 export const canSelectAreaRequerimiento = (user) =>
   canViewAllRequerimientos(user);
 
-export const canApproveJefatura = (user) => user?.rol === "JEFE_AREA";
+export const canApproveJefatura = (user) => hasRole(user, "JEFE_AREA");
 
 export const canApproveGerenciaArea = (user) =>
-  user?.rol === "GERENTE_FUNCIONAL";
+  hasRole(user, "GERENTE_FUNCIONAL");
 
 export const canApproveGerenciaAdministracion = (user) =>
-  user?.rol === "GERENTE_ADMINISTRACION";
+  hasRole(user, "GERENTE_ADMINISTRACION");
 
 export const canApproveGerenciaGeneral = (user) =>
-  user?.rol === "GERENTE_GENERAL";
+  hasRole(user, "GERENTE_GENERAL");
 
-const isAdminOverride = (user) => user?.rol === "ADMINISTRADOR_SISTEMA";
+const isAdminOverride = (user) => hasRole(user, "ADMINISTRADOR_SISTEMA");
 
 const trayDefinitions = {
   jefatura: {
@@ -53,23 +57,17 @@ const trayDefinitions = {
 export const canAccessTrayLevel = (user, nivel) => {
   switch (nivel) {
     case "jefatura":
-      return user?.rol === "JEFE_AREA" || user?.rol === "ADMINISTRADOR_SISTEMA";
+      return hasAnyRole(user, ["JEFE_AREA", "ADMINISTRADOR_SISTEMA"]);
     case "gerencia-area":
-      return (
-        user?.rol === "GERENTE_FUNCIONAL" ||
-        user?.rol === "ADMINISTRADOR_SISTEMA"
-      );
+      return hasAnyRole(user, ["GERENTE_FUNCIONAL", "ADMINISTRADOR_SISTEMA"]);
     case "gerencia-administracion":
-      return (
-        user?.rol === "GERENTE_ADMINISTRACION" ||
-        user?.rol === "GERENTE_GENERAL" ||
-        user?.rol === "ADMINISTRADOR_SISTEMA"
-      );
+      return hasAnyRole(user, [
+        "GERENTE_ADMINISTRACION",
+        "GERENTE_GENERAL",
+        "ADMINISTRADOR_SISTEMA",
+      ]);
     case "gerencia-general":
-      return (
-        user?.rol === "GERENTE_GENERAL" ||
-        user?.rol === "ADMINISTRADOR_SISTEMA"
-      );
+      return hasAnyRole(user, ["GERENTE_GENERAL", "ADMINISTRADOR_SISTEMA"]);
     default:
       return false;
   }

@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MdInventory } from "react-icons/md";
 import {
   FaBoxes,
@@ -23,6 +23,8 @@ import {
 } from "../utils/inventarioPermissions";
 import { canViewOrdenesCompra } from "../utils/ordenCompraPermissions";
 import { getAvailableApprovalTrays } from "../utils/requerimientoPermissions";
+import { getActiveRoles } from "../utils/userRoles";
+import { canAccessUserManagement } from "../utils/userManagementPermissions";
 
 const cardClasses =
   "transform rounded-lg border-2 border-indigo-500 bg-white p-6 shadow transition-transform duration-300 hover:scale-105 hover:shadow-xl";
@@ -30,7 +32,7 @@ const cardClasses =
 const baseCards = [
   { title: "Gestion de Productos", description: "Crear, ver, actualizar y dar de baja productos.", icon: <MdInventory />, path: "/gestion-productos", visible: () => true },
   { title: "Gestion de Areas", description: "Administrar las areas o unidades de la organizacion.", icon: <FaSitemap />, path: "/gestion-areas", visible: () => true },
-  { title: "Gestion de Usuarios", description: "Administrar usuarios y accesos del sistema.", icon: <FaUserCog />, path: "/gestion-usuarios", visible: () => true },
+  { title: "Gestion de Usuarios", description: "Administrar usuarios y accesos del sistema.", icon: <FaUserCog />, path: "/gestion-usuarios", visible: ({ user }) => canAccessUserManagement(user) },
   { title: "Requerimientos", description: "Consultar, filtrar y seguir requerimientos de compra.", icon: <FaShoppingCart />, path: "/requerimientos", visible: () => true },
   { title: "Nuevo Requerimiento", description: "Registrar una solicitud formal de adquisicion.", icon: <FaOpencart />, path: "/requerimientos/nuevo", visible: () => true },
   { title: "Gestion de Proveedores", description: "Administrar proveedores y consultar SUNAT.", icon: <FaRegAddressCard />, path: "/gestion-proveedores", visible: () => true },
@@ -57,6 +59,7 @@ const DashboardPage = () => {
     return <div>Cargando contenido del panel de control...</div>;
   }
 
+  const activeRoles = getActiveRoles(user);
   const dynamicTrays = getAvailableApprovalTrays(user).map((tray) => ({
     title: tray.label,
     description: tray.description,
@@ -106,10 +109,12 @@ const DashboardPage = () => {
             </div>
             <div className="rounded-lg bg-gray-50 px-4 py-3">
               <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Rol
+                Roles activos
               </span>
               <span className="mt-1 block text-sm font-medium text-gray-800">
-                {user.rol || "No definido"}
+                {activeRoles.length > 0
+                  ? activeRoles.join(", ")
+                  : "No definido"}
               </span>
             </div>
             <div className="rounded-lg bg-gray-50 px-4 py-3">
@@ -150,3 +155,5 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
+

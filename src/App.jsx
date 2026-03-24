@@ -23,6 +23,8 @@ import {
   isLogisticaOperador,
 } from "./utils/cotizacionPermissions";
 import { canAccessTrayLevel } from "./utils/requerimientoPermissions";
+import { hasRole } from "./utils/userRoles";
+import { canAccessUserManagement } from "./utils/userManagementPermissions";
 import "./index.css";
 
 const CrearPrimerUsuarioPage = lazy(() => import("./pages/CrearPrimerUsuarioPage"));
@@ -141,7 +143,14 @@ const AppRoutes = () => {
             <Route path="gestion-marcas" element={<GestionMarcasPage />} />
             <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
             <Route path="gestion-areas" element={<GestionAreasPage />} />
-            <Route path="gestion-usuarios" element={<GestionUsuariosPage />} />
+            <Route
+              path="gestion-usuarios"
+              element={
+                <RoutePermissionGuard allow={canAccessUserManagement}>
+                  <GestionUsuariosPage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route path="gestion-proveedores" element={<GestionProveedoresPage />} />
             <Route
               path="cotizaciones"
@@ -165,7 +174,7 @@ const AppRoutes = () => {
                 <RoutePermissionGuard
                   allow={(user) =>
                     isLogisticaOperador(user) ||
-                    user?.rol === "ADMINISTRADOR_SISTEMA"
+                    hasRole(user, "ADMINISTRADOR_SISTEMA")
                   }
                 >
                   <CotizacionesBandejaPage tipo="operador" />
@@ -272,4 +281,6 @@ const App = () => {
 };
 
 export default App;
+
+
 

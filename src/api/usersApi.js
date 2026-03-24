@@ -1,6 +1,23 @@
 // src/api/usersApi.js
 import apiFetch from './apiFetch';
 
+const normalizeRangosPayload = (rangos = []) =>
+  (Array.isArray(rangos) ? rangos : [])
+    .filter(
+      (rango) =>
+        rango &&
+        rango.rol &&
+        rango.areaId !== "" &&
+        rango.areaId !== null &&
+        rango.areaId !== undefined
+    )
+    .map((rango) => ({
+      rol: rango.rol,
+      areaId: Number(rango.areaId),
+      activo: rango.activo !== false,
+      branchDescription: rango.branchDescription?.trim() || undefined,
+    }));
+
 const serializeUserPayload = (usuario = {}) => {
   const payload = { ...usuario };
 
@@ -8,8 +25,21 @@ const serializeUserPayload = (usuario = {}) => {
     payload.nombre = payload.name;
   }
 
+  if ("areaId" in payload && payload.areaId !== "") {
+    payload.areaId = Number(payload.areaId);
+  }
+
+  if (typeof payload.password === "string" && !payload.password.trim()) {
+    delete payload.password;
+  }
+
+  if ("rangos" in payload) {
+    payload.rangos = normalizeRangosPayload(payload.rangos);
+  }
+
   delete payload.name;
   delete payload.rangoId;
+  delete payload.userRangos;
 
   return payload;
 };

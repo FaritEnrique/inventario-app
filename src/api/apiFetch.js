@@ -44,13 +44,20 @@ const apiFetch = async (endpoint, options = {}) => {
         : {
             message: `Respuesta no JSON del servidor (${res.status} ${res.statusText})`,
           };
+      const normalizedError = data?.error || null;
       const errorMessage =
-        data.mensaje || data.message || "Error al conectar con el servidor";
-      const validationErrors = data.errores || [];
+        normalizedError?.message ||
+        data.mensaje ||
+        data.message ||
+        "Error al conectar con el servidor";
+      const validationErrors =
+        data.errores || normalizedError?.details?.errores || [];
 
       const fullError = new Error(errorMessage);
       fullError.response = { data, status: res.status };
       fullError.validationErrors = validationErrors;
+      fullError.code = normalizedError?.code || data?.code || null;
+      fullError.details = normalizedError?.details || data?.detalles || null;
       throw fullError;
     }
 
