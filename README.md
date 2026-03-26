@@ -83,27 +83,39 @@ inventario-app/
 
 ## Variables de entorno
 
-En desarrollo local:
+Las variables `.env*` no deben versionarse.
+
+Para desarrollo local puedes usar tu propio archivo `.env` o `.env.local` fuera de Git, por ejemplo:
 
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
+Para produccion y Netlify:
+
+- configurar `VITE_API_URL` en las variables del sitio en Netlify
+- apuntar al backend publico, sin necesidad de agregar `/api` manualmente
+
+Ejemplo:
+
+```env
+VITE_API_URL=https://tu-backend.example.com
+```
+
 ## Despliegue en Netlify
 
-El frontend esta pensado para desplegarse como SPA.
+El frontend esta pensado para desplegarse como SPA con build nativo de Vite.
 
-Se usa `BrowserRouter`, por lo que Netlify necesita fallback de rutas a `index.html`.
+Netlify debe construirlo directamente desde GitHub usando:
 
-Eso ya queda cubierto con:
+- comando de build: `npm run build`
+- directorio de publicacion: `dist`
 
-- `public/_redirects`
+La configuracion queda centralizada en:
 
-Contenido:
+- `netlify.toml`
 
-```txt
-/* /index.html 200
-```
+`BrowserRouter` requiere fallback de rutas a `index.html`, y eso ya queda cubierto desde `netlify.toml`.
 
 Esto es importante para rutas como:
 
@@ -117,3 +129,4 @@ Esto es importante para rutas como:
 - reutilizar hooks y APIs existentes antes de crear nuevas capas
 - validar `npm run build` despues de tocar rutas, layout o bundling
 - mantener sobria la navegacion principal; no saturar el header con acciones secundarias
+- no usar Docker para desplegar este frontend en Netlify; el flujo nativo GitHub -> Netlify es suficiente y mas simple

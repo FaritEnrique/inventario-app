@@ -1,4 +1,3 @@
-//src/api/apiFetch.js
 const normalizeBaseUrl = (rawUrl) => {
   const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
 
@@ -39,11 +38,10 @@ const apiFetch = async (endpoint, options = {}) => {
 
     if (!res.ok) {
       const contentType = res.headers.get("content-type") || "";
-      const data = contentType.includes("application/json")
-        ? await res.json()
-        : {
-            message: `Respuesta no JSON del servidor (${res.status} ${res.statusText})`,
-          };
+      let data = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      }
       const normalizedError = data?.error || null;
       const errorMessage =
         normalizedError?.message ||
