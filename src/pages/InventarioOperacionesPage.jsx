@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canAdjustInventoryEffective,
+  canOperateInventoryEffective,
+} from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 import { useAuth } from "../context/authContext";
-import {
-  canAdjustInventory,
-  canOperateInventory,
-} from "../utils/inventarioPermissions";
 
 const operationOptions = [
   { value: "cargaInicial", label: "Carga inicial" },
@@ -59,8 +59,8 @@ const InventarioOperacionesPage = () => {
   const [form, setForm] = useState(initialForm);
   const [resultado, setResultado] = useState(null);
 
-  const canOperate = canOperateInventory(user);
-  const canAdjust = canAdjustInventory(user);
+  const canOperate = canOperateInventoryEffective(user);
+  const canAdjust = canAdjustInventoryEffective(user);
 
   const canSubmit = useMemo(() => {
     if (["cargaInicial", "ajuste"].includes(modo)) {

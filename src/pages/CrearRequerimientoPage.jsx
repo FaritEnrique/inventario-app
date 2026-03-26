@@ -5,7 +5,7 @@ import RequerimientoForm from "../components/RequerimientoForm";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
-import { canSelectAreaRequerimiento } from "../utils/requerimientoPermissions";
+import { canSelectAreaRequerimientoEffective } from "../accessRules";
 
 Modal.setAppElement("#root");
 
@@ -110,7 +110,7 @@ const CrearRequerimientoPage = () => {
 
   const initialData = useMemo(
     () => ({
-      areaId: canSelectAreaRequerimiento(user) ? "" : user?.areaId,
+      areaId: canSelectAreaRequerimientoEffective(user) ? "" : user?.areaId,
       prioridad: prioridades[0] || "Normal",
     }),
     [prioridades, user]
@@ -130,7 +130,7 @@ const CrearRequerimientoPage = () => {
         initialData={initialData}
         areas={areas}
         prioridades={prioridades.length ? prioridades : ["Normal", "Urgente", "Emergencia"]}
-        allowAreaSelection={canSelectAreaRequerimiento(user)}
+        allowAreaSelection={canSelectAreaRequerimientoEffective(user)}
         buscarCatalogoProductos={buscarCatalogoProductos}
         onSubmit={handleSubmit}
         submitting={submitting}
@@ -146,3 +146,4 @@ const CrearRequerimientoPage = () => {
 };
 
 export default CrearRequerimientoPage;
+

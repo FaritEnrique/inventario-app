@@ -7,9 +7,9 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
-  canEditRequerimiento,
-  canSelectAreaRequerimiento,
-} from "../utils/requerimientoPermissions";
+  canEditRequerimientoEffective,
+  canSelectAreaRequerimientoEffective,
+} from "../accessRules";
 
 const EditarRequerimientoPage = () => {
   const { id } = useParams();
@@ -53,7 +53,7 @@ const EditarRequerimientoPage = () => {
   if (loading) return <Loader />;
   if (!requerimiento) return <div className="p-6 text-sm text-red-600">No se pudo cargar el requerimiento.</div>;
 
-  if (!canEditRequerimiento(user, requerimiento)) {
+  if (!canEditRequerimientoEffective(user, requerimiento)) {
     return <Navigate to={`/requerimientos/${id}`} replace />;
   }
 
@@ -74,7 +74,7 @@ const EditarRequerimientoPage = () => {
         initialData={requerimiento}
         areas={areas}
         prioridades={prioridades.length ? prioridades : ["Normal", "Urgente", "Emergencia"]}
-        allowAreaSelection={canSelectAreaRequerimiento(user)}
+        allowAreaSelection={canSelectAreaRequerimientoEffective(user)}
         buscarCatalogoProductos={buscarCatalogoProductos}
         onSubmit={handleSubmit}
         submitting={submitting}
@@ -84,3 +84,4 @@ const EditarRequerimientoPage = () => {
 };
 
 export default EditarRequerimientoPage;
+

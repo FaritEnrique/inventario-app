@@ -6,9 +6,9 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
-  canSelectAreaRequerimiento,
-  getAvailableApprovalTrays,
-} from "../utils/requerimientoPermissions";
+  canSelectAreaRequerimientoEffective,
+  getAvailableApprovalTraysEffective,
+} from "../accessRules";
 
 const initialFilters = {
   search: "",
@@ -37,7 +37,7 @@ const RequerimientosPage = () => {
     fetchRequerimientos(filters).catch(() => {});
   }, [fetchRequerimientos, filters]);
 
-  const trays = useMemo(() => getAvailableApprovalTrays(user), [user]);
+  const trays = useMemo(() => getAvailableApprovalTraysEffective(user), [user]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -77,7 +77,7 @@ const RequerimientosPage = () => {
           placeholder="Buscar por codigo, item o solicitante"
           className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
         />
-        {canSelectAreaRequerimiento(user) ? (
+        {canSelectAreaRequerimientoEffective(user) ? (
           <select
             value={filters.areaId}
             name="requerimientos-page-select-80"
@@ -233,4 +233,5 @@ const RequerimientosPage = () => {
 };
 
 export default RequerimientosPage;
+
 

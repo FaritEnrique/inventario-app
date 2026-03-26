@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
@@ -7,10 +7,10 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
-  canViewAllRequerimientos,
-  getTrayEmptyState,
-  getTrayGuidance,
-} from "../utils/requerimientoPermissions";
+  canViewAllRequerimientosEffective,
+  getTrayEmptyStateEffective,
+  getTrayGuidanceEffective,
+} from "../accessRules";
 
 const titles = {
   jefatura: "Bandeja de Jefatura",
@@ -51,14 +51,14 @@ const RequerimientosBandejaPage = ({ nivel }) => {
   }, [fetchTray, nivel, filters]);
 
   const title = useMemo(() => titles[nivel] || "Bandeja de aprobacion", [nivel]);
-  const canFilterArea = canViewAllRequerimientos(user);
+  const canFilterArea = canViewAllRequerimientosEffective(user);
   const filtersApplied = useMemo(
     () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
     [filters]
   );
-  const trayGuidance = useMemo(() => getTrayGuidance(user, nivel), [nivel, user]);
+  const trayGuidance = useMemo(() => getTrayGuidanceEffective(user, nivel), [nivel, user]);
   const emptyState = useMemo(
-    () => getTrayEmptyState(user, nivel, filtersApplied),
+    () => getTrayEmptyStateEffective(user, nivel, filtersApplied),
     [filtersApplied, nivel, user]
   );
 
@@ -160,7 +160,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                 <div>
                   <p className="text-lg font-semibold text-gray-900">{req.codigo}</p>
                   <p className="text-sm text-gray-600">
-                    {req.areaNombreSnapshot} · {req.solicitante?.nombre || "-"}
+                    {req.areaNombreSnapshot} � {req.solicitante?.nombre || "-"}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">Uso: {req.usoFinalidad}</p>
                 </div>
@@ -281,3 +281,4 @@ const RequerimientosBandejaPage = ({ nivel }) => {
 };
 
 export default RequerimientosBandejaPage;
+

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canApprovePedidoInternoEffective,
+  canCreatePedidoInternoEffective,
+  canViewWarehouseTrayEffective,
+} from "../accessRules";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
-import {
-  canApprovePedidoInterno,
-  canCreatePedidoInterno,
-  canViewWarehouseTray,
-} from "../utils/inventarioPermissions";
 
 const InventarioStockPage = () => {
   const { user } = useAuth();
@@ -16,9 +16,9 @@ const InventarioStockPage = () => {
   const [almacenId, setAlmacenId] = useState("");
   const [rows, setRows] = useState([]);
 
-  const canCreate = canCreatePedidoInterno(user);
-  const canApprove = canApprovePedidoInterno(user);
-  const canUseWarehouseTray = canViewWarehouseTray(user);
+  const canCreate = canCreatePedidoInternoEffective(user);
+  const canApprove = canApprovePedidoInternoEffective(user);
+  const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
   const cargarStock = async (filters = {}) => {
     try {
@@ -293,4 +293,5 @@ const InventarioStockPage = () => {
 };
 
 export default InventarioStockPage;
+
 

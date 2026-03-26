@@ -13,18 +13,19 @@ import {
   FaSitemap,
   FaUserCog,
 } from "react-icons/fa";
-import { useAuth } from "../context/authContext";
-import { canAccessCotizaciones } from "../utils/cotizacionPermissions";
 import {
-  canApprovePedidoInterno,
-  canCreatePedidoInterno,
-  canOperateInventory,
-  canViewWarehouseTray,
-} from "../utils/inventarioPermissions";
-import { canViewOrdenesCompra } from "../utils/ordenCompraPermissions";
-import { getAvailableApprovalTrays } from "../utils/requerimientoPermissions";
+  canAccessCotizacionesEffective,
+  canCreatePedidoInternoEffective,
+  canApprovePedidoInternoEffective,
+  canOperateInventoryEffective,
+  canViewOrdenesCompraEffective,
+  canViewOrdenCompraApprovalTrayEffective,
+  canViewWarehouseTrayEffective,
+} from "../accessRules";
+import { useAuth } from "../context/authContext";
+import { getAvailableApprovalTraysEffective } from "../accessRules";
 import { getActiveRoles } from "../utils/userRoles";
-import { canAccessUserManagement } from "../utils/userManagementPermissions";
+import { canAccessUserManagementEffective } from "../accessRules";
 
 const cardClasses =
   "transform rounded-lg border-2 border-indigo-500 bg-white p-6 shadow transition-transform duration-300 hover:scale-105 hover:shadow-xl";
@@ -32,24 +33,25 @@ const cardClasses =
 const baseCards = [
   { title: "Gestion de Productos", description: "Crear, ver, actualizar y dar de baja productos.", icon: <MdInventory />, path: "/gestion-productos", visible: () => true },
   { title: "Gestion de Areas", description: "Administrar las areas o unidades de la organizacion.", icon: <FaSitemap />, path: "/gestion-areas", visible: () => true },
-  { title: "Gestion de Usuarios", description: "Administrar usuarios y accesos del sistema.", icon: <FaUserCog />, path: "/gestion-usuarios", visible: ({ user }) => canAccessUserManagement(user) },
+  { title: "Gestion de Usuarios", description: "Administrar usuarios y accesos del sistema.", icon: <FaUserCog />, path: "/gestion-usuarios", visible: ({ user }) => canAccessUserManagementEffective(user) },
   { title: "Requerimientos", description: "Consultar, filtrar y seguir requerimientos de compra.", icon: <FaShoppingCart />, path: "/requerimientos", visible: () => true },
   { title: "Nuevo Requerimiento", description: "Registrar una solicitud formal de adquisicion.", icon: <FaOpencart />, path: "/requerimientos/nuevo", visible: () => true },
   { title: "Gestion de Proveedores", description: "Administrar proveedores y consultar SUNAT.", icon: <FaRegAddressCard />, path: "/gestion-proveedores", visible: () => true },
-  { title: "Cotizaciones", description: "Emitir solicitudes, registrar ofertas y comparar proveedores.", icon: <FaFileInvoiceDollar />, path: "/cotizaciones", visible: ({ user }) => canAccessCotizaciones(user) },
-  { title: "Ordenes de Compra", description: "Consultar ordenes emitidas, detalle documental y acciones de cierre.", icon: <FaFileInvoiceDollar />, path: "/ordenes-compra", visible: ({ user }) => canViewOrdenesCompra(user) },
+  { title: "Cotizaciones", description: "Emitir solicitudes, registrar ofertas y comparar proveedores.", icon: <FaFileInvoiceDollar />, path: "/cotizaciones", visible: ({ user }) => canAccessCotizacionesEffective(user) },
+  { title: "Ordenes de Compra", description: "Consultar ordenes emitidas, detalle documental y acciones de cierre.", icon: <FaFileInvoiceDollar />, path: "/ordenes-compra", visible: ({ user }) => canViewOrdenesCompraEffective(user) },
+  { title: "Bandeja OC", description: "Revisar solo las ordenes de compra que hoy puedes aprobar realmente.", icon: <FaFileInvoiceDollar />, path: "/ordenes-compra?view=aprobacion", visible: ({ user }) => canViewOrdenCompraApprovalTrayEffective(user) },
   { title: "Stock de Inventario", description: "Consultar stock actual, reservado y disponible por producto.", icon: <FaBoxes />, path: "/inventario-stock", visible: () => true },
   { title: "Notas de Pedido", description: "Consultar el historial y detalle de notas de pedido internas.", icon: <FaClipboardList />, path: "/notas-pedido", visible: () => true },
-  { title: "Nueva Nota de Pedido", description: "Registrar una nota de pedido sobre stock disponible.", icon: <FaOpencart />, path: "/notas-pedido/nueva", visible: ({ user }) => canCreatePedidoInterno(user) },
-  { title: "Bandeja de Aprobacion NP", description: "Revisar y aprobar notas de pedido pendientes.", icon: <FaClipboardList />, path: "/notas-pedido/aprobaciones", visible: ({ user }) => canApprovePedidoInterno(user) },
-  { title: "Bandeja de Almacen", description: "Atender notas de pedido aprobadas y generar salidas.", icon: <FaBoxes />, path: "/notas-pedido/almacen", visible: ({ user }) => canViewWarehouseTray(user) },
+  { title: "Nueva Nota de Pedido", description: "Registrar una nota de pedido sobre stock disponible.", icon: <FaOpencart />, path: "/notas-pedido/nueva", visible: ({ user }) => canCreatePedidoInternoEffective(user) },
+  { title: "Bandeja de Aprobacion NP", description: "Revisar y aprobar notas de pedido pendientes.", icon: <FaClipboardList />, path: "/notas-pedido/aprobaciones", visible: ({ user }) => canApprovePedidoInternoEffective(user) },
+  { title: "Bandeja de Almacen", description: "Atender notas de pedido aprobadas y generar salidas.", icon: <FaBoxes />, path: "/notas-pedido/almacen", visible: ({ user }) => canViewWarehouseTrayEffective(user) },
   { title: "Movimientos de Inventario", description: "Auditar entradas, salidas, ajustes y transferencias.", icon: <FaExchangeAlt />, path: "/inventario-movimientos", visible: () => true },
   { title: "Kardex", description: "Revisar el kardex auditable por producto, almacen y periodo.", icon: <FaClipboardList />, path: "/inventario-kardex", visible: () => true },
   { title: "Notas de Ingreso", description: "Consultar documentalmente ingresos, recepciones y su trazabilidad.", icon: <FaFileImport />, path: "/inventario-notas-ingreso", visible: () => true },
   { title: "Notas de Salida", description: "Consultar documentalmente entregas internas y salidas de almacen.", icon: <FaExchangeAlt />, path: "/inventario-notas-salida", visible: () => true },
   { title: "Reservas de Stock", description: "Seguir reservas operativas, su estado y su despacho o liberacion.", icon: <FaBoxes />, path: "/inventario-reservas", visible: () => true },
-  { title: "Recepciones / Nota de Ingreso", description: "Registrar ingresos simples y recepciones contra OC.", icon: <FaFileImport />, path: "/inventario-recepciones", visible: ({ user }) => canOperateInventory(user) },
-  { title: "Operaciones de Inventario", description: "Carga inicial, ajustes, movimientos manuales y reservas.", icon: <MdInventory />, path: "/inventario-operaciones", visible: ({ user }) => canOperateInventory(user) },
+  { title: "Recepciones / Nota de Ingreso", description: "Registrar ingresos simples y recepciones contra OC.", icon: <FaFileImport />, path: "/inventario-recepciones", visible: ({ user }) => canOperateInventoryEffective(user) },
+  { title: "Operaciones de Inventario", description: "Carga inicial, ajustes, movimientos manuales y reservas.", icon: <MdInventory />, path: "/inventario-operaciones", visible: ({ user }) => canOperateInventoryEffective(user) },
 ];
 
 const DashboardPage = () => {
@@ -60,7 +62,7 @@ const DashboardPage = () => {
   }
 
   const activeRoles = getActiveRoles(user);
-  const dynamicTrays = getAvailableApprovalTrays(user).map((tray) => ({
+  const dynamicTrays = getAvailableApprovalTraysEffective(user).map((tray) => ({
     title: tray.label,
     description: tray.description,
     icon: <FaClipboardList />,
@@ -155,5 +157,6 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
 
 

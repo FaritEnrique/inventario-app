@@ -2,13 +2,13 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProductoSearchField from "../components/ProductoSearchField";
+import {
+  canApprovePedidoInternoEffective,
+  canViewWarehouseTrayEffective,
+} from "../accessRules";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 import usePedidosInternos from "../hooks/usePedidosInternos";
-import {
-  canApprovePedidoInterno,
-  canViewWarehouseTray,
-} from "../utils/inventarioPermissions";
 
 const initialState = {
   almacenId: "",
@@ -59,8 +59,8 @@ const CrearNotaPedidoPage = () => {
   const [stockProducto, setStockProducto] = useState(null);
   const [loadingProductStock, setLoadingProductStock] = useState(false);
 
-  const canApprove = canApprovePedidoInterno(user);
-  const canUseWarehouseTray = canViewWarehouseTray(user);
+  const canApprove = canApprovePedidoInternoEffective(user);
+  const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
   const cargarStockBase = async () => {
     try {

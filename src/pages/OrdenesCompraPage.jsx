@@ -1,21 +1,52 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canViewOrdenesCompraEffective,
+  canViewOrdenCompraApprovalTrayEffective,
+} from "../accessRules";
 import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
-import { canViewOrdenesCompra } from "../utils/ordenCompraPermissions";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
-const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : "-";
 
 const buildRequerimientoRefs = (ordenCompra) =>
   Array.isArray(ordenCompra?.requerimientos) ? ordenCompra.requerimientos : [];
 
+const buildDefaultFilters = (view) => ({
+  search: "",
+  estadoAprobacion: "",
+  estadoRecepcion: "",
+  nivel: view === "aprobacion" ? "" : undefined,
+});
+
+const viewLabels = {
+  listado: {
+    title: "Ordenes de compra",
+    description:
+      "Consulta documental del tramo de compra, aprobacion y recepcion.",
+  },
+  aprobacion: {
+    title: "Bandeja de aprobacion de OC",
+    description:
+      "Muestra solo las ordenes de compra que hoy puedes aprobar realmente segun el snapshot backend.",
+  },
+};
+
 const OrdenesCompraPage = () => {
   const { user } = useAuth();
-  const { loading, obtenerOrdenesCompra } = useOrdenesCompra();
+  const {
+    loading,
+    obtenerBandejaAprobacionOrdenCompra,
+    obtenerOrdenesCompra,
+  } = useOrdenesCompra();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentView =
+    searchParams.get("view") === "aprobacion" ? "aprobacion" : "listado";
   const [rows, setRows] = useState([]);
   const [pageInfo, setPageInfo] = useState({
     currentPage: 1,
@@ -23,14 +54,15 @@ const OrdenesCompraPage = () => {
     totalItems: 0,
   });
   const [pageError, setPageError] = useState("");
-  const [filters, setFilters] = useState({
-    search: "",
-    estadoAprobacion: "",
-    estadoRecepcion: "",
-  });
+  const [filters, setFilters] = useState(() => buildDefaultFilters(currentView));
   const filtersRef = useRef(filters);
 
-  const canView = canViewOrdenesCompra(user);
+  const canView = canViewOrdenesCompraEffective(user);
+  const canViewApprovalTray = canViewOrdenCompraApprovalTrayEffective(user);
+
+  useEffect(() => {
+    setFilters(buildDefaultFilters(currentView));
+  }, [currentView]);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -41,12 +73,21 @@ const OrdenesCompraPage = () => {
       try {
         setPageError("");
         const resolvedFilters = nextFilters || filtersRef.current;
-
-        const response = await obtenerOrdenesCompra({
-          page: nextPage,
-          limit: 12,
-          ...resolvedFilters,
-        });
+        const response =
+          currentView === "aprobacion"
+            ? await obtenerBandejaAprobacionOrdenCompra({
+                page: nextPage,
+                limit: 12,
+                search: resolvedFilters.search,
+                nivel: resolvedFilters.nivel || undefined,
+              })
+            : await obtenerOrdenesCompra({
+                page: nextPage,
+                limit: 12,
+                search: resolvedFilters.search,
+                estadoAprobacion: resolvedFilters.estadoAprobacion,
+                estadoRecepcion: resolvedFilters.estadoRecepcion,
+              });
 
         setRows(Array.isArray(response?.data) ? response.data : []);
         setPageInfo({
@@ -67,13 +108,14 @@ const OrdenesCompraPage = () => {
         toast.error(message);
       }
     },
-    [obtenerOrdenesCompra]
+    [currentView, obtenerBandejaAprobacionOrdenCompra, obtenerOrdenesCompra]
   );
 
   useEffect(() => {
     if (!canView) return;
+    if (currentView === "aprobacion" && !canViewApprovalTray) return;
     load();
-  }, [canView, load]);
+  }, [canView, canViewApprovalTray, currentView, load]);
 
   const resumen = useMemo(
     () => ({
@@ -101,6 +143,16 @@ const OrdenesCompraPage = () => {
     await load(nextPage);
   };
 
+  const switchView = (view) => {
+    const next = new URLSearchParams(searchParams);
+    if (view === "aprobacion") {
+      next.set("view", "aprobacion");
+    } else {
+      next.delete("view");
+    }
+    setSearchParams(next, { replace: true });
+  };
+
   if (!canView) {
     return (
       <div className="mx-auto max-w-5xl p-6">
@@ -111,16 +163,50 @@ const OrdenesCompraPage = () => {
     );
   }
 
+  if (currentView === "aprobacion" && !canViewApprovalTray) {
+    return (
+      <div className="mx-auto max-w-5xl p-6">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          Tu usuario no tiene bandeja de aprobacion de ordenes de compra.
+        </div>
+      </div>
+    );
+  }
+
+  const labels = viewLabels[currentView];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ordenes de compra</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Consulta documental del tramo de compra, aprobacion y recepcion.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">{labels.title}</h1>
+          <p className="mt-1 text-sm text-gray-600">{labels.description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => switchView("listado")}
+            className={`rounded px-4 py-2 text-sm font-medium ${
+              currentView === "listado"
+                ? "bg-indigo-600 text-white"
+                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Listado general
+          </button>
+          {canViewApprovalTray ? (
+            <button
+              type="button"
+              onClick={() => switchView("aprobacion")}
+              className={`rounded px-4 py-2 text-sm font-medium ${
+                currentView === "aprobacion"
+                  ? "bg-indigo-600 text-white"
+                  : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Mi bandeja de aprobacion
+            </button>
+          ) : null}
           <Link
             to="/inventario-recepciones"
             className="rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
@@ -167,40 +253,52 @@ const OrdenesCompraPage = () => {
       >
         <input
           value={filters.search}
-          name="ordenes-compra-page-input-168" onChange={(event) => handleFilterChange("search", event.target.value)}
+          onChange={(event) => handleFilterChange("search", event.target.value)}
           placeholder="Buscar por codigo, proveedor o RUC"
           className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
         />
-        <select
-          value={filters.estadoAprobacion}
-          name="ordenes-compra-page-select-174"
-          onChange={(event) =>
-            handleFilterChange("estadoAprobacion", event.target.value)
-          }
-          className="rounded border border-gray-300 px-3 py-2"
-        >
-          <option value="">Todos los estados de aprobacion</option>
-          <option value="BORRADOR">Borrador</option>
-          <option value="PENDIENTE_APROBACION">Pendiente aprobacion</option>
-          <option value="APROBADA">Aprobada</option>
-          <option value="RECHAZADA">Rechazada</option>
-        </select>
-        <select
-          value={filters.estadoRecepcion}
-          name="ordenes-compra-page-select-187"
-          onChange={(event) =>
-            handleFilterChange("estadoRecepcion", event.target.value)
-          }
-          className="rounded border border-gray-300 px-3 py-2"
-        >
-          <option value="">Todos los estados de recepcion</option>
-          <option value="PENDIENTE_RECEPCION">Pendiente recepcion</option>
-          <option value="PARCIALMENTE_RECIBIDA">Parcialmente recibida</option>
-          <option value="COMPLETAMENTE_RECIBIDA">Completamente recibida</option>
-          <option value="CERRADA">Cerrada</option>
-          <option value="INCUMPLIDA">Incumplida</option>
-          <option value="CANCELADA">Cancelada</option>
-        </select>
+        {currentView === "listado" ? (
+          <>
+            <select
+              value={filters.estadoAprobacion}
+              onChange={(event) =>
+                handleFilterChange("estadoAprobacion", event.target.value)
+              }
+              className="rounded border border-gray-300 px-3 py-2"
+            >
+              <option value="">Todos los estados de aprobacion</option>
+              <option value="BORRADOR">Borrador</option>
+              <option value="PENDIENTE_APROBACION">Pendiente aprobacion</option>
+              <option value="APROBADA">Aprobada</option>
+              <option value="RECHAZADA">Rechazada</option>
+            </select>
+            <select
+              value={filters.estadoRecepcion}
+              onChange={(event) =>
+                handleFilterChange("estadoRecepcion", event.target.value)
+              }
+              className="rounded border border-gray-300 px-3 py-2"
+            >
+              <option value="">Todos los estados de recepcion</option>
+              <option value="PENDIENTE_RECEPCION">Pendiente recepcion</option>
+              <option value="PARCIALMENTE_RECIBIDA">Parcialmente recibida</option>
+              <option value="COMPLETAMENTE_RECIBIDA">Completamente recibida</option>
+              <option value="CERRADA">Cerrada</option>
+              <option value="INCUMPLIDA">Incumplida</option>
+              <option value="CANCELADA">Cancelada</option>
+            </select>
+          </>
+        ) : (
+          <select
+            value={filters.nivel || ""}
+            onChange={(event) => handleFilterChange("nivel", event.target.value)}
+            className="rounded border border-gray-300 px-3 py-2"
+          >
+            <option value="">Todos los niveles</option>
+            <option value="GERENCIA_ADMINISTRACION">Gerencia de administracion</option>
+            <option value="GERENCIA_GENERAL">Gerencia general</option>
+          </select>
+        )}
         <div className="md:col-span-4">
           <button
             type="submit"
@@ -220,7 +318,57 @@ const OrdenesCompraPage = () => {
 
       {loading ? <Loader /> : null}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="space-y-4 md:hidden">
+        {rows.length > 0 ? (
+          rows.map((ordenCompra) => (
+            <div key={ordenCompra.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg font-semibold text-gray-900">{ordenCompra.codigo}</p>
+                  <p className="text-sm text-gray-600">
+                    {ordenCompra.proveedor?.razonSocial || "-"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(ordenCompra.montoTotal)}
+                  </p>
+                  <p className="text-xs text-gray-500">{formatDate(ordenCompra.fechaEmision)}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <OrdenCompraEstadoBadge
+                  estado={ordenCompra.estadoAprobacion}
+                  tipo="aprobacion"
+                />
+                <OrdenCompraEstadoBadge
+                  estado={ordenCompra.estadoRecepcion}
+                  tipo="recepcion"
+                />
+              </div>
+              {ordenCompra.nivelPendienteActual ? (
+                <p className="mt-3 text-sm text-gray-700">
+                  Nivel pendiente: {ordenCompra.nivelPendienteActual}
+                </p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  to={`/ordenes-compra/${ordenCompra.id}`}
+                  className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-indigo-50"
+                >
+                  Abrir detalle
+                </Link>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">
+            No hay ordenes de compra para los filtros aplicados.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -233,6 +381,9 @@ const OrdenesCompraPage = () => {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Estados
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Nivel pendiente
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Requerimientos
@@ -249,9 +400,6 @@ const OrdenesCompraPage = () => {
               {rows.length > 0 ? (
                 rows.map((ordenCompra) => {
                   const requerimientos = buildRequerimientoRefs(ordenCompra);
-                  const tienePendiente =
-                    Number(ordenCompra?.resumen?.totalPendiente || 0) > 0;
-
                   return (
                     <tr key={ordenCompra.id}>
                       <td className="px-4 py-3 text-sm text-gray-700">
@@ -277,6 +425,9 @@ const OrdenesCompraPage = () => {
                             tipo="recepcion"
                           />
                         </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {ordenCompra.nivelPendienteActual || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {requerimientos.length > 0 ? (
@@ -309,22 +460,12 @@ const OrdenesCompraPage = () => {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Link
-                            to={`/ordenes-compra/${ordenCompra.id}`}
-                            className="rounded border border-indigo-300 px-3 py-1.5 text-indigo-700 hover:bg-indigo-50"
-                          >
-                            Abrir
-                          </Link>
-                          {tienePendiente ? (
-                            <Link
-                              to="/inventario-recepciones"
-                              className="rounded border border-sky-300 px-3 py-1.5 text-sky-700 hover:bg-sky-50"
-                            >
-                              Recepcionar
-                            </Link>
-                          ) : null}
-                        </div>
+                        <Link
+                          to={`/ordenes-compra/${ordenCompra.id}`}
+                          className="rounded border border-indigo-300 px-3 py-1.5 text-indigo-700 hover:bg-indigo-50"
+                        >
+                          Abrir
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -332,7 +473,7 @@ const OrdenesCompraPage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
                     No hay ordenes de compra para los filtros aplicados.

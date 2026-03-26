@@ -19,6 +19,9 @@ const ordenesCompraApi = {
   obtenerOrdenesCompra: (params = {}) =>
     apiFetch(`ordenes-compra${buildQuery(params)}`),
 
+  obtenerBandejaAprobacion: (params = {}) =>
+    apiFetch(`ordenes-compra/bandeja/aprobacion${buildQuery(params)}`),
+
   obtenerOrdenCompraPorId: (id) => apiFetch(`ordenes-compra/${id}`),
 
   actualizarAprobacionOrdenCompra: (id, payload) =>

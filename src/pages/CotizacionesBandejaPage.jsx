@@ -2,11 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Loader from "../components/Loader";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
+import { canAssignCotizacionesLogisticaEffective } from "../accessRules";
 import { useAuth } from "../context/authContext";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
-import {
-  canAssignCotizacionesLogistica,
-} from "../utils/cotizacionPermissions";
 
 const titles = {
   jefatura: "Bandeja de Jefatura de Logistica",
@@ -39,7 +37,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [estadoLogistica, setEstadoLogistica] = useState("");
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
 
-  const canAssign = canAssignCotizacionesLogistica(user) && tipo === "jefatura";
+  const canAssign =
+    canAssignCotizacionesLogisticaEffective(user) && tipo === "jefatura";
 
   const load = async () => {
     const response = await obtenerBandeja(tipo, {
@@ -266,3 +265,5 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 };
 
 export default CotizacionesBandejaPage;
+
+

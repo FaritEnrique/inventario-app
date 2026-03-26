@@ -27,10 +27,22 @@ const inventarioApi = {
 
   obtenerNotaIngresoPorId: (id) => apiFetch(`inventario/notas-ingreso/${id}`),
 
+  actualizarAprobacionDocumentalNotaIngreso: (id, payload) =>
+    apiFetch(`inventario/notas-ingreso/${id}/aprobacion-documental`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
   obtenerNotasSalida: (params = {}) =>
     apiFetch(`inventario/notas-salida${buildQuery(params)}`),
 
   obtenerNotaSalidaPorId: (id) => apiFetch(`inventario/notas-salida/${id}`),
+
+  actualizarAprobacionDocumentalNotaSalida: (id, payload) =>
+    apiFetch(`inventario/notas-salida/${id}/aprobacion-documental`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 
   obtenerReservas: (params = {}) =>
     apiFetch(`inventario/reservas${buildQuery(params)}`),

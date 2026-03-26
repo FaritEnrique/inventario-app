@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canOperateInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
-import { canOperateInventory } from "../utils/inventarioPermissions";
 
 const simpleInitialState = {
   almacenDestinoId: "",
@@ -65,7 +65,7 @@ const InventarioRecepcionesPage = () => {
   const [selectedOrdenCompra, setSelectedOrdenCompra] = useState(null);
   const [ordenesSearch, setOrdenesSearch] = useState("");
 
-  const canOperate = canOperateInventory(user);
+  const canOperate = canOperateInventoryEffective(user);
 
   const pendingOrdenesCompra = useMemo(() => {
     const search = normalizeText(ordenesSearch);
@@ -328,7 +328,7 @@ const InventarioRecepcionesPage = () => {
         </div>
       ) : (
         <>
-          <div className="mb-4 flex gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
               onClick={() => setMode("simple")}

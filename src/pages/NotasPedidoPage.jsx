@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canCreatePedidoInternoEffective,
+  canApprovePedidoInternoEffective,
+  canViewWarehouseTrayEffective,
+} from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
-import {
-  canApprovePedidoInterno,
-  canCreatePedidoInterno,
-  canViewWarehouseTray,
-} from "../utils/inventarioPermissions";
-
 const initialFilters = {
   search: "",
   estadoFlujo: "",
@@ -32,9 +31,9 @@ const NotasPedidoPage = () => {
     currentPage: 1,
   });
 
-  const canCreate = canCreatePedidoInterno(user);
-  const canApprove = canApprovePedidoInterno(user);
-  const canUseWarehouseTray = canViewWarehouseTray(user);
+  const canCreate = canCreatePedidoInternoEffective(user);
+  const canApprove = canApprovePedidoInternoEffective(user);
+  const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
   const cargarPedidos = async (params = filters) => {
     try {
@@ -251,3 +250,5 @@ const NotasPedidoPage = () => {
 };
 
 export default NotasPedidoPage;
+
+

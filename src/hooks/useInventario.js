@@ -39,12 +39,22 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerNotaIngresoPorId(id)),
       [execute]
     ),
+    actualizarAprobacionDocumentalNotaIngreso: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.actualizarAprobacionDocumentalNotaIngreso(id, payload)),
+      [execute]
+    ),
     obtenerNotasSalida: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasSalida(params)),
       [execute]
     ),
     obtenerNotaSalidaPorId: useCallback(
       (id) => execute(() => inventarioApi.obtenerNotaSalidaPorId(id)),
+      [execute]
+    ),
+    actualizarAprobacionDocumentalNotaSalida: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.actualizarAprobacionDocumentalNotaSalida(id, payload)),
       [execute]
     ),
     obtenerReservas: useCallback(

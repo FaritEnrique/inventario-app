@@ -26,6 +26,11 @@ const useOrdenesCompra = () => {
       (params = {}) => execute(() => ordenesCompraApi.obtenerOrdenesCompra(params)),
       [execute]
     ),
+    obtenerBandejaAprobacionOrdenCompra: useCallback(
+      (params = {}) =>
+        execute(() => ordenesCompraApi.obtenerBandejaAprobacion(params)),
+      [execute]
+    ),
     obtenerOrdenCompraPorId: useCallback(
       (id) => execute(() => ordenesCompraApi.obtenerOrdenCompraPorId(id)),
       [execute]

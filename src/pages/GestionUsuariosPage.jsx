@@ -8,11 +8,11 @@ import useDebounce from "../hooks/useDebounce";
 import useUsers from "../hooks/useUsers";
 import areasApi from "../api/areasApi";
 import {
-  canAssignSystemAdminRole,
-  canCreateUsers,
-  canEditUsers,
-  canToggleUserStatus,
-} from "../utils/userManagementPermissions";
+  canAssignSystemAdminRoleEffective,
+  canCreateUsersEffective,
+  canEditUsersEffective,
+  canToggleUserStatusEffective,
+} from "../accessRules";
 
 Modal.setAppElement("#root");
 
@@ -67,10 +67,10 @@ const GestionUsuariosPage = () => {
     fetchAreas();
   }, []);
 
-  const canCreate = canCreateUsers(currentUser);
-  const canEdit = canEditUsers(currentUser);
-  const canToggleStatus = canToggleUserStatus(currentUser);
-  const canAssignAdminRole = canAssignSystemAdminRole(currentUser);
+  const canCreate = canCreateUsersEffective(currentUser);
+  const canEdit = canEditUsersEffective(currentUser);
+  const canToggleStatus = canToggleUserStatusEffective(currentUser);
+  const canAssignAdminRole = canAssignSystemAdminRoleEffective(currentUser);
 
   const handleCrear = async (usuario) => {
     try {
@@ -346,3 +346,4 @@ const GestionUsuariosPage = () => {
 };
 
 export default GestionUsuariosPage;
+

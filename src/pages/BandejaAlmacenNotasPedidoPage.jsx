@@ -1,16 +1,37 @@
 import { useEffect, useReducer, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canViewWarehouseTrayEffective } from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
-import { canViewWarehouseTray } from "../utils/inventarioPermissions";
 
 const MANUAL_RECEPTOR_OPTION = "__manual__";
 
 const buildReceptorCandidates = (pedido = {}) => {
   const areaId = pedido.areaSolicitante?.id ?? pedido.areaSolicitanteId ?? null;
   const candidates = new Map();
+  const snapshotFormal = pedido.snapshotFormal || {};
+  const snapshotApprover =
+    snapshotFormal.aprobadorPendienteActualIdSnapshot ||
+    snapshotFormal.aprobadorEfectivoIdSnapshot
+      ? {
+          id:
+            snapshotFormal.aprobadorPendienteActualIdSnapshot ||
+            snapshotFormal.aprobadorEfectivoIdSnapshot,
+          nombre:
+            snapshotFormal.aprobadorPendienteActualNombreSnapshot ||
+            snapshotFormal.aprobadorEfectivoNombreSnapshot,
+          cargo:
+            snapshotFormal.aprobadorPendienteActualRolSnapshot ||
+            snapshotFormal.aprobadorEfectivoRolSnapshot ||
+            null,
+          rol:
+            snapshotFormal.aprobadorPendienteActualRolSnapshot ||
+            snapshotFormal.aprobadorEfectivoRolSnapshot ||
+            null,
+        }
+      : null;
 
   const addCandidate = (user, sourceLabel) => {
     if (!user?.id) return;
@@ -32,7 +53,7 @@ const buildReceptorCandidates = (pedido = {}) => {
   };
 
   addCandidate(pedido.solicitante, "Solicitante");
-  addCandidate(pedido.aprobador, "Aprobador");
+  addCandidate(snapshotApprover, "Aprobador snapshot");
   addCandidate(pedido.areaSolicitante?.jefe, "Jefe del area");
 
   (pedido.notasSalida || []).forEach((nota) => {
@@ -105,7 +126,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
   const [ultimoResultado, setUltimoResultado] = useState(null);
   const [submittingId, setSubmittingId] = useState(null);
 
-  const canUseWarehouseTray = canViewWarehouseTray(user);
+  const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
   const cargarBandeja = async () => {
     try {
@@ -575,3 +596,5 @@ const BandejaAlmacenNotasPedidoPage = () => {
 };
 
 export default BandejaAlmacenNotasPedidoPage;
+
+

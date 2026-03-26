@@ -5,12 +5,32 @@ const normalizeAreaId = (value) => {
   return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
 };
 
+const normalizeArea = (area, fallback = {}) => {
+  if (area && typeof area === "object") {
+    return {
+      ...area,
+      id: normalizeAreaId(area.id ?? fallback.areaId),
+      nombre: area.nombre || fallback.areaNombre || null,
+      abreviatura: area.abreviatura || fallback.areaAbreviatura || null,
+      codigo: area.codigo || fallback.areaCodigo || null,
+    };
+  }
+
+  return {
+    id: normalizeAreaId(fallback.areaId),
+    nombre: fallback.areaNombre || null,
+    abreviatura: fallback.areaAbreviatura || null,
+    codigo: fallback.areaCodigo || null,
+  };
+};
+
 export const getActiveUserRangos = (user) =>
   toArray(user?.userRangos || user?.rangos)
     .filter((rango) => rango && rango.activo !== false && rango.rol)
     .map((rango) => ({
       ...rango,
-      areaId: normalizeAreaId(rango.areaId),
+      areaId: normalizeAreaId(rango.areaId ?? rango.area?.id),
+      area: normalizeArea(rango.area, rango),
     }));
 
 export const getActiveRoleAssignments = (user) => {
@@ -20,6 +40,8 @@ export const getActiveRoleAssignments = (user) => {
     assignments.push({
       rol: user.rol,
       areaId: normalizeAreaId(user?.areaId || user?.area?.id),
+      area: normalizeArea(user?.area, user),
+      branchDescription: null,
       source: "primary",
     });
   }
@@ -28,6 +50,8 @@ export const getActiveRoleAssignments = (user) => {
     assignments.push({
       rol: rango.rol,
       areaId: rango.areaId,
+      area: normalizeArea(rango.area, rango),
+      branchDescription: rango.branchDescription || null,
       source: "rango",
     });
   }
@@ -67,6 +91,7 @@ export const normalizeSessionUser = (user) => {
 
   return {
     ...user,
+    area: normalizeArea(user.area, user),
     userRangos: getActiveUserRangos(user),
   };
 };

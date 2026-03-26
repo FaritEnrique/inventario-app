@@ -1,11 +1,11 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canOperateInventoryEffective } from "../accessRules";
 import Loader from "../components/Loader";
 import ReservaEstadoBadge from "../components/ReservaEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
-import { canOperateInventory } from "../utils/inventarioPermissions";
 
 const actionableStates = new Set(["ACTIVA", "PARCIAL"]);
 
@@ -34,7 +34,7 @@ const InventarioReservaDetallePage = () => {
   });
   const [ultimoResultado, setUltimoResultado] = useState(null);
 
-  const canOperate = canOperateInventory(user);
+  const canOperate = canOperateInventoryEffective(user);
   const pendingAmount = Number(reserva?.cantidadPendiente || 0);
   const canMutate =
     canOperate &&
@@ -538,5 +538,4 @@ const InventarioReservaDetallePage = () => {
 };
 
 export default InventarioReservaDetallePage;
-
 

@@ -1,17 +1,32 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canActOnNoteDocument } from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
+import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
 import Loader from "../components/Loader";
+import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
+const formalLevelLabels = {
+  APROBACION_ALMACEN: "Aprobacion de almacen",
+  CONFORMIDAD_GERENCIA: "Conformidad de gerencia",
+};
+
 const InventarioNotaSalidaDetallePage = () => {
   const { id } = useParams();
-  const { loading, error, obtenerNotaSalidaPorId } = useInventario();
+  const { user } = useAuth();
+  const {
+    loading,
+    error,
+    obtenerNotaSalidaPorId,
+    actualizarAprobacionDocumentalNotaSalida,
+  } = useInventario();
   const [nota, setNota] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
@@ -27,6 +42,38 @@ const InventarioNotaSalidaDetallePage = () => {
     cargar();
   }, [id, obtenerNotaSalidaPorId]);
 
+  const documentoFormal = nota.documentoFormal || {};
+  const canAct = canActOnNoteDocument(user, documentoFormal);
+
+  const handleDecision = async (accion) => {
+    const comentario = window.prompt(
+      `Comentario para ${accion.toLowerCase()} la nota de salida (opcional).`,
+      ""
+    );
+
+    if (comentario === null) return;
+
+    setSubmitting(true);
+    try {
+      const updated = await actualizarAprobacionDocumentalNotaSalida(id, {
+        accion,
+        comentario: comentario.trim() || null,
+      });
+      setNota(updated);
+      toast.success(
+        accion === "APROBAR"
+          ? "Aprobacion documental registrada."
+          : "Rechazo documental registrado."
+      );
+    } catch (actionError) {
+      toast.error(
+        actionError.message || "No se pudo actualizar la aprobacion documental."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading && !nota) return <Loader />;
 
   if (!nota) {
@@ -40,8 +87,8 @@ const InventarioNotaSalidaDetallePage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">
             Detalle de nota de salida
@@ -63,24 +110,26 @@ const InventarioNotaSalidaDetallePage = () => {
           >
             Bandeja de almacen
           </Link>
-          <Link
-            to="/dashboard"
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Dashboard
-          </Link>
         </div>
       </div>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Estado
+            Estado operativo
           </p>
           <div className="mt-3">
             <DocumentoAlmacenEstadoBadge estado={nota.estado} />
+          </div>
+        </div>
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Estado documental
+          </p>
+          <div className="mt-3">
+            <DocumentoFormalEstadoBadge
+              estado={documentoFormal.estadoDocumentalFormal}
+            />
           </div>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -93,18 +142,12 @@ const InventarioNotaSalidaDetallePage = () => {
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Total entregado
+            Nivel pendiente
           </p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">
-            {nota.resumen?.totalEntregado || 0}
-          </p>
-        </div>
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Total pendiente
-          </p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">
-            {nota.resumen?.totalPendiente || 0}
+          <p className="mt-2 text-sm font-semibold text-slate-900">
+            {formalLevelLabels[documentoFormal.nivelPendienteActual] ||
+              documentoFormal.nivelPendienteActual ||
+              "Sin pendiente"}
           </p>
         </div>
       </div>
@@ -147,22 +190,6 @@ const InventarioNotaSalidaDetallePage = () => {
                 {nota.areaDestino?.nombre || "-"}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Referencia tipo
-              </p>
-              <p className="mt-1 text-sm text-slate-700">
-                {nota.referenciaTipo || "-"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Referencia codigo
-              </p>
-              <p className="mt-1 text-sm text-slate-700">
-                {nota.referenciaCodigo || "-"}
-              </p>
-            </div>
             <div className="md:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Observaciones
@@ -177,7 +204,7 @@ const InventarioNotaSalidaDetallePage = () => {
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-slate-900">
-              Trazabilidad
+              Flujo documental
             </h2>
             <Link
               to={`/inventario-movimientos?notaSalidaId=${nota.id}`}
@@ -186,51 +213,92 @@ const InventarioNotaSalidaDetallePage = () => {
               Ver movimientos
             </Link>
           </div>
-          <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Pedido interno origen
-              </p>
-              {nota.pedidoInterno ? (
-                <div className="mt-2 space-y-1 text-sm text-slate-700">
-                  <Link
-                    to={`/notas-pedido/${nota.pedidoInterno.id}`}
-                    className="font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    {nota.pedidoInterno.codigo}
-                  </Link>
-                  <p>{nota.pedidoInterno.areaSolicitante?.nombre || "Sin area"}</p>
-                  <p>Estado flujo: {nota.pedidoInterno.estadoFlujo}</p>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm text-slate-500">
-                  No hay un pedido interno vinculado directamente.
-                </p>
-              )}
-            </div>
 
-            <div className="rounded-lg border border-slate-200 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Flujo origen
-              </p>
-              <div className="mt-2 space-y-2 text-sm text-slate-700">
-                <p>
-                  Tipo: {nota.referenciaTipo || "-"} - Codigo:{" "}
-                  {nota.referenciaCodigo || "-"}
-                </p>
-                <Link
-                  to="/notas-pedido/almacen"
-                  className="font-medium text-emerald-700 hover:text-emerald-800"
+          <div className="mt-4 space-y-3">
+            {(documentoFormal.rutaAprobacionSnapshot || []).length > 0 ? (
+              documentoFormal.rutaAprobacionSnapshot.map((step) => (
+                <div
+                  key={`${step.orden}-${step.nivel}`}
+                  className={`rounded-lg border p-4 text-sm ${
+                    step.esPendienteActual
+                      ? "border-indigo-300 bg-indigo-50"
+                      : step.rechazado
+                        ? "border-rose-300 bg-rose-50"
+                        : step.aprobado
+                          ? "border-emerald-300 bg-emerald-50"
+                          : "border-slate-200 bg-white"
+                  }`}
                 >
-                  Volver al flujo de almacen
-                </Link>
+                  <p className="font-semibold text-slate-900">
+                    {formalLevelLabels[step.nivel] || step.nivel}
+                  </p>
+                  <p className="mt-1 text-slate-700">
+                    {step.aprobadorNombre || "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {step.estado || "PENDIENTE"}
+                  </p>
+                </div>
+              ))
+            ) : null}
+
+            {canAct ? (
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <p className="text-sm font-medium text-indigo-900">
+                  Accion documental disponible
+                </p>
+                <p className="mt-1 text-sm text-indigo-800">
+                  Tu usuario coincide con el aprobador snapshot del nivel pendiente.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDecision("APROBAR")}
+                    disabled={submitting}
+                    className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDecision("RECHAZAR")}
+                    disabled={submitting}
+                    className="rounded border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    Rechazar
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="space-y-3 md:hidden">
+        {(nota.detalles || []).length > 0 ? (
+          nota.detalles.map((detalle) => (
+            <div key={detalle.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="font-semibold text-slate-900">
+                {detalle.producto?.nombre || "-"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {detalle.producto?.codigo || "-"} · {detalle.producto?.unidadMedida || "-"}
+              </p>
+              <div className="mt-3 grid gap-1 text-sm text-slate-700">
+                <p>Solicitada: {detalle.cantidadSolicitada}</p>
+                <p>Entregada: {detalle.cantidadEntregada}</p>
+                <p>Pendiente: {detalle.cantidadPendiente}</p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+            Esta nota no tiene lineas visibles.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-900">Lineas entregadas</h2>
         </div>
@@ -259,8 +327,7 @@ const InventarioNotaSalidaDetallePage = () => {
                         {detalle.producto?.nombre || "-"}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {detalle.producto?.codigo || "-"} ?{" "}
-                        {detalle.producto?.unidadMedida || "-"}
+                        {detalle.producto?.codigo || "-"} · {detalle.producto?.unidadMedida || "-"}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -275,24 +342,16 @@ const InventarioNotaSalidaDetallePage = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <div className="space-y-1">
-                        {detalle.producto?.id ? (
-                          <Link
-                            to={`/inventario-kardex?productoId=${detalle.producto.id}`}
-                            className="font-medium text-blue-600 hover:text-blue-700"
-                          >
-                            Ver kardex del producto
-                          </Link>
-                        ) : null}
-                        {nota.pedidoInterno ? (
-                          <Link
-                            to={`/notas-pedido/${nota.pedidoInterno.id}`}
-                            className="font-medium text-slate-600 hover:text-slate-700"
-                          >
-                            Ver pedido interno
-                          </Link>
-                        ) : null}
-                      </div>
+                      {nota.pedidoInterno ? (
+                        <Link
+                          to={`/notas-pedido/${nota.pedidoInterno.id}`}
+                          className="font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          Ver pedido interno
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500">Sin pedido vinculado</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -303,59 +362,36 @@ const InventarioNotaSalidaDetallePage = () => {
       </div>
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Movimientos relacionados
-          </h2>
-          <Link
-            to={`/inventario-movimientos?notaSalidaId=${nota.id}`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            Abrir pagina de movimientos
-          </Link>
+        <h2 className="text-lg font-semibold text-slate-900">
+          Historial documental
+        </h2>
+        <div className="mt-4 space-y-3">
+          {(documentoFormal.historial || []).length > 0 ? (
+            documentoFormal.historial.map((entry) => (
+              <div key={entry.id} className="rounded-lg border border-slate-200 p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-slate-900">
+                    {entry.tipoEvento}
+                  </p>
+                  <p className="text-slate-500">{formatDateTime(entry.fechaAccion)}</p>
+                </div>
+                <p className="mt-1 text-slate-700">
+                  Actor: {entry.actor?.nombre || "-"}
+                </p>
+                {entry.comentario ? (
+                  <p className="mt-1 text-slate-700">{entry.comentario}</p>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+              Aun no hay historial documental visible.
+            </div>
+          )}
         </div>
-        {(nota.movimientos || []).length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">
-            No hay movimientos visibles vinculados a esta nota.
-          </p>
-        ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-700">
-                <tr>
-                  <th className="px-4 py-3 text-left">Fecha</th>
-                  <th className="px-4 py-3 text-left">Producto</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-left">Cantidad</th>
-                  <th className="px-4 py-3 text-left">Operacion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nota.movimientos.map((movimiento) => (
-                  <tr key={movimiento.id} className="border-t border-slate-200">
-                    <td className="px-4 py-3">{formatDateTime(movimiento.fechaMovimiento)}</td>
-                    <td className="px-4 py-3">
-                      {movimiento.producto?.codigo} - {movimiento.producto?.nombre}
-                    </td>
-                    <td className="px-4 py-3">
-                      {movimiento.tipoMovimiento}
-                      {movimiento.subtipoMovimiento
-                        ? ` / ${movimiento.subtipoMovimiento}`
-                        : ""}
-                    </td>
-                    <td className="px-4 py-3">{movimiento.cantidad}</td>
-                    <td className="px-4 py-3">{movimiento.numeroOperacion || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
 export default InventarioNotaSalidaDetallePage;
-
-

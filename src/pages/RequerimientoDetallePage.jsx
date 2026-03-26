@@ -6,9 +6,9 @@ import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
-  canEditRequerimiento,
-  getAvailableApprovalTrays,
-} from "../utils/requerimientoPermissions";
+  canEditRequerimientoEffective,
+  getAvailableApprovalTraysEffective,
+} from "../accessRules";
 
 const eventLabels = {
   CREACION: "Creacion",
@@ -111,9 +111,9 @@ const RequerimientoDetallePage = () => {
     load();
   }, [getRequerimientoById, id]);
 
-  const trays = useMemo(() => getAvailableApprovalTrays(user), [user]);
+  const trays = useMemo(() => getAvailableApprovalTraysEffective(user), [user]);
   const canEdit = useMemo(
-    () => canEditRequerimiento(user, requerimiento),
+    () => canEditRequerimientoEffective(user, requerimiento),
     [requerimiento, user]
   );
   const requiresGG = Number(requerimiento?.totalReferencial || 0) > 20000;
@@ -297,52 +297,77 @@ const RequerimientoDetallePage = () => {
 
         <div>
           <h2 className="mb-3 text-lg font-semibold text-gray-900">Items</h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Descripcion</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Cantidad</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Valor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Subtotal</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {requerimiento.items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      <p className="font-medium text-gray-900">{item.descripcionVisible}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.producto?.codigo || item.productoTemporal?.nombre || "Producto temporal"}
-                      </p>
-                      {item.esTemporal && (
-                        <div className="mt-1 space-y-1 text-xs text-amber-700">
-                          <p>Producto temporal pendiente de catalogacion.</p>
-                          <p>
-                            Propuesto por: {item.productoTemporal?.propuestoPor?.nombre || "-"}
-                          </p>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.esTemporal ? "Temporal" : "Catalogado"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.cantidadRequerida} {item.unidadMedida}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      S/ {(item.valorReferencialUnitario || 0).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      S/ {(item.subtotalReferencial || 0).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{item.estado}</td>
+          <div className="space-y-3 md:hidden">
+            {requerimiento.items.map((item) => (
+              <div key={item.id} className="rounded-lg border border-gray-200 p-4">
+                <p className="font-medium text-gray-900">{item.descripcionVisible}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {item.producto?.codigo || item.productoTemporal?.nombre || "Producto temporal"}
+                </p>
+                <div className="mt-3 grid gap-1 text-sm text-gray-700">
+                  <p>Tipo: {item.esTemporal ? "Temporal" : "Catalogado"}</p>
+                  <p>
+                    Cantidad: {item.cantidadRequerida} {item.unidadMedida}
+                  </p>
+                  <p>
+                    Valor: S/ {(item.valorReferencialUnitario || 0).toFixed(2)}
+                  </p>
+                  <p>
+                    Subtotal: S/ {(item.subtotalReferencial || 0).toFixed(2)}
+                  </p>
+                  <p>Estado: {item.estado}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-hidden rounded-lg border border-gray-200 md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Descripcion</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Tipo</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Cantidad</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Valor</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Subtotal</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {requerimiento.items.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <p className="font-medium text-gray-900">{item.descripcionVisible}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.producto?.codigo || item.productoTemporal?.nombre || "Producto temporal"}
+                        </p>
+                        {item.esTemporal && (
+                          <div className="mt-1 space-y-1 text-xs text-amber-700">
+                            <p>Producto temporal pendiente de catalogacion.</p>
+                            <p>
+                              Propuesto por: {item.productoTemporal?.propuestoPor?.nombre || "-"}
+                            </p>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.esTemporal ? "Temporal" : "Catalogado"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.cantidadRequerida} {item.unidadMedida}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        S/ {(item.valorReferencialUnitario || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        S/ {(item.subtotalReferencial || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{item.estado}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -408,6 +433,7 @@ const RequerimientoDetallePage = () => {
 };
 
 export default RequerimientoDetallePage;
+
 
 
 

@@ -1,7 +1,6 @@
-// src/components/ProtectedRoute.jsx
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/authContext";
 import Modal from "react-modal";
+import { useAuth } from "../context/authContext";
 
 Modal.setAppElement("#root");
 
@@ -13,7 +12,8 @@ const customStyles = {
     bottom: "auto",
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
-    width: "400px",
+    width: "min(420px, calc(100vw - 2rem))",
+    maxWidth: "calc(100vw - 2rem)",
     padding: "20px",
     borderRadius: "8px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
@@ -35,24 +35,22 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" />;
   }
 
-  // ✅ CORRECCIÓN CLAVE: Renderizamos solo el modal si el usuario no está activo
   if (user && !user.activo) {
     return (
       <Modal
-        isOpen={true} // Siempre abierto mientras el componente esté montado
+        isOpen
         onRequestClose={() => navigate("/login")}
         style={customStyles}
         contentLabel="Usuario no validado"
       >
-        <h3 className="text-xl font-bold mb-4">Acceso Denegado</h3>
+        <h3 className="mb-4 text-xl font-bold">Acceso denegado</h3>
         <p className="text-gray-700">
-          Usuario no validado, sólo acceso a la plataforma los usuarios
-          validados y autorizados.
+          Solo los usuarios activos y autorizados pueden ingresar a la plataforma.
         </p>
-        <div className="flex justify-end mt-4">
+        <div className="mt-4 flex justify-end">
           <button
             onClick={() => navigate("/login")}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
             Aceptar
           </button>
@@ -61,7 +59,6 @@ const ProtectedRoute = () => {
     );
   }
 
-  // Si todo es correcto, renderizamos el contenido de la ruta
   return <Outlet />;
 };
 

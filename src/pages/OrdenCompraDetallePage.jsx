@@ -1,25 +1,34 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canApproveOrdenCompraStageEffective,
+  canManageOrdenCompraLifecycleEffective,
+} from "../accessRules";
 import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
-import {
-  canApproveOrdenCompra,
-  canManageOrdenCompraLifecycle,
-} from "../utils/ordenCompraPermissions";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
-const formatDateTime = (value) =>
-  value ? new Date(value).toLocaleString() : "-";
-
 const finalReceptionStates = new Set([
   "CANCELADA",
   "CERRADA",
   "COMPLETAMENTE_RECIBIDA",
 ]);
+
+const approvalLabels = {
+  GERENCIA_ADMINISTRACION: "Gerencia de administracion",
+  GERENCIA_GENERAL: "Gerencia general",
+  JEFATURA_LOGISTICA: "Jefatura de logistica",
+};
+
+const requestOptionalText = (message, defaultValue = "") => {
+  const value = window.prompt(message, defaultValue);
+  if (value === null) return null;
+  return value.trim();
+};
 
 const buildRequerimientos = (ordenCompra) => {
   const map = new Map();
@@ -31,17 +40,6 @@ const buildRequerimientos = (ordenCompra) => {
   });
 
   return Array.from(map.values());
-};
-
-const requestOptionalText = (message, defaultValue = "") => {
-  const value = window.prompt(message, defaultValue);
-  if (value === null) return null;
-  return value.trim();
-};
-
-const approvalActionLabels = {
-  APROBADA: "aprobar",
-  RECHAZADA: "rechazar",
 };
 
 const OrdenCompraDetallePage = () => {
@@ -79,14 +77,14 @@ const OrdenCompraDetallePage = () => {
     [ordenCompra]
   );
 
-  const canApprove = canApproveOrdenCompra(user);
-  const canManageLifecycle = canManageOrdenCompraLifecycle(user);
+  const canApprove = canApproveOrdenCompraStageEffective(user, ordenCompra);
+  const canManageLifecycle = canManageOrdenCompraLifecycleEffective(user);
   const isReceptionFinal = finalReceptionStates.has(ordenCompra?.estadoRecepcion);
   const hasPendingBalance = Number(ordenCompra?.resumen?.totalPendiente || 0) > 0;
   const hasAcceptedReception = Number(ordenCompra?.resumen?.totalAceptado || 0) > 0;
   const allowApprovalAction =
     canApprove &&
-    Boolean(ordenCompra?.requiereAprobacionGerenciaGeneral) &&
+    ordenCompra?.estadoAprobacion === "PENDIENTE_APROBACION" &&
     !isReceptionFinal;
   const allowCloseAction =
     canManageLifecycle && !isReceptionFinal && hasPendingBalance;
@@ -115,11 +113,14 @@ const OrdenCompraDetallePage = () => {
   };
 
   const handleApproval = async (estadoAprobacion) => {
-    const actionLabel = approvalActionLabels[estadoAprobacion] || "actualizar";
+    const currentLevelLabel =
+      approvalLabels[ordenCompra?.nivelPendienteActual] ||
+      ordenCompra?.nivelPendienteActual ||
+      "el nivel pendiente";
 
     if (
       !window.confirm(
-        `Se ${actionLabel} la orden de compra ${ordenCompra.codigo} en Gerencia General. Deseas continuar?`
+        `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`
       )
     ) {
       return;
@@ -211,9 +212,12 @@ const OrdenCompraDetallePage = () => {
     );
   }
 
+  const snapshotFormal = ordenCompra.snapshotFormal || {};
+  const snapshotRoute = snapshotFormal.rutaAprobacionSnapshot || [];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             Detalle de orden de compra
@@ -230,16 +234,16 @@ const OrdenCompraDetallePage = () => {
             Listado de OCs
           </Link>
           <Link
+            to="/ordenes-compra?view=aprobacion"
+            className="rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+          >
+            Bandeja de aprobacion
+          </Link>
+          <Link
             to="/inventario-recepciones"
             className="rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
           >
             Recepciones
-          </Link>
-          <Link
-            to="/dashboard"
-            className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Dashboard
           </Link>
         </div>
       </div>
@@ -257,6 +261,13 @@ const OrdenCompraDetallePage = () => {
               tipo="aprobacion"
             />
           </div>
+          {ordenCompra.nivelPendienteActual ? (
+            <p className="mt-2 text-sm text-gray-700">
+              Pendiente:{" "}
+              {approvalLabels[ordenCompra.nivelPendienteActual] ||
+                ordenCompra.nivelPendienteActual}
+            </p>
+          ) : null}
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -279,10 +290,10 @@ const OrdenCompraDetallePage = () => {
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Notas de ingreso
+            Comparativo base
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {ordenCompra.resumen?.totalNotasIngreso || 0}
+          <p className="mt-2 text-lg font-semibold text-gray-900">
+            {ordenCompra.comparativoBase?.codigo || "-"}
           </p>
         </div>
       </div>
@@ -301,60 +312,42 @@ const OrdenCompraDetallePage = () => {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Requiere GG
-              </p>
-              <p className="mt-1 text-sm text-gray-700">
-                {ordenCompra.requiereAprobacionGerenciaGeneral ? "Si" : "No"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Fecha aprobacion GG
-              </p>
-              <p className="mt-1 text-sm text-gray-700">
-                {formatDateTime(ordenCompra.fechaAprobacionGerenciaGeneral)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Aprobado por
-              </p>
-              <p className="mt-1 text-sm text-gray-700">
-                {ordenCompra.aprobadoPorGerenciaGeneral?.nombre || "-"}
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Proveedor
               </p>
               <p className="mt-1 text-sm text-gray-700">
-                {ordenCompra.proveedor?.razonSocial || "-"} · {" "}
-                {ordenCompra.proveedor?.ruc || "Sin RUC"}
+                {ordenCompra.proveedor?.razonSocial || "-"} · {ordenCompra.proveedor?.ruc || "Sin RUC"}
               </p>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Requerimientos origen
-            </h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {requerimientos.length > 0 ? (
-                requerimientos.map((requerimiento) => (
-                  <Link
-                    key={requerimiento.id}
-                    to={`/requerimientos/${requerimiento.id}`}
-                    className="rounded border border-indigo-200 px-3 py-1.5 text-sm text-indigo-700 hover:bg-indigo-50"
-                  >
-                    {requerimiento.codigo}
-                  </Link>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No hay requerimientos visibles vinculados en el detalle actual.
-                </p>
-              )}
-            </div>
+          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Snapshot formal
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-gray-900">Logistica</p>
+                  <p>{snapshotFormal.aprobadorLogisticaNombreSnapshot || "-"}</p>
+                </div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-gray-900">Administracion</p>
+                  <p>{snapshotFormal.aprobadorAdministracionNombreSnapshot || "-"}</p>
+                </div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-gray-900">Gerencia general</p>
+                  <p>{snapshotFormal.aprobadorGerenciaGeneralNombreSnapshot || "-"}</p>
+                </div>
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-gray-900">Umbral GG</p>
+                  <p>
+                    {snapshotFormal.requiereGerenciaGeneralSnapshot
+                      ? `Si · S/ ${Number(
+                          snapshotFormal.umbralGerenciaGeneralSnapshot || 0
+                        ).toFixed(2)}`
+                      : "No aplica"}
+                  </p>
+                </div>
+              </div>
           </div>
         </div>
 
@@ -380,13 +373,15 @@ const OrdenCompraDetallePage = () => {
 
           <div className="mt-4 space-y-4">
             {allowApprovalAction ? (
-              <div className="rounded-lg border border-gray-200 p-4">
-                <p className="text-sm font-medium text-gray-900">
-                  Aprobacion de Gerencia General
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <p className="text-sm font-medium text-indigo-900">
+                  Aprobacion pendiente real
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
-                  Esta accion usa el mismo endpoint para aprobar o rechazar la
-                  orden, segun la decision final de Gerencia General.
+                <p className="mt-1 text-sm text-indigo-800">
+                  Esta orden esta pendiente en{" "}
+                  {approvalLabels[ordenCompra.nivelPendienteActual] ||
+                    ordenCompra.nivelPendienteActual}
+                  .
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -410,14 +405,12 @@ const OrdenCompraDetallePage = () => {
             ) : null}
 
             {allowCloseAction ? (
-              <div className="rounded-lg border border-gray-200 p-4">
-                <p className="text-sm font-medium text-gray-900">
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <p className="text-sm font-medium text-indigo-900">
                   Cierre documental
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
-                  Usa esta accion para cerrar un saldo pendiente sin recepcion
-                  completa, o para registrar incumplimiento documental del
-                  proveedor.
+                <p className="mt-1 text-sm text-indigo-800">
+                  Registra el cierre si ya no se recibira el saldo pendiente.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -446,8 +439,7 @@ const OrdenCompraDetallePage = () => {
                   Cancelacion
                 </p>
                 <p className="mt-1 text-sm text-rose-800">
-                  Solo disponible si aun no existen recepciones aceptadas ni
-                  cierre final del documento.
+                  Solo disponible si aun no existen recepciones aceptadas ni cierre final.
                 </p>
                 <button
                   type="button"
@@ -462,11 +454,43 @@ const OrdenCompraDetallePage = () => {
 
             {!allowApprovalAction && !allowCloseAction && !allowCancelAction ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                No hay acciones manuales habilitadas para tu perfil o para el estado
-                actual de esta orden.
+                No hay acciones manuales habilitadas para tu perfil o para el estado actual.
               </div>
             ) : null}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Ruta de aprobacion
+          </h2>
+          <span className="text-sm text-gray-500">
+
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {snapshotRoute.map((step) => (
+            <div
+              key={`${step.orden}-${step.nivel}`}
+              className={`rounded-lg border p-4 text-sm ${
+                step.esPendienteActual
+                  ? "border-indigo-300 bg-indigo-50"
+                  : step.rechazado
+                    ? "border-rose-300 bg-rose-50"
+                    : step.satisfecho
+                      ? "border-emerald-300 bg-emerald-50"
+                      : "border-gray-200 bg-white"
+              }`}
+            >
+              <p className="font-semibold text-gray-900">
+                {approvalLabels[step.nivel] || step.nivel}
+              </p>
+              <p className="mt-1 text-gray-700">{step.aprobadorNombre || "-"}</p>
+              <p className="mt-1 text-xs text-gray-500">{step.estado || "PENDIENTE"}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -512,59 +536,77 @@ const OrdenCompraDetallePage = () => {
         </div>
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Trazabilidad basica
-            </h2>
-            <Link
-              to="/inventario-recepciones"
-              className="text-sm font-medium text-sky-700 hover:text-sky-800"
-            >
-              Ir a recepciones
-            </Link>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Historial de aprobacion
+          </h2>
           <div className="mt-4 space-y-3">
-            {(ordenCompra.notasIngreso || []).length > 0 ? (
-              ordenCompra.notasIngreso.map((notaIngreso) => (
-                <div
-                  key={notaIngreso.id}
-                  className="rounded-lg border border-gray-200 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <Link
-                        to={`/inventario-notas-ingreso/${notaIngreso.id}`}
-                        className="font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        {notaIngreso.codigo}
-                      </Link>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(notaIngreso.fechaRecepcion)} · {" "}
-                        {notaIngreso.almacen?.nombre || "Sin almacen"}
-                      </p>
-                    </div>
-                    <OrdenCompraEstadoBadge
-                      estado={notaIngreso.estado}
-                      tipo="recepcion"
-                    />
+            {(ordenCompra.historialAprobacion || []).length > 0 ? (
+              ordenCompra.historialAprobacion.map((entry) => (
+                <div key={entry.id} className="rounded-lg border border-gray-200 p-4 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-gray-900">
+                      {approvalLabels[entry.nivel] || entry.nivel} · {entry.tipoEvento}
+                    </p>
+                    <p className="text-gray-500">{formatDateTime(entry.fechaAccion)}</p>
                   </div>
-                  <p className="mt-2 text-sm text-gray-700">
-                    Aceptado: {notaIngreso.resumen?.totalAceptado || 0} ·
-                    Rechazado: {notaIngreso.resumen?.totalRechazado || 0} ·
-                    Pendiente: {notaIngreso.resumen?.totalPendiente || 0}
+                  <p className="mt-1 text-gray-700">
+                    Actor: {entry.actor?.nombre || "-"}
                   </p>
+                  {entry.comentario ? (
+                    <p className="mt-1 text-gray-700">{entry.comentario}</p>
+                  ) : null}
                 </div>
               ))
             ) : (
               <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                Aun no existen notas de ingreso vinculadas a esta orden.
+                Aun no hay historial de aprobacion visible.
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="rounded-xl bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900">Requerimientos origen</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {requerimientos.length > 0 ? (
+            requerimientos.map((requerimiento) => (
+              <Link
+                key={requerimiento.id}
+                to={`/requerimientos/${requerimiento.id}`}
+                className="rounded border border-indigo-200 px-3 py-1.5 text-sm text-indigo-700 hover:bg-indigo-50"
+              >
+                {requerimiento.codigo}
+              </Link>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">
+              No hay requerimientos visibles vinculados.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4 md:hidden">
+        {(ordenCompra.items || []).map((item) => (
+          <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="font-semibold text-gray-900">
+              {item.producto?.nombre || "-"}
+            </p>
+            <p className="text-xs text-gray-500">
+              {item.producto?.codigo || "Sin codigo"} · {item.producto?.unidadMedida || "-"}
+            </p>
+            <div className="mt-3 grid gap-2 text-sm text-gray-700">
+              <p>Ordenada: {item.cantidadOrdenada}</p>
+              <p>Aceptada: {item.cantidadAceptada}</p>
+              <p>Pendiente: {item.cantidadPendiente}</p>
+              <p>Precio: {formatCurrency(item.precioUnidad)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
         <div className="border-b border-gray-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-gray-900">Lineas principales</h2>
         </div>
@@ -597,8 +639,7 @@ const OrdenCompraDetallePage = () => {
                       {item.producto?.nombre || "-"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {item.producto?.codigo || "Sin codigo"} · {" "}
-                      {item.producto?.unidadMedida || "-"}
+                      {item.producto?.codigo || "Sin codigo"} · {item.producto?.unidadMedida || "-"}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
@@ -625,17 +666,10 @@ const OrdenCompraDetallePage = () => {
                     </p>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    <div className="space-y-2">
-                      <OrdenCompraEstadoBadge
-                        estado={item.estadoRecepcion}
-                        tipo="recepcion"
-                      />
-                      {item.recepciones?.length > 0 ? (
-                        <p className="text-xs text-gray-500">
-                          {item.recepciones.length} recepcion(es) documentadas
-                        </p>
-                      ) : null}
-                    </div>
+                    <OrdenCompraEstadoBadge
+                      estado={item.estadoRecepcion}
+                      tipo="recepcion"
+                    />
                   </td>
                 </tr>
               ))}

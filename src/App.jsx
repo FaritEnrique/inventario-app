@@ -18,13 +18,13 @@ import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import {
-  canAccessCotizaciones,
-  canViewAllCotizacionesLogistica,
-  isLogisticaOperador,
-} from "./utils/cotizacionPermissions";
-import { canAccessTrayLevel } from "./utils/requerimientoPermissions";
+  canAccessCotizacionesEffective,
+  canViewAllCotizacionesLogisticaEffective,
+  isLogisticaOperadorEffective,
+} from "./accessRules";
+import { canAccessTrayLevelEffective } from "./accessRules";
 import { hasRole } from "./utils/userRoles";
-import { canAccessUserManagement } from "./utils/userManagementPermissions";
+import { canAccessUserManagementEffective } from "./accessRules";
 import "./index.css";
 
 const CrearPrimerUsuarioPage = lazy(() => import("./pages/CrearPrimerUsuarioPage"));
@@ -146,7 +146,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-usuarios"
               element={
-                <RoutePermissionGuard allow={canAccessUserManagement}>
+                <RoutePermissionGuard allow={canAccessUserManagementEffective}>
                   <GestionUsuariosPage />
                 </RoutePermissionGuard>
               }
@@ -155,7 +155,7 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones"
               element={
-                <RoutePermissionGuard allow={canAccessCotizaciones}>
+                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
                   <CotizacionesPage />
                 </RoutePermissionGuard>
               }
@@ -163,7 +163,7 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones/bandeja/jefatura"
               element={
-                <RoutePermissionGuard allow={canViewAllCotizacionesLogistica}>
+                <RoutePermissionGuard allow={canViewAllCotizacionesLogisticaEffective}>
                   <CotizacionesBandejaPage tipo="jefatura" />
                 </RoutePermissionGuard>
               }
@@ -173,7 +173,7 @@ const AppRoutes = () => {
               element={
                 <RoutePermissionGuard
                   allow={(user) =>
-                    isLogisticaOperador(user) ||
+                    isLogisticaOperadorEffective(user) ||
                     hasRole(user, "ADMINISTRADOR_SISTEMA")
                   }
                 >
@@ -184,7 +184,7 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones/proceso/:id"
               element={
-                <RoutePermissionGuard allow={canAccessCotizaciones}>
+                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
                   <ProcesoLogisticoDetallePage />
                 </RoutePermissionGuard>
               }
@@ -214,7 +214,7 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/jefatura"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevel(user, "jefatura")}>
+                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "jefatura")}>
                   <RequerimientosBandejaPage nivel="jefatura" />
                 </RoutePermissionGuard>
               }
@@ -222,7 +222,7 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-area"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevel(user, "gerencia-area")}>
+                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-area")}>
                   <RequerimientosBandejaPage nivel="gerencia-area" />
                 </RoutePermissionGuard>
               }
@@ -230,7 +230,7 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-administracion"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevel(user, "gerencia-administracion")}>
+                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-administracion")}>
                   <RequerimientosBandejaPage nivel="gerencia-administracion" />
                 </RoutePermissionGuard>
               }
@@ -238,7 +238,7 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-general"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevel(user, "gerencia-general")}>
+                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-general")}>
                   <RequerimientosBandejaPage nivel="gerencia-general" />
                 </RoutePermissionGuard>
               }
@@ -281,6 +281,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 

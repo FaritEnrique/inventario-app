@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canApprovePedidoInternoEffective } from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
-import { canApprovePedidoInterno } from "../utils/inventarioPermissions";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -17,7 +17,7 @@ const BandejaAprobacionNotasPedidoPage = () => {
   const [comentarios, setComentarios] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
 
-  const canApprove = canApprovePedidoInterno(user);
+  const canApprove = canApprovePedidoInternoEffective(user);
 
   const cargarBandeja = async () => {
     try {

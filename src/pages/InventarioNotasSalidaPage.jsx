@@ -1,7 +1,8 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
+import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
 import Loader from "../components/Loader";
 import ProductoSearchField from "../components/ProductoSearchField";
 import useInventario from "../hooks/useInventario";
@@ -238,6 +239,10 @@ const InventarioNotasSalidaPage = () => {
                       <div className="space-y-2">
                         <div className="font-medium text-slate-900">{nota.codigo}</div>
                         <DocumentoAlmacenEstadoBadge estado={nota.estado} />
+                        <DocumentoFormalEstadoBadge
+                          estado={nota.documentoFormal?.estadoDocumentalFormal}
+
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -267,6 +272,11 @@ const InventarioNotasSalidaPage = () => {
                       <div className="text-xs text-slate-500">
                         Receptor: {nota.receptor?.nombre || "-"}
                       </div>
+                      {nota.documentoFormal?.nivelPendienteActual ? (
+                        <div className="text-xs text-indigo-600">
+                          Pendiente: {nota.documentoFormal.nivelPendienteActual}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">
                       <div>Entregado: {nota.resumen?.totalEntregado || 0}</div>

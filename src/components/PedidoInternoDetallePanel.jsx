@@ -10,6 +10,15 @@ const formatNumber = (value) => Number(value || 0);
 const PedidoInternoDetallePanel = ({ pedido }) => {
   if (!pedido) return null;
 
+  const snapshotFormal = pedido.snapshotFormal || {};
+  const aprobadorSnapshotLabel =
+    snapshotFormal.aprobadorPendienteActualNombreSnapshot ||
+    snapshotFormal.aprobadorEfectivoNombreSnapshot ||
+    "-";
+  const requiereAprobacion = Boolean(
+    snapshotFormal.requiereAprobacionSnapshot
+  );
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -42,8 +51,10 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
                 {pedido.solicitante?.nombre || "-"}
               </p>
               <p>
-                <span className="font-medium text-slate-800">Aprobador:</span>{" "}
-                {pedido.aprobador?.nombre || "-"}
+                <span className="font-medium text-slate-800">
+                  Aprobador efectivo:
+                </span>{" "}
+                {aprobadorSnapshotLabel}
               </p>
               <p>
                 <span className="font-medium text-slate-800">Almacen:</span>{" "}
@@ -55,7 +66,7 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
                 <span className="font-medium text-slate-800">
                   Requiere aprobacion:
                 </span>{" "}
-                {pedido.requiereAprobacion ? "Si" : "No"}
+                {requiereAprobacion ? "Si" : "No"}
               </p>
             </div>
           </div>

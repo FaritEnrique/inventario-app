@@ -62,9 +62,9 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const adjudicarCotizacion = async (id) => {
+  const adjudicarCotizacion = async (id, payload = {}) => {
     try {
-      const cotizacionAdjudicada = await cotizacionesApi.adjudicar(id);
+      const cotizacionAdjudicada = await cotizacionesApi.adjudicar(id, payload);
       const requerimientoId =
         cotizacionAdjudicada?.solicitud?.requerimiento?.id ??
         cotizacionAdjudicada?.solicitud?.requerimientoId ??
@@ -96,11 +96,15 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
         })
       );
 
-      toast.success("Cotizacion adjudicada con exito.");
+      toast.success(
+        "Adjudicacion directa excepcional registrada con exito."
+      );
       return cotizacionAdjudicada;
     } catch (err) {
       console.error("Error adjudicando cotizacion:", err);
-      const errorMessage = err.message || "Error al adjudicar cotizacion.";
+      const errorMessage =
+        err.message ||
+        "Error al registrar la adjudicacion directa excepcional.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }

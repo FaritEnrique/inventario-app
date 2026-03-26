@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  canApprovePedidoInternoEffective,
+  canViewWarehouseTrayEffective,
+} from "../accessRules";
 import PedidoInternoDetallePanel from "../components/PedidoInternoDetallePanel";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
-import {
-  canApprovePedidoInterno,
-  canViewWarehouseTray,
-} from "../utils/inventarioPermissions";
 
 const NotaPedidoDetallePage = () => {
   const { user } = useAuth();
@@ -15,8 +15,8 @@ const NotaPedidoDetallePage = () => {
   const { loading, obtenerPedidoPorId } = usePedidosInternos();
   const [pedido, setPedido] = useState(null);
 
-  const canApprove = canApprovePedidoInterno(user);
-  const canUseWarehouseTray = canViewWarehouseTray(user);
+  const canApprove = canApprovePedidoInternoEffective(user);
+  const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
   useEffect(() => {
     const cargarPedido = async () => {
