@@ -297,6 +297,12 @@ const CotizacionesBandejaPage = ({ tipo }) => {
               canAssign &&
               !blocked &&
               item.modalidadFlujoLogistico === "REGULAR";
+            const canRegisterCotizaciones =
+              item.modalidadFlujoLogistico === "REGULAR" &&
+              Number(item.resumenComparativo?.totalSolicitudes || 0) > 0;
+            const canOpenComparativo =
+              item.modalidadFlujoLogistico === "REGULAR" &&
+              Number(item.resumenComparativo?.totalCotizaciones || 0) > 0;
 
             return (
               <div key={item.id} className="rounded-xl bg-white p-5 shadow-sm">
@@ -414,6 +420,22 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     >
                       Abrir expediente
                     </Link>
+                    {canRegisterCotizaciones ? (
+                      <Link
+                        to={`/cotizaciones/proceso/${item.id}#cotizaciones`}
+                        className="rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
+                      >
+                        Registrar cotizaciones
+                      </Link>
+                    ) : null}
+                    {canOpenComparativo ? (
+                      <Link
+                        to={`/cotizaciones/proceso/${item.id}#comparativo`}
+                        className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
+                      >
+                        Ir a comparativo
+                      </Link>
+                    ) : null}
                     {tipo === "operador" && item.estadoLogistica === "ASIGNADO" ? (
                       <button
                         type="button"

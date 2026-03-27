@@ -237,6 +237,9 @@ const GestionProveedoresPage = () => {
                   Teléfono
                 </th>
                 <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                  Tipos de Producto
+                </th>
+                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
                   Estado
                 </th>
                 <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
@@ -262,6 +265,14 @@ const GestionProveedoresPage = () => {
                     </td>
                     <td className="px-5 py-4 text-sm border-b">
                       {p.telefono || "N/A"}
+                    </td>
+                    <td className="px-5 py-4 text-sm border-b">
+                      {(p.especialidades || []).length > 0
+                        ? p.especialidades
+                            .map((especialidad) => especialidad.tipoProducto?.nombre)
+                            .filter(Boolean)
+                            .join(", ")
+                        : "Sin definir"}
                     </td>
                     <td className="px-5 py-4 text-sm border-b">
                       <span
@@ -292,7 +303,7 @@ const GestionProveedoresPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="py-10 text-center text-gray-500">
+                  <td colSpan="8" className="py-10 text-center text-gray-500">
                     No se encontraron proveedores.
                   </td>
                 </tr>

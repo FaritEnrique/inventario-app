@@ -10,11 +10,11 @@ const useProveedores = () => {
   const [error, setError] = useState(null);
   const [ultimaActualizacionSunat, setUltimaActualizacionSunat] = useState(null); // 🆕
 
-  const fetchProveedores = async (query = "") => {
+  const fetchProveedores = async (query = "", filters = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await proveedoresApi.getTodas(query);
+      const data = await proveedoresApi.getTodas(query, filters);
       setProveedores(data);
       return data;
     } catch (err) {

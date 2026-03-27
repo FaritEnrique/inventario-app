@@ -1,8 +1,18 @@
 import apiFetch from './apiFetch';
 
 const proveedoresApi = {
-  getTodas: async (buscar = '') => {
-    const query = buscar ? `?buscar=${encodeURIComponent(buscar)}` : '';
+  getTodas: async (buscar = '', filters = {}) => {
+    const params = new URLSearchParams();
+    if (buscar) {
+      params.set('buscar', buscar);
+    }
+    if (filters?.tipoProductoId) {
+      params.set('tipoProductoId', String(filters.tipoProductoId));
+    }
+    if (Array.isArray(filters?.tipoProductoIds) && filters.tipoProductoIds.length > 0) {
+      params.set('tipoProductoIds', filters.tipoProductoIds.join(','));
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
     return await apiFetch(`proveedores${query}`);
   },
 

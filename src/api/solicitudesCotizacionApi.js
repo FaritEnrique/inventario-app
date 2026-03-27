@@ -1,4 +1,4 @@
-import apiFetch from './apiFetch';
+import apiFetch, { buildApiUrl } from './apiFetch';
 
 const solicitudesCotizacionApi = {
   obtenerTodas: async () => {
@@ -6,6 +6,9 @@ const solicitudesCotizacionApi = {
   },
   obtenerPorId: async (id) => {
     return await apiFetch(`solicitudes-cotizacion/${id}`);
+  },
+  obtenerPdfUrl: (id) => {
+    return buildApiUrl(`solicitudes-cotizacion/${id}/pdf`);
   },
   crear: async (solicitud) => {
     return apiFetch('solicitudes-cotizacion', {
@@ -22,6 +25,12 @@ const solicitudesCotizacionApi = {
   eliminar: async (id) => {
     return apiFetch(`solicitudes-cotizacion/${id}`, {
       method: 'DELETE',
+    });
+  },
+  enviarCorreo: async (id, payload) => {
+    return apiFetch(`solicitudes-cotizacion/${id}/enviar-correo`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
     });
   },
 };

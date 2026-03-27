@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   canAdjudicateCotizacionesLogisticaEffective,
@@ -26,6 +26,7 @@ const createEmptyComparativoDraft = () => ({
   observaciones: "",
   cotizacionIdsConsideradas: [],
   cotizacionSeleccionadaId: "",
+  adjudicacionesItems: [],
   criterioAdjudicacion: "",
 });
 
@@ -46,26 +47,41 @@ const createEmptyDecisionExcepcionalDraft = () => ({
   comentario: "",
 });
 
-const buildComparativoDraft = (comparativo) => ({
-  observaciones: comparativo?.observaciones || "",
-  cotizacionIdsConsideradas: Array.isArray(
-    comparativo?.cotizacionesConsideradasSnapshot?.cotizaciones
-  )
-    ? comparativo.cotizacionesConsideradasSnapshot.cotizaciones.map((item) =>
-        String(item.cotizacionId)
-      )
-    : [],
-  cotizacionSeleccionadaId:
-    comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId !== undefined &&
-    comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId !== null
-      ? String(comparativo.cotizacionSeleccionadaSnapshot.cotizacionId)
-      : "",
-  criterioAdjudicacion:
-    comparativo?.criterioAdjudicacionSnapshot?.resumen ||
-    (typeof comparativo?.criterioAdjudicacionSnapshot === "string"
-      ? comparativo.criterioAdjudicacionSnapshot
-      : ""),
-});
+const buildComparativoDraft = (comparativo) => {
+  const adjudicacionesItems = Array.isArray(comparativo?.adjudicacionesPorItemSnapshot)
+    ? comparativo.adjudicacionesPorItemSnapshot.map((item) => ({
+        itemRequerimientoId: String(item.itemRequerimientoId),
+        cotizacionId: String(item.cotizacionId),
+      }))
+    : Array.isArray(comparativo?.cotizacionSeleccionadaSnapshot?.items)
+      ? comparativo.cotizacionSeleccionadaSnapshot.items.map((item) => ({
+          itemRequerimientoId: String(item.itemRequerimientoId),
+          cotizacionId: String(comparativo.cotizacionSeleccionadaSnapshot.cotizacionId),
+        }))
+      : [];
+
+  return {
+    observaciones: comparativo?.observaciones || "",
+    cotizacionIdsConsideradas: Array.isArray(
+      comparativo?.cotizacionesConsideradasSnapshot?.cotizaciones
+    )
+      ? comparativo.cotizacionesConsideradasSnapshot.cotizaciones.map((item) =>
+          String(item.cotizacionId)
+        )
+      : [],
+    cotizacionSeleccionadaId:
+      comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId !== undefined &&
+      comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId !== null
+        ? String(comparativo.cotizacionSeleccionadaSnapshot.cotizacionId)
+        : "",
+    adjudicacionesItems,
+    criterioAdjudicacion:
+      comparativo?.criterioAdjudicacionSnapshot?.resumen ||
+      (typeof comparativo?.criterioAdjudicacionSnapshot === "string"
+        ? comparativo.criterioAdjudicacionSnapshot
+        : ""),
+  };
+};
 
 const comparativoCanEdit = (comparativo) =>
   !comparativo ||
@@ -93,6 +109,12 @@ const getComparativoDecisionMeta = (comparativo) => {
     cotizacionId: Number(
       comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId || 0
     ),
+    adjudicacionesPorItem: Array.isArray(comparativo?.adjudicacionesPorItemSnapshot)
+      ? comparativo.adjudicacionesPorItemSnapshot
+      : [],
+    proveedoresAdjudicados: Array.isArray(comparativo?.proveedoresAdjudicadosSnapshot)
+      ? comparativo.proveedoresAdjudicadosSnapshot
+      : [],
   };
 };
 
@@ -128,8 +150,107 @@ const buildCotizacionDraft = (cotizacion) => ({
     : [],
 });
 
+const createCotizacionDraftFromSolicitud = (solicitud) => ({
+  solicitudId: solicitud?.id ? String(solicitud.id) : "",
+  fechaEmision: new Date().toISOString().slice(0, 10),
+  estado: "Pendiente",
+  garantia: "",
+  tiempoEntregaDias: "",
+  lugarEntrega: "",
+  formaPago: "",
+  items: Array.isArray(solicitud?.items)
+    ? solicitud.items.map((item) => ({
+        itemRequerimientoId: Number(item.itemRequerimientoId),
+        cantidadOfrecida: Number(item.itemRequerimiento?.cantidadRequerida || 0),
+        precioUnidad: 0,
+        precioTotal: 0,
+      }))
+    : [],
+});
+
+const getCotizacionItemsMap = (cotizaciones = []) =>
+  cotizaciones.reduce((acc, cotizacion) => {
+    acc[String(cotizacion.id)] = new Set(
+      Array.isArray(cotizacion.items)
+        ? cotizacion.items.map((item) => String(item.itemRequerimientoId))
+        : []
+    );
+    return acc;
+  }, {});
+
+const getAdjudicacionCotizacionId = (draft, itemRequerimientoId) =>
+  draft.adjudicacionesItems.find(
+    (entry) => String(entry.itemRequerimientoId) === String(itemRequerimientoId)
+  )?.cotizacionId || "";
+
+const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
+  if (detalle?.modalidadFlujoLogistico !== "REGULAR") {
+    return null;
+  }
+
+  const totalSolicitudes = Number(
+    detalle?.resumenComparativo?.totalSolicitudes || 0
+  );
+  const totalCotizaciones = Number(
+    detalle?.resumenComparativo?.totalCotizaciones || 0
+  );
+
+  if (!totalSolicitudes) {
+    return {
+      title: "Paso 1: emitir solicitudes de cotizacion",
+      description:
+        "Primero emite una o varias solicitudes para invitar proveedores al expediente.",
+      sectionId: "solicitudes",
+      cta: "Ir a solicitudes",
+    };
+  }
+
+  if (!totalCotizaciones) {
+    return {
+      title: "Paso 2: registrar cotizaciones",
+      description:
+        "Con la solicitud ya emitida, registra aqui las respuestas economicas de los proveedores.",
+      sectionId: "cotizaciones",
+      cta: "Ir a cotizaciones",
+    };
+  }
+
+  if (!comparativo?.id) {
+    return {
+      title: "Paso 3: formalizar comparativo",
+      description:
+        "Selecciona las ofertas consideradas, define la propuesta ganadora y guarda el comparativo formal.",
+      sectionId: "comparativo",
+      cta: "Ir a comparativo",
+    };
+  }
+
+  if (comparativo.estadoDocumento !== "APROBADO" && canAdjudicate) {
+    return {
+      title: "Paso 4: aprobar comparativo",
+      description:
+        "La jefatura aun debe revisar y aprobar el comparativo para poder emitir la orden de compra.",
+      sectionId: "comparativo",
+      cta: "Revisar comparativo",
+    };
+  }
+
+  if (detalle?.puedeGenerarOrdenCompra) {
+    return {
+      title: "Paso 5: emitir orden de compra",
+      description:
+        "El expediente ya tiene sustento formal; ahora puedes generar la orden de compra.",
+      sectionId: "control-logistico",
+      cta: "Ir a orden de compra",
+    };
+  }
+
+  return null;
+};
+
 const ProcesoLogisticoDetallePage = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { user } = useAuth();
   const { proveedores } = useProveedores();
   const {
@@ -154,6 +275,8 @@ const ProcesoLogisticoDetallePage = () => {
     crearSolicitud,
     actualizarSolicitud,
     eliminarSolicitud,
+    obtenerSolicitudPdfUrl,
+    enviarSolicitudCorreo,
   } = useSolicitudesCotizacion({ autoLoad: false });
   const {
     crearCotizacion,
@@ -176,6 +299,7 @@ const ProcesoLogisticoDetallePage = () => {
   const [submittingCotizacion, setSubmittingCotizacion] = useState(false);
   const [submittingComparativo, setSubmittingComparativo] = useState(false);
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [sendingSolicitudId, setSendingSolicitudId] = useState(null);
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canAdjudicate = canAdjudicateCotizacionesLogisticaEffective(user);
@@ -217,9 +341,31 @@ const ProcesoLogisticoDetallePage = () => {
       .catch(() => {});
   }, [canAssign, obtenerOperadores]);
 
+  useEffect(() => {
+    if (!location.hash || !detalle?.id) return;
+
+    const targetId = location.hash.replace(/^#/, "");
+    const timer = window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash, detalle?.id]);
+
   const resumenCotizaciones = useMemo(
     () => Array.isArray(detalle?.cotizaciones) ? detalle.cotizaciones : [],
     [detalle?.cotizaciones]
+  );
+  const ordenesCompraRelacionadas = useMemo(
+    () => (Array.isArray(detalle?.ordenesCompra) ? detalle.ordenesCompra : []),
+    [detalle?.ordenesCompra]
+  );
+  const cotizacionItemsMap = useMemo(
+    () => getCotizacionItemsMap(resumenCotizaciones),
+    [resumenCotizaciones]
   );
   const comparativoDecisionMeta = useMemo(
     () => getComparativoDecisionMeta(comparativo),
@@ -270,7 +416,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleGenerarOrdenCompra = async () => {
     if (
       !window.confirm(
-        "Se generara la orden de compra a partir de la decision formal vigente del expediente. Deseas continuar?"
+        "Se generaran las ordenes de compra a partir de la buena pro vigente del expediente. Deseas continuar?"
       )
     ) {
       return;
@@ -280,7 +426,16 @@ const ProcesoLogisticoDetallePage = () => {
     try {
       const result = await generarOrdenCompra(detalle.id);
       setDetalle(result.requerimiento);
-      toast.success(`Orden de compra ${result.ordenCompra?.codigo || "generada"} correctamente.`);
+      const totalGeneradas = Array.isArray(result.ordenesCompra)
+        ? result.ordenesCompra.length
+        : result.ordenCompra
+          ? 1
+          : 0;
+      toast.success(
+        totalGeneradas > 1
+          ? `${totalGeneradas} ordenes de compra generadas correctamente.`
+          : `Orden de compra ${result.ordenCompra?.codigo || "generada"} correctamente.`
+      );
     } finally {
       setSubmittingAction(false);
     }
@@ -289,11 +444,14 @@ const ProcesoLogisticoDetallePage = () => {
   const handleSolicitudSubmit = async (payload) => {
     setSubmittingSolicitud(true);
     try {
-      if (solicitudDraft?.id) {
-        await actualizarSolicitud(solicitudDraft.id, payload);
-      } else {
-        await crearSolicitud(payload);
-      }
+      const saved = solicitudDraft?.id
+        ? await actualizarSolicitud(solicitudDraft.id, payload)
+        : await crearSolicitud(payload);
+      setCotizacionDraft(createCotizacionDraftFromSolicitud(saved));
+      document.getElementById("cotizaciones")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
       await load();
       setSolicitudDraft({ requerimientoId: Number(id), elaboradorId: user?.id || null });
     } finally {
@@ -330,6 +488,43 @@ const ProcesoLogisticoDetallePage = () => {
     }
     await eliminarCotizacion(cotizacionId);
     await load();
+  };
+
+  const scrollToSection = (sectionId) => {
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handlePrintSolicitud = (solicitudId) => {
+    window.open(
+      obtenerSolicitudPdfUrl(solicitudId),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handleSendSolicitudByEmail = async (solicitud) => {
+    const defaultRecipient = solicitud?.proveedor?.correoElectronico || "";
+    const recipient = window.prompt(
+      "Correo destino para la solicitud de cotizacion:",
+      defaultRecipient
+    );
+
+    if (recipient === null) {
+      return;
+    }
+
+    setSendingSolicitudId(solicitud.id);
+    try {
+      await enviarSolicitudCorreo(solicitud.id, {
+        to: recipient.trim() || undefined,
+      });
+      await load();
+    } finally {
+      setSendingSolicitudId(null);
+    }
   };
 
   const handleGuardarFlujo = async () => {
@@ -411,17 +606,51 @@ const ProcesoLogisticoDetallePage = () => {
 
   const toggleCotizacionConsiderada = (cotizacionId) => {
     const normalizedId = String(cotizacionId);
-    setComparativoDraft((prev) => ({
-      ...prev,
-      cotizacionIdsConsideradas: prev.cotizacionIdsConsideradas.includes(normalizedId)
+    setComparativoDraft((prev) => {
+      const nextCotizaciones = prev.cotizacionIdsConsideradas.includes(normalizedId)
         ? prev.cotizacionIdsConsideradas.filter((idValue) => idValue !== normalizedId)
-        : [...prev.cotizacionIdsConsideradas, normalizedId],
-      cotizacionSeleccionadaId:
-        prev.cotizacionSeleccionadaId === normalizedId &&
-        prev.cotizacionIdsConsideradas.includes(normalizedId)
-          ? ""
-          : prev.cotizacionSeleccionadaId,
-    }));
+        : [...prev.cotizacionIdsConsideradas, normalizedId];
+
+      const nextAdjudicaciones = prev.adjudicacionesItems.filter(
+        (entry) =>
+          entry.cotizacionId !== normalizedId || nextCotizaciones.includes(normalizedId)
+      );
+      const singleWinnerIds = [
+        ...new Set(nextAdjudicaciones.map((entry) => entry.cotizacionId)),
+      ];
+
+      return {
+        ...prev,
+        cotizacionIdsConsideradas: nextCotizaciones,
+        adjudicacionesItems: nextAdjudicaciones,
+        cotizacionSeleccionadaId:
+          singleWinnerIds.length === 1 ? singleWinnerIds[0] : "",
+      };
+    });
+  };
+
+  const handleAdjudicacionItemChange = (itemRequerimientoId, cotizacionId) => {
+    setComparativoDraft((prev) => {
+      const nextEntries = prev.adjudicacionesItems.filter(
+        (entry) => String(entry.itemRequerimientoId) !== String(itemRequerimientoId)
+      );
+
+      if (cotizacionId) {
+        nextEntries.push({
+          itemRequerimientoId: String(itemRequerimientoId),
+          cotizacionId: String(cotizacionId),
+        });
+      }
+
+      const singleWinnerIds = [...new Set(nextEntries.map((entry) => entry.cotizacionId))];
+
+      return {
+        ...prev,
+        adjudicacionesItems: nextEntries,
+        cotizacionSeleccionadaId:
+          singleWinnerIds.length === 1 ? singleWinnerIds[0] : "",
+      };
+    });
   };
 
   const handleComparativoSubmit = async (event) => {
@@ -432,17 +661,12 @@ const ProcesoLogisticoDetallePage = () => {
       return;
     }
 
-    if (
-      comparativoDraft.cotizacionSeleccionadaId &&
-      !comparativoDraft.cotizacionIdsConsideradas.includes(
-        comparativoDraft.cotizacionSeleccionadaId
-      )
-    ) {
-      toast.error(
-        "La cotizacion seleccionada debe formar parte del conjunto considerado."
-      );
-      return;
-    }
+    const adjudicacionesValidas = comparativoDraft.adjudicacionesItems.filter(
+      (entry) =>
+        entry?.cotizacionId &&
+        entry?.itemRequerimientoId &&
+        comparativoDraft.cotizacionIdsConsideradas.includes(String(entry.cotizacionId))
+    );
 
     const payload = {
       observaciones: comparativoDraft.observaciones.trim() || null,
@@ -452,6 +676,10 @@ const ProcesoLogisticoDetallePage = () => {
       cotizacionSeleccionadaId: comparativoDraft.cotizacionSeleccionadaId
         ? Number(comparativoDraft.cotizacionSeleccionadaId)
         : null,
+      adjudicacionesItems: adjudicacionesValidas.map((entry) => ({
+        itemRequerimientoId: Number(entry.itemRequerimientoId),
+        cotizacionId: Number(entry.cotizacionId),
+      })),
       criterioAdjudicacion: comparativoDraft.criterioAdjudicacion.trim() || null,
     };
 
@@ -529,13 +757,18 @@ const ProcesoLogisticoDetallePage = () => {
     !detalle.resumenComparativo?.totalSolicitudes &&
     !detalle.resumenComparativo?.totalCotizaciones &&
     !comparativo?.id &&
-    !detalle.ordenCompra?.id &&
+    !ordenesCompraRelacionadas.length &&
     !detalle.cotizacionSeleccionadaExcepcionalId;
   const canManageDrafts = canOperate && !expedienteBloqueado && flujoDefinido;
   const canManageComparativo =
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
   const canFormalizeExceptional =
     canAdjudicate && !expedienteBloqueado && isFlujoExcepcional;
+  const regularWorkflowStep = getRegularWorkflowStep({
+    detalle,
+    comparativo,
+    canAdjudicate,
+  });
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -571,7 +804,7 @@ const ProcesoLogisticoDetallePage = () => {
             <CotizacionEstadoBadge estado={detalle.estadoLogistica} tipo="logistica" />
           </div>
         </div>
-        <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div id="control-logistico" className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Responsable actual</p>
           <p className="mt-2 text-lg font-semibold text-gray-900">{detalle.responsableLogistica?.nombre || "Sin asignar"}</p>
         </div>
@@ -582,19 +815,75 @@ const ProcesoLogisticoDetallePage = () => {
           </p>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Orden de compra</p>
-          {detalle.ordenCompra?.id ? (
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ordenes de compra</p>
+          <p className="mt-2 text-lg font-semibold text-gray-900">
+            {ordenesCompraRelacionadas.length || 0}
+          </p>
+          {ordenesCompraRelacionadas[0]?.id ? (
             <Link
-              to={`/ordenes-compra/${detalle.ordenCompra.id}`}
-              className="mt-2 inline-block text-lg font-semibold text-indigo-700 hover:text-indigo-800"
+              to={`/ordenes-compra/${ordenesCompraRelacionadas[0].id}`}
+              className="mt-2 inline-block text-sm font-medium text-indigo-700 hover:text-indigo-800"
             >
-              {detalle.ordenCompra.codigo}
+              Abrir la primera orden generada
             </Link>
-          ) : (
-            <p className="mt-2 text-lg font-semibold text-gray-900">No generada</p>
-          )}
+          ) : null}
         </div>
       </div>
+
+      {regularWorkflowStep ? (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Ruta operativa
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-indigo-950">
+                {regularWorkflowStep.title}
+              </h2>
+              <p className="mt-1 text-sm text-indigo-900">
+                {regularWorkflowStep.description}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => scrollToSection(regularWorkflowStep.sectionId)}
+              className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              {regularWorkflowStep.cta}
+            </button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => scrollToSection("solicitudes")}
+              className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-white"
+            >
+              Solicitudes
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("cotizaciones")}
+              className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-white"
+            >
+              Cotizaciones
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("comparativo")}
+              className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-white"
+            >
+              Comparativo
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("control-logistico")}
+              className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-white"
+            >
+              Orden de compra
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -855,22 +1144,37 @@ const ProcesoLogisticoDetallePage = () => {
                 disabled={submittingAction}
                 className="rounded bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Generar orden de compra
+                Generar ordenes de compra
               </button>
             )}
 
-            {detalle.ordenCompra && (
+            {ordenesCompraRelacionadas.length > 0 && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                <p className="font-semibold">Orden de compra generada</p>
-                <p className="mt-1">{detalle.ordenCompra.codigo} · {formatCurrency(detalle.ordenCompra.montoTotal)}</p>
-                {detalle.ordenCompra.id ? (
-                  <Link
-                    to={`/ordenes-compra/${detalle.ordenCompra.id}`}
-                    className="mt-2 inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-                  >
-                    Abrir detalle de la orden de compra
-                  </Link>
-                ) : null}
+                <p className="font-semibold">
+                  {ordenesCompraRelacionadas.length > 1
+                    ? "Ordenes de compra generadas"
+                    : "Orden de compra generada"}
+                </p>
+                <div className="mt-2 space-y-2">
+                  {ordenesCompraRelacionadas.map((ordenCompra) => (
+                    <div key={ordenCompra.id} className="rounded border border-emerald-300 bg-white/70 p-3">
+                      <p className="font-medium">
+                        {ordenCompra.codigo} · {formatCurrency(ordenCompra.montoTotal)}
+                      </p>
+                      <p className="text-sm">
+                        {ordenCompra.proveedor?.razonSocial || "Sin proveedor"}
+                      </p>
+                      {ordenCompra.id ? (
+                        <Link
+                          to={`/ordenes-compra/${ordenCompra.id}`}
+                          className="mt-1 inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+                        >
+                          Abrir detalle
+                        </Link>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -879,24 +1183,28 @@ const ProcesoLogisticoDetallePage = () => {
 
       {canManageDrafts ? (
         <div className="grid gap-6 xl:grid-cols-2">
-          <SolicitudCotizacionForm
-            initialData={solicitudDraft || { requerimientoId: Number(id), elaboradorId: user?.id || null }}
-            proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
-            requerimientos={requerimientoOption}
-            requerimientoDetalle={detalle}
-            onRequerimientoChange={() => {}}
-            onSubmit={handleSolicitudSubmit}
-            onCancel={() => setSolicitudDraft({ requerimientoId: Number(id), elaboradorId: user?.id || null })}
-            submitting={submittingSolicitud}
-          />
+          <div id="solicitudes">
+            <SolicitudCotizacionForm
+              initialData={solicitudDraft || { requerimientoId: Number(id), elaboradorId: user?.id || null }}
+              proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
+              requerimientos={requerimientoOption}
+              requerimientoDetalle={detalle}
+              onRequerimientoChange={() => {}}
+              onSubmit={handleSolicitudSubmit}
+              onCancel={() => setSolicitudDraft({ requerimientoId: Number(id), elaboradorId: user?.id || null })}
+              submitting={submittingSolicitud}
+            />
+          </div>
 
-          <CotizacionForm
-            initialData={cotizacionDraft}
-            solicitudes={detalle.solicitudes || []}
-            onSubmit={handleCotizacionSubmit}
-            onCancel={() => setCotizacionDraft(null)}
-            submitting={submittingCotizacion}
-          />
+          <div id="cotizaciones">
+            <CotizacionForm
+              initialData={cotizacionDraft}
+              solicitudes={detalle.solicitudes || []}
+              onSubmit={handleCotizacionSubmit}
+              onCancel={() => setCotizacionDraft(null)}
+              submitting={submittingCotizacion}
+            />
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600 shadow-sm">
@@ -908,7 +1216,7 @@ const ProcesoLogisticoDetallePage = () => {
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div id="comparativo" className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -993,7 +1301,7 @@ const ProcesoLogisticoDetallePage = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-900">Cotizaciones consideradas</p>
                   <p className="text-xs text-gray-500">
-                    Selecciona las ofertas que entran formalmente al comparativo.
+                    Selecciona las ofertas que entran formalmente al comparativo y quedaran disponibles para la buena pro por item.
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -1033,24 +1341,11 @@ const ProcesoLogisticoDetallePage = () => {
                                 </p>
                               </div>
                             </div>
-                            <label className="flex items-center gap-2 text-sm text-gray-700">
-                              <input
-                                type="radio"
-                                name="comparativo-seleccion"
-                                disabled={!canSelectWinner}
-                                checked={
-                                  comparativoDraft.cotizacionSeleccionadaId ===
-                                  String(cotizacion.id)
-                                }
-                                onChange={() =>
-                                  setComparativoDraft((prev) => ({
-                                    ...prev,
-                                    cotizacionSeleccionadaId: String(cotizacion.id),
-                                  }))
-                                }
-                              />
-                              Seleccionada
-                            </label>
+                            <span className="text-xs font-medium text-slate-600">
+                              {canSelectWinner
+                                ? "Disponible para adjudicar items"
+                                : "No considerada"}
+                            </span>
                           </div>
                         </label>
                       );
@@ -1064,6 +1359,73 @@ const ProcesoLogisticoDetallePage = () => {
               </div>
 
               <div className="space-y-4">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-sm font-medium text-gray-900">Buena pro por item</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Define a que cotizacion se adjudica cada item. Si una cotizacion omitio plazo, garantia o forma de pago, igual podras adjudicar el item mientras tenga precio y cantidad.
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {(detalle.items || []).map((item) => {
+                      const availableCotizaciones = resumenCotizaciones.filter(
+                        (cotizacion) =>
+                          comparativoDraft.cotizacionIdsConsideradas.includes(
+                            String(cotizacion.id)
+                          ) &&
+                          cotizacionItemsMap[String(cotizacion.id)]?.has(
+                            String(item.id)
+                          )
+                      );
+                      const selectedCotizacionId = getAdjudicacionCotizacionId(
+                        comparativoDraft,
+                        item.id
+                      );
+
+                      return (
+                        <div
+                          key={`adjudicacion-item-${item.id}`}
+                          className="rounded-lg border border-gray-200 bg-white p-3"
+                        >
+                          <p className="text-sm font-medium text-gray-900">
+                            {item.descripcionVisible || item.producto?.nombre || "Item sin descripcion"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Requerido: {item.cantidadRequerida} {item.unidadMedida || ""}
+                          </p>
+                          <select
+                            value={selectedCotizacionId}
+                            onChange={(event) =>
+                              handleAdjudicacionItemChange(item.id, event.target.value)
+                            }
+                            className="mt-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                          >
+                            <option value="">
+                              {availableCotizaciones.length
+                                ? "Selecciona la cotizacion ganadora"
+                                : "No hay cotizaciones consideradas para este item"}
+                            </option>
+                            {availableCotizaciones.map((cotizacion) => {
+                              const itemCotizado = Array.isArray(cotizacion.items)
+                                ? cotizacion.items.find(
+                                    (cotizacionItem) =>
+                                      Number(cotizacionItem.itemRequerimientoId) ===
+                                      Number(item.id)
+                                  )
+                                : null;
+
+                              return (
+                                <option key={cotizacion.id} value={cotizacion.id}>
+                                  {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"} ·{" "}
+                                  {formatCurrency(itemCotizado?.precioTotal || 0)}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <label className="block space-y-1 text-sm text-gray-700">
                   <span className="font-medium">Criterio de adjudicacion</span>
                   <textarea
@@ -1095,6 +1457,10 @@ const ProcesoLogisticoDetallePage = () => {
                     placeholder="Notas internas del comparativo formal."
                   />
                 </label>
+
+                <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-xs text-gray-600">
+                  Items adjudicados: {comparativoDraft.adjudicacionesItems.length} / {(detalle.items || []).length}
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -1129,13 +1495,18 @@ const ProcesoLogisticoDetallePage = () => {
               </h3>
               <div className="rounded-lg border border-gray-200 p-4">
                 <p className="text-sm font-medium text-gray-900">
-                  Cotizacion seleccionada
+                  Resultado formal de buena pro
                 </p>
-                  <p className="mt-1 text-sm text-gray-700">
-                    {comparativo.cotizacionSeleccionadaSnapshot
+                <p className="mt-1 text-sm text-gray-700">
+                  {(comparativo.proveedoresAdjudicadosSnapshot || []).length > 1
+                    ? `${comparativo.proveedoresAdjudicadosSnapshot.length} proveedores adjudicados`
+                    : comparativo.cotizacionSeleccionadaSnapshot
                       ? `${comparativo.cotizacionSeleccionadaSnapshot.codigo} · ${comparativo.cotizacionSeleccionadaSnapshot.proveedor?.razonSocial || "-"}`
                       : "Aun no definida"}
-                  </p>
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Items adjudicados: {(comparativo.adjudicacionesPorItemSnapshot || []).length}
+                </p>
                   <p className="mt-1 text-xs font-medium text-slate-600">
                     {comparativoDecisionMeta?.via === "EXCEPCIONAL"
                       ? "Via excepcional: adjudicacion directa formal."
@@ -1147,6 +1518,26 @@ const ProcesoLogisticoDetallePage = () => {
                 </p>
               </div>
               <div className="grid gap-3">
+                {(comparativo.proveedoresAdjudicadosSnapshot || []).length > 0 ? (
+                  comparativo.proveedoresAdjudicadosSnapshot.map((proveedor) => (
+                    <div
+                      key={`comparativo-proveedor-${proveedor.proveedorId}`}
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-emerald-950">
+                          {proveedor.proveedor?.razonSocial || "-"}
+                        </p>
+                        <span className="text-sm font-semibold text-emerald-900">
+                          {formatCurrency(proveedor.totalAdjudicado)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-emerald-800">
+                        Items adjudicados: {proveedor.totalItems}
+                      </p>
+                    </div>
+                  ))
+                ) : null}
                 {(comparativo.cotizacionesConsideradasSnapshot?.cotizaciones || []).map(
                   (cotizacion) => (
                     <div
@@ -1255,6 +1646,9 @@ const ProcesoLogisticoDetallePage = () => {
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="text-lg font-semibold text-gray-900">Solicitudes emitidas</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Puedes imprimir cada solicitud o enviarla por correo al proveedor.
+            </p>
           </div>
           <div className="space-y-3 p-4 md:hidden">
             {(detalle.solicitudes || []).length > 0 ? (
@@ -1266,6 +1660,25 @@ const ProcesoLogisticoDetallePage = () => {
                   </p>
                   <div className="mt-2">
                     <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePrintSolicitud(solicitud.id)}
+                      className="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                    >
+                      Imprimir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendSolicitudByEmail(solicitud)}
+                      disabled={sendingSolicitudId === solicitud.id}
+                      className="rounded border border-emerald-300 px-3 py-1 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {sendingSolicitudId === solicitud.id
+                        ? "Enviando..."
+                        : "Enviar correo"}
+                    </button>
                   </div>
                   {canManageDrafts ? (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -1318,24 +1731,43 @@ const ProcesoLogisticoDetallePage = () => {
                         <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
-                        {canManageDrafts && (
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud, user?.id || null))}
-                              className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSolicitud(solicitud.id)}
-                              className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handlePrintSolicitud(solicitud.id)}
+                            className="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                          >
+                            Imprimir
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSendSolicitudByEmail(solicitud)}
+                            disabled={sendingSolicitudId === solicitud.id}
+                            className="rounded border border-emerald-300 px-3 py-1 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {sendingSolicitudId === solicitud.id
+                              ? "Enviando..."
+                              : "Enviar correo"}
+                          </button>
+                          {canManageDrafts && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud, user?.id || null))}
+                                className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSolicitud(solicitud.id)}
+                                className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
+                              >
+                                Eliminar
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

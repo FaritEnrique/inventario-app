@@ -83,6 +83,23 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
+  const obtenerSolicitudPdfUrl = (id) =>
+    solicitudesCotizacionApi.obtenerPdfUrl(id);
+
+  const enviarSolicitudCorreo = async (id, payload) => {
+    try {
+      const response = await solicitudesCotizacionApi.enviarCorreo(id, payload);
+      toast.success("Solicitud de cotizacion enviada por correo.");
+      return response;
+    } catch (err) {
+      console.error("Error enviando solicitud de cotizacion por correo:", err);
+      const errorMessage =
+        err.message || "Error al enviar solicitud de cotizacion por correo.";
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   return {
     solicitudes,
     cargando,
@@ -91,6 +108,8 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     crearSolicitud,
     actualizarSolicitud,
     eliminarSolicitud,
+    obtenerSolicitudPdfUrl,
+    enviarSolicitudCorreo,
   };
 };
 

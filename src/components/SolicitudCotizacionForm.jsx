@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import useTipoProductos from "../hooks/useTipoProductos";
 
 const solicitudStates = ["Creada", "Enviada", "Respondida", "Rechazada"];
 
@@ -16,6 +17,17 @@ const normalizeInitialData = (initialData) => ({
     : [],
 });
 
+const getProveedorTipoProductoIds = (proveedor) => {
+  if (!proveedor || !Array.isArray(proveedor.especialidades)) {
+    return [];
+  }
+
+  return proveedor.especialidades
+    .map((item) => item?.tipoProductoId || item?.tipoProducto?.id)
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0);
+};
+
 const SolicitudCotizacionForm = ({
   initialData,
   proveedores,
@@ -26,7 +38,10 @@ const SolicitudCotizacionForm = ({
   onCancel,
   submitting,
 }) => {
+  const { tiposProducto, cargando: loadingTiposProducto } = useTipoProductos();
   const [formData, setFormData] = useState(() => normalizeInitialData(initialData));
+  const [proveedorSearch, setProveedorSearch] = useState("");
+  const [tipoProductoFiltroId, setTipoProductoFiltroId] = useState("");
 
   useEffect(() => {
     setFormData(normalizeInitialData(initialData));
@@ -45,6 +60,38 @@ const SolicitudCotizacionForm = ({
         : [],
     [requerimientoDetalle?.items]
   );
+
+  const filteredProveedores = useMemo(() => {
+    const normalizedSearch = proveedorSearch.trim().toLowerCase();
+    const tipoProductoId = tipoProductoFiltroId
+      ? Number(tipoProductoFiltroId)
+      : null;
+
+    return proveedores.filter((proveedor) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        String(proveedor.razonSocial || "").toLowerCase().includes(normalizedSearch) ||
+        String(proveedor.ruc || "").toLowerCase().includes(normalizedSearch);
+
+      const proveedorTipoProductoIds = getProveedorTipoProductoIds(proveedor);
+      const matchesTipoProducto =
+        !tipoProductoId || proveedorTipoProductoIds.includes(tipoProductoId);
+
+      return matchesSearch && matchesTipoProducto;
+    });
+  }, [proveedores, proveedorSearch, tipoProductoFiltroId]);
+
+  useEffect(() => {
+    if (!formData.proveedorId) return;
+
+    const stillVisible = filteredProveedores.some(
+      (proveedor) => String(proveedor.id) === formData.proveedorId
+    );
+
+    if (!stillVisible) {
+      setFormData((prev) => ({ ...prev, proveedorId: "" }));
+    }
+  }, [filteredProveedores, formData.proveedorId]);
 
   const toggleItem = (itemId) => {
     const nextId = String(itemId);
@@ -71,8 +118,15 @@ const SolicitudCotizacionForm = ({
     });
   };
 
+  const tiposProductoActivos = tiposProducto.filter(
+    (tipoProducto) => tipoProducto.activo !== false
+  );
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+    >
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
@@ -82,7 +136,7 @@ const SolicitudCotizacionForm = ({
             Documento emitido a un proveedor para cotizar items de un requerimiento aprobado.
           </p>
         </div>
-        {onCancel && (
+        {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
@@ -90,49 +144,33 @@ const SolicitudCotizacionForm = ({
           >
             Cancelar
           </button>
-        )}
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Proveedor</span>
-          <select
-            value={formData.proveedorId}
-            name="solicitud-cotizacion-form-select-99"
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, proveedorId: event.target.value }))
-            }
+        <label className="space-y-1 text-sm text-gray-700 md:col-span-2">
+          <span className="font-medium">Buscar proveedor</span>
+          <input
+            type="text"
+            value={proveedorSearch}
+            onChange={(event) => setProveedorSearch(event.target.value)}
+            placeholder="Buscar por razon social o RUC"
             className="w-full rounded border border-gray-300 px-3 py-2"
-            required
-          >
-            <option value="">Selecciona proveedor</option>
-            {proveedores.map((proveedor) => (
-              <option key={proveedor.id} value={proveedor.id}>
-                {proveedor.razonSocial}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
-        <label className="space-y-1 text-sm text-gray-700 md:col-span-2">
-          <span className="font-medium">Requerimiento aprobado</span>
+        <label className="space-y-1 text-sm text-gray-700">
+          <span className="font-medium">Filtrar por tipo de producto</span>
           <select
-            value={formData.requerimientoId}
-            name="solicitud-cotizacion-form-select-118"
-            onChange={(event) =>
-              setFormData((prev) => ({
-                ...prev,
-                requerimientoId: event.target.value,
-                itemIds: [],
-              }))
-            }
+            value={tipoProductoFiltroId}
+            onChange={(event) => setTipoProductoFiltroId(event.target.value)}
             className="w-full rounded border border-gray-300 px-3 py-2"
-            required
+            disabled={loadingTiposProducto}
           >
-            <option value="">Selecciona requerimiento</option>
-            {requerimientos.map((requerimiento) => (
-              <option key={requerimiento.id} value={requerimiento.id}>
-                {requerimiento.codigo} � {requerimiento.areaNombreSnapshot || requerimiento.usoFinalidad}
+            <option value="">Todos los tipos</option>
+            {tiposProductoActivos.map((tipoProducto) => (
+              <option key={tipoProducto.id} value={tipoProducto.id}>
+                {tipoProducto.nombre}
               </option>
             ))}
           </select>
@@ -142,7 +180,7 @@ const SolicitudCotizacionForm = ({
           <span className="font-medium">Estado</span>
           <select
             value={formData.estado}
-            name="solicitud-cotizacion-form-select-141"
+            name="solicitud-cotizacion-form-select-estado"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, estado: event.target.value }))
             }
@@ -157,12 +195,63 @@ const SolicitudCotizacionForm = ({
         </label>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label className="space-y-1 text-sm text-gray-700 md:col-span-2">
+          <span className="font-medium">Proveedor</span>
+          <select
+            value={formData.proveedorId}
+            name="solicitud-cotizacion-form-select-proveedor"
+            onChange={(event) =>
+              setFormData((prev) => ({ ...prev, proveedorId: event.target.value }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+            required
+          >
+            <option value="">Selecciona proveedor</option>
+            {filteredProveedores.map((proveedor) => (
+              <option key={proveedor.id} value={proveedor.id}>
+                {proveedor.ruc ? `${proveedor.ruc} · ` : ""}
+                {proveedor.razonSocial}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500">
+            {filteredProveedores.length} proveedor(es) coinciden con el filtro actual.
+          </p>
+        </label>
+
+        <label className="space-y-1 text-sm text-gray-700 md:col-span-2">
+          <span className="font-medium">Requerimiento aprobado</span>
+          <select
+            value={formData.requerimientoId}
+            name="solicitud-cotizacion-form-select-requerimiento"
+            onChange={(event) =>
+              setFormData((prev) => ({
+                ...prev,
+                requerimientoId: event.target.value,
+                itemIds: [],
+              }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+            required
+          >
+            <option value="">Selecciona requerimiento</option>
+            {requerimientos.map((requerimiento) => (
+              <option key={requerimiento.id} value={requerimiento.id}>
+                {requerimiento.codigo} -{" "}
+                {requerimiento.areaNombreSnapshot || requerimiento.usoFinalidad}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <label className="block space-y-1 text-sm text-gray-700">
         <span className="font-medium">Cuerpo / observaciones de la solicitud</span>
         <textarea
           rows="3"
           value={formData.cuerpoSolicitud}
-          name="solicitud-cotizacion-form-textarea-159"
+          name="solicitud-cotizacion-form-textarea"
           onChange={(event) =>
             setFormData((prev) => ({ ...prev, cuerpoSolicitud: event.target.value }))
           }
@@ -194,7 +283,7 @@ const SolicitudCotizacionForm = ({
                   <input
                     type="checkbox"
                     checked={checked}
-                    name="solicitud-cotizacion-form-input-190" onChange={() => toggleItem(item.id)}
+                    onChange={() => toggleItem(item.id)}
                     className="mt-1"
                   />
                   <span>
@@ -202,9 +291,8 @@ const SolicitudCotizacionForm = ({
                       {item.descripcionVisible}
                     </span>
                     <span className="block text-xs text-gray-500">
-                      {item.cantidadRequerida} {item.unidadMedida} � S/ {Number(
-                        item.subtotalReferencial || 0
-                      ).toFixed(2)}
+                      {item.cantidadRequerida} {item.unidadMedida} - S/{" "}
+                      {Number(item.subtotalReferencial || 0).toFixed(2)}
                     </span>
                   </span>
                 </label>
@@ -221,10 +309,19 @@ const SolicitudCotizacionForm = ({
       <div className="flex justify-end gap-3">
         <button
           type="submit"
-          disabled={submitting || !formData.proveedorId || !formData.requerimientoId || formData.itemIds.length === 0}
+          disabled={
+            submitting ||
+            !formData.proveedorId ||
+            !formData.requerimientoId ||
+            formData.itemIds.length === 0
+          }
           className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Guardando..." : formData.id ? "Actualizar solicitud" : "Crear solicitud"}
+          {submitting
+            ? "Guardando..."
+            : formData.id
+              ? "Actualizar solicitud"
+              : "Crear solicitud"}
         </button>
       </div>
     </form>
@@ -232,5 +329,3 @@ const SolicitudCotizacionForm = ({
 };
 
 export default SolicitudCotizacionForm;
-
-
