@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
+import FormularioProveedor from "../components/FormularioProveedor";
+import Loader from "../components/Loader";
+import ProveedorDetalleModal from "../components/ProveedorDetalleModal";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
-import useDebounce from "../hooks/useDebounce";
-import Loader from "../components/Loader";
-import FormularioProveedor from "../components/FormularioProveedor";
-import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 
 const RUC_REGEX = /^(10|20)\d{9}$/;
 
 const GestionProveedoresPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastAppliedSearchQuery, setLastAppliedSearchQuery] = useState("");
+  const [registeredFilterQuery, setRegisteredFilterQuery] = useState("");
   const [selectedProveedor, setSelectedProveedor] = useState(null);
+  const [detailProveedor, setDetailProveedor] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false); // New state
-
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false);
 
   const {
     proveedores,
@@ -25,62 +27,73 @@ const GestionProveedoresPage = () => {
     actualizarEstadoProveedor,
   } = useProveedores();
 
-  const { consultarPadronSunat, loading: sunatLoading } = useSunat();
+  const {
+    consultarPadronSunat,
+    actualizarPadronSunat,
+    actualizarPadronReducido,
+    obtenerUltimaActualizacion,
+    obtenerUltimaActualizacionReducido,
+    ultimaActualizacion,
+    ultimaActualizacionReducido,
+    loading: sunatLoading,
+    actualizando: actualizandoSunat,
+    actualizandoReducido,
+  } = useSunat();
 
   useEffect(() => {
-    // Actualiza la lista de proveedores en base a la búsqueda debounced
-    fetchProveedores(debouncedSearchQuery);
-  }, [debouncedSearchQuery]);
+    fetchProveedores(lastAppliedSearchQuery);
+  }, [lastAppliedSearchQuery]);
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    // If the input contains non-digit characters, it's a name search, don't limit length.
+  useEffect(() => {
+    obtenerUltimaActualizacion();
+    obtenerUltimaActualizacionReducido();
+  }, [obtenerUltimaActualizacion, obtenerUltimaActualizacionReducido]);
+
+  const handleSearchChange = (event) => {
+    const value = event.target.value;
+
     if (/[^0-9]/.test(value)) {
       setSearchQuery(value);
       return;
     }
-    // If it contains only digits, it's a RUC search, limit to 11 digits.
+
     if (value.length <= 11) {
       setSearchQuery(value);
     }
   };
 
-  const handleSearchSubmit = async (e) => {
-    e.preventDefault();
+  const handleSearchSubmit = async (event) => {
+    event.preventDefault();
     const query = searchQuery.trim();
 
-    // Validación de formato de RUC antes de cualquier otra cosa
     const isNumericQuery = /^\d+$/.test(query);
     if (isNumericQuery && query.length === 11 && !RUC_REGEX.test(query)) {
-      toast.error("El RUC debe tener 11 dígitos y empezar con 10 o 20.");
-      return; // Detener la ejecución si el formato es inválido
+      toast.error("El RUC debe tener 11 digitos y empezar con 10 o 20.");
+      return;
     }
 
-    // Resetear el estado de deshabilitación del RUC al iniciar una búsqueda normal
-    setIsRucDisabledForNewForm(false); // Reset on normal search
+    setIsRucDisabledForNewForm(false);
 
     if (!query) {
-      fetchProveedores(); // Cargar todos si la búsqueda está vacía
+      fetchProveedores();
       return;
     }
 
     const isRuc = RUC_REGEX.test(query);
 
-    // Siempre limpiar el formulario y la selección anterior al iniciar una búsqueda
     setIsFormVisible(false);
     setSelectedProveedor(null);
+    setLastAppliedSearchQuery(query);
+    setRegisteredFilterQuery(query);
 
     const localResults = await fetchProveedores(query);
 
     if (localResults.length > 0) {
-      // Si hay resultados locales, los mostramos en la tabla.
-      // Si es un solo resultado y es RUC, podríamos mostrar el form, pero
-      // por consistencia, dejaremos que el usuario haga clic en "Editar".
-      toast.info(
-        `Se encontraron ${localResults.length} coincidencias locales.`
-      );
-    } else if (isRuc) {
-      // Si no hay resultados locales y es un RUC, buscar en SUNAT
+      toast.info(`Se encontraron ${localResults.length} coincidencias locales.`);
+      return;
+    }
+
+    if (isRuc) {
       const sunatData = await consultarPadronSunat(query);
       if (sunatData) {
         setSelectedProveedor(sunatData);
@@ -89,33 +102,32 @@ const GestionProveedoresPage = () => {
           "Proveedor encontrado en SUNAT. Completa los datos para registrarlo."
         );
       } else {
-        setSelectedProveedor(null); // Para asegurar que el formulario se trate como una nueva creación
-        setIsFormVisible(true); // Mostrar el formulario
+        setSelectedProveedor(null);
+        setIsFormVisible(true);
         toast.info(
           "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC."
         );
       }
-    } else {
-      // No es RUC y no se encontró por nombre
-      toast.info(
-        "Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC."
-      );
+      return;
     }
+
+    toast.info("Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC.");
   };
 
-  // New handler for "Crear sin RUC" button
-  const handleCreateWithoutRuc = () => {
+  const handleCreateNew = () => {
     setSelectedProveedor(null);
     setIsFormVisible(true);
-    setIsRucDisabledForNewForm(true); // Disable RUC field
+    setIsRucDisabledForNewForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    toast.info("Formulario para nuevo proveedor sin RUC. El campo RUC está deshabilitado.");
+    toast.info(
+      "Formulario para nuevo proveedor. El RUC depende de la procedencia seleccionada."
+    );
   };
 
   const handleEdit = (proveedor) => {
     setSelectedProveedor(proveedor);
     setIsFormVisible(true);
-    setIsRucDisabledForNewForm(false); // Ensure RUC is not disabled when editing
+    setIsRucDisabledForNewForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -124,10 +136,10 @@ const GestionProveedoresPage = () => {
       ({ closeToast }) => (
         <ConfirmDeleteToast
           closeToast={closeToast}
-          message="¿Estás seguro de que deseas desactivar este proveedor?"
+          message="Estas seguro de que deseas desactivar este proveedor?"
           onConfirm={async () => {
             await actualizarEstadoProveedor(id, false);
-            fetchProveedores(debouncedSearchQuery); // Refrescar lista
+            fetchProveedores(lastAppliedSearchQuery);
           }}
         />
       ),
@@ -138,15 +150,34 @@ const GestionProveedoresPage = () => {
   const handleFormSuccess = () => {
     setIsFormVisible(false);
     setSelectedProveedor(null);
-    setIsRucDisabledForNewForm(false); // Reset state
-    setSearchQuery(""); // Limpiar búsqueda
-    fetchProveedores(); // Cargar todos los proveedores
+    setIsRucDisabledForNewForm(false);
+    setSearchQuery("");
+    fetchProveedores();
   };
 
   const handleFormCancel = () => {
     setIsFormVisible(false);
     setSelectedProveedor(null);
-    setIsRucDisabledForNewForm(false); // Reset state
+    setIsRucDisabledForNewForm(false);
+  };
+
+  const handleActualizarPadron = async () => {
+    await actualizarPadronSunat();
+  };
+
+  const handleActualizarPadronReducido = async () => {
+    await actualizarPadronReducido();
+  };
+
+  const handleRegisteredFilterSubmit = async (event) => {
+    event.preventDefault();
+    const query = registeredFilterQuery.trim();
+    setLastAppliedSearchQuery(query);
+  };
+
+  const handleClearRegisteredFilter = () => {
+    setRegisteredFilterQuery("");
+    setLastAppliedSearchQuery("");
   };
 
   const loading = proveedoresLoading || sunatLoading;
@@ -154,18 +185,18 @@ const GestionProveedoresPage = () => {
   return (
     <>
       <Helmet>
-        <title>Gestión de Proveedores | Sistema de Inventario</title>
+        <title>Gestion de Proveedores | Sistema de Inventario</title>
       </Helmet>
-      <div className="container p-4 mx-auto md:p-6 lg:p-8">
+      <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <h1 className="mb-6 text-3xl font-bold text-gray-800">
-          Gestión de Proveedores
+          Gestion de Proveedores
         </h1>
 
-        <div className="p-6 mb-6 bg-white rounded-lg shadow-md">
+        <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
           <form onSubmit={handleSearchSubmit}>
             <label
               htmlFor="search-proveedor"
-              className="block mb-2 font-medium text-gray-700 text-md"
+              className="mb-2 block font-medium text-gray-700 text-md"
             >
               Buscar o Registrar Proveedor
             </label>
@@ -173,127 +204,217 @@ const GestionProveedoresPage = () => {
               <input
                 id="search-proveedor"
                 type="text"
-                className="flex-grow p-3 transition-shadow border border-gray-500 max-w-96 rounded-l-md focus:ring-2 focus:ring-blue-500"
+                className="max-w-96 flex-grow rounded-l-md border border-gray-500 p-3 transition-shadow focus:ring-2 focus:ring-blue-500"
                 placeholder="Ingresa un RUC o nombre..."
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
               <button
                 type="submit"
-                className="flex items-center justify-center px-6 py-3 font-semibold text-white transition-colors bg-blue-600 rounded-r-md hover:bg-blue-700"
+                className="flex items-center justify-center rounded-r-md bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
                 disabled={loading}
               >
                 {loading ? <Loader size="sm" /> : "Buscar / Registrar"}
               </button>
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Busca un proveedor existente por RUC/nombre o ingresa uno nuevo
-              para registrarlo.
+              Busca un proveedor existente por RUC o nombre, o inicia un nuevo
+              registro.
             </p>
           </form>
-          {/* New button for creating without RUC */}
-          <div className="mt-4">
-            <button
-              onClick={handleCreateWithoutRuc}
-              className="px-6 py-3 font-semibold text-white transition-colors bg-purple-600 rounded-md hover:bg-purple-700"
-            >
-              Crear sin RUC
-            </button>
+
+          <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleCreateNew}
+                className="rounded-md bg-purple-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-purple-700"
+              >
+                Crear nuevo
+              </button>
+              <button
+                type="button"
+                onClick={handleActualizarPadron}
+                disabled={actualizandoSunat}
+                className="rounded-md bg-amber-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {actualizandoSunat
+                  ? "Actualizando padron SUNAT..."
+                  : "Actualizar padron SUNAT"}
+              </button>
+              <button
+                type="button"
+                onClick={handleActualizarPadronReducido}
+                disabled={actualizandoReducido}
+                className="rounded-md bg-teal-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {actualizandoReducido
+                  ? "Actualizando padron reducido..."
+                  : "Actualizar padron reducido"}
+              </button>
+              <Link
+                to="/solicitudes-tipo-producto"
+                className="rounded-md bg-slate-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800"
+              >
+                Bandeja de solicitudes
+              </Link>
+            </div>
+            <div className="max-w-md text-sm text-gray-600">
+              <p className="font-medium text-gray-700">
+                Actualizacion manual del padron SUNAT
+              </p>
+              <p>
+                Usala cuando necesites refrescar la base externa para que la
+                busqueda por RUC recupere datos recientes del proveedor.
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Ultima actualizacion padron SUNAT:{" "}
+                {ultimaActualizacion || "Sin informacion disponible"}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Ultima actualizacion padron reducido:{" "}
+                {ultimaActualizacionReducido || "Sin informacion disponible"}
+              </p>
+            </div>
           </div>
         </div>
 
-        {isFormVisible && (
+        {isFormVisible ? (
           <div className="mb-6">
             <FormularioProveedor
               key={selectedProveedor?.id || "new"}
               proveedor={selectedProveedor}
               onSuccess={handleFormSuccess}
               onCancel={handleFormCancel}
-              disableRucField={isRucDisabledForNewForm} // Pass new prop
+              disableRucField={isRucDisabledForNewForm}
             />
           </div>
-        )}
+        ) : null}
 
-        <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
-          <h2 className="p-5 text-xl font-semibold border-b">
-            Proveedores Registrados
-          </h2>
+        <div className="overflow-x-auto rounded-lg bg-white shadow-lg">
+          <div className="border-b p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Proveedores Registrados
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Filtra manualmente por razon social, RUC o tipo de producto.
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleRegisteredFilterSubmit}
+                className="flex w-full flex-col gap-2 md:max-w-2xl md:flex-row"
+              >
+                <input
+                  type="text"
+                  className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm transition-shadow focus:ring-2 focus:ring-blue-500"
+                  placeholder="Buscar por razon social, RUC o tipo de producto..."
+                  value={registeredFilterQuery}
+                  onChange={(event) => setRegisteredFilterQuery(event.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="rounded-md bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    disabled={proveedoresLoading}
+                  >
+                    Filtrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearRegisteredFilter}
+                    className="rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                    disabled={proveedoresLoading && !registeredFilterQuery}
+                  >
+                    Limpiar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
           <table className="min-w-full leading-normal">
             <thead>
               <tr className="bg-gray-100">
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
-                  Razón Social
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  Razon Social
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   RUC
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   Representante
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   Contacto
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
-                  Teléfono
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
+                  Telefono
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   Tipos de Producto
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   Estado
                 </th>
-                <th className="px-5 py-3 text-xs font-semibold text-left text-gray-600 uppercase border-b-2">
+                <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody>
               {proveedores.length > 0 ? (
-                proveedores.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-4 text-sm border-b">
-                      {p.razonSocial}
+                proveedores.map((proveedor) => (
+                  <tr key={proveedor.id} className="hover:bg-gray-50">
+                    <td className="border-b px-5 py-4 text-sm">
+                      {proveedor.razonSocial}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
-                      {p.ruc || "N/A"}
+                    <td className="border-b px-5 py-4 text-sm">
+                      {proveedor.ruc || "N/A"}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
-                      {p.representante || "N/A"}
+                    <td className="border-b px-5 py-4 text-sm">
+                      {proveedor.representante || "N/A"}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
-                      {p.contacto || "N/A"}
+                    <td className="border-b px-5 py-4 text-sm">
+                      {proveedor.contacto || "N/A"}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
-                      {p.telefono || "N/A"}
+                    <td className="border-b px-5 py-4 text-sm">
+                      {proveedor.telefono || "N/A"}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
-                      {(p.especialidades || []).length > 0
-                        ? p.especialidades
+                    <td className="border-b px-5 py-4 text-sm">
+                      {(proveedor.especialidades || []).length > 0
+                        ? proveedor.especialidades
                             .map((especialidad) => especialidad.tipoProducto?.nombre)
                             .filter(Boolean)
                             .join(", ")
                         : "Sin definir"}
                     </td>
-                    <td className="px-5 py-4 text-sm border-b">
+                    <td className="border-b px-5 py-4 text-sm">
                       <span
-                        className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
-                          p.activo
+                        className={`rounded-full px-2 py-1 text-xs font-semibold leading-tight ${
+                          proveedor.activo
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {p.activo ? "Activo" : "Inactivo"}
+                        {proveedor.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>
-                    <td className="flex gap-3 px-5 py-4 text-sm border-b">
+                    <td className="flex gap-3 border-b px-5 py-4 text-sm">
                       <button
-                        onClick={() => handleEdit(p)}
+                        onClick={() => setDetailProveedor(proveedor)}
+                        className="font-medium text-slate-700 hover:text-slate-900"
+                      >
+                        Ver
+                      </button>
+                      <button
+                        onClick={() => handleEdit(proveedor)}
                         className="font-medium text-indigo-600 hover:text-indigo-900"
                       >
                         Editar
                       </button>
                       <button
-                        onClick={() => handleDeactivate(p.id)}
+                        onClick={() => handleDeactivate(proveedor.id)}
                         className="font-medium text-red-600 hover:text-red-900"
                       >
                         Desactivar
@@ -311,6 +432,12 @@ const GestionProveedoresPage = () => {
             </tbody>
           </table>
         </div>
+
+        <ProveedorDetalleModal
+          isOpen={Boolean(detailProveedor)}
+          onClose={() => setDetailProveedor(null)}
+          proveedor={detailProveedor}
+        />
       </div>
     </>
   );

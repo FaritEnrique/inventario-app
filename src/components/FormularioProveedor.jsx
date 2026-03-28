@@ -6,6 +6,7 @@ import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
 import useTipoProductos from "../hooks/useTipoProductos";
 import Modal from "./Modal";
+import ModalBuscarTiposProducto from "./ModalBuscarTiposProducto";
 import ProveedorPrintPreview from "./ProveedorPrintPreview";
 
 const getInitialFormData = () => ({
@@ -33,6 +34,7 @@ const getInitialFormData = () => ({
   correoElectronico: "",
   telefono: "",
   tipoProductoIds: [],
+  solicitudTipoProductoIds: [],
   activo: true,
 });
 
@@ -90,6 +92,35 @@ const getTipoProductoIdsFromProveedor = (proveedor) => {
   return [];
 };
 
+const getSolicitudTipoProductoIdsFromProveedor = (proveedor) => {
+  if (!proveedor || !Array.isArray(proveedor.solicitudesTipoProducto)) {
+    return [];
+  }
+
+  return proveedor.solicitudesTipoProducto
+    .filter((solicitud) =>
+      ["PENDIENTE", "OBSERVADO"].includes(String(solicitud?.estado || ""))
+    )
+    .map((solicitud) => Number(solicitud.id))
+    .filter((value) => Number.isInteger(value) && value > 0);
+};
+
+const buildTipoProductoMap = (tiposProducto, proveedor) => {
+  const map = new Map();
+
+  (tiposProducto || []).forEach((tipoProducto) => {
+    map.set(Number(tipoProducto.id), tipoProducto);
+  });
+
+  (proveedor?.especialidades || []).forEach((especialidad) => {
+    if (especialidad?.tipoProducto?.id) {
+      map.set(Number(especialidad.tipoProducto.id), especialidad.tipoProducto);
+    }
+  });
+
+  return map;
+};
+
 const FormularioProveedor = ({
   proveedor,
   onSuccess,
@@ -98,14 +129,20 @@ const FormularioProveedor = ({
 }) => {
   const { crearProveedor, actualizarProveedor } = useProveedores();
   const { consultarPadronSunat, loading: loadingSunat } = useSunat();
-  const { tiposProducto, cargando: loadingTiposProducto } = useTipoProductos();
+  const {
+    tiposProducto,
+    cargando: loadingTiposProducto,
+    fetchTiposProducto,
+  } = useTipoProductos();
 
   const [formData, setFormData] = useState(getInitialFormData());
   const [loading, setLoading] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showTiposModal, setShowTiposModal] = useState(false);
   const [isPrintable, setIsPrintable] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [isProcedenciaDisabled, setIsProcedenciaDisabled] = useState(false);
+  const [solicitudesRegistradas, setSolicitudesRegistradas] = useState([]);
 
   const debouncedRuc = useDebounce(formData.ruc, 500);
 
@@ -115,8 +152,11 @@ const FormularioProveedor = ({
         ...getInitialFormData(),
         ...proveedor,
         tipoProductoIds: getTipoProductoIdsFromProveedor(proveedor),
+        solicitudTipoProductoIds: getSolicitudTipoProductoIdsFromProveedor(proveedor),
       };
+
       setFormData(nextState);
+      setSolicitudesRegistradas([]);
 
       if (proveedor.procedencia === "NACIONAL" && !proveedor.ruc) {
         toast.warn(
@@ -131,6 +171,7 @@ const FormularioProveedor = ({
     }
 
     setFormData(getInitialFormData());
+    setSolicitudesRegistradas([]);
     setIsProcedenciaDisabled(false);
   }, [proveedor]);
 
@@ -224,20 +265,6 @@ const FormularioProveedor = ({
     }
   };
 
-  const toggleTipoProducto = (tipoProductoId) => {
-    setFormData((prev) => {
-      const normalizedId = Number(tipoProductoId);
-      const alreadySelected = prev.tipoProductoIds.includes(normalizedId);
-      return {
-        ...prev,
-        tipoProductoIds: alreadySelected
-          ? prev.tipoProductoIds.filter((item) => item !== normalizedId)
-          : [...prev.tipoProductoIds, normalizedId],
-      };
-    });
-    setValidationErrors((prev) => ({ ...prev, tipoProductoIds: undefined }));
-  };
-
   const validateForm = () => {
     const errors = {};
 
@@ -257,16 +284,26 @@ const FormularioProveedor = ({
       formData.procedencia === "NACIONAL" &&
       !/^(10|20)\d{9}$/.test(formData.ruc)
     ) {
-      errors.ruc = "El RUC es obligatorio para proveedores nacionales y debe ser valido.";
+      errors.ruc =
+        "El RUC es obligatorio para proveedores nacionales y debe ser valido.";
     }
 
     if (!formData.correoElectronico.trim()) {
       errors.correoElectronico = "El correo electronico es obligatorio.";
     }
 
-    if (!Array.isArray(formData.tipoProductoIds) || !formData.tipoProductoIds.length) {
-      errors.tipoProductoIds =
-        "Debes seleccionar al menos un tipo de producto para el proveedor.";
+    if (
+      !Array.isArray(formData.tipoProductoIds) ||
+      !formData.tipoProductoIds.length
+    ) {
+      const hasTemporalSelection =
+        Array.isArray(formData.solicitudTipoProductoIds) &&
+        formData.solicitudTipoProductoIds.length > 0;
+
+      if (!hasTemporalSelection) {
+        errors.tipoProductoIds =
+          "Debes seleccionar al menos un tipo oficial o un tipo temporal pendiente para el proveedor.";
+      }
     }
 
     setValidationErrors(errors);
@@ -296,6 +333,11 @@ const FormularioProveedor = ({
 
       payload.tipoProductoIds = Array.isArray(formData.tipoProductoIds)
         ? formData.tipoProductoIds.map((value) => Number(value))
+        : [];
+      payload.solicitudTipoProductoIds = Array.isArray(
+        formData.solicitudTipoProductoIds
+      )
+        ? formData.solicitudTipoProductoIds.map((value) => Number(value))
         : [];
 
       if (proveedor?.id) {
@@ -328,7 +370,10 @@ const FormularioProveedor = ({
 
   const renderInputField = (label, name, options = {}) => (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium text-gray-700">
+      <label
+        htmlFor={name}
+        className="mb-1 block text-sm font-medium text-gray-700"
+      >
         {label}
       </label>
       <input
@@ -355,7 +400,10 @@ const FormularioProveedor = ({
 
   const renderSelectField = (label, name, options, fieldOptions = {}) => (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium text-gray-700">
+      <label
+        htmlFor={name}
+        className="mb-1 block text-sm font-medium text-gray-700"
+      >
         {label}
       </label>
       <select
@@ -385,6 +433,68 @@ const FormularioProveedor = ({
   const tiposProductoActivos = tiposProducto.filter(
     (tipoProducto) => tipoProducto.activo !== false
   );
+
+  const tipoProductoMap = buildTipoProductoMap(tiposProducto, proveedor);
+  const tiposSeleccionados = formData.tipoProductoIds
+    .map((tipoProductoId) => tipoProductoMap.get(Number(tipoProductoId)))
+    .filter(Boolean);
+  const solicitudesTemporalesDisponibles = [
+    ...(Array.isArray(proveedor?.solicitudesTipoProducto)
+      ? proveedor.solicitudesTipoProducto
+      : []),
+    ...solicitudesRegistradas,
+  ].reduce((acc, solicitud) => {
+    if (!solicitud?.id) return acc;
+    if (
+      !["PENDIENTE", "OBSERVADO"].includes(String(solicitud.estado || ""))
+    ) {
+      return acc;
+    }
+    if (!acc.some((item) => item.id === solicitud.id)) {
+      acc.push(solicitud);
+    }
+    return acc;
+  }, []);
+  const solicitudesTemporalesSeleccionadas = formData.solicitudTipoProductoIds
+    .map((solicitudId) =>
+      solicitudesTemporalesDisponibles.find(
+        (solicitud) => Number(solicitud.id) === Number(solicitudId)
+      )
+    )
+    .filter(Boolean);
+
+  const proveedorContext = {
+    id: proveedor?.id || null,
+    razonSocial: formData.razonSocial,
+    ruc: formData.ruc,
+  };
+
+  const handleTiposSeleccionados = ({
+    tipoProductoIds,
+    solicitudTipoProductoIds,
+  }) => {
+    setFormData((prev) => ({
+      ...prev,
+      tipoProductoIds,
+      solicitudTipoProductoIds,
+    }));
+    setValidationErrors((prev) => ({ ...prev, tipoProductoIds: undefined }));
+  };
+
+  const handleSolicitudCreada = (solicitud) => {
+    setSolicitudesRegistradas((prev) => [
+      solicitud,
+      ...prev.filter((item) => item.id !== solicitud.id),
+    ]);
+    setFormData((prev) => ({
+      ...prev,
+      solicitudTipoProductoIds: [
+        ...new Set([...(prev.solicitudTipoProductoIds || []), solicitud.id]),
+      ],
+    }));
+    fetchTiposProducto();
+    setValidationErrors((prev) => ({ ...prev, tipoProductoIds: undefined }));
+  };
 
   return (
     <>
@@ -438,55 +548,116 @@ const FormularioProveedor = ({
               })}
             </div>
 
-            <div className="mt-6">
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Tipos de producto que vende
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Este campo es obligatorio y se usara luego para filtrar proveedores en la solicitud de cotizacion.
-                </p>
+            <div className="mt-6 space-y-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Tipos de producto que vende
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Puedes usar tipos oficiales o marcar tipos temporales
+                    pendientes. Solo los oficiales participan luego en
+                    cotizaciones.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowTiposModal(true)}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Buscar tipos
+                  </button>
+                  {formData.tipoProductoIds.length > 0 ||
+                  formData.solicitudTipoProductoIds.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleTiposSeleccionados({
+                          tipoProductoIds: [],
+                          solicitudTipoProductoIds: [],
+                        })
+                      }
+                      className="rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+                    >
+                      Limpiar seleccion
+                    </button>
+                  ) : null}
+                </div>
               </div>
 
-              {tiposProductoActivos.length > 0 ? (
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {tiposProductoActivos.map((tipoProducto) => {
-                    const checked = formData.tipoProductoIds.includes(tipoProducto.id);
-                    return (
-                      <label
-                        key={tipoProducto.id}
-                        className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm ${
-                          checked
-                            ? "border-blue-300 bg-blue-50"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleTipoProducto(tipoProducto.id)}
-                          className="mt-1"
-                        />
-                        <span>
-                          <span className="block font-medium text-gray-900">
-                            {tipoProducto.nombre}
-                          </span>
-                          <span className="block text-xs text-gray-500">
-                            {tipoProducto.prefijo}
-                          </span>
-                        </span>
-                      </label>
-                    );
-                  })}
+              {tiposSeleccionados.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {tiposSeleccionados.map((tipoProducto) => (
+                    <div
+                      key={tipoProducto.id}
+                      className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3"
+                    >
+                      <p className="text-sm font-semibold text-blue-900">
+                        {tipoProducto.nombre}
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        {tipoProducto.prefijo || "Sin prefijo"}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="mt-3 rounded-lg border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
-                  No hay tipos de producto activos disponibles.
+                <div className="rounded-lg border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
+                  Aun no has seleccionado tipos oficiales para este proveedor.
                 </div>
               )}
 
+              {solicitudesTemporalesSeleccionadas.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Tipos temporales marcados
+                  </p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    Estos tipos permiten registrar el proveedor, pero no se
+                    usaran en solicitudes de cotizacion ni en el flujo operativo
+                    hasta ser homologados.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {solicitudesTemporalesSeleccionadas.map((solicitud) => (
+                      <div
+                        key={solicitud.id}
+                        className="flex flex-col gap-1 rounded-md border border-amber-100 bg-white px-3 py-2 text-sm text-gray-700 md:flex-row md:items-center md:justify-between"
+                      >
+                        <span>{solicitud.nombrePropuesto}</span>
+                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                          {solicitud.estado}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {solicitudesRegistradas.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Solicitudes registradas en esta edicion
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {solicitudesRegistradas.map((solicitud) => (
+                      <div
+                        key={solicitud.id}
+                        className="flex flex-col gap-1 rounded-md border border-amber-100 bg-white px-3 py-2 text-sm text-gray-700 md:flex-row md:items-center md:justify-between"
+                      >
+                        <span>{solicitud.nombrePropuesto}</span>
+                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                          {solicitud.estado}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {validationErrors.tipoProductoIds ? (
-                <p className="mt-2 text-xs text-red-500">
+                <p className="text-xs text-red-500">
                   {validationErrors.tipoProductoIds}
                 </p>
               ) : null}
@@ -505,9 +676,13 @@ const FormularioProveedor = ({
                 {renderInputField("Act. CIIU3 Principal", "actividadCIIU3Principal", {
                   readOnly: true,
                 })}
-                {renderInputField("Act. CIIU3 Secundaria", "actividadCIIU3Secundaria", {
-                  readOnly: true,
-                })}
+                {renderInputField(
+                  "Act. CIIU3 Secundaria",
+                  "actividadCIIU3Secundaria",
+                  {
+                    readOnly: true,
+                  }
+                )}
                 {renderInputField("Act. CIIU4 Principal", "actividadCIIU4Principal", {
                   readOnly: true,
                 })}
@@ -546,7 +721,10 @@ const FormularioProveedor = ({
                 onChange={handleChange}
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <label htmlFor="activo" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="activo"
+                className="text-sm font-medium text-gray-700"
+              >
                 Proveedor Activo
               </label>
             </div>
@@ -585,6 +763,19 @@ const FormularioProveedor = ({
           </div>
         </form>
       </div>
+
+      <ModalBuscarTiposProducto
+        isOpen={showTiposModal}
+        onClose={() => setShowTiposModal(false)}
+        tiposProducto={tiposProductoActivos}
+        loadingTiposProducto={loadingTiposProducto}
+        initialSelectedIds={formData.tipoProductoIds}
+        initialSelectedSolicitudIds={formData.solicitudTipoProductoIds}
+        solicitudesTemporalesDisponibles={solicitudesTemporalesDisponibles}
+        onSaveSelection={handleTiposSeleccionados}
+        proveedorContext={proveedorContext}
+        onSolicitudCreada={handleSolicitudCreada}
+      />
 
       <Modal
         isOpen={showPrintPreview}

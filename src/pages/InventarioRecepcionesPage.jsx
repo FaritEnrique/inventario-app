@@ -45,6 +45,31 @@ const createOcItemDraft = (linea) => ({
 });
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const RECEPCION_ESTADOS_VALIDOS = new Set([
+  "PENDIENTE_RECEPCION",
+  "PARCIALMENTE_RECIBIDA",
+]);
+const ESTADO_APROBACION_RECEPCIONABLE = "APROBADA";
+
+const getBlockingReasonForRecepcion = (ordenCompra) => {
+  if (!ordenCompra) {
+    return "No se pudo validar la orden de compra seleccionada.";
+  }
+
+  if (ordenCompra.estadoAprobacion !== ESTADO_APROBACION_RECEPCIONABLE) {
+    return "La orden de compra aun no esta aprobada y por eso no puede recepcionarse.";
+  }
+
+  if (!RECEPCION_ESTADOS_VALIDOS.has(ordenCompra.estadoRecepcion)) {
+    return `La orden de compra esta en estado ${ordenCompra.estadoRecepcion || "no disponible"} y ya no admite recepcion operativa.`;
+  }
+
+  if (Number(ordenCompra?.resumen?.totalPendiente || 0) <= 0) {
+    return "La orden de compra ya no tiene saldo pendiente por recepcionar.";
+  }
+
+  return "";
+};
 
 const InventarioRecepcionesPage = () => {
   const { user } = useAuth();
@@ -67,24 +92,32 @@ const InventarioRecepcionesPage = () => {
 
   const canOperate = canOperateInventoryEffective(user);
 
+  const recepcionablesOrdenesCompra = useMemo(
+    () =>
+      ordenesCompraDisponibles.filter(
+        (ordenCompra) => !getBlockingReasonForRecepcion(ordenCompra)
+      ),
+    [ordenesCompraDisponibles]
+  );
+
   const pendingOrdenesCompra = useMemo(() => {
     const search = normalizeText(ordenesSearch);
 
-    return ordenesCompraDisponibles.filter((ordenCompra) => {
-      const hasPending = Number(ordenCompra?.resumen?.totalPendiente || 0) > 0;
-      if (!hasPending) {
-        return false;
-      }
-
+    return recepcionablesOrdenesCompra.filter((ordenCompra) => {
       if (!search) {
         return true;
       }
 
       const codigo = normalizeText(ordenCompra.codigo);
       const proveedor = normalizeText(ordenCompra.proveedor?.razonSocial);
-      return codigo.includes(search) || proveedor.includes(search);
+      const ruc = normalizeText(ordenCompra.proveedor?.ruc);
+      return (
+        codigo.includes(search) ||
+        proveedor.includes(search) ||
+        ruc.includes(search)
+      );
     });
-  }, [ordenesCompraDisponibles, ordenesSearch]);
+  }, [recepcionablesOrdenesCompra, ordenesSearch]);
 
   useEffect(() => {
     setResultado(null);
@@ -102,6 +135,7 @@ const InventarioRecepcionesPage = () => {
         const response = await obtenerOrdenesCompra({
           limit: 200,
           includeInactive: false,
+          estadoAprobacion: ESTADO_APROBACION_RECEPCIONABLE,
         });
 
         if (!active) {
@@ -149,6 +183,7 @@ const InventarioRecepcionesPage = () => {
     const response = await obtenerOrdenesCompra({
       limit: 200,
       includeInactive: false,
+      estadoAprobacion: ESTADO_APROBACION_RECEPCIONABLE,
     });
 
     setOrdenesCompraDisponibles(Array.isArray(response?.data) ? response.data : []);
@@ -205,9 +240,23 @@ const InventarioRecepcionesPage = () => {
 
     try {
       const ordenCompra = await obtenerOrdenCompraPorId(ordenCompraId);
+      const blockingReason = getBlockingReasonForRecepcion(ordenCompra);
+
+      if (blockingReason) {
+        resetOcSelection();
+        toast.info(blockingReason);
+        return;
+      }
+
       const pendingLines = (ordenCompra.items || []).filter(
         (item) => Number(item.cantidadPendiente || 0) > 0
       );
+
+      if (!pendingLines.length) {
+        resetOcSelection();
+        toast.info("La orden seleccionada ya no tiene lineas pendientes.");
+        return;
+      }
 
       setSelectedOrdenCompra(ordenCompra);
       setOcForm((prev) => ({
@@ -215,10 +264,6 @@ const InventarioRecepcionesPage = () => {
         ordenCompraId: String(ordenCompra.id),
         items: pendingLines.map(createOcItemDraft),
       }));
-
-      if (!pendingLines.length) {
-        toast.info("La orden seleccionada ya no tiene lineas pendientes.");
-      }
     } catch (error) {
       toast.error(
         error.message || "No se pudo cargar el detalle de la orden de compra."
@@ -522,6 +567,12 @@ const InventarioRecepcionesPage = () => {
                 PedidoInterno, Reserva y NotaSalida.
               </div>
 
+              <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                Solo se muestran ordenes de compra <strong>aprobadas</strong>,
+                con estado de recepcion <strong>pendiente o parcial</strong> y
+                con saldo real por recepcionar.
+              </div>
+
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                 <div className="space-y-3 rounded border border-gray-200 p-4">
                   <div>
@@ -534,8 +585,11 @@ const InventarioRecepcionesPage = () => {
                       value={ordenesSearch}
                       name="inventario-recepciones-page-input-521" onChange={(event) => setOrdenesSearch(event.target.value)}
                       className="w-full rounded border border-gray-300 px-3 py-2"
-                      placeholder="Codigo o proveedor"
+                      placeholder="Codigo, proveedor o RUC"
                     />
+                    <p className="mt-2 text-xs text-gray-500">
+                      {pendingOrdenesCompra.length} orden(es) lista(s) para recepcion con el filtro actual.
+                    </p>
                   </div>
 
                   <div className="max-h-80 space-y-2 overflow-y-auto">
@@ -545,8 +599,8 @@ const InventarioRecepcionesPage = () => {
                       </div>
                     ) : pendingOrdenesCompra.length === 0 ? (
                       <div className="rounded border border-dashed border-gray-300 p-3 text-sm text-gray-500">
-                        No hay ordenes de compra con saldo pendiente para
-                        recepcionar.
+                        No hay ordenes de compra aprobadas y con saldo pendiente
+                        que cumplan el criterio actual de recepcion.
                       </div>
                     ) : (
                       pendingOrdenesCompra.map((ordenCompra) => {
@@ -568,17 +622,24 @@ const InventarioRecepcionesPage = () => {
                               <span className="font-medium text-gray-900">
                                 {ordenCompra.codigo}
                               </span>
-                              <span className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">
+                              <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
+                                {ordenCompra.estadoAprobacion}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                              <span className="rounded bg-gray-100 px-2 py-1 text-gray-700">
                                 {ordenCompra.estadoRecepcion}
+                              </span>
+                              <span className="rounded bg-blue-50 px-2 py-1 text-blue-700">
+                                Pendiente: {Number(ordenCompra.resumen?.totalPendiente || 0)}
                               </span>
                             </div>
                             <p className="mt-1 text-sm text-gray-600">
                               {ordenCompra.proveedor?.razonSocial ||
                                 "Proveedor sin nombre"}
                             </p>
-                            <p className="mt-2 text-xs text-gray-500">
-                              Pendiente total:{" "}
-                              {Number(ordenCompra.resumen?.totalPendiente || 0)}
+                            <p className="mt-1 text-xs text-gray-500">
+                              RUC: {ordenCompra.proveedor?.ruc || "Sin RUC visible"}
                             </p>
                           </button>
                         );
@@ -676,6 +737,10 @@ const InventarioRecepcionesPage = () => {
                       <p>
                         <span className="font-medium">Estado recepcion:</span>{" "}
                         {selectedOrdenCompra.estadoRecepcion}
+                      </p>
+                      <p>
+                        <span className="font-medium">Estado aprobacion:</span>{" "}
+                        {selectedOrdenCompra.estadoAprobacion}
                       </p>
                       <p>
                         <span className="font-medium">Pendiente total:</span>{" "}

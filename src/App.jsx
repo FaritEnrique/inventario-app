@@ -48,6 +48,9 @@ const GestionProductosPage = lazy(() => import("./pages/GestionProductosPage"));
 const GestionProveedoresPage = lazy(() =>
   import("./pages/GestionProveedoresPage")
 );
+const BandejaSolicitudesTipoProductoPage = lazy(() =>
+  import("./pages/BandejaSolicitudesTipoProductoPage")
+);
 const GestionTipoProductosPage = lazy(() =>
   import("./pages/GestionTipoProductosPage")
 );
@@ -152,6 +155,10 @@ const AppRoutes = () => {
               }
             />
             <Route path="gestion-proveedores" element={<GestionProveedoresPage />} />
+            <Route
+              path="solicitudes-tipo-producto"
+              element={<BandejaSolicitudesTipoProductoPage />}
+            />
             <Route
               path="cotizaciones"
               element={

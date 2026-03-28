@@ -7,8 +7,18 @@ const sunatApi = {
     });
   },
 
+  actualizarPadronReducido: async () => {
+    return apiFetch("sunat/actualizar-reducido", {
+      method: "POST",
+    });
+  },
+
   obtenerUltimaActualizacion: async () => {
     return apiFetch("sunat/ultima-actualizacion");
+  },
+
+  obtenerUltimaActualizacionReducido: async () => {
+    return apiFetch("sunat/ultima-actualizacion-reducido");
   },
 
   consultarPadronSunat: async (ruc) => {
