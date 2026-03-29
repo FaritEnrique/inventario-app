@@ -11,6 +11,34 @@ import useSunat from "../hooks/useSunat";
 
 const RUC_REGEX = /^(10|20)\d{9}$/;
 
+const renderEstadoImportacion = (job) => {
+  if (!job) {
+    return {
+      label: "Sin ejecucion reciente",
+      className: "bg-slate-100 text-slate-700",
+    };
+  }
+
+  if (job.estado === "EN_PROCESO" || job.estado === "PENDIENTE") {
+    return {
+      label: "En proceso",
+      className: "bg-amber-100 text-amber-800",
+    };
+  }
+
+  if (job.estado === "COMPLETADO") {
+    return {
+      label: "Completado",
+      className: "bg-green-100 text-green-800",
+    };
+  }
+
+  return {
+    label: "Error",
+    className: "bg-red-100 text-red-800",
+  };
+};
+
 const GestionProveedoresPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [lastAppliedSearchQuery, setLastAppliedSearchQuery] = useState("");
@@ -33,11 +61,15 @@ const GestionProveedoresPage = () => {
     actualizarPadronReducido,
     obtenerUltimaActualizacion,
     obtenerUltimaActualizacionReducido,
+    obtenerEstadoImportacionSunat,
+    obtenerEstadoImportacionReducido,
     ultimaActualizacion,
     ultimaActualizacionReducido,
     loading: sunatLoading,
     actualizando: actualizandoSunat,
     actualizandoReducido,
+    estadoImportacionSunat,
+    estadoImportacionReducido,
   } = useSunat();
 
   useEffect(() => {
@@ -47,7 +79,14 @@ const GestionProveedoresPage = () => {
   useEffect(() => {
     obtenerUltimaActualizacion();
     obtenerUltimaActualizacionReducido();
-  }, [obtenerUltimaActualizacion, obtenerUltimaActualizacionReducido]);
+    obtenerEstadoImportacionSunat();
+    obtenerEstadoImportacionReducido();
+  }, [
+    obtenerEstadoImportacionReducido,
+    obtenerEstadoImportacionSunat,
+    obtenerUltimaActualizacion,
+    obtenerUltimaActualizacionReducido,
+  ]);
 
   const handleSearchChange = (event) => {
     const value = event.target.value;
@@ -181,6 +220,8 @@ const GestionProveedoresPage = () => {
   };
 
   const loading = proveedoresLoading || sunatLoading;
+  const estadoSunatUi = renderEstadoImportacion(estadoImportacionSunat);
+  const estadoReducidoUi = renderEstadoImportacion(estadoImportacionReducido);
 
   return (
     <>
@@ -273,6 +314,42 @@ const GestionProveedoresPage = () => {
               <p className="mt-1 text-xs text-gray-500">
                 Ultima actualizacion padron reducido:{" "}
                 {ultimaActualizacionReducido || "Sin informacion disponible"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-amber-900">Padron SUNAT</p>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-semibold ${estadoSunatUi.className}`}
+                >
+                  {estadoSunatUi.label}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-amber-900">
+                {estadoImportacionSunat?.errorMensaje ||
+                  (estadoImportacionSunat?.estado === "COMPLETADO"
+                    ? `Leidos: ${estadoImportacionSunat?.totalLeidos || 0} | Persistidos: ${estadoImportacionSunat?.totalPersistidos || 0}`
+                    : "Cuando inicies la importacion, aqui se mostrara su estado.")}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-teal-200 bg-teal-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-teal-900">Padron reducido</p>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-semibold ${estadoReducidoUi.className}`}
+                >
+                  {estadoReducidoUi.label}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-teal-900">
+                {estadoImportacionReducido?.errorMensaje ||
+                  (estadoImportacionReducido?.estado === "COMPLETADO"
+                    ? `Leidos: ${estadoImportacionReducido?.totalLeidos || 0} | Persistidos: ${estadoImportacionReducido?.totalPersistidos || 0}`
+                    : "Cuando inicies la importacion, aqui se mostrara su estado.")}
               </p>
             </div>
           </div>

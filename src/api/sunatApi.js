@@ -21,6 +21,10 @@ const sunatApi = {
     return apiFetch("sunat/ultima-actualizacion-reducido");
   },
 
+  obtenerEstadoImportacion: async (tipo) => {
+    return apiFetch(`sunat/estado/${tipo}`);
+  },
+
   consultarPadronSunat: async (ruc) => {
     if (!ruc || !/^\d{11}$/.test(ruc)) {
       throw new Error("RUC invalido. Debe tener 11 digitos numericos.");
