@@ -18,7 +18,7 @@ const BotonActualizarPadron = () => {
             try {
               await actualizarPadronSunat();
               toast.success("Padrón SUNAT actualizado correctamente.");
-            } catch (error) {
+            } catch {
               toast.error("Error al actualizar el padrón.");
             }
           }}
@@ -32,7 +32,9 @@ const BotonActualizarPadron = () => {
     <button
       onClick={handleClick}
       disabled={actualizando}
-      className={`bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded ${actualizando ? "opacity-50 cursor-not-allowed" : ""}`}
+      className={`rounded bg-yellow-500 px-4 py-2 font-bold text-white hover:bg-yellow-600 ${
+        actualizando ? "cursor-not-allowed opacity-50" : ""
+      }`}
     >
       {actualizando ? "Actualizando..." : "Actualizar padrón SUNAT"}
     </button>

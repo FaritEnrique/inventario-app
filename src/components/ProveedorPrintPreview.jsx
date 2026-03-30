@@ -13,7 +13,7 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
     const printArea = document.getElementById("print-area");
 
     if (!printArea) {
-      console.error("Print area not found!");
+      console.error("No se encontró el área de impresión.");
       return;
     }
 
@@ -69,7 +69,9 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(
+          `Error HTTP al generar el PDF. Estado: ${response.status}`
+        );
       }
 
       const pdfBlob = await response.blob();
@@ -77,7 +79,7 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
       window.open(pdfUrl, "_blank");
       URL.revokeObjectURL(pdfUrl);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error al generar el PDF:", error);
       alert("Error al generar el PDF. Por favor, intentalo de nuevo.");
     }
   };

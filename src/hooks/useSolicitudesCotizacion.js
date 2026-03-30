@@ -14,9 +14,9 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
       setSolicitudes(data);
       setError(null);
     } catch (err) {
-      console.error("Error cargando solicitudes de cotizacion:", err);
-      setError("No se pudieron cargar las solicitudes de cotizacion.");
-      toast.error("Error al cargar solicitudes de cotizacion.");
+      console.error("Error cargando solicitudes de cotización:", err);
+      setError("No se pudieron cargar las solicitudes de cotización.");
+      toast.error("Error al cargar solicitudes de cotización.");
     } finally {
       setCargando(false);
     }
@@ -34,12 +34,12 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     try {
       const nuevaSolicitud = await solicitudesCotizacionApi.crear(solicitud);
       setSolicitudes((prev) => [...prev, nuevaSolicitud]);
-      toast.success("Solicitud de cotizacion creada con exito.");
+      toast.success("Solicitud de cotización creada con éxito.");
       return nuevaSolicitud;
     } catch (err) {
-      console.error("Error creando solicitud de cotizacion:", err);
+      console.error("Error creando solicitud de cotización:", err);
       const errorMessage =
-        err.message || "Error al crear solicitud de cotizacion.";
+        err.message || "Error al crear solicitud de cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -56,12 +56,12 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
           solicitud.id === id ? solicitudActualizada : solicitud
         )
       );
-      toast.success("Solicitud de cotizacion actualizada con exito.");
+      toast.success("Solicitud de cotización actualizada con éxito.");
       return solicitudActualizada;
     } catch (err) {
-      console.error("Error actualizando solicitud de cotizacion:", err);
+      console.error("Error actualizando solicitud de cotización:", err);
       const errorMessage =
-        err.message || "Error al actualizar solicitud de cotizacion.";
+        err.message || "Error al actualizar solicitud de cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -73,11 +73,11 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
       setSolicitudes((prev) =>
         prev.filter((solicitud) => solicitud.id !== id)
       );
-      toast.success("Solicitud de cotizacion eliminada con exito.");
+      toast.success("Solicitud de cotización eliminada con éxito.");
     } catch (err) {
-      console.error("Error eliminando solicitud de cotizacion:", err);
+      console.error("Error eliminando solicitud de cotización:", err);
       const errorMessage =
-        err.message || "Error al eliminar solicitud de cotizacion.";
+        err.message || "Error al eliminar solicitud de cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -89,12 +89,12 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
   const enviarSolicitudCorreo = async (id, payload) => {
     try {
       const response = await solicitudesCotizacionApi.enviarCorreo(id, payload);
-      toast.success("Solicitud de cotizacion enviada por correo.");
+      toast.success("Solicitud de cotización enviada por correo.");
       return response;
     } catch (err) {
-      console.error("Error enviando solicitud de cotizacion por correo:", err);
+      console.error("Error enviando solicitud de cotización por correo:", err);
       const errorMessage =
-        err.message || "Error al enviar solicitud de cotizacion por correo.";
+        err.message || "Error al enviar solicitud de cotización por correo.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }

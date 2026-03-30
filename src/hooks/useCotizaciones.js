@@ -34,11 +34,11 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     try {
       const nuevaCotizacion = await cotizacionesApi.crear(cotizacion);
       setCotizaciones((prev) => [...prev, nuevaCotizacion]);
-      toast.success("Cotizacion creada con exito.");
+      toast.success("Cotización creada con éxito.");
       return nuevaCotizacion;
     } catch (err) {
-      console.error("Error creando cotizacion:", err);
-      const errorMessage = err.message || "Error al crear cotizacion.";
+      console.error("Error creando cotización:", err);
+      const errorMessage = err.message || "Error al crear cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -52,11 +52,11 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
           cotizacion.id === id ? cotizacionActualizada : cotizacion
         )
       );
-      toast.success("Cotizacion actualizada con exito.");
+      toast.success("Cotización actualizada con éxito.");
       return cotizacionActualizada;
     } catch (err) {
-      console.error("Error actualizando cotizacion:", err);
-      const errorMessage = err.message || "Error al actualizar cotizacion.";
+      console.error("Error actualizando cotización:", err);
+      const errorMessage = err.message || "Error al actualizar cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -97,14 +97,14 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
       );
 
       toast.success(
-        "Adjudicacion directa excepcional registrada con exito."
+        "Adjudicación directa excepcional registrada con éxito."
       );
       return cotizacionAdjudicada;
     } catch (err) {
-      console.error("Error adjudicando cotizacion:", err);
+      console.error("Error adjudicando cotización:", err);
       const errorMessage =
         err.message ||
-        "Error al registrar la adjudicacion directa excepcional.";
+        "Error al registrar la adjudicación directa excepcional.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -114,10 +114,10 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     try {
       await cotizacionesApi.eliminar(id);
       setCotizaciones((prev) => prev.filter((cotizacion) => cotizacion.id !== id));
-      toast.success("Cotizacion eliminada con exito.");
+      toast.success("Cotización eliminada con éxito.");
     } catch (err) {
-      console.error("Error eliminando cotizacion:", err);
-      const errorMessage = err.message || "Error al eliminar cotizacion.";
+      console.error("Error eliminando cotización:", err);
+      const errorMessage = err.message || "Error al eliminar cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }

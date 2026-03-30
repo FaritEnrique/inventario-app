@@ -32,7 +32,7 @@ const SolicitarRestablecimientoPage = () => {
 
       const message =
         response?.message ||
-        "Si el correo existe, se ha enviado un enlace para restablecer la contrasena.";
+        "Si el correo existe, se ha enviado un enlace para restablecer la contraseña.";
 
       setFeedback({
         type: "success",
@@ -57,10 +57,10 @@ const SolicitarRestablecimientoPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded bg-white p-8 shadow">
         <h2 className="mb-6 text-center text-2xl font-semibold text-indigo-700">
-          Restablecer Contrasena
+          Restablecer contraseña
         </h2>
         <p className="mb-4 text-center text-sm text-gray-600">
-          Ingresa tu correo electronico para recibir un enlace de
+          Ingresa tu correo electrónico para recibir un enlace de
           restablecimiento.
         </p>
 
@@ -79,7 +79,7 @@ const SolicitarRestablecimientoPage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="solicitar-restablecimiento-email" className="mb-1 block text-sm font-medium text-gray-700">
-              Correo electronico
+              Correo electrónico
             </label>
             <input
               id="solicitar-restablecimiento-email"
@@ -105,7 +105,7 @@ const SolicitarRestablecimientoPage = () => {
             to="/login"
             className="font-medium text-indigo-600 hover:text-indigo-700"
           >
-            Volver al inicio de sesion
+            Volver al inicio de sesión
           </Link>
           {feedback.type === "success" ? (
             <button
@@ -113,7 +113,7 @@ const SolicitarRestablecimientoPage = () => {
               onClick={() => navigate("/login")}
               className="rounded border border-emerald-300 px-3 py-1.5 font-medium text-emerald-700 hover:bg-emerald-50"
             >
-              Ir a iniciar sesion
+              Ir a iniciar sesión
             </button>
           ) : null}
         </div>

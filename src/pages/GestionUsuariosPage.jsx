@@ -59,8 +59,8 @@ const GestionUsuariosPage = () => {
         const response = await areasApi.getAreas();
         setAreas(response || []);
       } catch (error) {
-        console.error("Error al cargar areas:", error);
-        toast.error("No se pudieron cargar las areas.");
+        console.error("Error al cargar áreas:", error);
+        toast.error("No se pudieron cargar las áreas.");
       }
     };
 
@@ -75,7 +75,7 @@ const GestionUsuariosPage = () => {
   const handleCrear = async (usuario) => {
     try {
       await crearUsuario(usuario);
-      toast.success("Usuario creado con exito.");
+      toast.success("Usuario creado con éxito.");
       cargarUsuarios();
     } catch (error) {
       console.error(error);
@@ -95,7 +95,7 @@ const GestionUsuariosPage = () => {
 
     try {
       await actualizarUsuario(usuarioAEditar.id, datos);
-      toast.success("Usuario actualizado con exito.");
+      toast.success("Usuario actualizado con éxito.");
       setIsModalOpen(false);
       setUsuarioAEditar(null);
       cargarUsuarios();
@@ -112,15 +112,15 @@ const GestionUsuariosPage = () => {
 
     toast.info(
       <ConfirmDeleteToast2
-        message={`Estas seguro de que quieres desactivar a ${userName}? El usuario no podra acceder al sistema.`}
+        message={`¿Estás seguro de que quieres desactivar a ${userName}? El usuario no podrá acceder al sistema.`}
         onConfirm={async () => {
           try {
             await eliminarUsuario(userId);
-            toast.success("Usuario desactivado correctamente");
+            toast.success("Usuario desactivado correctamente.");
             cargarUsuarios();
           } catch (error) {
             toast.error(
-              getUserErrorMessage(error, "Error al desactivar el usuario")
+              getUserErrorMessage(error, "Error al desactivar el usuario.")
             );
           }
         }}
@@ -135,20 +135,22 @@ const GestionUsuariosPage = () => {
 
     try {
       await toggleActivo(userId, true);
-      toast.success(`${userName} fue reactivado correctamente`);
+      toast.success(`${userName} fue reactivado correctamente.`);
       cargarUsuarios();
     } catch (error) {
       toast.error(
-        getUserErrorMessage(error, "Error al reactivar el usuario")
+        getUserErrorMessage(error, "Error al reactivar el usuario.")
       );
     }
   };
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
+      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
       <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Solo `ADMINISTRADOR_SISTEMA` y `GERENTE_ADMINISTRACION` pueden crear, editar y cambiar el estado de usuarios.
+        Solo <code>ADMINISTRADOR_SISTEMA</code> y{" "}
+        <code>GERENTE_ADMINISTRACION</code> pueden crear, editar y cambiar el
+        estado de usuarios.
       </div>
 
       {canCreate ? (
@@ -165,7 +167,7 @@ const GestionUsuariosPage = () => {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Buscar por nombre, codigo o email..."
+          placeholder="Buscar por nombre, código o correo electrónico..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
           name="gestion-usuarios-page-input-135"
@@ -203,7 +205,7 @@ const GestionUsuariosPage = () => {
                     <strong>{user.name || user.nombre}</strong> - {user.email}
                   </p>
                   <p className="text-sm">
-                    Codigo:{" "}
+                    Código:{" "}
                     <span className="font-semibold text-blue-700">
                       {user.codigoUsuario || "N/A"}
                     </span>
@@ -221,7 +223,7 @@ const GestionUsuariosPage = () => {
                     </span>
                   </p>
                   <p className="text-sm">
-                    Area:{" "}
+                    Área:{" "}
                     <span className="font-semibold text-gray-700">
                       {user.area?.nombre || "N/A"}
                     </span>
@@ -238,7 +240,7 @@ const GestionUsuariosPage = () => {
                               areas.find(
                                 (area) =>
                                   String(area.id) === String(rango.areaId)
-                              )?.nombre || `Area ${rango.areaId}`;
+                              )?.nombre || `Área ${rango.areaId}`;
                             return `${rango.rol} (${areaNombre})`;
                           })
                           .join(" | ")}
@@ -302,7 +304,7 @@ const GestionUsuariosPage = () => {
               Anterior
             </button>
             <span>
-              Pagina {page} de {totalPages}
+              Página {page} de {totalPages}
             </span>
             <button
               onClick={() => setPage(page + 1)}
@@ -346,4 +348,3 @@ const GestionUsuariosPage = () => {
 };
 
 export default GestionUsuariosPage;
-

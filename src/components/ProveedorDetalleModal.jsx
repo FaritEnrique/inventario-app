@@ -81,9 +81,9 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
             </h4>
             <dl>
               <DetailRow label="Procedencia" value={proveedor.procedencia} />
-              <DetailRow label="Direccion" value={proveedor.direccion} />
-              <DetailRow label="Telefono" value={proveedor.telefono} />
-              <DetailRow label="Correo electronico" value={proveedor.correoElectronico} />
+              <DetailRow label="Dirección" value={proveedor.direccion} />
+              <DetailRow label="Teléfono" value={proveedor.telefono} />
+              <DetailRow label="Correo electrónico" value={proveedor.correoElectronico} />
               <DetailRow label="Representante" value={proveedor.representante} />
               <DetailRow label="Contacto" value={proveedor.contacto} />
               <DetailRow label="Creado" value={proveedor.createdAt ? new Date(proveedor.createdAt).toLocaleString("es-PE") : null} />
@@ -93,11 +93,11 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
 
           <section className="rounded-lg border border-gray-200 bg-white p-5">
             <h4 className="mb-4 text-lg font-semibold text-gray-800">
-              Datos SUNAT y ubicacion
+              Datos SUNAT y ubicación
             </h4>
             <dl>
               <DetailRow label="Estado" value={proveedor.estado} />
-              <DetailRow label="Condicion" value={proveedor.condicion} />
+              <DetailRow label="Condición" value={proveedor.condicion} />
               <DetailRow label="Tipo" value={proveedor.tipo} />
               <DetailRow label="Actividad CIIU 3 principal" value={proveedor.actividadCIIU3Principal} />
               <DetailRow label="Actividad CIIU 3 secundaria" value={proveedor.actividadCIIU3Secundaria} />
@@ -107,14 +107,14 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
               <DetailRow label="Departamento" value={proveedor.departamento} />
               <DetailRow label="Provincia" value={proveedor.provincia} />
               <DetailRow label="Distrito" value={proveedor.distrito} />
-              <DetailRow label="Periodo publicacion" value={proveedor.periodoPublicacion} />
+              <DetailRow label="Período de publicación" value={proveedor.periodoPublicacion} />
             </dl>
           </section>
         </div>
 
         <section className="rounded-lg border border-gray-200 bg-white p-5">
           <h4 className="mb-4 text-lg font-semibold text-gray-800">
-            Clasificacion del proveedor
+            Clasificación del proveedor
           </h4>
 
           <div className="space-y-4">
@@ -154,7 +154,7 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
                           </p>
                           {solicitud.comentarioRevision ? (
                             <p className="mt-1 text-xs text-amber-700">
-                              Revision: {solicitud.comentarioRevision}
+                              Revisión: {solicitud.comentarioRevision}
                             </p>
                           ) : null}
                         </div>

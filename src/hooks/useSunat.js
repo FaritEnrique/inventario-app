@@ -38,7 +38,7 @@ const useSunat = () => {
       setUltimaActualizacion(data?.ultimaActualizacion || null);
       return data;
     } catch (err) {
-      toast.error("Error al obtener la ultima actualizacion del padron SUNAT.");
+      toast.error("Error al obtener la última actualización del padrón SUNAT.");
       console.error(err);
       return null;
     }
@@ -53,7 +53,7 @@ const useSunat = () => {
       return data;
     } catch (err) {
       toast.error(
-        "Error al obtener la ultima actualizacion del padron reducido."
+        "Error al obtener la última actualización del padrón reducido."
       );
       console.error(err);
       return null;
@@ -81,7 +81,7 @@ const useSunat = () => {
         return job;
       } catch (err) {
         if (!silent) {
-          toast.error("No se pudo consultar el estado de la importacion SUNAT.");
+          toast.error("No se pudo consultar el estado de la importación SUNAT.");
         }
         console.error(err);
         return null;
@@ -129,7 +129,7 @@ const useSunat = () => {
 
   const actualizarPadronSunat = useCallback(async () => {
     if (iniciandoSunat || ACTIVE_JOB_STATES.has(estadoImportacionSunat?.estado)) {
-      toast.warn("Ya hay una importacion del padron SUNAT en proceso.");
+      toast.warn("Ya hay una importación del padrón SUNAT en proceso.");
       return null;
     }
 
@@ -141,12 +141,12 @@ const useSunat = () => {
 
       if (response?.alreadyRunning) {
         toast.info(
-          response?.mensaje || "Ya existe una importacion del padron SUNAT en proceso."
+          response?.mensaje || "Ya existe una importación del padrón SUNAT en proceso."
         );
       } else {
         toast.success(
           response?.mensaje ||
-            "La importacion del padron SUNAT fue iniciada correctamente."
+            "La importación del padrón SUNAT fue iniciada correctamente."
         );
       }
 
@@ -155,7 +155,7 @@ const useSunat = () => {
     } catch (err) {
       console.error("Error en actualizarPadronSunat:", err);
       toast.error(
-        err?.message || "Error al iniciar la importacion del padron SUNAT."
+        err?.message || "Error al iniciar la importación del padrón SUNAT."
       );
       return null;
     } finally {
@@ -168,7 +168,7 @@ const useSunat = () => {
       iniciandoReducido ||
       ACTIVE_JOB_STATES.has(estadoImportacionReducido?.estado)
     ) {
-      toast.warn("Ya hay una importacion del padron reducido en proceso.");
+      toast.warn("Ya hay una importación del padrón reducido en proceso.");
       return null;
     }
 
@@ -181,12 +181,12 @@ const useSunat = () => {
       if (response?.alreadyRunning) {
         toast.info(
           response?.mensaje ||
-            "Ya existe una importacion del padron reducido en proceso."
+            "Ya existe una importación del padrón reducido en proceso."
         );
       } else {
         toast.success(
           response?.mensaje ||
-            "La importacion del padron reducido fue iniciada correctamente."
+            "La importación del padrón reducido fue iniciada correctamente."
         );
       }
 
@@ -195,7 +195,7 @@ const useSunat = () => {
     } catch (err) {
       console.error("Error en actualizarPadronReducido:", err);
       toast.error(
-        err?.message || "Error al iniciar la importacion del padron reducido."
+        err?.message || "Error al iniciar la importación del padrón reducido."
       );
       return null;
     } finally {
@@ -236,7 +236,7 @@ const useSunat = () => {
       return null;
     } catch (err) {
       console.error("Error consultando SUNAT:", err);
-      toast.error("No se pudo conectar con SUNAT. Verifica tu conexion.");
+      toast.error("No se pudo conectar con SUNAT. Verifica tu conexión.");
       return null;
     } finally {
       setLoading(false);

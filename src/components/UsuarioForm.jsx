@@ -38,13 +38,13 @@ const formatValidationMessage = (message) =>
   String(message || "")
     .replace(/["]/g, "")
     .replace(/\bnombre\b/g, "nombre")
-    .replace(/\bemail\b/g, "correo")
-    .replace(/\bpassword\b/g, "contrasena")
+    .replace(/\bemail\b/g, "correo electrónico")
+    .replace(/\bpassword\b/g, "contraseña")
     .replace(/\bcargo\b/g, "cargo")
-    .replace(/\bareaId\b/g, "area")
+    .replace(/\bareaId\b/g, "área")
     .replace(/\brol\b/g, "rol")
     .replace(/\brangos\[\d+\]\.rol\b/g, "rol adicional")
-    .replace(/\brangos\[\d+\]\.areaId\b/g, "area del rango adicional");
+    .replace(/\brangos\[\d+\]\.areaId\b/g, "área del rango adicional");
 
 const buildErrorMessage = (error) => {
   if (Array.isArray(error?.validationErrors) && error.validationErrors.length) {
@@ -157,12 +157,12 @@ const UsuarioForm = ({
 
     for (const rango of form.rangos) {
       if (!rango.rol || !rango.areaId) {
-        return "Completa el rol y el area de cada rango adicional.";
+      return "Completa el rol y el área de cada rango adicional.";
       }
 
       const key = `${rango.rol}::${rango.areaId}`;
       if (duplicateAssignments.has(key)) {
-        return "No se pueden repetir asignaciones de rol y area en el mismo usuario.";
+        return "No se pueden repetir asignaciones de rol y área en el mismo usuario.";
       }
 
       duplicateAssignments.add(key);
@@ -222,7 +222,7 @@ const UsuarioForm = ({
       <div className="md:col-span-3">
         <h2 className="text-sm font-semibold text-gray-900">Datos principales</h2>
         <p className="mt-1 text-xs text-gray-600">
-          El rol principal y el area principal se mantienen separados de los rangos adicionales.
+          El rol principal y el área principal se mantienen separados de los rangos adicionales.
         </p>
       </div>
 
@@ -238,7 +238,7 @@ const UsuarioForm = ({
         name="email"
         value={form.email}
         onChange={handleChange}
-        placeholder="Email"
+        placeholder="Correo electrónico"
         type="email"
         className="rounded border p-2 md:col-span-1"
         required
@@ -247,7 +247,7 @@ const UsuarioForm = ({
         name="password"
         value={form.password}
         onChange={handleChange}
-        placeholder={initialValues ? "Dejar vacio si no cambia" : "Contrasena"}
+        placeholder={initialValues ? "Dejar vacío si no cambia" : "Contraseña"}
         type="password"
         className="rounded border p-2 md:col-span-1"
         {...(initialValues ? {} : { required: true })}
@@ -263,7 +263,7 @@ const UsuarioForm = ({
 
       <div className="md:col-span-1">
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          Area principal
+          Área principal
         </label>
         <select
           name="areaId"
@@ -272,7 +272,7 @@ const UsuarioForm = ({
           className="w-full rounded border p-2"
           required
         >
-          <option value="">-- Area principal --</option>
+          <option value="">-- Área principal --</option>
           {areas.map((area) => (
             <option key={area.id} value={area.id}>
               {area.nombre}
@@ -326,7 +326,7 @@ const UsuarioForm = ({
                 Rangos adicionales
               </h3>
               <p className="text-xs text-gray-600">
-                Usa esta seccion para asignaciones organizacionales por area, como jefatura o gerencia funcional.
+                Usa esta sección para asignaciones organizacionales por área, como jefatura o gerencia funcional.
               </p>
             </div>
             <button
@@ -373,7 +373,7 @@ const UsuarioForm = ({
                     className="rounded border p-2"
                     required
                   >
-                    <option value="">-- Area del rango --</option>
+                    <option value="">-- Área del rango --</option>
                     {areas.map((area) => (
                       <option key={area.id} value={area.id}>
                         {area.nombre}

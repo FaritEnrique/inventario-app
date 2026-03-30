@@ -2,13 +2,14 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import proveedoresApi from "../api/proveedoresApi";
-import sunatApi from "../api/sunatApi"; // 🆕 Importamos la API de SUNAT
+import sunatApi from "../api/sunatApi";
 
 const useProveedores = () => {
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [ultimaActualizacionSunat, setUltimaActualizacionSunat] = useState(null); // 🆕
+  const [ultimaActualizacionSunat, setUltimaActualizacionSunat] =
+    useState(null);
 
   const fetchProveedores = async (query = "", filters = {}) => {
     setLoading(true);
@@ -19,7 +20,7 @@ const useProveedores = () => {
       return data;
     } catch (err) {
       setError(err.message);
-      toast.error(`Error: ${err.message}`);
+      toast.error(`Error al cargar proveedores: ${err.message}`);
       return [];
     } finally {
       setLoading(false);
@@ -42,7 +43,7 @@ const useProveedores = () => {
     try {
       const data = await proveedoresApi.actualizar(id, datosActualizados);
       setProveedores(
-        proveedores.map((p) => (p.id === parseInt(id) ? data : p))
+        proveedores.map((p) => (p.id === parseInt(id, 10) ? data : p))
       );
       toast.success("Proveedor actualizado exitosamente.");
       return data;
@@ -56,19 +57,18 @@ const useProveedores = () => {
     try {
       await proveedoresApi.actualizarEstado(id, nuevoEstado);
       await fetchProveedores();
-      toast.success(`Proveedor actualizado exitosamente.`);
+      toast.success("Proveedor actualizado exitosamente.");
     } catch (err) {
       toast.error(`Error al actualizar estado del proveedor: ${err.message}`);
       throw err;
     }
   };
 
-  // 🆕 Nueva función para llamar al servicio de actualización del padrón
   const actualizarPadronSunat = async () => {
     try {
       await toast.promise(sunatApi.actualizarPadronSunat(), {
-        pending: "Actualizando padrón SUNAT, esto puede tardar unos minutos...",
-        success: "Padrón SUNAT actualizado exitosamente!",
+        pending: "Actualizando padrón SUNAT. Esto puede tardar unos minutos...",
+        success: "Padrón SUNAT actualizado correctamente.",
         error:
           "Error al actualizar el padrón SUNAT. Revisa la consola para más detalles.",
       });
@@ -79,13 +79,12 @@ const useProveedores = () => {
     }
   };
 
-  // 🆕 Función para obtener la última actualización del padrón
   const obtenerUltimaActualizacion = async () => {
     try {
       const data = await sunatApi.obtenerUltimaActualizacion();
       setUltimaActualizacionSunat(data?.ultimaActualizacion || null);
     } catch (err) {
-      console.error("Error obteniendo última actualización SUNAT:", err);
+      console.error("Error al obtener la última actualización de SUNAT:", err);
     }
   };
 
@@ -98,7 +97,7 @@ const useProveedores = () => {
     proveedores,
     loading,
     error,
-    ultimaActualizacionSunat, // 🆕 para mostrar en UI
+    ultimaActualizacionSunat,
     fetchProveedores,
     crearProveedor,
     actualizarProveedor,

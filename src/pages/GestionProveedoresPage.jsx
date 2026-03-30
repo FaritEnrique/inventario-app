@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import FormularioProveedor from "../components/FormularioProveedor";
 import Loader from "../components/Loader";
+import Modal from "../components/Modal";
 import ProveedorDetalleModal from "../components/ProveedorDetalleModal";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
@@ -47,6 +48,11 @@ const GestionProveedoresPage = () => {
   const [detailProveedor, setDetailProveedor] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false);
+  const [resultadoImportacionModal, setResultadoImportacionModal] = useState(null);
+  const handledImportResultRef = useRef({
+    PADRON_COMPLETO: null,
+    PADRON_REDUCIDO: null,
+  });
 
   const {
     proveedores,
@@ -87,6 +93,29 @@ const GestionProveedoresPage = () => {
     obtenerUltimaActualizacion,
     obtenerUltimaActualizacionReducido,
   ]);
+
+  useEffect(() => {
+    const jobs = [
+      estadoImportacionSunat,
+      estadoImportacionReducido,
+    ].filter(Boolean);
+
+    jobs.forEach((job) => {
+      if (
+        job.estado === "COMPLETADO" &&
+        job.actualizado === false &&
+        job.mensajeResultado &&
+        handledImportResultRef.current[job.tipo] !== job.id
+      ) {
+        handledImportResultRef.current[job.tipo] = job.id;
+        setResultadoImportacionModal({
+          jobId: job.id,
+          tipo: job.tipo,
+          mensaje: job.mensajeResultado,
+        });
+      }
+    });
+  }, [estadoImportacionReducido, estadoImportacionSunat]);
 
   const handleSearchChange = (event) => {
     const value = event.target.value;
@@ -330,6 +359,7 @@ const GestionProveedoresPage = () => {
               </div>
               <p className="mt-2 text-sm text-amber-900">
                 {estadoImportacionSunat?.errorMensaje ||
+                  estadoImportacionSunat?.mensajeResultado ||
                   (estadoImportacionSunat?.estado === "COMPLETADO"
                     ? `Leidos: ${estadoImportacionSunat?.totalLeidos || 0} | Persistidos: ${estadoImportacionSunat?.totalPersistidos || 0}`
                     : "Cuando inicies la importacion, aqui se mostrara su estado.")}
@@ -347,6 +377,7 @@ const GestionProveedoresPage = () => {
               </div>
               <p className="mt-2 text-sm text-teal-900">
                 {estadoImportacionReducido?.errorMensaje ||
+                  estadoImportacionReducido?.mensajeResultado ||
                   (estadoImportacionReducido?.estado === "COMPLETADO"
                     ? `Leidos: ${estadoImportacionReducido?.totalLeidos || 0} | Persistidos: ${estadoImportacionReducido?.totalPersistidos || 0}`
                     : "Cuando inicies la importacion, aqui se mostrara su estado.")}
@@ -515,6 +546,28 @@ const GestionProveedoresPage = () => {
           onClose={() => setDetailProveedor(null)}
           proveedor={detailProveedor}
         />
+
+        <Modal
+          isOpen={Boolean(resultadoImportacionModal)}
+          onClose={() => setResultadoImportacionModal(null)}
+          title="Resultado de actualizacion SUNAT"
+          maxWidth="max-w-lg"
+        >
+          <div className="space-y-5">
+            <p className="text-sm leading-6 text-gray-700">
+              {resultadoImportacionModal?.mensaje}
+            </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setResultadoImportacionModal(null)}
+                className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </>
   );

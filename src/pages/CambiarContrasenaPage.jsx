@@ -34,21 +34,21 @@ const CambiarContrasenaPage = () => {
       !form.nuevaContrasena ||
       !form.confirmarNuevaContrasena
     ) {
-      const message = "Completa todos los campos para cambiar la contrasena.";
+      const message = "Completa todos los campos para cambiar la contraseña.";
       setFeedback({ type: "error", message });
       toast.error(message);
       return;
     }
 
     if (form.nuevaContrasena.length < 6) {
-      const message = "La nueva contrasena debe tener al menos 6 caracteres.";
+      const message = "La nueva contraseña debe tener al menos 6 caracteres.";
       setFeedback({ type: "error", message });
       toast.error(message);
       return;
     }
 
     if (form.nuevaContrasena !== form.confirmarNuevaContrasena) {
-      const message = "La confirmacion de la nueva contrasena no coincide.";
+      const message = "La confirmación de la nueva contraseña no coincide.";
       setFeedback({ type: "error", message });
       toast.error(message);
       return;
@@ -66,7 +66,7 @@ const CambiarContrasenaPage = () => {
       });
 
       const message =
-        response?.message || "Contrasena actualizada correctamente.";
+        response?.message || "Contraseña actualizada correctamente.";
 
       setFeedback({ type: "success", message });
       setForm(initialForm);
@@ -75,7 +75,7 @@ const CambiarContrasenaPage = () => {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "No se pudo actualizar la contrasena.";
+        "No se pudo actualizar la contraseña.";
 
       setFeedback({ type: "error", message });
       toast.error(message);
@@ -90,10 +90,10 @@ const CambiarContrasenaPage = () => {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-indigo-700">
-              Cambiar contrasena
+              Cambiar contraseña
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Actualiza tu acceso validando primero tu contrasena actual.
+              Actualiza tu acceso validando primero tu contraseña actual.
             </p>
           </div>
           <Link
@@ -111,7 +111,7 @@ const CambiarContrasenaPage = () => {
                 htmlFor="cambiar-password-actual"
                 className="mb-1 block text-sm font-medium text-gray-700"
               >
-                Contrasena actual
+                Contraseña actual
               </label>
               <input
                 id="cambiar-password-actual"
@@ -130,7 +130,7 @@ const CambiarContrasenaPage = () => {
                 htmlFor="cambiar-password-nueva"
                 className="mb-1 block text-sm font-medium text-gray-700"
               >
-                Nueva contrasena
+                Nueva contraseña
               </label>
               <input
                 id="cambiar-password-nueva"
@@ -143,8 +143,8 @@ const CambiarContrasenaPage = () => {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Debe ser distinta de tu contrasena actual y de tus ultimas 5
-                contrasenas.
+                Debe ser distinta de tu contraseña actual y de tus últimas 5
+                contraseñas.
               </p>
             </div>
 
@@ -153,7 +153,7 @@ const CambiarContrasenaPage = () => {
                 htmlFor="cambiar-password-confirmar"
                 className="mb-1 block text-sm font-medium text-gray-700"
               >
-                Confirmar nueva contrasena
+                Confirmar nueva contraseña
               </label>
               <input
                 id="cambiar-password-confirmar"
@@ -185,7 +185,7 @@ const CambiarContrasenaPage = () => {
                 disabled={submitting}
                 className="rounded bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
               >
-                {submitting ? "Actualizando..." : "Guardar nueva contrasena"}
+                {submitting ? "Actualizando..." : "Guardar nueva contraseña"}
               </button>
               <button
                 type="button"

@@ -32,7 +32,7 @@ const CrearPrimerUsuarioPage = () => {
       });
 
       completeInitialSetup();
-      toast.success("Usuario administrador creado con exito. Inicia sesion.");
+      toast.success("Usuario administrador creado con éxito. Inicia sesión.");
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Error al crear el primer usuario:", error);
@@ -52,11 +52,7 @@ const CrearPrimerUsuarioPage = () => {
           Este formulario solo se usa una vez para inicializar el sistema.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-          autoComplete="off"
-        >
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label
               htmlFor="nombre"
@@ -80,7 +76,7 @@ const CrearPrimerUsuarioPage = () => {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700"
             >
-              Email
+              Correo electrónico
             </label>
             <input
               id="email"
@@ -116,7 +112,7 @@ const CrearPrimerUsuarioPage = () => {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700"
             >
-              Contrasena
+              Contraseña
             </label>
             <div className="relative mt-1">
               <input
