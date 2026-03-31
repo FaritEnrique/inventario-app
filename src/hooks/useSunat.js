@@ -9,6 +9,22 @@ const JOB_TYPE = {
 
 const ACTIVE_JOB_STATES = new Set(["PENDIENTE", "EN_PROCESO"]);
 const POLLING_INTERVAL_MS = 5000;
+const inFlightSunatRequests = new Map();
+
+const runSharedSunatRequest = (key, requestFactory) => {
+  if (inFlightSunatRequests.has(key)) {
+    return inFlightSunatRequests.get(key);
+  }
+
+  const request = Promise.resolve()
+    .then(requestFactory)
+    .finally(() => {
+      inFlightSunatRequests.delete(key);
+    });
+
+  inFlightSunatRequests.set(key, request);
+  return request;
+};
 
 const useSunat = () => {
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
@@ -34,7 +50,10 @@ const useSunat = () => {
 
   const obtenerUltimaActualizacion = useCallback(async () => {
     try {
-      const data = await sunatApi.obtenerUltimaActualizacion();
+      const data = await runSharedSunatRequest(
+        "ultima-actualizacion",
+        () => sunatApi.obtenerUltimaActualizacion()
+      );
       setUltimaActualizacion(data?.ultimaActualizacion || null);
       return data;
     } catch (err) {
@@ -46,7 +65,10 @@ const useSunat = () => {
 
   const obtenerUltimaActualizacionReducido = useCallback(async () => {
     try {
-      const data = await sunatApi.obtenerUltimaActualizacionReducido();
+      const data = await runSharedSunatRequest(
+        "ultima-actualizacion-reducido",
+        () => sunatApi.obtenerUltimaActualizacionReducido()
+      );
       setUltimaActualizacionReducido(
         data?.ultimaActualizacionReducido || null
       );
@@ -63,7 +85,10 @@ const useSunat = () => {
   const obtenerEstadoImportacion = useCallback(
     async (tipo, { silent = false } = {}) => {
       try {
-        const response = await sunatApi.obtenerEstadoImportacion(tipo);
+        const response = await runSharedSunatRequest(
+          `estado-importacion:${tipo}`,
+          () => sunatApi.obtenerEstadoImportacion(tipo)
+        );
         const job = response?.job || null;
 
         if (tipo === JOB_TYPE.PADRON_COMPLETO) {
@@ -222,7 +247,10 @@ const useSunat = () => {
 
     setLoading(true);
     try {
-      const response = await sunatApi.consultarPadronSunat(ruc);
+      const response = await runSharedSunatRequest(
+        `consultar-padron:${ruc}`,
+        () => sunatApi.consultarPadronSunat(ruc)
+      );
 
       if (!response?.ok) return null;
 

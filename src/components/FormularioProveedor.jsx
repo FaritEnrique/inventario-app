@@ -38,26 +38,302 @@ const getInitialFormData = () => ({
   activo: true,
 });
 
-const mapSunatDataToFormData = (sunatData) => ({
-  ruc: sunatData.ruc || "",
-  razonSocial: sunatData.razonSocial || "",
-  estado: sunatData.estado || "",
-  condicion: sunatData.condicion || "",
-  tipo: sunatData.tipo || "",
-  actividadCIIU3Principal: sunatData.actividadCIIU3Principal || "",
-  actividadCIIU3Secundaria: sunatData.actividadCIIU3Secundaria || "",
-  actividadCIIU4Principal: sunatData.actividadCIIU4Principal || "",
-  nroTrabajadores: sunatData.nroTrabajadores || "",
-  tipoFacturacion: sunatData.tipoFacturacion || "",
-  tipoContabilidad: sunatData.tipoContabilidad || "",
-  comercioExterior: sunatData.comercioExterior || "",
-  ubigeo: sunatData.ubigeo || "",
-  departamento: sunatData.departamento || "",
-  provincia: sunatData.provincia || "",
-  distrito: sunatData.distrito || "",
-  periodoPublicacion: sunatData.periodoPublicacion || "",
-  direccion: sunatData.direccion || "",
+const pickFirstTextValue = (...values) =>
+  values.find(
+    (value) => typeof value === "string" && value.trim() !== ""
+  ) || "";
+
+const TYPE_LABEL_MAP = {
+  "AV.": "Av.",
+  AV: "Av.",
+  "JR.": "Jr.",
+  JR: "Jr.",
+  "CAL.": "Calle",
+  CAL: "Calle",
+  "PQ.": "Parque",
+  PQ: "Parque",
+  "URB.": "Urb.",
+  URB: "Urb.",
+  "FND.": "Fundo",
+  FND: "Fundo",
+  "P.J.": "Pueblo Joven",
+  PJ: "Pueblo Joven",
+  "P J": "Pueblo Joven",
+  "COO.": "Cooperativa",
+  COO: "Cooperativa",
+  "BL.": "Bl.",
+  BL: "Bl.",
+};
+
+const PRIMARY_ZONE_TYPES = new Set(["URB.", "URB", "FND.", "FND"]);
+const SECONDARY_ZONE_TYPES = new Set(["P.J.", "PJ", "P J", "COO.", "COO"]);
+const PHONE_PATTERN = /^\+?\d+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SUSPICIOUS_ZONE_NAMES = new Set([
+  "JR",
+  "JR.",
+  "AV",
+  "AV.",
+  "CAL",
+  "CAL.",
+  "MZ",
+  "LT",
+  "KM",
+  "RES",
+  "RES.",
+  "URB",
+  "URB.",
+  "FND",
+  "FND.",
+  "OTR",
+  "OTR.",
+  "COO",
+  "COO.",
+]);
+
+const normalizeText = (value) => {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().replace(/\s+/g, " ");
+  return normalized.length ? normalized : null;
+};
+
+const nullIfPlaceholder = (value) => {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  return normalized === "-" ? null : normalized;
+};
+
+const toTitleCase = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+
+const normalizeTypeToken = (value) =>
+  String(value || "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeBareToken = (value) =>
+  String(value || "")
+    .toUpperCase()
+    .replace(/\./g, "")
+    .replace(/\s+/g, "")
+    .trim();
+
+const formatTypeLabel = (value) => {
+  const normalized = normalizeTypeToken(value);
+  if (!normalized) return null;
+  return TYPE_LABEL_MAP[normalized] || toTitleCase(normalized);
+};
+
+const stripDuplicatedTypePrefix = (name, rawType) => {
+  const normalizedName = nullIfPlaceholder(name);
+  if (!normalizedName) return null;
+
+  const bareType = normalizeBareToken(rawType);
+  if (!bareType) return toTitleCase(normalizedName);
+
+  const upperName = normalizedName.toUpperCase();
+  const prefixes = [`${bareType} `, `${bareType}. `];
+  const matchedPrefix = prefixes.find((prefix) => upperName.startsWith(prefix));
+
+  if (!matchedPrefix) {
+    return toTitleCase(normalizedName);
+  }
+
+  return toTitleCase(normalizedName.slice(matchedPrefix.length).trim());
+};
+
+const buildTypedAddressSegment = (rawType, rawName) => {
+  const label = formatTypeLabel(rawType);
+  const cleanName = stripDuplicatedTypePrefix(rawName, rawType);
+
+  if (!label && !cleanName) return null;
+  if (!label) return cleanName;
+  if (!cleanName) return label;
+
+  return `${label} ${cleanName}`.trim();
+};
+
+const isNumericLike = (value) =>
+  /^[0-9]+([.,][0-9]+)?$/i.test(String(value || "").trim());
+
+const extractLotNumber = (value) => {
+  const normalized = nullIfPlaceholder(value);
+  if (!normalized) return null;
+
+  const match = normalized.toUpperCase().match(/^LT\.?\s*([A-Z0-9.-]+)$/);
+  return match?.[1] || null;
+};
+
+const buildReducedAddressComplement = ({
+  numero,
+  interior,
+  lote,
+  departamentoDireccion,
+  manzana,
+  kilometro,
+}) => {
+  const numeroValue = nullIfPlaceholder(numero);
+  const interiorValue = nullIfPlaceholder(interior);
+  const loteValue = nullIfPlaceholder(lote);
+  const departamentoValue = nullIfPlaceholder(departamentoDireccion);
+  const manzanaValue = nullIfPlaceholder(manzana);
+  const kilometroValue = nullIfPlaceholder(kilometro);
+  const numeroToken = normalizeBareToken(numeroValue);
+  const interiorLot = extractLotNumber(interiorValue);
+  const loteLot = extractLotNumber(loteValue);
+
+  if (numeroToken === "KM") {
+    const kmValue = [
+      interiorValue,
+      loteValue,
+      departamentoValue,
+      manzanaValue,
+      kilometroValue,
+    ].find(Boolean);
+    return kmValue ? `Km. ${kmValue}` : null;
+  }
+
+  if (numeroToken === "MZ") {
+    if (interiorLot) {
+      return `Nro. ${interiorLot}`;
+    }
+
+    if (interiorValue) {
+      return `Mz. ${toTitleCase(interiorValue)}`;
+    }
+
+    if (manzanaValue) {
+      return `Mz. ${toTitleCase(manzanaValue)}`;
+    }
+  }
+
+  if (numeroValue && isNumericLike(numeroValue)) {
+    return `Nro. ${numeroValue}`;
+  }
+
+  if (interiorValue && isNumericLike(interiorValue)) {
+    return `Nro. ${interiorValue}`;
+  }
+
+  if (!numeroValue && loteValue && isNumericLike(loteValue)) {
+    return `Nro. ${loteValue}`;
+  }
+
+  if (loteLot) {
+    return `Nro. ${loteLot}`;
+  }
+
+  if (kilometroValue && isNumericLike(kilometroValue)) {
+    return `Km. ${kilometroValue}`;
+  }
+
+  if (manzanaValue) {
+    return `Mz. ${toTitleCase(manzanaValue)}`;
+  }
+
+  return null;
+};
+
+const shouldIgnoreZoneSegment = (rawType, rawName) => {
+  const zoneName = nullIfPlaceholder(rawName);
+  if (!zoneName) return true;
+
+  if (SUSPICIOUS_ZONE_NAMES.has(normalizeTypeToken(zoneName))) {
+    return true;
+  }
+
+  const zoneType = normalizeTypeToken(rawType);
+  return (
+    zoneType === "RES." ||
+    zoneType === "RES" ||
+    zoneType === "OTR." ||
+    zoneType === "OTR"
+  );
+};
+
+const buildSunatAddress = (data = {}) => {
+  const viaSegment = buildTypedAddressSegment(data.tipoVia, data.nombreVia);
+  const zoneSegment = shouldIgnoreZoneSegment(data.codigoZona, data.tipoZona)
+    ? null
+    : buildTypedAddressSegment(data.codigoZona, data.tipoZona);
+  const complement = buildReducedAddressComplement({
+    numero: data.numero,
+    interior: data.interior,
+    lote: data.lote,
+    departamentoDireccion: data.departamentoDireccion,
+    manzana: data.manzana,
+    kilometro: data.kilometro,
+  });
+  const zoneTypeToken = normalizeTypeToken(data.codigoZona);
+
+  if (zoneSegment && PRIMARY_ZONE_TYPES.has(zoneTypeToken)) {
+    const primary = [zoneSegment, complement].filter(Boolean).join(" ").trim();
+    return viaSegment ? `${primary} (${viaSegment})` : primary || "";
+  }
+
+  const primary = [viaSegment || zoneSegment, complement]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  if (!primary) {
+    return "";
+  }
+
+  if (zoneSegment && viaSegment && SECONDARY_ZONE_TYPES.has(zoneTypeToken)) {
+    return `${primary} (${zoneSegment})`;
+  }
+
+  return primary;
+};
+
+const normalizeProveedorData = (proveedor = {}) => ({
+  ...proveedor,
+  procedencia: proveedor.procedencia || "NACIONAL",
+  ruc: pickFirstTextValue(proveedor.ruc, proveedor.nroRuc, proveedor.numeroRuc),
+  razonSocial: pickFirstTextValue(
+    proveedor.razonSocial,
+    proveedor.razonsocial,
+    proveedor.nombreORazonSocial,
+    proveedor.nombreOrazonSocial,
+    proveedor.nombreOrazonSocialDelContribuyente,
+    proveedor.nombre
+  ),
+  direccion: pickFirstTextValue(
+    proveedor.direccion,
+    proveedor.domicilioFiscal,
+    proveedor.direccionCompleta,
+    buildSunatAddress(proveedor)
+  ),
 });
+
+const mapSunatDataToFormData = (sunatData) => {
+  const normalizedData = normalizeProveedorData(sunatData);
+
+  return {
+    ruc: normalizedData.ruc || "",
+    razonSocial: normalizedData.razonSocial || "",
+    estado: normalizedData.estado || "",
+    condicion: normalizedData.condicion || "",
+    tipo: normalizedData.tipo || "",
+    actividadCIIU3Principal: normalizedData.actividadCIIU3Principal || "",
+    actividadCIIU3Secundaria: normalizedData.actividadCIIU3Secundaria || "",
+    actividadCIIU4Principal: normalizedData.actividadCIIU4Principal || "",
+    nroTrabajadores: normalizedData.nroTrabajadores || "",
+    tipoFacturacion: normalizedData.tipoFacturacion || "",
+    tipoContabilidad: normalizedData.tipoContabilidad || "",
+    comercioExterior: normalizedData.comercioExterior || "",
+    ubigeo: normalizedData.ubigeo || "",
+    departamento: normalizedData.departamento || "",
+    provincia: normalizedData.provincia || "",
+    distrito: normalizedData.distrito || "",
+    periodoPublicacion: normalizedData.periodoPublicacion || "",
+    direccion: normalizedData.direccion || "",
+  };
+};
 
 const areAllFieldsFilled = (data) => {
   const mandatoryFields = [
@@ -148,24 +424,26 @@ const FormularioProveedor = ({
 
   useEffect(() => {
     if (proveedor) {
+      const normalizedProveedor = normalizeProveedorData(proveedor);
       const nextState = {
         ...getInitialFormData(),
-        ...proveedor,
-        tipoProductoIds: getTipoProductoIdsFromProveedor(proveedor),
-        solicitudTipoProductoIds: getSolicitudTipoProductoIdsFromProveedor(proveedor),
+        ...normalizedProveedor,
+        tipoProductoIds: getTipoProductoIdsFromProveedor(normalizedProveedor),
+        solicitudTipoProductoIds:
+          getSolicitudTipoProductoIdsFromProveedor(normalizedProveedor),
       };
 
       setFormData(nextState);
       setSolicitudesRegistradas([]);
 
-      if (proveedor.procedencia === "NACIONAL" && !proveedor.ruc) {
+      if (normalizedProveedor.procedencia === "NACIONAL" && !normalizedProveedor.ruc) {
         toast.warn(
           "Este proveedor nacional no tiene RUC. Por favor, asigna un RUC o cambia su procedencia a Extranjero.",
           { autoClose: 8000 }
         );
         setIsProcedenciaDisabled(false);
       } else {
-        setIsProcedenciaDisabled(Boolean(proveedor.id));
+        setIsProcedenciaDisabled(Boolean(normalizedProveedor.id));
       }
       return;
     }
@@ -192,11 +470,22 @@ const FormularioProveedor = ({
         debouncedRuc &&
         debouncedRuc.length === 11
       ) {
+        if (proveedor?.ruc === debouncedRuc) {
+          return;
+        }
+
         const datos = await consultarPadronSunat(debouncedRuc);
         if (datos) {
           const mappedData = mapSunatDataToFormData(datos);
           setFormData((prev) => ({ ...prev, ...mappedData }));
-          toast.success("Datos de SUNAT cargados correctamente.");
+
+          if (mappedData.razonSocial || mappedData.direccion) {
+            toast.success("Datos de SUNAT cargados correctamente.");
+          } else {
+            toast.warn(
+              "El RUC existe en ProveedoresSunat, pero no tiene razon social o direccion disponibles para autocompletar."
+            );
+          }
         } else {
           toast.info(
             "RUC no encontrado en SUNAT. Puedes continuar con el registro manual."
@@ -212,6 +501,7 @@ const FormularioProveedor = ({
     disableRucField,
     formData.procedencia,
     proveedor?.id,
+    proveedor?.ruc,
   ]);
 
   const handleChange = (event) => {
@@ -267,17 +557,30 @@ const FormularioProveedor = ({
 
   const validateForm = () => {
     const errors = {};
+    const razonSocial = formData.razonSocial.trim();
+    const direccion = formData.direccion.trim();
+    const telefono = formData.telefono.trim();
+    const correoElectronico = formData.correoElectronico.trim();
 
-    if (!formData.razonSocial.trim()) {
+    if (!razonSocial) {
       errors.razonSocial = "El Nombre o Razon Social es obligatorio.";
+    } else if (razonSocial.length > 255) {
+      errors.razonSocial =
+        "El Nombre o Razon Social no puede superar los 255 caracteres.";
     }
 
-    if (!formData.direccion.trim()) {
+    if (!direccion) {
       errors.direccion = "La Direccion es obligatoria.";
+    } else if (direccion.length > 255) {
+      errors.direccion =
+        "La Direccion no puede superar los 255 caracteres.";
     }
 
-    if (!formData.telefono.trim()) {
+    if (!telefono) {
       errors.telefono = "El Telefono es obligatorio.";
+    } else if (!PHONE_PATTERN.test(telefono.replace(/\s/g, ""))) {
+      errors.telefono =
+        "El Telefono solo debe contener numeros y puede iniciar con '+'.";
     }
 
     if (
@@ -288,8 +591,11 @@ const FormularioProveedor = ({
         "El RUC es obligatorio para proveedores nacionales y debe ser valido.";
     }
 
-    if (!formData.correoElectronico.trim()) {
+    if (!correoElectronico) {
       errors.correoElectronico = "El correo electronico es obligatorio.";
+    } else if (!EMAIL_PATTERN.test(correoElectronico)) {
+      errors.correoElectronico =
+        "El correo electronico debe tener un formato valido.";
     }
 
     if (
@@ -321,7 +627,14 @@ const FormularioProveedor = ({
     }
 
     try {
-      const { id, createdAt, updatedAt, especialidades, ...payload } = formData;
+      const {
+        id: _id,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        especialidades: _especialidades,
+        fechaActualizacionReducido: _fechaActualizacionReducido,
+        ...payload
+      } = formData;
 
       Object.keys(payload).forEach((key) => {
         if (payload[key] === "") payload[key] = null;

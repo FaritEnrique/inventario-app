@@ -12,6 +12,282 @@ import useSunat from "../hooks/useSunat";
 
 const RUC_REGEX = /^(10|20)\d{9}$/;
 
+const pickFirstTextValue = (...values) =>
+  values.find(
+    (value) => typeof value === "string" && value.trim() !== ""
+  ) || "";
+
+const TYPE_LABEL_MAP = {
+  "AV.": "Av.",
+  AV: "Av.",
+  "JR.": "Jr.",
+  JR: "Jr.",
+  "CAL.": "Calle",
+  CAL: "Calle",
+  "PQ.": "Parque",
+  PQ: "Parque",
+  "URB.": "Urb.",
+  URB: "Urb.",
+  "FND.": "Fundo",
+  FND: "Fundo",
+  "P.J.": "Pueblo Joven",
+  PJ: "Pueblo Joven",
+  "P J": "Pueblo Joven",
+  "COO.": "Cooperativa",
+  COO: "Cooperativa",
+  "BL.": "Bl.",
+  BL: "Bl.",
+};
+
+const PRIMARY_ZONE_TYPES = new Set(["URB.", "URB", "FND.", "FND"]);
+const SECONDARY_ZONE_TYPES = new Set(["P.J.", "PJ", "P J", "COO.", "COO"]);
+const SUSPICIOUS_ZONE_NAMES = new Set([
+  "JR",
+  "JR.",
+  "AV",
+  "AV.",
+  "CAL",
+  "CAL.",
+  "MZ",
+  "LT",
+  "KM",
+  "RES",
+  "RES.",
+  "URB",
+  "URB.",
+  "FND",
+  "FND.",
+  "OTR",
+  "OTR.",
+  "COO",
+  "COO.",
+]);
+
+const normalizeText = (value) => {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().replace(/\s+/g, " ");
+  return normalized.length ? normalized : null;
+};
+
+const nullIfPlaceholder = (value) => {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  return normalized === "-" ? null : normalized;
+};
+
+const toTitleCase = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+
+const normalizeTypeToken = (value) =>
+  String(value || "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeBareToken = (value) =>
+  String(value || "")
+    .toUpperCase()
+    .replace(/\./g, "")
+    .replace(/\s+/g, "")
+    .trim();
+
+const formatTypeLabel = (value) => {
+  const normalized = normalizeTypeToken(value);
+  if (!normalized) return null;
+  return TYPE_LABEL_MAP[normalized] || toTitleCase(normalized);
+};
+
+const stripDuplicatedTypePrefix = (name, rawType) => {
+  const normalizedName = nullIfPlaceholder(name);
+  if (!normalizedName) return null;
+
+  const bareType = normalizeBareToken(rawType);
+  if (!bareType) return toTitleCase(normalizedName);
+
+  const upperName = normalizedName.toUpperCase();
+  const prefixes = [`${bareType} `, `${bareType}. `];
+  const matchedPrefix = prefixes.find((prefix) => upperName.startsWith(prefix));
+
+  if (!matchedPrefix) {
+    return toTitleCase(normalizedName);
+  }
+
+  return toTitleCase(normalizedName.slice(matchedPrefix.length).trim());
+};
+
+const buildTypedAddressSegment = (rawType, rawName) => {
+  const label = formatTypeLabel(rawType);
+  const cleanName = stripDuplicatedTypePrefix(rawName, rawType);
+
+  if (!label && !cleanName) return null;
+  if (!label) return cleanName;
+  if (!cleanName) return label;
+
+  return `${label} ${cleanName}`.trim();
+};
+
+const isNumericLike = (value) =>
+  /^[0-9]+([.,][0-9]+)?$/i.test(String(value || "").trim());
+
+const extractLotNumber = (value) => {
+  const normalized = nullIfPlaceholder(value);
+  if (!normalized) return null;
+
+  const match = normalized.toUpperCase().match(/^LT\.?\s*([A-Z0-9.-]+)$/);
+  return match?.[1] || null;
+};
+
+const buildReducedAddressComplement = ({
+  numero,
+  interior,
+  lote,
+  departamentoDireccion,
+  manzana,
+  kilometro,
+}) => {
+  const numeroValue = nullIfPlaceholder(numero);
+  const interiorValue = nullIfPlaceholder(interior);
+  const loteValue = nullIfPlaceholder(lote);
+  const departamentoValue = nullIfPlaceholder(departamentoDireccion);
+  const manzanaValue = nullIfPlaceholder(manzana);
+  const kilometroValue = nullIfPlaceholder(kilometro);
+  const numeroToken = normalizeBareToken(numeroValue);
+  const interiorLot = extractLotNumber(interiorValue);
+  const loteLot = extractLotNumber(loteValue);
+
+  if (numeroToken === "KM") {
+    const kmValue = [
+      interiorValue,
+      loteValue,
+      departamentoValue,
+      manzanaValue,
+      kilometroValue,
+    ].find(Boolean);
+    return kmValue ? `Km. ${kmValue}` : null;
+  }
+
+  if (numeroToken === "MZ") {
+    if (interiorLot) {
+      return `Nro. ${interiorLot}`;
+    }
+
+    if (interiorValue) {
+      return `Mz. ${toTitleCase(interiorValue)}`;
+    }
+
+    if (manzanaValue) {
+      return `Mz. ${toTitleCase(manzanaValue)}`;
+    }
+  }
+
+  if (numeroValue && isNumericLike(numeroValue)) {
+    return `Nro. ${numeroValue}`;
+  }
+
+  if (interiorValue && isNumericLike(interiorValue)) {
+    return `Nro. ${interiorValue}`;
+  }
+
+  if (!numeroValue && loteValue && isNumericLike(loteValue)) {
+    return `Nro. ${loteValue}`;
+  }
+
+  if (loteLot) {
+    return `Nro. ${loteLot}`;
+  }
+
+  if (kilometroValue && isNumericLike(kilometroValue)) {
+    return `Km. ${kilometroValue}`;
+  }
+
+  if (manzanaValue) {
+    return `Mz. ${toTitleCase(manzanaValue)}`;
+  }
+
+  return null;
+};
+
+const shouldIgnoreZoneSegment = (rawType, rawName) => {
+  const zoneName = nullIfPlaceholder(rawName);
+  if (!zoneName) return true;
+
+  if (SUSPICIOUS_ZONE_NAMES.has(normalizeTypeToken(zoneName))) {
+    return true;
+  }
+
+  const zoneType = normalizeTypeToken(rawType);
+  return (
+    zoneType === "RES." ||
+    zoneType === "RES" ||
+    zoneType === "OTR." ||
+    zoneType === "OTR"
+  );
+};
+
+const buildSunatAddress = (data = {}) => {
+  const viaSegment = buildTypedAddressSegment(data.tipoVia, data.nombreVia);
+  const zoneSegment = shouldIgnoreZoneSegment(data.codigoZona, data.tipoZona)
+    ? null
+    : buildTypedAddressSegment(data.codigoZona, data.tipoZona);
+  const complement = buildReducedAddressComplement({
+    numero: data.numero,
+    interior: data.interior,
+    lote: data.lote,
+    departamentoDireccion: data.departamentoDireccion,
+    manzana: data.manzana,
+    kilometro: data.kilometro,
+  });
+  const zoneTypeToken = normalizeTypeToken(data.codigoZona);
+
+  if (zoneSegment && PRIMARY_ZONE_TYPES.has(zoneTypeToken)) {
+    const primary = [zoneSegment, complement].filter(Boolean).join(" ").trim();
+    return viaSegment ? `${primary} (${viaSegment})` : primary || "";
+  }
+
+  const primary = [viaSegment || zoneSegment, complement]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  if (!primary) {
+    return "";
+  }
+
+  if (zoneSegment && viaSegment && SECONDARY_ZONE_TYPES.has(zoneTypeToken)) {
+    return `${primary} (${zoneSegment})`;
+  }
+
+  return primary;
+};
+
+const normalizeSunatProveedorDraft = (proveedor = {}, fallbackRuc = "") => ({
+  ...proveedor,
+  procedencia: proveedor.procedencia || "NACIONAL",
+  ruc: pickFirstTextValue(proveedor.ruc, fallbackRuc),
+  razonSocial: pickFirstTextValue(
+    proveedor.razonSocial,
+    proveedor.razonsocial,
+    proveedor.nombreORazonSocial,
+    proveedor.nombreOrazonSocial,
+    proveedor.nombreOrazonSocialDelContribuyente,
+    proveedor.nombre
+  ),
+  direccion: pickFirstTextValue(
+    proveedor.direccion,
+    proveedor.domicilioFiscal,
+    proveedor.direccionCompleta,
+    buildSunatAddress(proveedor)
+  ),
+});
+
+const hasSunatAutofillData = (proveedor = {}) =>
+  Boolean(
+    pickFirstTextValue(proveedor.razonSocial) ||
+      pickFirstTextValue(proveedor.direccion)
+  );
+
 const renderEstadoImportacion = (job) => {
   if (!job) {
     return {
@@ -58,8 +334,9 @@ const GestionProveedoresPage = () => {
     proveedores,
     loading: proveedoresLoading,
     fetchProveedores,
+    consultarProveedores,
     actualizarEstadoProveedor,
-  } = useProveedores();
+  } = useProveedores({ autoLoad: false });
 
   const {
     consultarPadronSunat,
@@ -80,7 +357,7 @@ const GestionProveedoresPage = () => {
 
   useEffect(() => {
     fetchProveedores(lastAppliedSearchQuery);
-  }, [lastAppliedSearchQuery]);
+  }, [fetchProveedores, lastAppliedSearchQuery]);
 
   useEffect(() => {
     obtenerUltimaActualizacion();
@@ -143,7 +420,7 @@ const GestionProveedoresPage = () => {
     setIsRucDisabledForNewForm(false);
 
     if (!query) {
-      fetchProveedores();
+      toast.info("Ingresa un RUC o nombre para buscar.");
       return;
     }
 
@@ -151,10 +428,8 @@ const GestionProveedoresPage = () => {
 
     setIsFormVisible(false);
     setSelectedProveedor(null);
-    setLastAppliedSearchQuery(query);
-    setRegisteredFilterQuery(query);
 
-    const localResults = await fetchProveedores(query);
+    const localResults = await consultarProveedores(query);
 
     if (localResults.length > 0) {
       toast.info(`Se encontraron ${localResults.length} coincidencias locales.`);
@@ -163,14 +438,23 @@ const GestionProveedoresPage = () => {
 
     if (isRuc) {
       const sunatData = await consultarPadronSunat(query);
+      const proveedorDraft = normalizeSunatProveedorDraft(sunatData, query);
+
       if (sunatData) {
-        setSelectedProveedor(sunatData);
+        setSelectedProveedor(proveedorDraft);
         setIsFormVisible(true);
-        toast.success(
-          "Proveedor encontrado en SUNAT. Completa los datos para registrarlo."
-        );
+
+        if (hasSunatAutofillData(proveedorDraft)) {
+          toast.success(
+            "Proveedor encontrado en SUNAT. Completa los datos para registrarlo."
+          );
+        } else {
+          toast.warn(
+            "Se encontro el RUC en ProveedoresSunat, pero sin razon social o direccion. Completa esos campos manualmente o actualiza el padron reducido."
+          );
+        }
       } else {
-        setSelectedProveedor(null);
+        setSelectedProveedor(proveedorDraft);
         setIsFormVisible(true);
         toast.info(
           "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC."
