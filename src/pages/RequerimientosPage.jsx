@@ -32,6 +32,10 @@ const RequerimientosPage = () => {
     prioridades,
   } = useRequerimientos();
   const [filters, setFilters] = useState(initialFilters);
+  const filtersApplied = useMemo(
+    () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
+    [filters]
+  );
 
   useEffect(() => {
     fetchRequerimientos(filters).catch(() => {});
@@ -162,6 +166,17 @@ const RequerimientosPage = () => {
           }
           className="rounded border border-gray-300 px-3 py-2"
         />
+        {filtersApplied ? (
+          <div className="md:col-span-6 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setFilters(initialFilters)}
+              className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {cargando && <Loader />}

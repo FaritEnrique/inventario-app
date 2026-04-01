@@ -1,4 +1,4 @@
-// src/pages/LoginPage.jsx
+﻿// src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -23,8 +23,11 @@ const LoginPage = () => {
     const result = await login(email, password);
 
     if (result.success) {
-      toast.success("¡Inicio de sesión exitoso!");
-      navigate("/dashboard");
+      toast.success("Inicio de sesion exitoso.");
+      navigate(
+        result.contextSelectionRequired ? "/seleccionar-contexto" : "/dashboard",
+        { replace: true }
+      );
     } else {
       setEmail("");
       setPassword("");
@@ -32,7 +35,7 @@ const LoginPage = () => {
       if (result.error && result.error.includes("Credenciales")) {
         setIsErrorModalOpen(true);
       } else {
-        toast.error(result.error || "Ocurrió un error inesperado.");
+        toast.error(result.error || "Ocurrio un error inesperado.");
       }
     }
 
@@ -65,7 +68,7 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded bg-white p-8 shadow">
         <h2 className="mb-6 text-center text-2xl font-semibold text-indigo-700">
-          Iniciar sesión
+          Iniciar sesion
         </h2>
         <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
@@ -73,7 +76,7 @@ const LoginPage = () => {
               htmlFor="email"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
-              Correo electrónico
+              Correo electronico
             </label>
             <input
               id="email"
@@ -92,7 +95,7 @@ const LoginPage = () => {
               htmlFor="password"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
-              Contraseña
+              Contrasena
             </label>
             <div className="relative">
               <input
@@ -111,7 +114,7 @@ const LoginPage = () => {
                 onClick={togglePasswordVisibility}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
                 aria-label={
-                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
                 }
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -123,7 +126,7 @@ const LoginPage = () => {
             className="w-full rounded bg-indigo-600 py-2 text-white transition duration-300 hover:bg-indigo-700 disabled:bg-indigo-400"
             disabled={cargando}
           >
-            {cargando ? "Iniciando sesión..." : "Iniciar sesión"}
+            {cargando ? "Iniciando sesion..." : "Iniciar sesion"}
           </button>
         </form>
 
@@ -132,7 +135,7 @@ const LoginPage = () => {
             to="/solicitar-restablecimiento"
             className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
           >
-            ¿Olvidaste tu contraseña?
+            Olvidaste tu contrasena?
           </Link>
         </div>
       </div>
@@ -145,9 +148,7 @@ const LoginPage = () => {
       >
         <h3 className="mb-4 text-xl font-bold">Error de credenciales</h3>
         <p className="text-gray-700">
-          El usuario o la contraseña que estás ingresando no coincide con la
-          que está almacenada en la base de datos para ese usuario. Solo pueden
-          acceder a la plataforma usuarios autorizados.
+          El usuario o la contrasena que estas ingresando no coincide con la que esta almacenada en la base de datos para ese usuario. Solo pueden acceder a la plataforma usuarios autorizados.
         </p>
         <div className="mt-4 flex justify-end">
           <button

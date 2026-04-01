@@ -1,10 +1,18 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getPrimaryNavigationLinksEffective } from "../accessRules";
 import { useAuth } from "../context/authContext";
-import { getActiveRoles } from "../utils/userRoles";
 
 const Header = () => {
-  const { isAuthenticated, logout, user } = useAuth();
+  const {
+    isAuthenticated,
+    logout,
+    user,
+    identity,
+    activeContext,
+    availableContexts,
+    contextSelectionRequired,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,20 +32,29 @@ const Header = () => {
     "rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20";
 
   const publicLinks = [{ to: "/", label: "Inicio" }];
-  const authenticatedLinks = [
-    { to: "/", label: "Inicio" },
-    { to: "/dashboard", label: "Dashboard" },
-  ];
-
-  const navigationLinks = isAuthenticated ? authenticatedLinks : publicLinks;
-  const activeRoles = getActiveRoles(user);
-  const roleSummary =
-    activeRoles.length > 1
-      ? `${user?.rol || activeRoles[0]} +${activeRoles.length - 1} rango(s)`
-      : user?.rol;
-  const summaryText = isAuthenticated
-    ? [user?.cargo, roleSummary, user?.areaNombre].filter(Boolean).join(" | ")
-    : "Gestiona requerimientos, inventario y seguimiento logistico desde una sola plataforma.";
+  const navigationLinks = isAuthenticated
+    ? getPrimaryNavigationLinksEffective(user || {})
+    : publicLinks;
+  const canChangeContext = isAuthenticated && availableContexts.length > 1;
+  const shouldShowContextAction =
+    isAuthenticated && (canChangeContext || !activeContext);
+  const contextActionLabel = activeContext
+    ? "Cambiar contexto"
+    : "Seleccionar contexto";
+  const contextSummary = activeContext
+    ? [activeContext.role, activeContext.areaNombre || activeContext.area?.nombre]
+        .filter(Boolean)
+        .join(" | ")
+    : null;
+  const summaryText = !isAuthenticated
+    ? "Gestiona requerimientos, inventario y seguimiento logistico desde una sola plataforma."
+    : activeContext
+      ? [activeContext.displayName, contextSummary, identity?.cargo]
+          .filter(Boolean)
+          .join(" | ")
+      : contextSelectionRequired
+        ? "Seleccion de contexto pendiente"
+        : [identity?.cargo, identity?.areaNombre].filter(Boolean).join(" | ");
 
   return (
     <Fragment>
@@ -50,7 +67,7 @@ const Header = () => {
               </Link>
               <p className="mt-1 hidden max-w-2xl text-sm text-indigo-100 md:block">
                 {isAuthenticated
-                  ? `Sesion activa${user?.nombre ? `: ${user.nombre}` : ""}${
+                  ? `Sesion activa${identity?.nombre ? `: ${identity.nombre}` : ""}${
                       summaryText ? ` - ${summaryText}` : ""
                     }`
                   : summaryText}
@@ -64,6 +81,21 @@ const Header = () => {
                     {link.label}
                   </Link>
                 ))}
+
+                {shouldShowContextAction && (
+                  <Link to="/seleccionar-contexto" className={commonLinkClasses}>
+                    {contextActionLabel}
+                  </Link>
+                )}
+
+                {activeContext && (
+                  <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-indigo-50">
+                    <div className="uppercase tracking-wide text-indigo-100">
+                      Contexto activo
+                    </div>
+                    <div>{activeContext.displayName}</div>
+                  </div>
+                )}
 
                 {isAuthenticated ? (
                   <button
@@ -102,7 +134,7 @@ const Header = () => {
             >
               <p className="border-b border-white/10 pb-3 text-sm text-indigo-100">
                 {isAuthenticated
-                  ? `${user?.nombre || "Usuario"}${summaryText ? ` - ${summaryText}` : ""}`
+                  ? `${identity?.nombre || "Usuario"}${summaryText ? ` - ${summaryText}` : ""}`
                   : "Accesos publicos y autenticados del sistema."}
               </p>
               <nav className="mt-3 flex flex-col gap-2">
@@ -115,6 +147,29 @@ const Header = () => {
                     {link.label}
                   </Link>
                 ))}
+
+                {shouldShowContextAction && (
+                  <Link
+                    to="/seleccionar-contexto"
+                    className="rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10"
+                  >
+                    {contextActionLabel}
+                  </Link>
+                )}
+
+                {activeContext && (
+                  <div className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-indigo-50">
+                    <div className="text-xs uppercase tracking-wide text-indigo-100">
+                      Contexto activo
+                    </div>
+                    <div>{activeContext.displayName}</div>
+                    {contextSummary && (
+                      <div className="mt-1 text-xs text-indigo-100">
+                        {contextSummary}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {isAuthenticated ? (
                   <button
@@ -142,4 +197,3 @@ const Header = () => {
 };
 
 export default Header;
-

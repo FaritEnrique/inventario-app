@@ -1,4 +1,4 @@
-const normalizeBaseUrl = (rawUrl) => {
+﻿const normalizeBaseUrl = (rawUrl) => {
   const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
 
   if (!trimmedUrl) {
@@ -15,16 +15,16 @@ const rawBaseUrl =
 const baseURL = normalizeBaseUrl(rawBaseUrl);
 
 const FIELD_LABELS = {
-  email: "correo electrónico",
-  password: "contraseña",
+  email: "correo electronico",
+  password: "contrasena",
   procedencia: "procedencia",
-  razonSocial: "razón social",
-  direccion: "dirección",
-  telefono: "teléfono",
-  correoElectronico: "correo electrónico",
+  razonSocial: "razon social",
+  direccion: "direccion",
+  telefono: "telefono",
+  correoElectronico: "correo electronico",
   ruc: "RUC",
   tipoProductoIds: "tipos de producto",
-  areaId: "área",
+  areaId: "area",
   nombre: "nombre",
   prefijo: "prefijo",
   activo: "estado activo",
@@ -53,7 +53,7 @@ const translateValidationMessage = (message) => {
   const rawMessage = String(message || "").trim();
 
   if (!rawMessage) {
-    return "Ocurrió un error de validación.";
+    return "Ocurrio un error de validacion.";
   }
 
   const directTranslations = {
@@ -80,12 +80,12 @@ const translateValidationMessage = (message) => {
 
   match = rawMessage.match(/^"([^"]+)" is not allowed to be empty$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no puede estar vacío.`;
+    return `El campo ${formatFieldLabel(match[1])} no puede estar vacio.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" is not allowed$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no está permitido.`;
+    return `El campo ${formatFieldLabel(match[1])} no esta permitido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be a string$/i);
@@ -95,12 +95,12 @@ const translateValidationMessage = (message) => {
 
   match = rawMessage.match(/^"([^"]+)" must be a number$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser un número.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser un numero.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be an integer$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser un número entero.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser un numero entero.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be a boolean$/i);
@@ -115,12 +115,12 @@ const translateValidationMessage = (message) => {
 
   match = rawMessage.match(/^"([^"]+)" must be a valid email$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser un correo electrónico válido.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser un correo electronico valido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be a valid date$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser una fecha válida.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser una fecha valida.`;
   }
 
   match = rawMessage.match(
@@ -134,7 +134,7 @@ const translateValidationMessage = (message) => {
     /^"([^"]+)" length must be less than or equal to (\d+) characters long$/i
   );
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no puede tener más de ${match[2]} caracteres.`;
+    return `El campo ${formatFieldLabel(match[1])} no puede tener mas de ${match[2]} caracteres.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must contain at least (\d+) items$/i);
@@ -166,15 +166,35 @@ const translateValidationMessage = (message) => {
     /^"([^"]+)" with value "([^"]*)" fails to match the required pattern: .*$/i
   );
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} tiene un formato inválido.`;
+    return `El campo ${formatFieldLabel(match[1])} tiene un formato invalido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" contains an invalid value$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} contiene un valor inválido.`;
+    return `El campo ${formatFieldLabel(match[1])} contiene un valor invalido.`;
   }
 
   return rawMessage;
+};
+
+const dispatchOperationalContextEvent = (code, error) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!["CONTEXT_REQUIRED", "INVALID_ACTIVE_CONTEXT"].includes(code)) {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("operational-context-invalidated", {
+      detail: {
+        code,
+        status: error?.response?.status || null,
+        message: error?.message || null,
+      },
+    })
+  );
 };
 
 export const buildApiUrl = (endpoint) => {
@@ -209,12 +229,12 @@ const apiFetch = async (endpoint, options = {}) => {
       const errorMessage =
         translateValidationMessage(
           normalizedError?.message ||
-            data.mensaje ||
-            data.message ||
+            data?.mensaje ||
+            data?.message ||
             "Error al conectar con el servidor"
         );
       const validationErrors =
-        (data.errores || normalizedError?.details?.errores || []).map(
+        (data?.errores || normalizedError?.details?.errores || []).map(
           translateValidationMessage
         );
 
@@ -223,6 +243,7 @@ const apiFetch = async (endpoint, options = {}) => {
       fullError.validationErrors = validationErrors;
       fullError.code = normalizedError?.code || data?.code || null;
       fullError.details = normalizedError?.details || data?.detalles || null;
+      dispatchOperationalContextEvent(fullError.code, fullError);
       throw fullError;
     }
 

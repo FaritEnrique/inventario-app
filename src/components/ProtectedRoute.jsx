@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useNavigate } from "react-router-dom";
+﻿import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 import { useAuth } from "../context/authContext";
 
@@ -23,19 +23,25 @@ const customStyles = {
   },
 };
 
+const PATHS_ALLOWED_WITHOUT_ACTIVE_CONTEXT = new Set([
+  "/seleccionar-contexto",
+  "/cambiar-contrasena",
+]);
+
 const ProtectedRoute = () => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading, identity, activeContext } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (loading) {
     return <div>Cargando...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !identity) {
     return <Navigate to="/login" />;
   }
 
-  if (user && !user.activo) {
+  if (!identity.activo) {
     return (
       <Modal
         isOpen
@@ -57,6 +63,13 @@ const ProtectedRoute = () => {
         </div>
       </Modal>
     );
+  }
+
+  if (
+    !activeContext &&
+    !PATHS_ALLOWED_WITHOUT_ACTIVE_CONTEXT.has(location.pathname)
+  ) {
+    return <Navigate to="/seleccionar-contexto" replace state={{ from: location }} />;
   }
 
   return <Outlet />;

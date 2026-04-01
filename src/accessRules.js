@@ -19,6 +19,8 @@ const normalize = (value) =>
     .trim();
 
 const isAdminOverride = (user = {}) => hasRole(user, "ADMINISTRADOR_SISTEMA");
+const hasOperationalSession = (user = {}) =>
+  Boolean(user?.id && user?.activo !== false && user?.activeContext);
 
 const isLogisticaScope = (rawValues = []) => {
   const values = rawValues.map((value) => normalize(value)).filter(Boolean);
@@ -169,7 +171,10 @@ export const canViewWarehouseTrayEffective = (user = {}) =>
   canOperateInventoryEffective(user);
 
 export const canCreatePedidoInternoEffective = (user = {}) =>
-  Boolean(user?.id && user?.activo !== false);
+  hasOperationalSession(user);
+
+export const canViewPedidosInternosModuleEffective = (user = {}) =>
+  hasOperationalSession(user);
 
 export const canApprovePedidoInternoEffective = (user = {}) =>
   hasAnyRole(user, [
@@ -179,7 +184,8 @@ export const canApprovePedidoInternoEffective = (user = {}) =>
   ]);
 
 export const canViewOrdenesCompraEffective = (user = {}) =>
-  Boolean(user?.id && user?.activo !== false);
+  canManageOrdenCompraLifecycleEffective(user) ||
+  canViewOrdenCompraApprovalTrayEffective(user);
 
 export const canViewOrdenCompraApprovalTrayEffective = (user = {}) =>
   hasAnyRole(user, [
@@ -258,6 +264,9 @@ export const canViewAllRequerimientosEffective = (user = {}) =>
     "GERENTE_ADMINISTRACION",
     "GERENTE_GENERAL",
   ]);
+
+export const canViewRequerimientosModuleEffective = (user = {}) =>
+  hasOperationalSession(user);
 
 export const canSelectAreaRequerimientoEffective = (user = {}) =>
   canViewAllRequerimientosEffective(user);
@@ -394,6 +403,22 @@ export const getTrayEmptyStateEffective = (
 export const canAccessUserManagementEffective = (user = {}) =>
   hasAnyRole(user, USER_MANAGEMENT_ADMIN_ROLES);
 
+export const canAccessAdministrationCatalogsEffective = (user = {}) => {
+  if (
+    hasAnyRole(user, [
+      "ADMINISTRADOR_SISTEMA",
+      "GERENTE_GENERAL",
+      "GERENTE_ADMINISTRACION",
+    ])
+  ) {
+    return true;
+  }
+
+  return getActiveRoleAssignments(user).some((assignment) =>
+    isAdministracionContext(assignment)
+  );
+};
+
 export const canCreateUsersEffective = (user = {}) =>
   canAccessUserManagementEffective(user);
 
@@ -405,3 +430,78 @@ export const canToggleUserStatusEffective = (user = {}) =>
 
 export const canAssignSystemAdminRoleEffective = (user = {}) =>
   hasRole(user, "ADMINISTRADOR_SISTEMA");
+
+export const getRequerimientosHomePathEffective = (user = {}) => {
+  const trays = getAvailableApprovalTraysEffective(user);
+  return trays[0]?.path || "/requerimientos";
+};
+
+export const getPedidosInternosHomePathEffective = (user = {}) => {
+  if (canViewWarehouseTrayEffective(user)) return "/notas-pedido/almacen";
+  if (canApprovePedidoInternoEffective(user)) return "/notas-pedido/aprobaciones";
+  if (canCreatePedidoInternoEffective(user)) return "/notas-pedido/nueva";
+  return "/notas-pedido";
+};
+
+export const getAdministrationHomePathEffective = (user = {}) => {
+  if (canAccessUserManagementEffective(user)) return "/gestion-usuarios";
+  if (canAccessAdministrationCatalogsEffective(user)) {
+    return "/gestion-productos";
+  }
+  return "/dashboard";
+};
+
+export const getPrimaryNavigationLinksEffective = (user = {}) => {
+  const links = [
+    { to: "/", label: "Inicio" },
+    { to: "/dashboard", label: "Dashboard" },
+  ];
+
+  if (!hasOperationalSession(user)) {
+    return links;
+  }
+
+  if (canViewRequerimientosModuleEffective(user)) {
+    links.push({
+      to: getRequerimientosHomePathEffective(user),
+      label: "Requerimientos",
+    });
+  }
+
+  if (canViewPedidosInternosModuleEffective(user)) {
+    links.push({
+      to: getPedidosInternosHomePathEffective(user),
+      label: "Notas de pedido",
+    });
+  }
+
+  if (canOperateInventoryEffective(user)) {
+    links.push({ to: "/inventario-stock", label: "Inventario" });
+  }
+
+  if (canAccessCotizacionesEffective(user)) {
+    links.push({
+      to: getCotizacionesHomePathEffective(user),
+      label: "Cotizaciones",
+    });
+  }
+
+  if (canViewOrdenesCompraEffective(user)) {
+    links.push({ to: "/ordenes-compra", label: "Ordenes de compra" });
+  }
+
+  if (
+    canAccessAdministrationCatalogsEffective(user) ||
+    canAccessUserManagementEffective(user)
+  ) {
+    links.push({
+      to: getAdministrationHomePathEffective(user),
+      label: "Gestion",
+    });
+  }
+
+  return links.filter(
+    (link, index, collection) =>
+      collection.findIndex((current) => current.to === link.to) === index
+  );
+};

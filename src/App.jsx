@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+﻿import React, { Suspense, lazy } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -18,7 +18,12 @@ import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import {
+  canAccessAdministrationCatalogsEffective,
   canAccessCotizacionesEffective,
+  canApprovePedidoInternoEffective,
+  canCreatePedidoInternoEffective,
+  canOperateInventoryEffective,
+  canViewOrdenesCompraEffective,
   canViewAllCotizacionesLogisticaEffective,
   isLogisticaOperadorEffective,
 } from "./accessRules";
@@ -111,6 +116,8 @@ const ProcesoLogisticoDetallePage = lazy(() =>
 );
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
 
+const SeleccionContextoPage = lazy(() => import("./pages/SeleccionContextoPage"));
+
 const AppRoutes = () => {
   const { loading, needsInitialSetup } = useAuth();
   const location = useLocation();
@@ -140,12 +147,43 @@ const AppRoutes = () => {
           <Route path="reset-password" element={<RestablecerContrasenaPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="seleccionar-contexto" element={<SeleccionContextoPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="cambiar-contrasena" element={<CambiarContrasenaPage />} />
-            <Route path="gestion-productos" element={<GestionProductosPage />} />
-            <Route path="gestion-marcas" element={<GestionMarcasPage />} />
-            <Route path="gestion-tipo-producto" element={<GestionTipoProductosPage />} />
-            <Route path="gestion-areas" element={<GestionAreasPage />} />
+            <Route
+              path="gestion-productos"
+              element={
+                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                  <GestionProductosPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="gestion-marcas"
+              element={
+                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                  <GestionMarcasPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="gestion-tipo-producto"
+              element={
+                <RoutePermissionGuard
+                  allow={canAccessAdministrationCatalogsEffective}
+                >
+                  <GestionTipoProductosPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="gestion-areas"
+              element={
+                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                  <GestionAreasPage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route
               path="gestion-usuarios"
               element={
@@ -154,7 +192,14 @@ const AppRoutes = () => {
                 </RoutePermissionGuard>
               }
             />
-            <Route path="gestion-proveedores" element={<GestionProveedoresPage />} />
+            <Route
+              path="gestion-proveedores"
+              element={
+                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                  <GestionProveedoresPage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route
               path="solicitudes-tipo-producto"
               element={<BandejaSolicitudesTipoProductoPage />}
@@ -196,24 +241,136 @@ const AppRoutes = () => {
                 </RoutePermissionGuard>
               }
             />
-            <Route path="inventario-stock" element={<InventarioStockPage />} />
+            <Route
+              path="inventario-stock"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioStockPage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route path="notas-pedido" element={<NotasPedidoPage />} />
-            <Route path="notas-pedido/nueva" element={<CrearNotaPedidoPage />} />
-            <Route path="notas-pedido/aprobaciones" element={<BandejaAprobacionNotasPedidoPage />} />
-            <Route path="notas-pedido/almacen" element={<BandejaAlmacenNotasPedidoPage />} />
+            <Route
+              path="notas-pedido/nueva"
+              element={
+                <RoutePermissionGuard allow={canCreatePedidoInternoEffective}>
+                  <CrearNotaPedidoPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="notas-pedido/aprobaciones"
+              element={
+                <RoutePermissionGuard allow={canApprovePedidoInternoEffective}>
+                  <BandejaAprobacionNotasPedidoPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="notas-pedido/almacen"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <BandejaAlmacenNotasPedidoPage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route path="notas-pedido/:id" element={<NotaPedidoDetallePage />} />
-            <Route path="inventario-movimientos" element={<InventarioMovimientosPage />} />
-            <Route path="inventario-kardex" element={<InventarioKardexPage />} />
-            <Route path="inventario-notas-ingreso" element={<InventarioNotasIngresoPage />} />
-            <Route path="inventario-notas-ingreso/:id" element={<InventarioNotaIngresoDetallePage />} />
-            <Route path="inventario-notas-salida" element={<InventarioNotasSalidaPage />} />
-            <Route path="inventario-notas-salida/:id" element={<InventarioNotaSalidaDetallePage />} />
-            <Route path="inventario-reservas" element={<InventarioReservasPage />} />
-            <Route path="inventario-reservas/:id" element={<InventarioReservaDetallePage />} />
-            <Route path="inventario-recepciones" element={<InventarioRecepcionesPage />} />
-            <Route path="inventario-operaciones" element={<InventarioOperacionesPage />} />
-            <Route path="ordenes-compra" element={<OrdenesCompraPage />} />
-            <Route path="ordenes-compra/:id" element={<OrdenCompraDetallePage />} />
+            <Route
+              path="inventario-movimientos"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioMovimientosPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-kardex"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioKardexPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-notas-ingreso"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioNotasIngresoPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-notas-ingreso/:id"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioNotaIngresoDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-notas-salida"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioNotasSalidaPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-notas-salida/:id"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioNotaSalidaDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-reservas"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioReservasPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-reservas/:id"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioReservaDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-recepciones"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioRecepcionesPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-operaciones"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioOperacionesPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="ordenes-compra"
+              element={
+                <RoutePermissionGuard allow={canViewOrdenesCompraEffective}>
+                  <OrdenesCompraPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="ordenes-compra/:id"
+              element={
+                <RoutePermissionGuard allow={canViewOrdenesCompraEffective}>
+                  <OrdenCompraDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
             <Route path="requerimientos" element={<RequerimientosPage />} />
             <Route path="requerimientos/nuevo" element={<CrearRequerimientoPage />} />
             <Route path="requerimientos/:id" element={<RequerimientoDetallePage />} />
@@ -288,6 +445,10 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
 
 
 

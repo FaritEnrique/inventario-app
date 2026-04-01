@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import usersApi from "../api/usersApi";
 
 const useUsers = () => {
@@ -11,14 +11,6 @@ const useUsers = () => {
   const [includeInactive, setIncludeInactive] = useState(false);
 
   const cargarUsuarios = useCallback(async () => {
-    const storedUser = sessionStorage.getItem("user");
-    if (!storedUser) {
-      setUsuarios([]);
-      setTotalPages(1);
-      setCargando(false);
-      return;
-    }
-
     setCargando(true);
     setError(null);
 

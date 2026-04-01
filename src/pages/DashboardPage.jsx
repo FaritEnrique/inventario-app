@@ -14,63 +14,207 @@ import {
   FaUserCog,
 } from "react-icons/fa";
 import {
+  canAccessAdministrationCatalogsEffective,
   canAccessCotizacionesEffective,
-  canCreatePedidoInternoEffective,
+  canAccessUserManagementEffective,
   canApprovePedidoInternoEffective,
+  canCreatePedidoInternoEffective,
   canOperateInventoryEffective,
-  canViewOrdenesCompraEffective,
   canViewOrdenCompraApprovalTrayEffective,
+  canViewOrdenesCompraEffective,
+  canViewPedidosInternosModuleEffective,
+  canViewRequerimientosModuleEffective,
   canViewWarehouseTrayEffective,
+  getAvailableApprovalTraysEffective,
+  getCotizacionesHomePathEffective,
+  getPedidosInternosHomePathEffective,
+  getRequerimientosHomePathEffective,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
-import { getAvailableApprovalTraysEffective } from "../accessRules";
-import { getActiveRoles } from "../utils/userRoles";
-import { canAccessUserManagementEffective } from "../accessRules";
 
 const cardClasses =
   "transform rounded-lg border-2 border-indigo-500 bg-white p-6 shadow transition-transform duration-300 hover:scale-105 hover:shadow-xl";
 
 const baseCards = [
-  { title: "Gestion de Productos", description: "Crear, ver, actualizar y dar de baja productos.", icon: <MdInventory />, path: "/gestion-productos", visible: () => true },
-  { title: "Gestion de Areas", description: "Administrar las areas o unidades de la organizacion.", icon: <FaSitemap />, path: "/gestion-areas", visible: () => true },
-  { title: "Gestion de Usuarios", description: "Administrar usuarios y accesos del sistema.", icon: <FaUserCog />, path: "/gestion-usuarios", visible: ({ user }) => canAccessUserManagementEffective(user) },
-  { title: "Requerimientos", description: "Consultar, filtrar y seguir requerimientos de compra.", icon: <FaShoppingCart />, path: "/requerimientos", visible: () => true },
-  { title: "Nuevo Requerimiento", description: "Registrar una solicitud formal de adquisicion.", icon: <FaOpencart />, path: "/requerimientos/nuevo", visible: () => true },
-  { title: "Gestion de Proveedores", description: "Administrar proveedores y consultar SUNAT.", icon: <FaRegAddressCard />, path: "/gestion-proveedores", visible: () => true },
-  { title: "Cotizaciones", description: "Emitir solicitudes, registrar ofertas y comparar proveedores.", icon: <FaFileInvoiceDollar />, path: "/cotizaciones", visible: ({ user }) => canAccessCotizacionesEffective(user) },
-  { title: "Ordenes de Compra", description: "Consultar ordenes emitidas, detalle documental y acciones de cierre.", icon: <FaFileInvoiceDollar />, path: "/ordenes-compra", visible: ({ user }) => canViewOrdenesCompraEffective(user) },
-  { title: "Bandeja OC", description: "Revisar solo las ordenes de compra que hoy puedes aprobar realmente.", icon: <FaFileInvoiceDollar />, path: "/ordenes-compra?view=aprobacion", visible: ({ user }) => canViewOrdenCompraApprovalTrayEffective(user) },
-  { title: "Stock de Inventario", description: "Consultar stock actual, reservado y disponible por producto.", icon: <FaBoxes />, path: "/inventario-stock", visible: () => true },
-  { title: "Notas de Pedido", description: "Consultar el historial y detalle de notas de pedido internas.", icon: <FaClipboardList />, path: "/notas-pedido", visible: () => true },
-  { title: "Nueva Nota de Pedido", description: "Registrar una nota de pedido sobre stock disponible.", icon: <FaOpencart />, path: "/notas-pedido/nueva", visible: ({ user }) => canCreatePedidoInternoEffective(user) },
-  { title: "Bandeja de Aprobacion NP", description: "Revisar y aprobar notas de pedido pendientes.", icon: <FaClipboardList />, path: "/notas-pedido/aprobaciones", visible: ({ user }) => canApprovePedidoInternoEffective(user) },
-  { title: "Bandeja de Almacen", description: "Atender notas de pedido aprobadas y generar salidas.", icon: <FaBoxes />, path: "/notas-pedido/almacen", visible: ({ user }) => canViewWarehouseTrayEffective(user) },
-  { title: "Movimientos de Inventario", description: "Auditar entradas, salidas, ajustes y transferencias.", icon: <FaExchangeAlt />, path: "/inventario-movimientos", visible: () => true },
-  { title: "Kardex", description: "Revisar el kardex auditable por producto, almacen y periodo.", icon: <FaClipboardList />, path: "/inventario-kardex", visible: () => true },
-  { title: "Notas de Ingreso", description: "Consultar documentalmente ingresos, recepciones y su trazabilidad.", icon: <FaFileImport />, path: "/inventario-notas-ingreso", visible: () => true },
-  { title: "Notas de Salida", description: "Consultar documentalmente entregas internas y salidas de almacen.", icon: <FaExchangeAlt />, path: "/inventario-notas-salida", visible: () => true },
-  { title: "Reservas de Stock", description: "Seguir reservas operativas, su estado y su despacho o liberacion.", icon: <FaBoxes />, path: "/inventario-reservas", visible: () => true },
-  { title: "Recepciones / Nota de Ingreso", description: "Registrar ingresos simples y recepciones contra OC.", icon: <FaFileImport />, path: "/inventario-recepciones", visible: ({ user }) => canOperateInventoryEffective(user) },
-  { title: "Operaciones de Inventario", description: "Carga inicial, ajustes, movimientos manuales y reservas.", icon: <MdInventory />, path: "/inventario-operaciones", visible: ({ user }) => canOperateInventoryEffective(user) },
+  {
+    title: "Requerimientos",
+    description:
+      "Entrar a la vista de requerimientos que corresponde al contexto activo.",
+    icon: <FaShoppingCart />,
+    path: ({ user }) => getRequerimientosHomePathEffective(user),
+    visible: ({ user }) => canViewRequerimientosModuleEffective(user),
+  },
+  {
+    title: "Notas de Pedido",
+    description:
+      "Entrar a la vista de notas de pedido compatible con el contexto activo.",
+    icon: <FaClipboardList />,
+    path: ({ user }) => getPedidosInternosHomePathEffective(user),
+    visible: ({ user }) => canViewPedidosInternosModuleEffective(user),
+  },
+  {
+    title: "Nueva Nota de Pedido",
+    description:
+      "Registrar una nota de pedido desde el contexto operativo seleccionado.",
+    icon: <FaOpencart />,
+    path: "/notas-pedido/nueva",
+    visible: ({ user }) => canCreatePedidoInternoEffective(user),
+  },
+  {
+    title: "Bandeja de Aprobacion NP",
+    description:
+      "Revisar solo notas de pedido que este contexto puede aprobar.",
+    icon: <FaClipboardList />,
+    path: "/notas-pedido/aprobaciones",
+    visible: ({ user }) => canApprovePedidoInternoEffective(user),
+  },
+  {
+    title: "Bandeja de Almacen",
+    description:
+      "Atender notas de pedido y generar salidas solo desde contexto operativo de inventario.",
+    icon: <FaBoxes />,
+    path: "/notas-pedido/almacen",
+    visible: ({ user }) => canViewWarehouseTrayEffective(user),
+  },
+  {
+    title: "Cotizaciones",
+    description:
+      "Entrar a la bandeja o vista logistica habilitada por el contexto activo.",
+    icon: <FaFileInvoiceDollar />,
+    path: ({ user }) => getCotizacionesHomePathEffective(user),
+    visible: ({ user }) => canAccessCotizacionesEffective(user),
+  },
+  {
+    title: "Ordenes de Compra",
+    description:
+      "Consultar ordenes y acciones de compra solo cuando el contexto lo habilita.",
+    icon: <FaFileInvoiceDollar />,
+    path: "/ordenes-compra",
+    visible: ({ user }) => canViewOrdenesCompraEffective(user),
+  },
+  {
+    title: "Bandeja OC",
+    description:
+      "Revisar solo las ordenes de compra que este contexto puede aprobar.",
+    icon: <FaFileInvoiceDollar />,
+    path: "/ordenes-compra?view=aprobacion",
+    visible: ({ user }) => canViewOrdenCompraApprovalTrayEffective(user),
+  },
+  {
+    title: "Stock de Inventario",
+    description:
+      "Consultar stock actual, reservado y disponible solo desde un contexto compatible.",
+    icon: <FaBoxes />,
+    path: "/inventario-stock",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Movimientos de Inventario",
+    description:
+      "Auditar entradas, salidas, ajustes y transferencias desde inventario.",
+    icon: <FaExchangeAlt />,
+    path: "/inventario-movimientos",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Kardex",
+    description:
+      "Revisar el kardex auditable por producto, almacen y periodo desde inventario.",
+    icon: <FaClipboardList />,
+    path: "/inventario-kardex",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Notas de Ingreso",
+    description:
+      "Consultar ingresos y recepciones documentales solo desde inventario.",
+    icon: <FaFileImport />,
+    path: "/inventario-notas-ingreso",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Notas de Salida",
+    description:
+      "Consultar salidas documentales e internas solo desde inventario.",
+    icon: <FaExchangeAlt />,
+    path: "/inventario-notas-salida",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Reservas de Stock",
+    description:
+      "Seguir reservas, liberaciones y despachos solo desde inventario.",
+    icon: <FaBoxes />,
+    path: "/inventario-reservas",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Recepciones / Nota de Ingreso",
+    description:
+      "Registrar recepciones e ingresos solo cuando el contexto opera inventario.",
+    icon: <FaFileImport />,
+    path: "/inventario-recepciones",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Operaciones de Inventario",
+    description:
+      "Carga inicial, ajustes, movimientos manuales y reservas desde inventario.",
+    icon: <MdInventory />,
+    path: "/inventario-operaciones",
+    visible: ({ user }) => canOperateInventoryEffective(user),
+  },
+  {
+    title: "Gestion de Productos",
+    description:
+      "Administrar catalogos de productos desde un contexto administrativo compatible.",
+    icon: <MdInventory />,
+    path: "/gestion-productos",
+    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+  },
+  {
+    title: "Gestion de Marcas",
+    description:
+      "Administrar marcas desde un contexto administrativo compatible.",
+    icon: <MdInventory />,
+    path: "/gestion-marcas",
+    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+  },
+  {
+    title: "Gestion de Areas",
+    description:
+      "Administrar areas o unidades solo desde un contexto administrativo.",
+    icon: <FaSitemap />,
+    path: "/gestion-areas",
+    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+  },
+  {
+    title: "Gestion de Proveedores",
+    description:
+      "Administrar proveedores y consultas relacionadas desde contexto administrativo.",
+    icon: <FaRegAddressCard />,
+    path: "/gestion-proveedores",
+    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+  },
+  {
+    title: "Gestion de Usuarios",
+    description:
+      "Administrar usuarios, rangos y asignaciones operativas del sistema.",
+    icon: <FaUserCog />,
+    path: "/gestion-usuarios",
+    visible: ({ user }) => canAccessUserManagementEffective(user),
+  },
 ];
 
 const DashboardPage = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, activeContext } = useAuth();
 
-  if (loading || !user) {
+  if (loading || !user || !activeContext) {
     return <div>Cargando contenido del panel de control...</div>;
   }
 
-  const activeRoles = getActiveRoles(user);
-  const dynamicTrays = getAvailableApprovalTraysEffective(user).map((tray) => ({
-    title: tray.label,
-    description: tray.description,
-    icon: <FaClipboardList />,
-    path: tray.path,
-    visible: () => true,
-  }));
-
-  const filteredCards = [...baseCards, ...dynamicTrays].filter((card) =>
+  const availableApprovalTrays = getAvailableApprovalTraysEffective(user);
+  const filteredCards = baseCards.filter((card) =>
     typeof card.visible === "function" ? card.visible({ user }) : true
   );
 
@@ -87,8 +231,8 @@ const DashboardPage = () => {
                 Bienvenido, {user.nombre}
               </h1>
               <p className="mt-2 text-sm text-gray-600">
-                Revisa tus accesos y entra directo a las operaciones que usas
-                mas seguido.
+                Este panel refleja solo los modulos y accesos compatibles con
+                el contexto operativo activo.
               </p>
             </div>
             <Link
@@ -111,52 +255,85 @@ const DashboardPage = () => {
             </div>
             <div className="rounded-lg bg-gray-50 px-4 py-3">
               <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Roles activos
+                Contexto activo
               </span>
               <span className="mt-1 block text-sm font-medium text-gray-800">
-                {activeRoles.length > 0
-                  ? activeRoles.join(", ")
-                  : "No definido"}
+                {activeContext.displayName || "No definido"}
               </span>
             </div>
             <div className="rounded-lg bg-gray-50 px-4 py-3">
               <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Area
+                Investidura operativa
               </span>
               <span className="mt-1 block text-sm font-medium text-gray-800">
-                {user.areaNombre || "Sin area asignada"}
+                {activeContext.role || "Sin rol operativo"}
               </span>
             </div>
             <div className="rounded-lg bg-gray-50 px-4 py-3">
               <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Correo
+                Unidad operativa
               </span>
-              <span className="mt-1 block break-all text-sm font-medium text-gray-800">
-                {user.email || "Sin correo"}
+              <span className="mt-1 block text-sm font-medium text-gray-800">
+                {activeContext.areaNombre || "Sin area operativa"}
               </span>
             </div>
           </div>
+
+          {availableApprovalTrays.length > 0 && (
+            <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              Este contexto habilita {availableApprovalTrays.length} bandeja
+              {availableApprovalTrays.length > 1 ? "s" : ""} de aprobacion.
+            </div>
+          )}
         </div>
 
-        <h2 className="mb-4 text-3xl font-bold text-indigo-700">Panel de Control</h2>
-        <p className="mb-6 text-lg text-gray-700">Accede a los modulos operativos consolidados del sistema.</p>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCards.map((card) => (
-            <Link key={`${card.title}-${card.path}`} to={card.path} className={cardClasses}>
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-blue-600 bg-indigo-100 text-3xl text-indigo-600">
-                {card.icon}
-              </div>
-              <h2 className="text-center text-lg font-semibold text-gray-800">{card.title}</h2>
-              <p className="text-center text-sm text-gray-600">{card.description}</p>
-            </Link>
-          ))}
-        </div>
+        <h2 className="mb-4 text-3xl font-bold text-indigo-700">
+          Panel de Control
+        </h2>
+        <p className="mb-6 text-lg text-gray-700">
+          Accede solo a las vistas y modulos compatibles con el contexto activo
+          seleccionado.
+        </p>
+
+        {filteredCards.length === 0 ? (
+          <div className="rounded-xl border border-indigo-100 bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-indigo-700">
+              No hay accesos directos para este contexto
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Cambia de contexto si necesitas operar con otra investidura o
+              espera la habilitacion de modulos para esta sesion.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredCards.map((card) => {
+              const resolvedPath =
+                typeof card.path === "function" ? card.path({ user }) : card.path;
+
+              return (
+                <Link
+                  key={`${card.title}-${resolvedPath}`}
+                  to={resolvedPath}
+                  className={cardClasses}
+                >
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-blue-600 bg-indigo-100 text-3xl text-indigo-600">
+                    {card.icon}
+                  </div>
+                  <h2 className="text-center text-lg font-semibold text-gray-800">
+                    {card.title}
+                  </h2>
+                  <p className="text-center text-sm text-gray-600">
+                    {card.description}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default DashboardPage;
-
-
-

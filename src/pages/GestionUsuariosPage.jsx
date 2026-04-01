@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
@@ -23,6 +23,42 @@ const getUserErrorMessage = (error, fallbackMessage) => {
 
   return error?.message || fallbackMessage;
 };
+
+const getAreaNombre = (areas, areaId, fallbackArea = null) => {
+  const foundArea = areas.find((area) => String(area.id) === String(areaId));
+  if (foundArea?.nombre) {
+    return foundArea.nombre;
+  }
+
+  return fallbackArea?.nombre || `Area ${areaId}`;
+};
+
+const formatUserRangos = (user, areas) =>
+  Array.isArray(user.userRangos)
+    ? user.userRangos
+        .filter((rango) => rango.activo !== false)
+        .map((rango) => {
+          const areaNombre = getAreaNombre(areas, rango.areaId, rango.area);
+          return `${rango.rol} (${areaNombre})`;
+        })
+        .join(" | ")
+    : "";
+
+const formatOperationalAssignments = (user, areas) =>
+  Array.isArray(user.asignacionesOperativas)
+    ? user.asignacionesOperativas
+        .filter((assignment) => assignment.activo !== false)
+        .map((assignment) => {
+          const areaNombre = getAreaNombre(
+            areas,
+            assignment.areaId,
+            assignment.area
+          );
+          const tipo = assignment.tipoAsignacion || "RESPONSABILIDAD_OPERATIVA";
+          return `${assignment.rol} (${areaNombre}) [${tipo}]`;
+        })
+        .join(" | ")
+    : "";
 
 const GestionUsuariosPage = () => {
   const {
@@ -59,8 +95,8 @@ const GestionUsuariosPage = () => {
         const response = await areasApi.getAreas();
         setAreas(response || []);
       } catch (error) {
-        console.error("Error al cargar áreas:", error);
-        toast.error("No se pudieron cargar las áreas.");
+        console.error("Error al cargar areas:", error);
+        toast.error("No se pudieron cargar las areas.");
       }
     };
 
@@ -75,7 +111,7 @@ const GestionUsuariosPage = () => {
   const handleCrear = async (usuario) => {
     try {
       await crearUsuario(usuario);
-      toast.success("Usuario creado con éxito.");
+      toast.success("Usuario creado con exito.");
       cargarUsuarios();
     } catch (error) {
       console.error(error);
@@ -95,7 +131,7 @@ const GestionUsuariosPage = () => {
 
     try {
       await actualizarUsuario(usuarioAEditar.id, datos);
-      toast.success("Usuario actualizado con éxito.");
+      toast.success("Usuario actualizado con exito.");
       setIsModalOpen(false);
       setUsuarioAEditar(null);
       cargarUsuarios();
@@ -112,7 +148,7 @@ const GestionUsuariosPage = () => {
 
     toast.info(
       <ConfirmDeleteToast2
-        message={`¿Estás seguro de que quieres desactivar a ${userName}? El usuario no podrá acceder al sistema.`}
+        message={`Estas seguro de que quieres desactivar a ${userName}? El usuario no podra acceder al sistema.`}
         onConfirm={async () => {
           try {
             await eliminarUsuario(userId);
@@ -146,11 +182,14 @@ const GestionUsuariosPage = () => {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
-      <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Solo <code>ADMINISTRADOR_SISTEMA</code> y{" "}
-        <code>GERENTE_ADMINISTRACION</code> pueden crear, editar y cambiar el
-        estado de usuarios.
+      <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Solo <code>ADMINISTRADOR_SISTEMA</code> y <code>GERENTE_ADMINISTRACION</code>
+        {" "}pueden crear, editar y cambiar el estado de usuarios.
+      </div>
+      <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+        Esta vista distingue entre <strong>rol principal</strong>, <strong>rangos adicionales</strong>
+        {" "}y <strong>asignaciones operativas explicitas</strong>. Las asignaciones operativas ya no deben inferirse desde la estructura de areas.
       </div>
 
       {canCreate ? (
@@ -167,7 +206,7 @@ const GestionUsuariosPage = () => {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Buscar por nombre, código o correo electrónico..."
+          placeholder="Buscar por nombre, codigo o correo electronico..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
           name="gestion-usuarios-page-input-135"
@@ -195,104 +234,106 @@ const GestionUsuariosPage = () => {
       ) : (
         <>
           <ul className="space-y-2">
-            {usuarios.map((user) => (
-              <li
-                key={user.id}
-                className="flex flex-col items-start justify-between rounded border bg-white p-4 shadow-sm md:flex-row md:items-center"
-              >
-                <div>
-                  <p>
-                    <strong>{user.name || user.nombre}</strong> - {user.email}
-                  </p>
-                  <p className="text-sm">
-                    Código:{" "}
-                    <span className="font-semibold text-blue-700">
-                      {user.codigoUsuario || "N/A"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    Rol:{" "}
-                    <span className="font-semibold text-purple-700">
-                      {user.rol || "N/A"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    Cargo:{" "}
-                    <span className="font-semibold text-gray-700">
-                      {user.cargo || "N/A"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    Área:{" "}
-                    <span className="font-semibold text-gray-700">
-                      {user.area?.nombre || "N/A"}
-                    </span>
-                  </p>
-                  {Array.isArray(user.userRangos) &&
-                  user.userRangos.some((rango) => rango.activo !== false) ? (
+            {usuarios.map((user) => {
+              const rangosAdicionales = formatUserRangos(user, areas);
+              const asignacionesOperativas = formatOperationalAssignments(user, areas);
+
+              return (
+                <li
+                  key={user.id}
+                  className="flex flex-col items-start justify-between rounded border bg-white p-4 shadow-sm md:flex-row md:items-center"
+                >
+                  <div>
+                    <p>
+                      <strong>{user.name || user.nombre}</strong> - {user.email}
+                    </p>
                     <p className="text-sm">
-                      Rangos adicionales:{" "}
-                      <span className="font-semibold text-slate-700">
-                        {user.userRangos
-                          .filter((rango) => rango.activo !== false)
-                          .map((rango) => {
-                            const areaNombre =
-                              areas.find(
-                                (area) =>
-                                  String(area.id) === String(rango.areaId)
-                              )?.nombre || `Área ${rango.areaId}`;
-                            return `${rango.rol} (${areaNombre})`;
-                          })
-                          .join(" | ")}
+                      Codigo:{" "}
+                      <span className="font-semibold text-blue-700">
+                        {user.codigoUsuario || "N/A"}
                       </span>
                     </p>
-                  ) : null}
-                  <p className="text-sm">
-                    Estado:{" "}
-                    <span
-                      className={`font-semibold ${
-                        user.activo ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {user.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </p>
-                </div>
-                {canEdit || canToggleStatus ? (
-                  <div className="mt-3 flex gap-2 md:mt-0">
-                    {canEdit ? (
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="rounded bg-green-500 px-4 py-2 text-white"
+                    <p className="text-sm">
+                      Rol:{" "}
+                      <span className="font-semibold text-purple-700">
+                        {user.rol || "N/A"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      Cargo:{" "}
+                      <span className="font-semibold text-gray-700">
+                        {user.cargo || "N/A"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      Area:{" "}
+                      <span className="font-semibold text-gray-700">
+                        {user.area?.nombre || "N/A"}
+                      </span>
+                    </p>
+                    {rangosAdicionales ? (
+                      <p className="text-sm">
+                        Rangos adicionales:{" "}
+                        <span className="font-semibold text-slate-700">
+                          {rangosAdicionales}
+                        </span>
+                      </p>
+                    ) : null}
+                    {asignacionesOperativas ? (
+                      <p className="text-sm">
+                        Asignaciones operativas explicitas:{" "}
+                        <span className="font-semibold text-cyan-700">
+                          {asignacionesOperativas}
+                        </span>
+                      </p>
+                    ) : null}
+                    <p className="text-sm">
+                      Estado:{" "}
+                      <span
+                        className={`font-semibold ${
+                          user.activo ? "text-green-600" : "text-red-600"
+                        }`}
                       >
-                        Editar
-                      </button>
-                    ) : null}
-                    {canToggleStatus ? (
-                      user.activo ? (
-                        <button
-                          onClick={() =>
-                            handleDeactivate(user.id, user.name || user.nombre)
-                          }
-                          className="rounded bg-red-500 px-4 py-2 text-white"
-                        >
-                          Desactivar
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            handleReactivate(user.id, user.name || user.nombre)
-                          }
-                          className="rounded bg-blue-600 px-4 py-2 text-white"
-                        >
-                          Reactivar
-                        </button>
-                      )
-                    ) : null}
+                        {user.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </p>
                   </div>
-                ) : null}
-              </li>
-            ))}
+                  {canEdit || canToggleStatus ? (
+                    <div className="mt-3 flex gap-2 md:mt-0">
+                      {canEdit ? (
+                        <button
+                          onClick={() => handleEditClick(user)}
+                          className="rounded bg-green-500 px-4 py-2 text-white"
+                        >
+                          Editar
+                        </button>
+                      ) : null}
+                      {canToggleStatus ? (
+                        user.activo ? (
+                          <button
+                            onClick={() =>
+                              handleDeactivate(user.id, user.name || user.nombre)
+                            }
+                            className="rounded bg-red-500 px-4 py-2 text-white"
+                          >
+                            Desactivar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              handleReactivate(user.id, user.name || user.nombre)
+                            }
+                            className="rounded bg-blue-600 px-4 py-2 text-white"
+                          >
+                            Reactivar
+                          </button>
+                        )
+                      ) : null}
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-6 flex items-center justify-between">
@@ -304,7 +345,7 @@ const GestionUsuariosPage = () => {
               Anterior
             </button>
             <span>
-              Página {page} de {totalPages}
+              Pagina {page} de {totalPages}
             </span>
             <button
               onClick={() => setPage(page + 1)}
@@ -324,6 +365,9 @@ const GestionUsuariosPage = () => {
           style={{ content: { width: "720px", maxWidth: "95vw", margin: "auto" } }}
         >
           <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
+          <div className="mb-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+            Este formulario sigue administrando el rol principal y los rangos adicionales. Las asignaciones operativas explicitas quedaron separadas de la estructura y se gestionaran en un paso posterior.
+          </div>
           <UsuarioForm
             initialValues={{
               name: usuarioAEditar.name ?? usuarioAEditar.nombre,
