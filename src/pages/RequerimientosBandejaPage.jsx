@@ -21,7 +21,8 @@ const titles = {
 
 const RequerimientosBandejaPage = ({ nivel }) => {
   const { user } = useAuth();
-  const { areas } = useAreas();
+  const canFilterArea = canViewAllRequerimientosEffective(user);
+  const { areas } = useAreas({ enabled: canFilterArea });
   const { fetchTray, procesarAprobacion, cargando } = useRequerimientos();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,6 @@ const RequerimientosBandejaPage = ({ nivel }) => {
   }, [fetchTray, nivel, filters]);
 
   const title = useMemo(() => titles[nivel] || "Bandeja de aprobacion", [nivel]);
-  const canFilterArea = canViewAllRequerimientosEffective(user);
   const filtersApplied = useMemo(
     () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
     [filters]
@@ -160,7 +160,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                 <div>
                   <p className="text-lg font-semibold text-gray-900">{req.codigo}</p>
                   <p className="text-sm text-gray-600">
-                    {req.areaNombreSnapshot} · {req.solicitante?.nombre || "-"}
+                    {req.areaNombreSnapshot} Â· {req.solicitante?.nombre || "-"}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">Uso: {req.usoFinalidad}</p>
                 </div>

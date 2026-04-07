@@ -108,9 +108,11 @@ const ProductDetailModal = ({ producto, onClose }) => {
 
 const RequerimientoForm = ({
   initialData,
-  areas,
+  areas = [],
   prioridades,
-  allowAreaSelection,
+  allowAreaSelection = false,
+  lockAreaToContext = false,
+  contextualAreaLabel = "",
   buscarCatalogoProductos,
   onSubmit,
   submitting,
@@ -128,6 +130,7 @@ const RequerimientoForm = ({
     observaciones: "",
     cantidadRequerida: "1",
   });
+  const [tempErrors, setTempErrors] = useState({});
 
   useEffect(() => {
     dispatch({ type: "RESET", payload: initialData });
@@ -161,6 +164,31 @@ const RequerimientoForm = ({
     [state.items]
   );
 
+  const validateTemporaryProductDraft = () => {
+    const errors = {};
+    const cantidad = Number(tempDraft.cantidadRequerida);
+    const valor = Number(tempDraft.valorReferencialUnitario);
+
+    if (!tempDraft.nombre.trim()) {
+      errors.nombre = "Debes ingresar el nombre.";
+    }
+
+    if (!tempDraft.unidadMedida.trim()) {
+      errors.unidadMedida = "Debes ingresar la unidad de medida.";
+    }
+
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      errors.cantidadRequerida = "La cantidad debe ser mayor a 0.";
+    }
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      errors.valorReferencialUnitario =
+        "Debes ingresar un valor referencial mayor a 0.";
+    }
+
+    return errors;
+  };
+
   const addCatalogProduct = (producto) => {
     if (state.items.some((item) => item.productoId === producto.id)) {
       toast.info("Ese producto ya esta agregado al requerimiento.");
@@ -184,24 +212,25 @@ const RequerimientoForm = ({
   };
 
   const addTemporaryProduct = () => {
-    if (!tempDraft.nombre.trim()) {
-      toast.error("Debes ingresar el nombre del producto temporal.");
+    const errors = validateTemporaryProductDraft();
+    if (Object.keys(errors).length > 0) {
+      setTempErrors(errors);
+      const missingFields = [];
+      if (errors.nombre) missingFields.push("nombre");
+      if (errors.unidadMedida) missingFields.push("unidad de medida");
+      if (errors.cantidadRequerida) missingFields.push("cantidad");
+      if (errors.valorReferencialUnitario) {
+        missingFields.push("valor referencial unitario");
+      }
+
+      toast.error(
+        `Completa los datos obligatorios del producto temporal. Falta: ${missingFields.join(", ")}.`
+      );
       return;
     }
-    if (!tempDraft.unidadMedida.trim()) {
-      toast.error("Debes ingresar la unidad de medida del producto temporal.");
-      return;
-    }
+
     const cantidad = Number(tempDraft.cantidadRequerida);
     const valor = Number(tempDraft.valorReferencialUnitario);
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      toast.error("La cantidad del producto temporal debe ser mayor a 0.");
-      return;
-    }
-    if (!Number.isFinite(valor) || valor <= 0) {
-      toast.error("El valor referencial del producto temporal debe ser mayor a 0.");
-      return;
-    }
 
     dispatch({
       type: "ADD_ITEM",
@@ -222,6 +251,7 @@ const RequerimientoForm = ({
       },
     });
 
+    setTempErrors({});
     setTempDraft({
       nombre: "",
       descripcion: "",
@@ -236,7 +266,11 @@ const RequerimientoForm = ({
     event.preventDefault();
 
     if (!state.areaId) {
-      toast.error("Debes seleccionar el area solicitante.");
+      toast.error(
+        lockAreaToContext
+          ? "No se pudo resolver el area solicitante desde tu contexto activo."
+          : "Debes seleccionar el area solicitante."
+      );
       return;
     }
     if (!state.usoFinalidad.trim()) {
@@ -268,7 +302,6 @@ const RequerimientoForm = ({
     }
 
     const payload = {
-      areaId: Number(state.areaId),
       prioridad: state.prioridad,
       descripcion: state.descripcion.trim() || null,
       usoFinalidad: state.usoFinalidad.trim(),
@@ -315,20 +348,35 @@ const RequerimientoForm = ({
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="requerimiento-area-id" className="mb-1 block text-sm font-medium text-gray-700">Area solicitante</label>
-            <select
-              id="requerimiento-area-id"
-              value={state.areaId}
-              name="requerimiento-form-select-318" onChange={(event) => dispatch({ type: "FIELD", name: "areaId", value: event.target.value })}
-              disabled={!allowAreaSelection}
-              className="w-full rounded border border-gray-300 px-3 py-2"
-            >
-              <option value="">Selecciona un area</option>
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.branchDescription ? `${area.nombre} - ${area.branchDescription}` : area.nombre}
-                </option>
-              ))}
-            </select>
+            {lockAreaToContext ? (
+              <>
+                <input
+                  id="requerimiento-area-id"
+                  type="text"
+                  value={contextualAreaLabel || "Contexto sin area valida"}
+                  readOnly
+                  className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Esta area se toma automaticamente de tu contexto activo.
+                </p>
+              </>
+            ) : (
+              <select
+                id="requerimiento-area-id"
+                value={state.areaId}
+                name="requerimiento-form-select-318" onChange={(event) => dispatch({ type: "FIELD", name: "areaId", value: event.target.value })}
+                disabled={!allowAreaSelection}
+                className="w-full rounded border border-gray-300 px-3 py-2"
+              >
+                <option value="">Selecciona un area</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.branchDescription ? `${area.nombre} - ${area.branchDescription}` : area.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label htmlFor="requerimiento-prioridad" className="mb-1 block text-sm font-medium text-gray-700">Prioridad</label>
@@ -429,11 +477,104 @@ const RequerimientoForm = ({
           <div className="rounded-lg border border-gray-200 p-4">
             <h3 className="text-lg font-semibold text-gray-900">Proponer producto temporal</h3>
             <p className="mt-1 text-sm text-gray-500">Usa esta opcion si el catalogo actual no corresponde.</p>
+            <p className="mt-2 text-xs text-gray-500">
+              Campos obligatorios: nombre, unidad, cantidad y valor referencial.
+            </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <input className="rounded border border-gray-300 px-3 py-2" placeholder="Nombre" value={tempDraft.nombre} name="requerimiento-form-input-427" onChange={(event) => setTempDraft((prev) => ({ ...prev, nombre: event.target.value }))} />
-              <input className="rounded border border-gray-300 px-3 py-2" placeholder="Unidad" value={tempDraft.unidadMedida} name="requerimiento-form-input-428" onChange={(event) => setTempDraft((prev) => ({ ...prev, unidadMedida: event.target.value }))} />
-              <input className="rounded border border-gray-300 px-3 py-2" placeholder="Cantidad" type="number" min="1" step="0.01" value={tempDraft.cantidadRequerida} name="requerimiento-form-input-429" onChange={(event) => setTempDraft((prev) => ({ ...prev, cantidadRequerida: event.target.value }))} />
-              <input className="rounded border border-gray-300 px-3 py-2" placeholder="Valor referencial" type="number" min="0" step="0.01" value={tempDraft.valorReferencialUnitario} name="requerimiento-form-input-430" onChange={(event) => setTempDraft((prev) => ({ ...prev, valorReferencialUnitario: event.target.value }))} />
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 ${
+                    tempErrors.nombre ? "border-red-400 bg-red-50" : "border-gray-300"
+                  }`}
+                  placeholder="Nombre *"
+                  value={tempDraft.nombre}
+                  name="requerimiento-form-input-427"
+                  onChange={(event) => {
+                    setTempDraft((prev) => ({ ...prev, nombre: event.target.value }));
+                    setTempErrors((prev) => ({ ...prev, nombre: undefined }));
+                  }}
+                />
+                {tempErrors.nombre ? (
+                  <p className="mt-1 text-xs text-red-600">{tempErrors.nombre}</p>
+                ) : null}
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 ${
+                    tempErrors.unidadMedida ? "border-red-400 bg-red-50" : "border-gray-300"
+                  }`}
+                  placeholder="Unidad *"
+                  value={tempDraft.unidadMedida}
+                  name="requerimiento-form-input-428"
+                  onChange={(event) => {
+                    setTempDraft((prev) => ({ ...prev, unidadMedida: event.target.value }));
+                    setTempErrors((prev) => ({ ...prev, unidadMedida: undefined }));
+                  }}
+                />
+                {tempErrors.unidadMedida ? (
+                  <p className="mt-1 text-xs text-red-600">{tempErrors.unidadMedida}</p>
+                ) : null}
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 ${
+                    tempErrors.cantidadRequerida
+                      ? "border-red-400 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Cantidad *"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={tempDraft.cantidadRequerida}
+                  name="requerimiento-form-input-429"
+                  onChange={(event) => {
+                    setTempDraft((prev) => ({
+                      ...prev,
+                      cantidadRequerida: event.target.value,
+                    }));
+                    setTempErrors((prev) => ({
+                      ...prev,
+                      cantidadRequerida: undefined,
+                    }));
+                  }}
+                />
+                {tempErrors.cantidadRequerida ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {tempErrors.cantidadRequerida}
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <input
+                  className={`w-full rounded border px-3 py-2 ${
+                    tempErrors.valorReferencialUnitario
+                      ? "border-red-400 bg-red-50"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="Valor referencial *"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={tempDraft.valorReferencialUnitario}
+                  name="requerimiento-form-input-430"
+                  onChange={(event) => {
+                    setTempDraft((prev) => ({
+                      ...prev,
+                      valorReferencialUnitario: event.target.value,
+                    }));
+                    setTempErrors((prev) => ({
+                      ...prev,
+                      valorReferencialUnitario: undefined,
+                    }));
+                  }}
+                />
+                {tempErrors.valorReferencialUnitario ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {tempErrors.valorReferencialUnitario}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <textarea className="mt-3 w-full rounded border border-gray-300 px-3 py-2" rows="2" placeholder="Descripcion" value={tempDraft.descripcion} name="requerimiento-form-textarea-432" onChange={(event) => setTempDraft((prev) => ({ ...prev, descripcion: event.target.value }))} />
             <textarea className="mt-3 w-full rounded border border-gray-300 px-3 py-2" rows="2" placeholder="Observaciones" value={tempDraft.observaciones} name="requerimiento-form-textarea-433" onChange={(event) => setTempDraft((prev) => ({ ...prev, observaciones: event.target.value }))} />

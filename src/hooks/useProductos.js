@@ -13,11 +13,16 @@ const useProductos = () => {
   const [desde, setDesde] = useState(1);
   const [hasta, setHasta] = useState(0);
 
-  const obtenerProductos = useCallback(async (buscar = '', pageNumber = page, limitNumber = limit) => {
+  const obtenerProductos = useCallback(async (
+    buscar = '',
+    pageNumber = page,
+    limitNumber = limit,
+    estado = 'activos'
+  ) => {
     try {
       setCargando(true);
       setError(null);
-      const data = await productosApi.getTodos(buscar, pageNumber, limitNumber);
+      const data = await productosApi.getTodos(buscar, pageNumber, limitNumber, estado);
 
       const formateados = Array.isArray(data.productos)
         ? data.productos.map((producto) => ({ ...producto, stock: parseFloat(producto.stock) }))
@@ -71,13 +76,29 @@ const useProductos = () => {
     }
   }, []);
 
-  const eliminarProducto = useCallback(async (id) => {
+  const desactivarProducto = useCallback(async (id) => {
     try {
-      await productosApi.eliminar(id);
-      setProductos((prev) => prev.filter((p) => p.id !== id));
-      toast.success('🗑️ Producto eliminado correctamente');
+      const { message, producto } = await productosApi.desactivar(id);
+      setProductos((prev) =>
+        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
+      );
+      toast.success(`✅ ${message || 'Producto desactivado correctamente'}`);
     } catch (err) {
-      console.error('❌ Error al eliminar producto:', err);
+      console.error('❌ Error al desactivar producto:', err);
+      toast.error(`❌ ${err.message || 'Error desconocido'}`);
+      throw err;
+    }
+  }, []);
+
+  const reactivarProducto = useCallback(async (id) => {
+    try {
+      const { message, producto } = await productosApi.reactivar(id);
+      setProductos((prev) =>
+        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
+      );
+      toast.success(`✅ ${message || 'Producto reactivado correctamente'}`);
+    } catch (err) {
+      console.error('❌ Error al reactivar producto:', err);
       toast.error(`❌ ${err.message || 'Error desconocido'}`);
       throw err;
     }
@@ -95,7 +116,8 @@ const useProductos = () => {
     fetchProductos: obtenerProductos,
     crearProducto,
     actualizarProducto,
-    eliminarProducto,
+    desactivarProducto,
+    reactivarProducto,
     cargando,
     error,
   };

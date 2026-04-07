@@ -121,6 +121,15 @@ export const canAccessCotizacionesEffective = (user) =>
         isLogisticaAssignment(assignment))
   );
 
+export const canAccessProveedorManagementEffective = (user = {}) =>
+  hasRole(user, "ADMINISTRADOR_SISTEMA") ||
+  hasRole(user, "GERENTE_ADMINISTRACION") ||
+  getActiveRoleAssignments(user).some(
+    (assignment) =>
+      ["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
+      isLogisticaAssignment(assignment)
+  );
+
 export const canViewAllCotizacionesLogisticaEffective = (user) =>
   isAdminOverride(user) ||
   getActiveRoleAssignments(user).some(
@@ -403,6 +412,17 @@ export const getTrayEmptyStateEffective = (
 export const canAccessUserManagementEffective = (user = {}) =>
   hasAnyRole(user, USER_MANAGEMENT_ADMIN_ROLES);
 
+export const canAccessAreasManagementEffective = (user = {}) =>
+  canAccessUserManagementEffective(user);
+
+export const canManageCatalogMasterEffective = (user = {}) =>
+  hasRole(user, "ADMINISTRADOR_SISTEMA") ||
+  hasRole(user, "GERENTE_ADMINISTRACION") ||
+  getActiveRoleAssignments(user).some(
+    (assignment) =>
+      assignment.rol === "JEFE_AREA" && isWarehouseContext(assignment)
+  );
+
 export const canAccessAdministrationCatalogsEffective = (user = {}) => {
   if (
     hasAnyRole(user, [
@@ -445,7 +465,7 @@ export const getPedidosInternosHomePathEffective = (user = {}) => {
 
 export const getAdministrationHomePathEffective = (user = {}) => {
   if (canAccessUserManagementEffective(user)) return "/gestion-usuarios";
-  if (canAccessAdministrationCatalogsEffective(user)) {
+  if (canManageCatalogMasterEffective(user)) {
     return "/gestion-productos";
   }
   return "/dashboard";
@@ -491,7 +511,7 @@ export const getPrimaryNavigationLinksEffective = (user = {}) => {
   }
 
   if (
-    canAccessAdministrationCatalogsEffective(user) ||
+    canManageCatalogMasterEffective(user) ||
     canAccessUserManagementEffective(user)
   ) {
     links.push({

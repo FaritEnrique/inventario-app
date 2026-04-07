@@ -14,8 +14,10 @@ import {
   FaUserCog,
 } from "react-icons/fa";
 import {
-  canAccessAdministrationCatalogsEffective,
+  canAccessAreasManagementEffective,
   canAccessCotizacionesEffective,
+  canAccessProveedorManagementEffective,
+  canManageCatalogMasterEffective,
   canAccessUserManagementEffective,
   canApprovePedidoInternoEffective,
   canCreatePedidoInternoEffective,
@@ -28,7 +30,6 @@ import {
   getAvailableApprovalTraysEffective,
   getCotizacionesHomePathEffective,
   getPedidosInternosHomePathEffective,
-  getRequerimientosHomePathEffective,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
@@ -39,9 +40,9 @@ const baseCards = [
   {
     title: "Requerimientos",
     description:
-      "Entrar a la vista de requerimientos que corresponde al contexto activo.",
+      "Entrar al listado general de requerimientos y desde ahi acceder a bandejas o crear nuevos requerimientos.",
     icon: <FaShoppingCart />,
-    path: ({ user }) => getRequerimientosHomePathEffective(user),
+    path: "/requerimientos",
     visible: ({ user }) => canViewRequerimientosModuleEffective(user),
   },
   {
@@ -167,18 +168,18 @@ const baseCards = [
   {
     title: "Gestion de Productos",
     description:
-      "Administrar catalogos de productos desde un contexto administrativo compatible.",
+      "Administrar catalogos maestros de productos desde la jefatura de almacen o los overrides autorizados.",
     icon: <MdInventory />,
     path: "/gestion-productos",
-    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+    visible: ({ user }) => canManageCatalogMasterEffective(user),
   },
   {
     title: "Gestion de Marcas",
     description:
-      "Administrar marcas desde un contexto administrativo compatible.",
+      "Administrar marcas del catalogo maestro desde almacen o los overrides autorizados.",
     icon: <MdInventory />,
     path: "/gestion-marcas",
-    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+    visible: ({ user }) => canManageCatalogMasterEffective(user),
   },
   {
     title: "Gestion de Areas",
@@ -186,7 +187,7 @@ const baseCards = [
       "Administrar areas o unidades solo desde un contexto administrativo.",
     icon: <FaSitemap />,
     path: "/gestion-areas",
-    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+    visible: ({ user }) => canAccessAreasManagementEffective(user),
   },
   {
     title: "Gestion de Proveedores",
@@ -194,7 +195,7 @@ const baseCards = [
       "Administrar proveedores y consultas relacionadas desde contexto administrativo.",
     icon: <FaRegAddressCard />,
     path: "/gestion-proveedores",
-    visible: ({ user }) => canAccessAdministrationCatalogsEffective(user),
+    visible: ({ user }) => canAccessProveedorManagementEffective(user),
   },
   {
     title: "Gestion de Usuarios",

@@ -6,8 +6,8 @@ import useTipoProductos from "../hooks/useTipoProductos";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
+import Modal from "../components/Modal";
 import productosApi from "../api/productosApi";
-import Modal from "react-modal";
 import { FaSearch, FaRegistered } from "react-icons/fa";
 import { TbArrowBackUpDouble } from "react-icons/tb";
 import { MdCategory } from "react-icons/md";
@@ -15,7 +15,33 @@ import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
 import imageCompression from "browser-image-compression";
 
-Modal.setAppElement("#root");
+const buildUploadsBaseUrl = () => {
+  const rawApiUrl =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
+
+  return String(rawApiUrl || "").trim().replace(/\/+$/, "").replace(/\/api$/, "");
+};
+
+const resolveProductoImageUrl = (imageUrl) => {
+  if (!imageUrl) return "";
+
+  if (
+    imageUrl.startsWith("blob:") ||
+    imageUrl.startsWith("data:") ||
+    imageUrl.startsWith("http://") ||
+    imageUrl.startsWith("https://")
+  ) {
+    return imageUrl;
+  }
+
+  const uploadsBaseUrl = buildUploadsBaseUrl();
+  if (!uploadsBaseUrl) {
+    return imageUrl;
+  }
+
+  return `${uploadsBaseUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+};
 
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
@@ -56,6 +82,7 @@ const GestionProductosPage = () => {
   const [productoActual, setProductoActual] = useState(initialProducto);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("activos");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [productoEnDetalle, setProductoEnDetalle] = useState(null);
 
@@ -71,7 +98,8 @@ const GestionProductosPage = () => {
     fetchProductos,
     crearProducto,
     actualizarProducto,
-    eliminarProducto,
+    desactivarProducto,
+    reactivarProducto,
     cargando: cargandoProductos,
   } = useProductos();
   const { marcas, fetchMarcas, cargando: cargandoMarcas } = useMarcas();
@@ -84,8 +112,8 @@ const GestionProductosPage = () => {
   const debouncedBusqueda = useDebounce(busqueda, 2000);
 
   useEffect(() => {
-    fetchProductos(debouncedBusqueda, page, limit);
-  }, [fetchProductos, debouncedBusqueda, page, limit]);
+    fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
+  }, [fetchProductos, debouncedBusqueda, page, limit, estadoFiltro]);
 
   useEffect(() => {
     fetchMarcas();
@@ -155,7 +183,6 @@ const GestionProductosPage = () => {
           formData.append("descripcion", productoActual.descripcion);
         if (productoActual.marcaId)
           formData.append("marcaId", productoActual.marcaId);
-        formData.append("activo", productoActual.activo);
 
         if (productoActual.imagenFile) {
           formData.append("imagen", productoActual.imagenFile);
@@ -182,7 +209,7 @@ const GestionProductosPage = () => {
 
         setProductoActual({ ...initialProducto, imagenFile: null });
         setModoEdicion(false);
-        fetchProductos(debouncedBusqueda, page, limit);
+        fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
       } catch (err) {
         const msg =
           err.response?.data?.message ||
@@ -200,6 +227,7 @@ const GestionProductosPage = () => {
       debouncedBusqueda,
       page,
       limit,
+      estadoFiltro,
     ]
   );
 
@@ -215,29 +243,29 @@ const GestionProductosPage = () => {
     setModoEdicion(true);
   }, []);
 
-  const handleEliminar = useCallback(
+  const handleDesactivar = useCallback(
     (id) => {
       const producto = productos.find((p) => p.id === id);
-      if (!producto) return;
+      if (!producto || producto.activo === false) return;
 
       toast.warn(
         ({ closeToast, toastProps }) => (
           <ConfirmDeleteToast
             closeToast={closeToast}
             toastProps={toastProps}
-            message={`¿Estás seguro de que deseas eliminar el producto "${producto.nombre}"? Esta acción no se puede deshacer.`}
+            message={`¿Deseas desactivar el producto "${producto.nombre}"? Dejara de estar disponible para nuevas operaciones, pero se conservara para el historico.`}
             onConfirm={async () => {
               try {
-                await eliminarProducto(id);
-                fetchProductos(debouncedBusqueda, page, limit);
+                await desactivarProducto(id);
+                fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
                 if (productoActual.id === id) {
                   setProductoActual(initialProducto);
                   setModoEdicion(false);
                 }
               } catch (err) {
-                console.error("Error al eliminar producto:", err);
+                console.error("Error al desactivar producto:", err);
                 toast.error(
-                  `❌ Error al eliminar producto: ${
+                  `❌ Error al desactivar producto: ${
                     err.message || "Error desconocido"
                   }`
                 );
@@ -258,12 +286,61 @@ const GestionProductosPage = () => {
     },
     [
       productos,
-      eliminarProducto,
+      desactivarProducto,
       fetchProductos,
       debouncedBusqueda,
       productoActual.id,
       page,
       limit,
+      estadoFiltro,
+    ]
+  );
+
+  const handleReactivar = useCallback(
+    (id) => {
+      const producto = productos.find((p) => p.id === id);
+      if (!producto || producto.activo !== false) return;
+
+      toast.warn(
+        ({ closeToast, toastProps }) => (
+          <ConfirmDeleteToast
+            closeToast={closeToast}
+            toastProps={toastProps}
+            message={`¿Deseas reactivar el producto "${producto.nombre}"? Volvera a estar disponible para nuevas operaciones.`}
+            onConfirm={async () => {
+              try {
+                await reactivarProducto(id);
+                fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
+              } catch (err) {
+                console.error("Error al reactivar producto:", err);
+                toast.error(
+                  `❌ Error al reactivar producto: ${
+                    err.message || "Error desconocido"
+                  }`
+                );
+              }
+            }}
+          />
+        ),
+        {
+          position: "top-center",
+          autoClose: false,
+          closeButton: false,
+          hideProgressBar: true,
+          closeOnClick: false,
+          draggable: false,
+          pauseOnHover: false,
+        }
+      );
+    },
+    [
+      productos,
+      reactivarProducto,
+      fetchProductos,
+      debouncedBusqueda,
+      page,
+      limit,
+      estadoFiltro,
     ]
   );
 
@@ -293,8 +370,6 @@ const GestionProductosPage = () => {
   }, []);
 
   const cargandoGeneral = cargandoProductos || cargandoMarcas || cargandoTipos;
-  const apiUrl = import.meta.env.VITE_API_URL;
-
   return (
     <div className="max-w-5xl p-6 mx-auto">
       <h1 className="text-2xl font-bold text-center text-indigo-700">
@@ -542,29 +617,25 @@ const GestionProductosPage = () => {
             />
             {productoActual.imagenUrl && (
               <img
-                src={productoActual.imagenUrl}
+                src={resolveProductoImageUrl(productoActual.imagenUrl)}
                 alt="Preview"
                 className="object-contain w-32 h-32 mt-2 border rounded"
               />
             )}
           </div>
 
-          {/* Activo */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="activo"
-              name="activo"
-              checked={productoActual.activo}
-              onChange={handleChange}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <label
-              htmlFor="activo"
-              className="text-sm font-medium text-gray-700"
-            >
-              Activo
-            </label>
+          {/* Estado */}
+          <div className="md:col-span-2">
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <span className="font-semibold text-slate-900">
+                Estado del producto:
+              </span>{" "}
+              {productoActual.activo ? "Activo" : "Inactivo"}
+              <p className="mt-1 text-xs text-slate-500">
+                El estado operativo del producto se administra desde las acciones
+                de la tabla mediante desactivacion o reactivacion.
+              </p>
+            </div>
           </div>
 
           {/* Botones */}
@@ -587,15 +658,30 @@ const GestionProductosPage = () => {
       </div>
 
       {/* Buscador */}
-      <div className="flex items-center gap-2 mb-4">
-        <FaSearch size={18} className="text-gray-500" />
-        <input
-          type="text"
-          placeholder="Buscar producto..."
-          value={busqueda}
-          name="gestion-productos-page-input-592" onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-        />
+      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="flex items-center gap-2">
+          <FaSearch size={18} className="text-gray-500" />
+          <input
+            type="text"
+            placeholder="Buscar producto..."
+            value={busqueda}
+            name="gestion-productos-page-input-592"
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <select
+          value={estadoFiltro}
+          onChange={(e) => {
+            setEstadoFiltro(e.target.value);
+            setPage(1);
+          }}
+          className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+        >
+          <option value="activos">Solo activos</option>
+          <option value="inactivos">Solo inactivos</option>
+          <option value="todos">Todos</option>
+        </select>
       </div>
 
       {/* Tabla de Productos */}
@@ -604,7 +690,7 @@ const GestionProductosPage = () => {
           <p className="p-6 text-center text-gray-500">Cargando productos...</p>
         ) : productos.length === 0 ? (
           <p className="p-6 text-center text-gray-500">
-            No hay productos registrados.
+            No hay productos registrados para el filtro actual.
           </p>
         ) : (
           <table className="w-full border-collapse table-auto">
@@ -617,12 +703,18 @@ const GestionProductosPage = () => {
                 <th className="px-4 py-2 border">Marca</th>
                 <th className="px-4 py-2 border">Valor referencial</th>
                 <th className="px-4 py-2 border">Stock</th>
+                <th className="px-4 py-2 border">Estado</th>
                 <th className="px-4 py-2 border">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {productos.map((producto, index) => (
-                <tr key={producto.id} className="text-center">
+                <tr
+                  key={producto.id}
+                  className={`text-center ${
+                    producto.activo === false ? "bg-slate-50 text-slate-500" : ""
+                  }`}
+                >
                   <td className="px-4 py-2 border">{desde + index}</td>
                   <td className="px-4 py-2 border">{producto.codigo}</td>
                   <td className="px-4 py-2 text-left border">
@@ -638,6 +730,17 @@ const GestionProductosPage = () => {
                     S/ {Number(producto.valorReferencial || 0).toFixed(2)}
                   </td>
                   <td className="px-4 py-2 border">{producto.stock}</td>
+                  <td className="px-4 py-2 border">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                        producto.activo === false
+                          ? "bg-slate-200 text-slate-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {producto.activo === false ? "Inactivo" : "Activo"}
+                    </span>
+                  </td>
                   <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
                     <button
                       onClick={() => handleVerDetalles(producto)}
@@ -645,18 +748,29 @@ const GestionProductosPage = () => {
                     >
                       <FaSearch className="w-4 h-5" />
                     </button>
-                    <button
-                      onClick={() => handleEditar(producto)}
-                      className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleEliminar(producto.id)}
-                      className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
-                    >
-                      Eliminar
-                    </button>
+                    {producto.activo === false ? (
+                      <button
+                        onClick={() => handleReactivar(producto.id)}
+                        className="px-2 py-1 text-sm font-semibold text-white bg-sky-600 rounded hover:bg-sky-700"
+                      >
+                        Reactivar
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditar(producto)}
+                          className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDesactivar(producto.id)}
+                          className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                        >
+                          Desactivar
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -695,19 +809,21 @@ const GestionProductosPage = () => {
       {/* Modal Detalle Producto */}
       <Modal
         isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Detalles del Producto"
-        className="relative w-11/12 p-6 mx-auto my-10 bg-white rounded-lg shadow-xl outline-none md:w-3/4 lg:w-1/2 xl:w-1/3 max-h-[80vh] overflow-y-auto"
-        overlayClassName="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
+        onClose={closeModal}
+        title={
+          productoEnDetalle
+            ? `Detalles de ${productoEnDetalle.nombre}`
+            : "Detalles del producto"
+        }
+        maxWidth="max-w-3xl"
+        overlayClassName="bg-gray-800 bg-opacity-75"
+        bodyClassName="px-6 pb-6 pt-6"
       >
         {productoEnDetalle && (
           <div className="flex flex-col items-center">
-            <h2 className="w-full pb-2 mb-4 text-2xl font-bold text-center text-gray-800 border-b-2 border-indigo-500">
-              Detalles de {productoEnDetalle.nombre}
-            </h2>
             {productoEnDetalle.imagenUrl ? (
               <img
-                src={`${apiUrl}${productoEnDetalle.imagenUrl}`}
+                src={resolveProductoImageUrl(productoEnDetalle.imagenUrl)}
                 alt={`Imagen de ${productoEnDetalle.nombre}`}
                 className="object-cover w-48 h-48 mb-4 rounded-lg shadow-md"
                 onError={(e) => {
@@ -751,8 +867,16 @@ const GestionProductosPage = () => {
                 {productoEnDetalle.tipoProducto?.nombre || "N/A"}
               </p>
               <p>
-                <strong className="font-semibold">Activo:</strong>{" "}
-                {productoEnDetalle.activo ? "Sí" : "No"}
+                <strong className="font-semibold">Estado:</strong>{" "}
+                <span
+                  className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                    productoEnDetalle.activo === false
+                      ? "bg-slate-200 text-slate-700"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {productoEnDetalle.activo === false ? "Inactivo" : "Activo"}
+                </span>
               </p>
               <p>
                 <strong className="font-semibold">Creado:</strong>{" "}

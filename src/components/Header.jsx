@@ -1,6 +1,5 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getPrimaryNavigationLinksEffective } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
 const Header = () => {
@@ -8,7 +7,6 @@ const Header = () => {
     isAuthenticated,
     logout,
     user,
-    identity,
     activeContext,
     availableContexts,
     contextSelectionRequired,
@@ -16,10 +14,45 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const headerElement = headerRef.current;
+    if (!headerElement || typeof document === "undefined") return undefined;
+
+    const root = document.documentElement;
+    const updateHeaderHeight = () => {
+      root.style.setProperty(
+        "--app-header-height",
+        `${headerElement.offsetHeight}px`
+      );
+    };
+
+    updateHeaderHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => updateHeaderHeight())
+        : null;
+
+    if (resizeObserver) {
+      resizeObserver.observe(headerElement);
+    } else {
+      window.addEventListener("resize", updateHeaderHeight);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", updateHeaderHeight);
+      }
+    };
+  }, [isMobileMenuOpen, isAuthenticated, activeContext, contextSelectionRequired]);
 
   const handleLogout = () => {
     logout();
@@ -31,10 +64,6 @@ const Header = () => {
   const primaryActionClasses =
     "rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20";
 
-  const publicLinks = [{ to: "/", label: "Inicio" }];
-  const navigationLinks = isAuthenticated
-    ? getPrimaryNavigationLinksEffective(user || {})
-    : publicLinks;
   const canChangeContext = isAuthenticated && availableContexts.length > 1;
   const shouldShowContextAction =
     isAuthenticated && (canChangeContext || !activeContext);
@@ -48,39 +77,70 @@ const Header = () => {
     : null;
   const summaryText = !isAuthenticated
     ? "Gestiona requerimientos, inventario y seguimiento logistico desde una sola plataforma."
-    : activeContext
-      ? [activeContext.displayName, contextSummary, identity?.cargo]
-          .filter(Boolean)
-          .join(" | ")
-      : contextSelectionRequired
-        ? "Seleccion de contexto pendiente"
-        : [identity?.cargo, identity?.areaNombre].filter(Boolean).join(" | ");
+    : contextSelectionRequired
+      ? "Seleccion de contexto pendiente"
+      : null;
 
   return (
     <Fragment>
-      <header className="bg-indigo-700 text-white shadow-md">
+      <header
+        ref={headerRef}
+        className="fixed inset-x-0 top-0 z-40 bg-indigo-700 text-white shadow-md"
+      >
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Link to="/" className="text-2xl font-bold">
-                InventarioApp
+            <div className="min-w-0 flex-1">
+              <Link
+                to="/"
+                className="inline-flex max-w-full items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-white/10"
+              >
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white shadow-lg shadow-indigo-900/20 sm:h-14 sm:w-14">
+                  <svg
+                    viewBox="0 0 64 64"
+                    className="h-8 w-8 sm:h-9 sm:w-9"
+                    aria-hidden="true"
+                    fill="none"
+                  >
+                    <rect x="8" y="12" width="24" height="18" rx="3" className="fill-white/90" />
+                    <rect x="20" y="34" width="20" height="14" rx="3" className="fill-indigo-100" />
+                    <path d="M34 24h11l7 8v10H34z" className="fill-white/90" />
+                    <circle cx="40" cy="46" r="4" className="fill-indigo-700" />
+                    <circle cx="49" cy="46" r="4" className="fill-indigo-700" />
+                    <path
+                      d="M14 21h12M14 39h10"
+                      stroke="rgb(67 56 202)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-xl font-bold leading-tight sm:text-2xl">
+                    LogisticaAPP
+                  </div>
+                  <div className="hidden text-xs uppercase tracking-[0.24em] text-indigo-100 sm:block">
+                    Operacion Logistica
+                  </div>
+                </div>
               </Link>
-              <p className="mt-1 hidden max-w-2xl text-sm text-indigo-100 md:block">
-                {isAuthenticated
-                  ? `Sesion activa${identity?.nombre ? `: ${identity.nombre}` : ""}${
-                      summaryText ? ` - ${summaryText}` : ""
-                    }`
-                  : summaryText}
-              </p>
+              {summaryText && (
+                <p className="mt-1 hidden max-w-2xl text-sm text-indigo-100 md:block">
+                  {summaryText}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
               <nav className="hidden items-center gap-2 md:flex">
-                {navigationLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className={commonLinkClasses}>
-                    {link.label}
+                <Link to="/" className={commonLinkClasses}>
+                  Inicio
+                </Link>
+
+                {isAuthenticated && (
+                  <Link to="/dashboard" className={commonLinkClasses}>
+                    Dashboard
                   </Link>
-                ))}
+                )}
 
                 {shouldShowContextAction && (
                   <Link to="/seleccionar-contexto" className={commonLinkClasses}>
@@ -132,21 +192,27 @@ const Header = () => {
               id="mobile-navigation"
               className="mt-4 rounded-xl border border-white/15 bg-indigo-800/80 p-3 md:hidden"
             >
-              <p className="border-b border-white/10 pb-3 text-sm text-indigo-100">
-                {isAuthenticated
-                  ? `${identity?.nombre || "Usuario"}${summaryText ? ` - ${summaryText}` : ""}`
-                  : "Accesos publicos y autenticados del sistema."}
-              </p>
-              <nav className="mt-3 flex flex-col gap-2">
-                {navigationLinks.map((link) => (
+              {summaryText && (
+                <p className="border-b border-white/10 pb-3 text-sm text-indigo-100">
+                  {summaryText}
+                </p>
+              )}
+              <nav className={summaryText ? "mt-3 flex flex-col gap-2" : "flex flex-col gap-2"}>
+                <Link
+                  to="/"
+                  className="rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10"
+                >
+                  Inicio
+                </Link>
+
+                {isAuthenticated && (
                   <Link
-                    key={link.to}
-                    to={link.to}
+                    to="/dashboard"
                     className="rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10"
                   >
-                    {link.label}
+                    Dashboard
                   </Link>
-                ))}
+                )}
 
                 {shouldShowContextAction && (
                   <Link

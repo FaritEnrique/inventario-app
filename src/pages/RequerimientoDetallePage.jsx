@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
+import PrintRequerimientoDocument from "../components/PrintRequerimientoDocument";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useRequerimientos from "../hooks/useRequerimientos";
@@ -174,6 +175,7 @@ const RequerimientoDetallePage = () => {
 
   return (
     <div className="mx-auto max-w-7xl p-6 print:p-0">
+      <div className="print:hidden">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Detalle de requerimiento</h1>
@@ -428,6 +430,12 @@ const RequerimientoDetallePage = () => {
           ))}
         </div>
       </div>
+      </div>
+      <PrintRequerimientoDocument
+        requerimiento={requerimiento}
+        signatures={signatures}
+        applicableApprovalLevels={signatureLevels}
+      />
     </div>
   );
 };

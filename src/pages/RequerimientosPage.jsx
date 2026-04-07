@@ -22,7 +22,8 @@ const initialFilters = {
 
 const RequerimientosPage = () => {
   const { user } = useAuth();
-  const { areas } = useAreas();
+  const canSelectArea = canSelectAreaRequerimientoEffective(user);
+  const { areas } = useAreas({ enabled: canSelectArea });
   const {
     requerimientos,
     fetchRequerimientos,
@@ -81,7 +82,7 @@ const RequerimientosPage = () => {
           placeholder="Buscar por codigo, item o solicitante"
           className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
         />
-        {canSelectAreaRequerimientoEffective(user) ? (
+        {canSelectArea ? (
           <select
             value={filters.areaId}
             name="requerimientos-page-select-80"

@@ -2,11 +2,12 @@
 import apiFetch from './apiFetch';
 
 const productosApi = {
-  getTodos: async (buscar = '', page = 1, limit = 10) => {
+  getTodos: async (buscar = '', page = 1, limit = 10, estado = 'activos') => {
     const params = new URLSearchParams();
     if (buscar) params.append('buscar', buscar);
     params.append('page', page);
     params.append('limit', limit);
+    if (estado) params.append('estado', estado);
 
     const res = await apiFetch(`productos?${params.toString()}`);
     return res ?? { productos: [], total: 0, page, limit };
@@ -42,9 +43,15 @@ const productosApi = {
     });
   },
 
-  eliminar: async (id) => {
-    return await apiFetch(`productos/${id}`, {
-      method: 'DELETE',
+  desactivar: async (id) => {
+    return await apiFetch(`productos/${id}/desactivar`, {
+      method: 'PATCH',
+    });
+  },
+
+  reactivar: async (id) => {
+    return await apiFetch(`productos/${id}/reactivar`, {
+      method: 'PATCH',
     });
   },
 };

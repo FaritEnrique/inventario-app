@@ -18,8 +18,10 @@ import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import {
-  canAccessAdministrationCatalogsEffective,
+  canAccessAreasManagementEffective,
   canAccessCotizacionesEffective,
+  canManageCatalogMasterEffective,
+  canAccessProveedorManagementEffective,
   canApprovePedidoInternoEffective,
   canCreatePedidoInternoEffective,
   canOperateInventoryEffective,
@@ -153,7 +155,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-productos"
               element={
-                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
                   <GestionProductosPage />
                 </RoutePermissionGuard>
               }
@@ -161,7 +163,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-marcas"
               element={
-                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
                   <GestionMarcasPage />
                 </RoutePermissionGuard>
               }
@@ -170,7 +172,7 @@ const AppRoutes = () => {
               path="gestion-tipo-producto"
               element={
                 <RoutePermissionGuard
-                  allow={canAccessAdministrationCatalogsEffective}
+                  allow={canManageCatalogMasterEffective}
                 >
                   <GestionTipoProductosPage />
                 </RoutePermissionGuard>
@@ -179,7 +181,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-areas"
               element={
-                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                <RoutePermissionGuard allow={canAccessAreasManagementEffective}>
                   <GestionAreasPage />
                 </RoutePermissionGuard>
               }
@@ -195,14 +197,18 @@ const AppRoutes = () => {
             <Route
               path="gestion-proveedores"
               element={
-                <RoutePermissionGuard allow={canAccessAdministrationCatalogsEffective}>
+                <RoutePermissionGuard allow={canAccessProveedorManagementEffective}>
                   <GestionProveedoresPage />
                 </RoutePermissionGuard>
               }
             />
             <Route
               path="solicitudes-tipo-producto"
-              element={<BandejaSolicitudesTipoProductoPage />}
+              element={
+                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                  <BandejaSolicitudesTipoProductoPage />
+                </RoutePermissionGuard>
+              }
             />
             <Route
               path="cotizaciones"

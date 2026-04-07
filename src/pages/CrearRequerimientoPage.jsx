@@ -1,13 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Modal from "react-modal";
+import Modal from "../components/Modal";
 import RequerimientoForm from "../components/RequerimientoForm";
 import { useAuth } from "../context/authContext";
-import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
-import { canSelectAreaRequerimientoEffective } from "../accessRules";
-
-Modal.setAppElement("#root");
 
 const FeedbackModal = ({ isOpen, feedback, onClose }) => {
   if (!feedback) return null;
@@ -17,10 +13,12 @@ const FeedbackModal = ({ isOpen, feedback, onClose }) => {
   return (
     <Modal
       isOpen={isOpen}
-      onRequestClose={onClose}
-      contentLabel="Resultado del requerimiento"
-      className="relative mx-auto mt-24 w-11/12 max-w-md rounded-xl bg-white p-6 shadow-xl outline-none"
-      overlayClassName="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4"
+      onClose={onClose}
+      maxWidth="max-w-md"
+      overlayClassName="items-start bg-black/40"
+      panelClassName="mt-24 rounded-xl shadow-xl"
+      bodyClassName="p-6"
+      showCloseButton={false}
     >
       <div className="space-y-4">
         <div>
@@ -65,7 +63,6 @@ const FeedbackModal = ({ isOpen, feedback, onClose }) => {
 const CrearRequerimientoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { areas } = useAreas();
   const { prioridades, crearRequerimiento, buscarCatalogoProductos } = useRequerimientos();
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -110,11 +107,21 @@ const CrearRequerimientoPage = () => {
 
   const initialData = useMemo(
     () => ({
-      areaId: canSelectAreaRequerimientoEffective(user) ? "" : user?.areaId,
+      areaId: user?.areaId,
       prioridad: prioridades[0] || "Normal",
     }),
     [prioridades, user]
   );
+
+  const contextualAreaLabel = useMemo(() => {
+    const areaNombre = user?.areaNombre || user?.area?.nombre || "";
+    const branchDescription =
+      user?.activeContext?.branchDescription || user?.area?.branchDescription || "";
+
+    return branchDescription
+      ? `${areaNombre} - ${branchDescription}`
+      : areaNombre;
+  }, [user]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -128,9 +135,9 @@ const CrearRequerimientoPage = () => {
 
       <RequerimientoForm
         initialData={initialData}
-        areas={areas}
         prioridades={prioridades.length ? prioridades : ["Normal", "Urgente", "Emergencia"]}
-        allowAreaSelection={canSelectAreaRequerimientoEffective(user)}
+        lockAreaToContext
+        contextualAreaLabel={contextualAreaLabel}
         buscarCatalogoProductos={buscarCatalogoProductos}
         onSubmit={handleSubmit}
         submitting={submitting}
