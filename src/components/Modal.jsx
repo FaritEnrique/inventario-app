@@ -1,25 +1,89 @@
 // src/components/Modal.jsx
-import React from "react";
+import React, { useEffect, useId } from "react";
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md" }) => {
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  maxWidth = "max-w-md",
+  overlayClassName = "",
+  panelClassName = "",
+  headerClassName = "",
+  titleClassName = "",
+  bodyClassName = "",
+  showCloseButton = true,
+  closeOnBackdrop = true,
+}) => {
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose?.();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center w-full h-full p-4 overflow-y-auto bg-gray-600 bg-opacity-50">
+    <div
+      className={`fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-gray-600 bg-opacity-50 p-4 ${overlayClassName}`}
+      onClick={() => {
+        if (closeOnBackdrop) {
+          onClose?.();
+        }
+      }}
+    >
       <div
-        className={`relative mx-auto border shadow-lg rounded-md bg-white w-full ${maxWidth}`}
+        className={`relative mx-auto w-full rounded-md border bg-white shadow-lg ${maxWidth} ${panelClassName}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-3xl font-light leading-none text-gray-500 hover:text-gray-800"
+        {title || showCloseButton ? (
+          <div
+            className={`flex items-center justify-between border-b p-4 ${headerClassName}`}
           >
-            &times;
-          </button>
+            {title ? (
+              <h3
+                id={titleId}
+                className={`text-lg font-bold text-gray-800 ${titleClassName}`}
+              >
+                {title}
+              </h3>
+            ) : (
+              <span />
+            )}
+            {showCloseButton ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-3xl font-light leading-none text-gray-500 hover:text-gray-800"
+                aria-label="Cerrar modal"
+              >
+                &times;
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        <div
+          className={`max-h-[80vh] overflow-y-auto px-4 pb-4 ${
+            title || showCloseButton ? "pt-6" : "p-6"
+          } ${bodyClassName}`}
+        >
+          {children}
         </div>
-        {/* Espacio adicional en la parte superior del contenido */}
-        <div className="px-4 pt-6 pb-4 overflow-y-auto max-h-[80vh]">{children}</div>
       </div>
     </div>
   );

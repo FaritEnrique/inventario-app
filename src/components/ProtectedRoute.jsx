@@ -1,27 +1,6 @@
-﻿import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import Modal from "react-modal";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-
-Modal.setAppElement("#root");
-
-const customStyles = {
-  content: {
-    top: "50%",
-    left: "50%",
-    right: "auto",
-    bottom: "auto",
-    marginRight: "-50%",
-    transform: "translate(-50%, -50%)",
-    width: "min(420px, calc(100vw - 2rem))",
-    maxWidth: "calc(100vw - 2rem)",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-  },
-};
+import Modal from "./Modal";
 
 const PATHS_ALLOWED_WITHOUT_ACTIVE_CONTEXT = new Set([
   "/seleccionar-contexto",
@@ -45,11 +24,10 @@ const ProtectedRoute = () => {
     return (
       <Modal
         isOpen
-        onRequestClose={() => navigate("/login")}
-        style={customStyles}
-        contentLabel="Usuario no validado"
+        onClose={() => navigate("/login")}
+        title="Acceso denegado"
+        maxWidth="max-w-md"
       >
-        <h3 className="mb-4 text-xl font-bold">Acceso denegado</h3>
         <p className="text-gray-700">
           Solo los usuarios activos y autorizados pueden ingresar a la plataforma.
         </p>

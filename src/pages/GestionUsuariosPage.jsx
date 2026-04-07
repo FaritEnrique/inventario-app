@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useState } from "react";
-import Modal from "react-modal";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
+import Modal from "../components/Modal";
 import UsuarioForm from "../components/UsuarioForm";
 import { useAuth } from "../context/authContext";
 import useDebounce from "../hooks/useDebounce";
@@ -13,8 +14,6 @@ import {
   canEditUsersEffective,
   canToggleUserStatusEffective,
 } from "../accessRules";
-
-Modal.setAppElement("#root");
 
 const getUserErrorMessage = (error, fallbackMessage) => {
   if (Array.isArray(error?.validationErrors) && error.validationErrors.length) {
@@ -184,13 +183,56 @@ const GestionUsuariosPage = () => {
     <div className="p-6">
       <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Solo <code>ADMINISTRADOR_SISTEMA</code> y <code>GERENTE_ADMINISTRACION</code>
-        {" "}pueden crear, editar y cambiar el estado de usuarios.
+        Solo <code>ADMINISTRADOR_SISTEMA</code> y{" "}
+        <code>GERENTE_ADMINISTRACION</code> pueden crear, editar y cambiar el
+        estado de usuarios.
       </div>
       <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-        Esta vista distingue entre <strong>rol principal</strong>, <strong>rangos adicionales</strong>
-        {" "}y <strong>asignaciones operativas explicitas</strong>. Las asignaciones operativas ya no deben inferirse desde la estructura de areas.
+        Esta vista distingue entre <strong>rol principal</strong>,{" "}
+        <strong>rangos adicionales</strong> y{" "}
+        <strong>asignaciones operativas explicitas</strong>. Las asignaciones
+        operativas ya no deben inferirse desde la estructura de areas.
       </div>
+
+      <Link
+        to="/gestion-areas"
+        className="mb-6 flex w-full flex-col gap-4 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-cyan-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center md:justify-between"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-6 w-6"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v6" />
+              <path d="M5 21v-4a2 2 0 0 1 2-2h3" />
+              <path d="M19 21v-4a2 2 0 0 0-2-2h-3" />
+              <path d="M7 7h10" />
+              <path d="M12 13v8" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-slate-900">
+              Configurar areas para usuarios
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Si el usuario que vas a crear o editar todavia no tiene un area
+              definida, crea o ajusta primero la unidad organizacional para
+              poder asignarla correctamente.
+            </p>
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-2 self-start rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 md:self-center">
+          Ir a Gestion de Areas
+          <span aria-hidden="true">→</span>
+        </div>
+      </Link>
 
       {canCreate ? (
         <div className="mb-6">
@@ -236,7 +278,10 @@ const GestionUsuariosPage = () => {
           <ul className="space-y-2">
             {usuarios.map((user) => {
               const rangosAdicionales = formatUserRangos(user, areas);
-              const asignacionesOperativas = formatOperationalAssignments(user, areas);
+              const asignacionesOperativas = formatOperationalAssignments(
+                user,
+                areas
+              );
 
               return (
                 <li
@@ -312,7 +357,10 @@ const GestionUsuariosPage = () => {
                         user.activo ? (
                           <button
                             onClick={() =>
-                              handleDeactivate(user.id, user.name || user.nombre)
+                              handleDeactivate(
+                                user.id,
+                                user.name || user.nombre
+                              )
                             }
                             className="rounded bg-red-500 px-4 py-2 text-white"
                           >
@@ -321,7 +369,10 @@ const GestionUsuariosPage = () => {
                         ) : (
                           <button
                             onClick={() =>
-                              handleReactivate(user.id, user.name || user.nombre)
+                              handleReactivate(
+                                user.id,
+                                user.name || user.nombre
+                              )
                             }
                             className="rounded bg-blue-600 px-4 py-2 text-white"
                           >
@@ -361,12 +412,14 @@ const GestionUsuariosPage = () => {
       {usuarioAEditar && canEdit ? (
         <Modal
           isOpen={isModalOpen}
-          onRequestClose={() => setIsModalOpen(false)}
-          style={{ content: { width: "720px", maxWidth: "95vw", margin: "auto" } }}
+          onClose={() => setIsModalOpen(false)}
+          title="Editar Usuario"
+          maxWidth="max-w-[720px]"
         >
-          <h3 className="mb-4 text-xl font-bold">Editar Usuario</h3>
           <div className="mb-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
-            Este formulario sigue administrando el rol principal y los rangos adicionales. Las asignaciones operativas explicitas quedaron separadas de la estructura y se gestionaran en un paso posterior.
+            Este formulario sigue administrando el rol principal y los rangos
+            adicionales. Las asignaciones operativas explicitas quedaron
+            separadas de la estructura y se gestionaran en un paso posterior.
           </div>
           <UsuarioForm
             initialValues={{

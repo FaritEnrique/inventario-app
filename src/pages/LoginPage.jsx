@@ -4,9 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../context/authContext";
-import Modal from "react-modal";
-
-Modal.setAppElement("#root");
+import Modal from "../components/Modal";
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -44,24 +42,6 @@ const LoginPage = () => {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
-  };
-
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      width: "400px",
-      padding: "20px",
-      borderRadius: "8px",
-      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    },
-    overlay: {
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
-    },
   };
 
   return (
@@ -142,11 +122,10 @@ const LoginPage = () => {
 
       <Modal
         isOpen={isErrorModalOpen}
-        onRequestClose={() => setIsErrorModalOpen(false)}
-        style={customStyles}
-        contentLabel="Error de credenciales"
+        onClose={() => setIsErrorModalOpen(false)}
+        title="Error de credenciales"
+        maxWidth="max-w-md"
       >
-        <h3 className="mb-4 text-xl font-bold">Error de credenciales</h3>
         <p className="text-gray-700">
           El usuario o la contrasena que estas ingresando no coincide con la que esta almacenada en la base de datos para ese usuario. Solo pueden acceder a la plataforma usuarios autorizados.
         </p>

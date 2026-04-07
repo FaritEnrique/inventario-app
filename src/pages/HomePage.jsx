@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiFetch from "../api/apiFetch";
@@ -77,7 +77,7 @@ const HomePage = () => {
       });
 
       toast.success(
-        "Usuario administrador creado con éxito. Por favor, inicia sesión."
+        "Usuario administrador creado con exito. Por favor, inicia sesion.",
       );
       navigate("/login");
     } catch (error) {
@@ -127,7 +127,7 @@ const HomePage = () => {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Correo electrónico
+                Correo electronico
               </label>
               <input
                 id="email"
@@ -161,7 +161,7 @@ const HomePage = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Contraseña
+                Contrasena
               </label>
               <div className="relative mt-1">
                 <input
@@ -198,15 +198,15 @@ const HomePage = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-white p-8 text-center shadow-lg">
         <h1 className="mb-4 text-4xl font-bold text-blue-700">
-          Bienvenido al Sistema de Inventario
+          Bienvenido al Sistema Logistico
         </h1>
         <p className="mb-6 text-lg text-gray-600">
-          Gestiona tus productos, controla tu stock y mantén tu negocio
-          organizado en todo momento.
+          Centraliza requerimientos, notas de pedido, compras, inventario y
+          seguimiento operativo desde una sola plataforma logistica.
         </p>
         <img
-          src="/images/ImagenInventario.png"
-          alt="Inventario"
+          src="/images/Gestion_logistica.webp"
+          alt="Sistema logistico"
           className="mx-auto mb-6 w-96 rounded-lg object-cover shadow-md"
         />
         <Link

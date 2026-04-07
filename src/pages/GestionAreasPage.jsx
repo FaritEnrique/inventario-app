@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import { FaMoon, FaSun } from "react-icons/fa";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
+import Modal from "../components/Modal";
 import useAreas from "../hooks/useAreas";
 import areasApi from "../api/areasApi";
 import "react-toastify/dist/ReactToastify.css";
@@ -65,6 +66,11 @@ const formatUserLabel = (user) => {
   return `${user.nombre}${mainRole}`;
 };
 
+const hasAdminSistemaLinked = (area) =>
+  area?.responsable?.rol === "ADMINISTRADOR_SISTEMA" ||
+  (Array.isArray(area?.adscritos) &&
+    area.adscritos.some((user) => user?.rol === "ADMINISTRADOR_SISTEMA"));
+
 const GestionAreasPage = () => {
   const { areas, fetchAreas, createArea, updateArea, deleteArea, cargando } =
     useAreas();
@@ -73,6 +79,8 @@ const GestionAreasPage = () => {
   const [formData, setFormData] = useState(createEmptyForm);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
+  const [blockedEditAreaName, setBlockedEditAreaName] = useState("");
+  const [isBlockedEditModalOpen, setIsBlockedEditModalOpen] = useState(false);
   const [isDarkModeLocal, setIsDarkModeLocal] = useState(() => {
     const localTheme = localStorage.getItem("area-theme");
     return localTheme === "dark";
@@ -214,6 +222,16 @@ const GestionAreasPage = () => {
     setEditingId(area.id);
   };
 
+  const handleEditIntent = (area) => {
+    if (hasAdminSistemaLinked(area)) {
+      setBlockedEditAreaName(area.nombre || "esta unidad");
+      setIsBlockedEditModalOpen(true);
+      return;
+    }
+
+    handleEdit(area);
+  };
+
   const handleDelete = (id, nombre) => {
     toast(
       ({ closeToast }) => (
@@ -350,6 +368,13 @@ const GestionAreasPage = () => {
             </option>
           ))}
         </select>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 md:col-span-2 xl:col-span-3">
+          El tipo de unidad define el responsable estructural esperado para la
+          unidad. Esta relacion no aplica para
+          <span className="font-semibold"> ADMINISTRADOR_SISTEMA</span>, porque
+          ese rol no se usa como responsable principal de unidad.
+        </div>
 
         <div className="flex items-center gap-2">
           <button
@@ -525,7 +550,7 @@ const GestionAreasPage = () => {
                     </td>
                     <td className="space-x-3 px-4 py-4 text-center text-sm font-medium">
                       <button
-                        onClick={() => handleEdit(area)}
+                        onClick={() => handleEditIntent(area)}
                         className="font-bold text-blue-600 transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                         aria-label={`Editar ${area.nombre}`}
                       >
@@ -557,6 +582,35 @@ const GestionAreasPage = () => {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        isOpen={isBlockedEditModalOpen}
+        onClose={() => setIsBlockedEditModalOpen(false)}
+        title="Edicion no disponible"
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-4 text-sm text-slate-700">
+          <p>
+            La unidad <span className="font-semibold">{blockedEditAreaName}</span>{" "}
+            tiene un usuario con rol
+            <span className="font-semibold"> ADMINISTRADOR_SISTEMA</span>{" "}
+            asociado.
+          </p>
+          <p>
+            Esa configuracion no se edita desde Gestion de Areas, porque ese rol
+            no aplica como responsable estructural de unidad.
+          </p>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsBlockedEditModalOpen(false)}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
