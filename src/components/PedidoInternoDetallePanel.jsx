@@ -6,11 +6,25 @@ const formatDate = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
 const formatNumber = (value) => Number(value || 0);
+const formatHistoryEventLabel = (value) =>
+  ({
+    CREACION: "Creacion",
+    AUTOAPROBACION: "Autoaprobacion",
+    APROBACION: "Aprobacion",
+    RECHAZO: "Rechazo",
+    RESERVA_GENERADA: "Reserva generada",
+    ATENCION_OPERATIVA: "Atencion operativa",
+  }[value] || value || "-");
 
 const PedidoInternoDetallePanel = ({ pedido }) => {
   if (!pedido) return null;
 
   const snapshotFormal = pedido.snapshotFormal || {};
+  const historial = Array.isArray(pedido.historial)
+    ? pedido.historial
+    : Array.isArray(pedido.historialAprobacion)
+      ? pedido.historialAprobacion
+      : [];
   const aprobadorSnapshotLabel =
     snapshotFormal.aprobadorPendienteActualNombreSnapshot ||
     snapshotFormal.aprobadorEfectivoNombreSnapshot ||
@@ -265,6 +279,56 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
             </div>
           )}
         </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <h3 className="mb-3 text-lg font-semibold text-slate-900">
+          Historial del pedido
+        </h3>
+        {historial.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Aun no hay historial persistido visible para este pedido.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {historial.map((entry) => (
+              <div
+                key={entry.id}
+                className="rounded-md border border-slate-200 p-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {formatHistoryEventLabel(entry.tipoEvento)}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {entry.nivel || "-"} - {entry.estadoResultante || "-"}
+                    </p>
+                  </div>
+                  <span className="text-xs text-slate-500">
+                    {formatDate(entry.fechaAccion)}
+                  </span>
+                </div>
+                <div className="mt-2 grid gap-1 text-slate-600">
+                  <p>Actor: {entry.actor?.nombre || "Sistema"}</p>
+                  <p>
+                    Contexto: {entry.detalle?.actorContextKey || "-"} - Area:{" "}
+                    {entry.detalle?.actorAreaName || "-"}
+                  </p>
+                  {entry.comentario ? <p>{entry.comentario}</p> : null}
+                  {entry.detalle?.notaSalidaCodigo ? (
+                    <p>
+                      Nota de salida relacionada: {entry.detalle.notaSalidaCodigo}
+                    </p>
+                  ) : null}
+                  {entry.detalle?.reservasCount ? (
+                    <p>Reservas generadas: {entry.detalle.reservasCount}</p>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

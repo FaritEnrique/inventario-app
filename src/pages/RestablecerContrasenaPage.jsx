@@ -4,6 +4,10 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiFetch from "../api/apiFetch";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  isPasswordPolicyValid,
+  PASSWORD_POLICY_MESSAGE,
+} from "../constants/passwordPolicy";
 
 const RestablecerContrasenaPage = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +32,11 @@ const RestablecerContrasenaPage = () => {
 
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden.");
+      return;
+    }
+
+    if (!isPasswordPolicyValid(password)) {
+      toast.error(PASSWORD_POLICY_MESSAGE);
       return;
     }
 
@@ -94,6 +103,7 @@ const RestablecerContrasenaPage = () => {
               onChange={(event) => setPassword(event.target.value)}
               required
             />
+            <p className="mt-1 text-xs text-gray-500">{PASSWORD_POLICY_MESSAGE}</p>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}

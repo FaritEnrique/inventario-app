@@ -55,6 +55,9 @@ const GestionProductosPage = lazy(() => import("./pages/GestionProductosPage"));
 const GestionProveedoresPage = lazy(() =>
   import("./pages/GestionProveedoresPage")
 );
+const ConfiguracionEmpresaPage = lazy(() =>
+  import("./pages/ConfiguracionEmpresaPage")
+);
 const BandejaSolicitudesTipoProductoPage = lazy(() =>
   import("./pages/BandejaSolicitudesTipoProductoPage")
 );
@@ -203,6 +206,14 @@ const AppRoutes = () => {
               }
             />
             <Route
+              path="configuracion-empresa"
+              element={
+                <RoutePermissionGuard allow={canAccessUserManagementEffective}>
+                  <ConfiguracionEmpresaPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
               path="solicitudes-tipo-producto"
               element={
                 <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
@@ -213,7 +224,10 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones"
               element={
-                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
+                <RoutePermissionGuard
+                  allow={canAccessCotizacionesEffective}
+                  contextGate="logistica-access"
+                >
                   <CotizacionesPage />
                 </RoutePermissionGuard>
               }
@@ -221,7 +235,10 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones/bandeja/jefatura"
               element={
-                <RoutePermissionGuard allow={canViewAllCotizacionesLogisticaEffective}>
+                <RoutePermissionGuard
+                  allow={canViewAllCotizacionesLogisticaEffective}
+                  contextGate="logistica-jefatura"
+                >
                   <CotizacionesBandejaPage tipo="jefatura" />
                 </RoutePermissionGuard>
               }
@@ -234,6 +251,7 @@ const AppRoutes = () => {
                     isLogisticaOperadorEffective(user) ||
                     hasRole(user, "ADMINISTRADOR_SISTEMA")
                   }
+                  contextGate="logistica-operador"
                 >
                   <CotizacionesBandejaPage tipo="operador" />
                 </RoutePermissionGuard>

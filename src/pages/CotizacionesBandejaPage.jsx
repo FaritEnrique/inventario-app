@@ -1,23 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
-import { canAssignCotizacionesLogisticaEffective } from "../accessRules";
+import {
+  canAssignCotizacionesLogisticaEffective,
+  hasLogisticaJefaturaContext,
+  hasLogisticaOperadorContext,
+  isLogisticaContext,
+} from "../accessRules";
 import { useAuth } from "../context/authContext";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 
 const titles = {
-  jefatura: "Bandeja de Jefatura de Logistica",
+  jefatura: "Bandeja Operativa de Logistica",
   operador: "Bandeja de Operador de Logistica",
 };
 
 const subtitles = {
   jefatura:
-    "Supervisa requerimientos aprobados, asigna responsables, define el flujo logistico y emite solicitudes de cotizacion.",
+    "Supervisa requerimientos habilitados para atencion logistica, asigna responsables, define el flujo logistico y activa la atencion operativa.",
   operador:
     "Trabaja solo los expedientes logisticos que tienes asignados y dejalos listos para decision de jefatura.",
 };
@@ -25,6 +30,25 @@ const subtitles = {
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "-";
+const getAprobacionChipClass = (item) => {
+  if (item?.pendienteGerenciaGeneral) {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  if (item?.aprobacionDocumentalFinal) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
+
+const getAprobacionChipLabel = (item) => {
+  if (item?.pendienteGerenciaGeneral) {
+    return "Pendiente GG";
+  }
+  if (item?.aprobacionDocumentalFinal) {
+    return "Aprobacion final";
+  }
+  return "Habilitado para logistica";
+};
 
 const createFlowDraft = (item) => ({
   modalidadFlujoLogistico: item?.modalidadFlujoLogistico || "",
@@ -32,9 +56,8 @@ const createFlowDraft = (item) => ({
   justificacionFlujoExcepcional: item?.justificacionFlujoExcepcional || "",
 });
 
-const createSolicitudDraft = (requerimientoId, elaboradorId) => ({
+const createSolicitudDraft = (requerimientoId) => ({
   requerimientoId,
-  elaboradorId,
   proveedorId: "",
   cuerpoSolicitud: "",
   estado: "Creada",
@@ -42,7 +65,9 @@ const createSolicitudDraft = (requerimientoId, elaboradorId) => ({
 });
 
 const CotizacionesBandejaPage = ({ tipo }) => {
-  const { user } = useAuth();
+  const { user, activeContext, availableContexts } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     cargando,
     error,
@@ -57,6 +82,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   const [items, setItems] = useState([]);
   const [operadores, setOperadores] = useState([]);
+  const [contextError, setContextError] = useState(null);
   const [search, setSearch] = useState("");
   const [estadoLogistica, setEstadoLogistica] = useState("");
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
@@ -68,29 +94,61 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   const canAssign =
     canAssignCotizacionesLogisticaEffective(user) && tipo === "jefatura";
+  const hasJefaturaContext = hasLogisticaJefaturaContext(availableContexts);
+  const hasOperadorContext = hasLogisticaOperadorContext(availableContexts);
+  const hasCompatibleLogisticaContext =
+    tipo === "jefatura" ? hasJefaturaContext : hasOperadorContext;
+  const activeContextLabel = activeContext?.displayName || "-";
+  const activeContextIsLogistica = isLogisticaContext(activeContext || {});
+
+  const handleChangeContext = () => {
+    navigate("/seleccionar-contexto", {
+      replace: true,
+      state: {
+        from: location,
+        reason: "CONTEXT_INCOMPATIBLE",
+        expectedContext: tipo === "jefatura" ? "logistica-jefatura" : "logistica-operador",
+      },
+    });
+  };
 
   const load = async () => {
-    const response = await obtenerBandeja(tipo, {
-      search,
-      estadoLogistica,
-    });
-    const data = Array.isArray(response?.data) ? response.data : [];
-    setItems(data);
-    setSeleccionOperadores((prev) => {
-      const next = { ...prev };
-      data.forEach((item) => {
-        next[item.id] =
-          next[item.id] || String(item.responsableLogisticaId || "");
+    try {
+      const response = await obtenerBandeja(tipo, {
+        search,
+        estadoLogistica,
       });
-      return next;
-    });
-    setFlowDrafts((prev) => {
-      const next = { ...prev };
-      data.forEach((item) => {
-        next[item.id] = next[item.id] || createFlowDraft(item);
+      const data = Array.isArray(response?.data) ? response.data : [];
+      setItems(data);
+      setContextError(null);
+      setSeleccionOperadores((prev) => {
+        const next = { ...prev };
+        data.forEach((item) => {
+          next[item.id] =
+            next[item.id] || String(item.responsableLogisticaId || "");
+        });
+        return next;
       });
-      return next;
-    });
+      setFlowDrafts((prev) => {
+        const next = { ...prev };
+        data.forEach((item) => {
+          next[item.id] = next[item.id] || createFlowDraft(item);
+        });
+        return next;
+      });
+    } catch (err) {
+      const status = err?.response?.status || null;
+      if (status === 403) {
+        setContextError({
+          status,
+          message:
+            err?.message ||
+            "No tienes acceso a esta bandeja con el contexto activo actual.",
+        });
+      } else {
+        setContextError(null);
+      }
+    }
   };
 
   useEffect(() => {
@@ -218,6 +276,52 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </Link>
       </div>
 
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Contexto activo
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {activeContextLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleChangeContext}
+            className="rounded border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Cambiar contexto
+          </button>
+        </div>
+      </div>
+
+      {!activeContextIsLogistica && hasCompatibleLogisticaContext ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+          <p className="font-semibold">
+            El contexto activo actual no corresponde a Logistica.
+          </p>
+          <p className="mt-1 text-amber-800">
+            Para continuar en esta bandeja, cambia al contexto de Logistica.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleChangeContext}
+              className="rounded bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
+            >
+              Cambiar a contexto de Logistica
+            </button>
+            <Link
+              to="/dashboard"
+              className="rounded border border-amber-300 px-4 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+            >
+              Volver al dashboard
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -283,7 +387,42 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="space-y-4">
-        {items.length > 0 ? (
+        {contextError ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+            <p className="font-semibold">
+              No tienes acceso a esta bandeja con el contexto activo actual.
+            </p>
+            <p className="mt-1 text-amber-800">
+              Contexto activo: {activeContextLabel}
+            </p>
+            {hasCompatibleLogisticaContext ? (
+              <p className="mt-2 text-amber-800">
+                Tienes un contexto compatible disponible para Logistica.
+              </p>
+            ) : (
+              <p className="mt-2 text-amber-800">
+                No tienes un contexto operativo autorizado para el modulo logistico.
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {hasCompatibleLogisticaContext ? (
+                <button
+                  type="button"
+                  onClick={handleChangeContext}
+                  className="rounded bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
+                >
+                  Ir a seleccionar contexto
+                </button>
+              ) : null}
+              <Link
+                to="/dashboard"
+                className="rounded border border-amber-300 px-4 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+              >
+                Volver al dashboard
+              </Link>
+            </div>
+          </div>
+        ) : items.length > 0 ? (
           items.map((item) => {
             const flowDraft = flowDrafts[item.id] || createFlowDraft(item);
             const blocked = ["ADJUDICADO", "OC_GENERADA"].includes(
@@ -324,6 +463,20 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                       estado={item.estadoLogistica}
                       tipo="logistica"
                     />
+                    <div className="mt-2 flex flex-wrap justify-end gap-2">
+                      {item.habilitadoLogistica ? (
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                          Habilitado para logistica
+                        </span>
+                      ) : null}
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getAprobacionChipClass(
+                          item
+                        )}`}
+                      >
+                        {getAprobacionChipLabel(item)}
+                      </span>
+                    </div>
                     <p className="mt-2 text-sm font-medium text-gray-700">
                       {formatCurrency(item.totalReferencial)}
                     </p>
@@ -411,6 +564,12 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     </p>
                   </div>
                 </div>
+
+                {item.pendienteGerenciaGeneral ? (
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                    El expediente ya puede trabajarse en logistica, pero la aprobacion documental final aun depende de Gerencia General. La decision final y la orden de compra permanecen bloqueadas.
+                  </div>
+                ) : null}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
@@ -612,10 +771,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                 {expandedSolicitudId === item.id ? (
                   <div className="mt-4">
                     <SolicitudCotizacionForm
-                      initialData={createSolicitudDraft(
-                        item.id,
-                        user?.id || null
-                      )}
+                      initialData={createSolicitudDraft(item.id)}
                       proveedores={proveedores.filter(
                         (proveedor) => proveedor.activo !== false
                       )}

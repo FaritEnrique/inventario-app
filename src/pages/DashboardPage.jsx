@@ -198,6 +198,14 @@ const baseCards = [
     visible: ({ user }) => canAccessProveedorManagementEffective(user),
   },
   {
+    title: "Configuracion de Empresa",
+    description:
+      "Actualizar identidad institucional, logo y pie documental para la emision formal de solicitudes.",
+    icon: <FaRegAddressCard />,
+    path: "/configuracion-empresa",
+    visible: ({ user }) => canAccessUserManagementEffective(user),
+  },
+  {
     title: "Gestion de Usuarios",
     description:
       "Administrar usuarios, rangos y asignaciones operativas del sistema.",

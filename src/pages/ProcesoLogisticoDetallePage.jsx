@@ -118,11 +118,10 @@ const getComparativoDecisionMeta = (comparativo) => {
   };
 };
 
-const buildSolicitudDraft = (solicitud, elaboradorIdFallback) => ({
+const buildSolicitudDraft = (solicitud) => ({
   id: solicitud.id,
   proveedorId: solicitud.proveedorId || solicitud.proveedor?.id,
   requerimientoId: solicitud.requerimientoId,
-  elaboradorId: solicitud.elaboradorId || solicitud.elaborador?.id || elaboradorIdFallback,
   cuerpoSolicitud: solicitud.cuerpoSolicitud || "",
   estado: solicitud.estado,
   items: Array.isArray(solicitud.items)
@@ -138,8 +137,10 @@ const buildCotizacionDraft = (cotizacion) => ({
   estado: cotizacion.estado,
   garantia: cotizacion.garantia || "",
   tiempoEntregaDias: cotizacion.tiempoEntregaDias,
+  vigenciaOfertaDias: cotizacion.vigenciaOfertaDias,
   lugarEntrega: cotizacion.lugarEntrega || "",
   formaPago: cotizacion.formaPago || "",
+  observaciones: cotizacion.observaciones || "",
   items: Array.isArray(cotizacion.items)
     ? cotizacion.items.map((item) => ({
         itemRequerimientoId: item.itemRequerimientoId,
@@ -156,8 +157,10 @@ const createCotizacionDraftFromSolicitud = (solicitud) => ({
   estado: "Pendiente",
   garantia: "",
   tiempoEntregaDias: "",
+  vigenciaOfertaDias: "",
   lugarEntrega: "",
   formaPago: "",
+  observaciones: "",
   items: Array.isArray(solicitud?.items)
     ? solicitud.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
@@ -225,6 +228,16 @@ const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
     };
   }
 
+  if (detalle?.pendienteGerenciaGeneral) {
+    return {
+      title: "Paso 4: esperar aprobacion final",
+      description:
+        "Logistica ya puede preparar el expediente, pero la aprobacion final del comparativo y la orden de compra siguen bloqueadas mientras Gerencia General este pendiente.",
+      sectionId: "control-logistico",
+      cta: "Ir a control logistico",
+    };
+  }
+
   if (comparativo.estadoDocumento !== "APROBADO" && canAdjudicate) {
     return {
       title: "Paso 4: aprobar comparativo",
@@ -259,6 +272,7 @@ const ProcesoLogisticoDetallePage = () => {
     obtenerDetalle,
     definirFlujo,
     obtenerComparativo,
+    obtenerComparativoPdfUrl,
     obtenerOperadores,
     asignar,
     iniciar,
@@ -282,6 +296,7 @@ const ProcesoLogisticoDetallePage = () => {
     crearCotizacion,
     actualizarCotizacion,
     eliminarCotizacion,
+    obtenerCotizacionPdfUrl,
   } = useCotizaciones({ autoLoad: false });
 
   const [detalle, setDetalle] = useState(null);
@@ -326,7 +341,6 @@ const ProcesoLogisticoDetallePage = () => {
     setResponsableId(String(data?.responsableLogisticaId || ""));
     setSolicitudDraft((prev) => prev || {
       requerimientoId: data.id,
-      elaboradorId: user?.id || null,
     });
   };
 
@@ -453,7 +467,7 @@ const ProcesoLogisticoDetallePage = () => {
         block: "start",
       });
       await load();
-      setSolicitudDraft({ requerimientoId: Number(id), elaboradorId: user?.id || null });
+      setSolicitudDraft({ requerimientoId: Number(id) });
     } finally {
       setSubmittingSolicitud(false);
     }
@@ -500,6 +514,22 @@ const ProcesoLogisticoDetallePage = () => {
   const handlePrintSolicitud = (solicitudId) => {
     window.open(
       obtenerSolicitudPdfUrl(solicitudId),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handlePrintCotizacion = (cotizacionId) => {
+    window.open(
+      obtenerCotizacionPdfUrl(cotizacionId),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handlePrintComparativo = (comparativoId) => {
+    window.open(
+      obtenerComparativoPdfUrl(comparativoId),
       "_blank",
       "noopener,noreferrer"
     );
@@ -748,6 +778,7 @@ const ProcesoLogisticoDetallePage = () => {
   const expedienteBloqueado = ["ADJUDICADO", "OC_GENERADA"].includes(
     detalle.estadoLogistica
   );
+  const bloqueadoPorAprobacionFinal = Boolean(detalle.pendienteGerenciaGeneral);
   const flujoDefinido = Boolean(detalle.modalidadFlujoLogistico);
   const isFlujoRegular = detalle.modalidadFlujoLogistico === "REGULAR";
   const isFlujoExcepcional = detalle.modalidadFlujoLogistico === "EXCEPCIONAL";
@@ -762,8 +793,15 @@ const ProcesoLogisticoDetallePage = () => {
   const canManageDrafts = canOperate && !expedienteBloqueado && flujoDefinido;
   const canManageComparativo =
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
-  const canFormalizeExceptional =
+  const canPrepareExceptionalDecision =
     canAdjudicate && !expedienteBloqueado && isFlujoExcepcional;
+  const canFormalizeExceptional =
+    canPrepareExceptionalDecision && !bloqueadoPorAprobacionFinal;
+  const canApproveComparativo =
+    canAdjudicate &&
+    isFlujoRegular &&
+    Boolean(comparativo?.id) &&
+    !bloqueadoPorAprobacionFinal;
   const regularWorkflowStep = getRegularWorkflowStep({
     detalle,
     comparativo,
@@ -796,6 +834,36 @@ const ProcesoLogisticoDetallePage = () => {
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        {detalle.habilitadoLogistica ? (
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+            Habilitado para logistica
+          </span>
+        ) : null}
+        <span
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
+            detalle.aprobacionDocumentalFinal
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}
+        >
+          {detalle.aprobacionDocumentalFinal
+            ? "Aprobacion documental final"
+            : "Aprobacion documental final pendiente"}
+        </span>
+        {detalle.pendienteGerenciaGeneral ? (
+          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+            Gerencia General pendiente
+          </span>
+        ) : null}
+      </div>
+
+      {detalle.pendienteGerenciaGeneral ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Logistica ya puede trabajar este expediente, pero los actos finales del sistema siguen bloqueados hasta completar la aprobacion documental final de Gerencia General.
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -1083,13 +1151,18 @@ const ProcesoLogisticoDetallePage = () => {
               </button>
             )}
 
-            {canFormalizeExceptional ? (
+            {canPrepareExceptionalDecision ? (
               <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                 <div>
                   <p className="font-medium text-emerald-900">Decision excepcional</p>
                   <p className="mt-1 text-xs text-emerald-800">
                     Selecciona la cotizacion que sustenta la decision excepcional del expediente.
                   </p>
+                  {bloqueadoPorAprobacionFinal ? (
+                    <p className="mt-2 text-xs text-amber-800">
+                      La formalizacion final de la decision excepcional queda bloqueada hasta completar la aprobacion documental final.
+                    </p>
+                  ) : null}
                 </div>
                 <select
                   value={decisionExcepcionalDraft.cotizacionId}
@@ -1125,6 +1198,7 @@ const ProcesoLogisticoDetallePage = () => {
                   onClick={handleFormalizarDecisionExcepcional}
                   disabled={
                     submittingAction ||
+                    bloqueadoPorAprobacionFinal ||
                     !decisionExcepcionalDraft.cotizacionId ||
                     Boolean(detalle.cotizacionSeleccionadaExcepcionalId)
                   }
@@ -1137,7 +1211,7 @@ const ProcesoLogisticoDetallePage = () => {
               </div>
             ) : null}
 
-            {canAdjudicate && detalle.puedeGenerarOrdenCompra && (
+            {canAdjudicate && detalle.puedeGenerarOrdenCompra ? (
               <button
                 type="button"
                 onClick={handleGenerarOrdenCompra}
@@ -1146,7 +1220,7 @@ const ProcesoLogisticoDetallePage = () => {
               >
                 Generar ordenes de compra
               </button>
-            )}
+            ) : null}
 
             {ordenesCompraRelacionadas.length > 0 && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
@@ -1185,13 +1259,13 @@ const ProcesoLogisticoDetallePage = () => {
         <div className="grid gap-6 xl:grid-cols-2">
           <div id="solicitudes">
             <SolicitudCotizacionForm
-              initialData={solicitudDraft || { requerimientoId: Number(id), elaboradorId: user?.id || null }}
+              initialData={solicitudDraft || { requerimientoId: Number(id) }}
               proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
               requerimientos={requerimientoOption}
               requerimientoDetalle={detalle}
               onRequerimientoChange={() => {}}
               onSubmit={handleSolicitudSubmit}
-              onCancel={() => setSolicitudDraft({ requerimientoId: Number(id), elaboradorId: user?.id || null })}
+              onCancel={() => setSolicitudDraft({ requerimientoId: Number(id) })}
               submitting={submittingSolicitud}
             />
           </div>
@@ -1251,6 +1325,15 @@ const ProcesoLogisticoDetallePage = () => {
               <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700">
                 {comparativo.codigo} v{comparativo.versionActual || 1}
               </span>
+            ) : null}
+            {comparativo?.id ? (
+              <button
+                type="button"
+                onClick={() => handlePrintComparativo(comparativo.id)}
+                className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Imprimir
+              </button>
             ) : null}
           </div>
         </div>
@@ -1337,7 +1420,7 @@ const ProcesoLogisticoDetallePage = () => {
                                   {formatCurrency(cotizacion.totalOferta)} · {cotizacion.formaPago || "Sin forma de pago"}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Garantia: {cotizacion.garantia || "Sin definir"}
+                                  Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Garantia: {cotizacion.garantia || "Sin definir"} · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
                                 </p>
                               </div>
                             </div>
@@ -1555,6 +1638,9 @@ const ProcesoLogisticoDetallePage = () => {
                       <p className="mt-1 text-xs text-gray-500">
                         Estado snapshot: {cotizacion.estado || "-"}
                       </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                      </p>
                     </div>
                   )
                 )}
@@ -1601,43 +1687,50 @@ const ProcesoLogisticoDetallePage = () => {
         )}
 
         {canAdjudicate && isFlujoRegular && comparativo?.id ? (
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              onClick={() =>
-                runComparativoDecision("Aprobar", (payload) =>
-                  aprobarComparativo(comparativo.id, payload)
-                )
-              }
-              disabled={submittingComparativo}
-              className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              Aprobar comparativo
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                runComparativoDecision("Observar", (payload) =>
-                  observarComparativo(comparativo.id, payload)
-                )
-              }
-              disabled={submittingComparativo}
-              className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-            >
-              Observar
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                runComparativoDecision("Rechazar", (payload) =>
-                  rechazarComparativo(comparativo.id, payload)
-                )
-              }
-              disabled={submittingComparativo}
-              className="rounded border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-            >
-              Rechazar
-            </button>
+          <div className="mt-5 border-t border-gray-200 pt-4">
+            {bloqueadoPorAprobacionFinal ? (
+              <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                El comparativo puede revisarse y seguir ajustandose, pero su aprobacion final queda bloqueada hasta completar la aprobacion documental final del requerimiento.
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  runComparativoDecision("Aprobar", (payload) =>
+                    aprobarComparativo(comparativo.id, payload)
+                  )
+                }
+                disabled={submittingComparativo || !canApproveComparativo}
+                className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                Aprobar comparativo
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  runComparativoDecision("Observar", (payload) =>
+                    observarComparativo(comparativo.id, payload)
+                  )
+                }
+                disabled={submittingComparativo}
+                className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+              >
+                Observar
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  runComparativoDecision("Rechazar", (payload) =>
+                    rechazarComparativo(comparativo.id, payload)
+                  )
+                }
+                disabled={submittingComparativo}
+                className="rounded border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+              >
+                Rechazar
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -1684,9 +1777,7 @@ const ProcesoLogisticoDetallePage = () => {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() =>
-                          setSolicitudDraft(buildSolicitudDraft(solicitud, user?.id || null))
-                        }
+                        onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud))}
                         className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                       >
                         Editar
@@ -1753,7 +1844,7 @@ const ProcesoLogisticoDetallePage = () => {
                             <>
                               <button
                                 type="button"
-                                onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud, user?.id || null))}
+                                onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud))}
                                 className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                               >
                                 Editar
@@ -1800,6 +1891,9 @@ const ProcesoLogisticoDetallePage = () => {
                   <p className="mt-1 text-sm font-semibold text-gray-900">
                     {formatCurrency(cotizacion.totalOferta)}
                   </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                  </p>
                   {comparativoDecisionMeta?.cotizacionId === Number(cotizacion.id) ? (
                     <p className="mt-2 text-xs font-medium text-emerald-700">
                       {comparativoDecisionMeta.via === "EXCEPCIONAL"
@@ -1811,6 +1905,13 @@ const ProcesoLogisticoDetallePage = () => {
                     <CotizacionEstadoBadge estado={cotizacion.estado} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePrintCotizacion(cotizacion.id)}
+                      className="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                    >
+                      Imprimir
+                    </button>
                     {canManageDrafts ? (
                       <button
                         type="button"
@@ -1865,12 +1966,24 @@ const ProcesoLogisticoDetallePage = () => {
                         ) : null}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{cotizacion.proveedor?.razonSocial || "-"}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatCurrency(cotizacion.totalOferta)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                        <p>{formatCurrency(cotizacion.totalOferta)}</p>
+                        <p className="mt-1 text-xs font-normal text-gray-500">
+                          {cotizacion.tiempoEntregaDias ?? "-"} dias · vigencia {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                        </p>
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <CotizacionEstadoBadge estado={cotizacion.estado} />
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
                         <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handlePrintCotizacion(cotizacion.id)}
+                            className="rounded border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                          >
+                            Imprimir
+                          </button>
                           {canManageDrafts && (
                             <button
                               type="button"

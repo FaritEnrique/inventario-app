@@ -1,4 +1,4 @@
-import apiFetch from './apiFetch';
+import apiFetch, { buildApiUrl } from './apiFetch';
 
 const cotizacionesApi = {
   obtenerTodas: async () => {
@@ -6,6 +6,9 @@ const cotizacionesApi = {
   },
   obtenerPorId: async (id) => {
     return await apiFetch(`cotizaciones/${id}`);
+  },
+  obtenerPdfUrl: (id) => {
+    return buildApiUrl(`cotizaciones/${id}/pdf`);
   },
   crear: async (cotizacion) => {
     return apiFetch('cotizaciones', {

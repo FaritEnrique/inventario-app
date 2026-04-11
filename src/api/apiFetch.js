@@ -182,12 +182,32 @@ const dispatchOperationalContextEvent = (code, error) => {
     return;
   }
 
-  if (!["CONTEXT_REQUIRED", "INVALID_ACTIVE_CONTEXT"].includes(code)) {
+  if (!CONTEXT_INVALIDATION_CODES.includes(code)) {
     return;
   }
 
   window.dispatchEvent(
     new CustomEvent("operational-context-invalidated", {
+      detail: {
+        code,
+        status: error?.response?.status || null,
+        message: error?.message || null,
+      },
+    })
+  );
+};
+
+const dispatchAuthSessionInvalidationEvent = (code, error) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!AUTH_SESSION_INVALIDATION_CODES.includes(code)) {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("auth-session-invalidated", {
       detail: {
         code,
         status: error?.response?.status || null,
@@ -244,6 +264,7 @@ const apiFetch = async (endpoint, options = {}) => {
       fullError.code = normalizedError?.code || data?.code || null;
       fullError.details = normalizedError?.details || data?.detalles || null;
       dispatchOperationalContextEvent(fullError.code, fullError);
+      dispatchAuthSessionInvalidationEvent(fullError.code, fullError);
       throw fullError;
     }
 
@@ -265,3 +286,7 @@ const apiFetch = async (endpoint, options = {}) => {
 };
 
 export default apiFetch;
+import {
+  AUTH_SESSION_INVALIDATION_CODES,
+  CONTEXT_INVALIDATION_CODES,
+} from "../constants/authErrorCodes";

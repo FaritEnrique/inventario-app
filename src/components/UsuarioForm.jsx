@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from "react";
+import {
+  isPasswordPolicyValid,
+  PASSWORD_POLICY_MESSAGE,
+} from "../constants/passwordPolicy";
 
 const rolesList = [
   "GERENTE_GENERAL",
@@ -157,7 +161,7 @@ const UsuarioForm = ({
 
     for (const rango of form.rangos) {
       if (!rango.rol || !rango.areaId) {
-      return "Completa el rol y el área de cada rango adicional.";
+        return "Completa el rol y el area de cada rango adicional.";
       }
 
       const key = `${rango.rol}::${rango.areaId}`;
@@ -166,6 +170,10 @@ const UsuarioForm = ({
       }
 
       duplicateAssignments.add(key);
+    }
+
+    if (form.password && !isPasswordPolicyValid(form.password)) {
+      return PASSWORD_POLICY_MESSAGE;
     }
 
     return "";
@@ -252,6 +260,7 @@ const UsuarioForm = ({
         className="rounded border p-2 md:col-span-1"
         {...(initialValues ? {} : { required: true })}
       />
+      <p className="text-xs text-gray-500 md:col-span-3">{PASSWORD_POLICY_MESSAGE}</p>
       <input
         name="cargo"
         value={form.cargo}

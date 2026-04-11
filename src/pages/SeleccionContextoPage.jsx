@@ -1,6 +1,7 @@
 ﻿import React from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { isLogisticaContext, isLogisticaJefaturaContext } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
 const cardClasses =
@@ -26,6 +27,10 @@ const SeleccionContextoPage = () => {
     location.state.from.pathname !== "/seleccionar-contexto"
       ? location.state.from.pathname
       : "/dashboard";
+  const reason = location.state?.reason || null;
+  const expectedContext = location.state?.expectedContext || null;
+  const requiresLogistica =
+    expectedContext === "logistica-jefatura" || expectedContext === "logistica-operador";
 
   if (loading) {
     return (
@@ -67,6 +72,8 @@ const SeleccionContextoPage = () => {
 
   const renderContextCard = (context) => {
     const isCurrent = activeContext?.contextKey === context.contextKey;
+    const isLogistica = isLogisticaContext(context);
+    const isLogisticaJefatura = isLogisticaJefaturaContext(context);
 
     return (
       <article key={context.contextKey} className={cardClasses}>
@@ -79,6 +86,16 @@ const SeleccionContextoPage = () => {
               {isCurrent && (
                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   Activo
+                </span>
+              )}
+              {isLogistica && (
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                  Logistica
+                </span>
+              )}
+              {isLogisticaJefatura && (
+                <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+                  Jefatura
                 </span>
               )}
             </div>
@@ -153,6 +170,18 @@ const SeleccionContextoPage = () => {
           )}
         </div>
       </section>
+
+      {reason === "CONTEXT_INCOMPATIBLE" && requiresLogistica && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5 text-sm text-amber-900 shadow-sm">
+          <p className="font-semibold">
+            El contexto activo actual no corresponde a Logistica.
+          </p>
+          <p className="mt-1 text-amber-800">
+            Para continuar en la bandeja logistica, selecciona un contexto de Logistica
+            disponible abajo. Luego volveras automaticamente a {targetPath}.
+          </p>
+        </section>
+      )}
 
       {availableContexts.length === 0 ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 shadow-sm">

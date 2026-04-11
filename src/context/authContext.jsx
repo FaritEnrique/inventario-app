@@ -212,6 +212,24 @@ export const AuthProvider = ({ children }) => {
     const response = await apiFetch("auth/validate-token");
 
     if (response.valid && response.identity) {
+      const shouldAutoActivateSingleContext =
+        !response.activeContext &&
+        Array.isArray(response.availableContexts) &&
+        response.availableContexts.length === 1 &&
+        response.availableContexts[0]?.contextKey;
+
+      if (shouldAutoActivateSingleContext) {
+        const activatedSession = await apiFetch("auth/context/activate", {
+          method: "POST",
+          body: JSON.stringify({
+            contextKey: response.availableContexts[0].contextKey,
+          }),
+        });
+
+        applySessionState(activatedSession);
+        return activatedSession;
+      }
+
       applySessionState(response);
       return response;
     }
@@ -301,6 +319,24 @@ export const AuthProvider = ({ children }) => {
       );
     };
   }, [clearSessionState, refreshAuthSession]);
+
+  useEffect(() => {
+    const handleInvalidAuthSession = () => {
+      clearTimeout(inactivityTimer.current);
+      clearSessionState();
+      setLoading(false);
+      setContextBusy(false);
+    };
+
+    window.addEventListener("auth-session-invalidated", handleInvalidAuthSession);
+
+    return () => {
+      window.removeEventListener(
+        "auth-session-invalidated",
+        handleInvalidAuthSession
+      );
+    };
+  }, [clearSessionState]);
 
   const login = async (email, password) => {
     setLoading(true);

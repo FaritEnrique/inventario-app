@@ -123,6 +123,8 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     }
   };
 
+  const obtenerCotizacionPdfUrl = (id) => cotizacionesApi.obtenerPdfUrl(id);
+
   return {
     cotizaciones,
     cargando,
@@ -132,6 +134,7 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     actualizarCotizacion,
     adjudicarCotizacion,
     eliminarCotizacion,
+    obtenerCotizacionPdfUrl,
   };
 };
 

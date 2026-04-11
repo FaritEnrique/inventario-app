@@ -42,6 +42,34 @@ const isLogisticaAssignment = (assignment = {}) =>
     assignment?.area?.codigo,
   ]);
 
+export const isLogisticaContext = (context = {}) =>
+  isLogisticaScope([
+    context?.branchDescription,
+    context?.areaNombre,
+    context?.area?.nombre,
+    context?.areaAbreviatura,
+    context?.area?.abreviatura,
+    context?.areaCodigo,
+    context?.area?.codigo,
+  ]);
+
+export const isLogisticaJefaturaContext = (context = {}) =>
+  (context?.rolOperativo || context?.role) === "JEFE_AREA" &&
+  isLogisticaContext(context);
+
+export const isLogisticaOperadorContext = (context = {}) =>
+  (context?.rolOperativo || context?.role) === "OPERADOR" &&
+  isLogisticaContext(context);
+
+export const hasAnyLogisticaContext = (contexts = []) =>
+  Array.isArray(contexts) && contexts.some(isLogisticaContext);
+
+export const hasLogisticaJefaturaContext = (contexts = []) =>
+  Array.isArray(contexts) && contexts.some(isLogisticaJefaturaContext);
+
+export const hasLogisticaOperadorContext = (contexts = []) =>
+  Array.isArray(contexts) && contexts.some(isLogisticaOperadorContext);
+
 const isWarehouseContext = (assignment = {}) => {
   const areaNombre = normalize(assignment.area?.nombre);
   const areaAbreviatura = normalize(assignment.area?.abreviatura);
@@ -136,6 +164,13 @@ export const canViewAllCotizacionesLogisticaEffective = (user) =>
     (assignment) =>
       assignment.rol === "JEFE_AREA" && isLogisticaAssignment(assignment)
   );
+
+export const canAccessLogisticaOperativeTrayFromRequerimientosEffective = (
+  user
+) => canViewAllCotizacionesLogisticaEffective(user);
+
+export const getLogisticaOperativeTrayPathEffective = () =>
+  "/cotizaciones/bandeja/jefatura";
 
 export const canAssignCotizacionesLogisticaEffective = (user) =>
   canViewAllCotizacionesLogisticaEffective(user);

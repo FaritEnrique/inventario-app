@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiFetch from "../api/apiFetch";
+import {
+  isPasswordPolicyValid,
+  PASSWORD_POLICY_MESSAGE,
+} from "../constants/passwordPolicy";
 
 const initialForm = {
   contrasenaActual: "",
@@ -40,8 +44,8 @@ const CambiarContrasenaPage = () => {
       return;
     }
 
-    if (form.nuevaContrasena.length < 6) {
-      const message = "La nueva contraseña debe tener al menos 6 caracteres.";
+    if (!isPasswordPolicyValid(form.nuevaContrasena)) {
+      const message = PASSWORD_POLICY_MESSAGE;
       setFeedback({ type: "error", message });
       toast.error(message);
       return;
@@ -143,8 +147,7 @@ const CambiarContrasenaPage = () => {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Debe ser distinta de tu contraseña actual y de tus últimas 5
-                contraseñas.
+                {PASSWORD_POLICY_MESSAGE} Debe ser distinta de tu contraseña actual y de tus últimas 5 contraseñas.
               </p>
             </div>
 

@@ -43,8 +43,13 @@ const normalizeInitialData = (initialData) => ({
     initialData?.tiempoEntregaDias === null || initialData?.tiempoEntregaDias === undefined
       ? ""
       : String(initialData.tiempoEntregaDias),
+  vigenciaOfertaDias:
+    initialData?.vigenciaOfertaDias === null || initialData?.vigenciaOfertaDias === undefined
+      ? ""
+      : String(initialData.vigenciaOfertaDias),
   lugarEntrega: initialData?.lugarEntrega || "",
   formaPago: initialData?.formaPago || "",
+  observaciones: initialData?.observaciones || "",
   items: Array.isArray(initialData?.items)
     ? initialData.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
@@ -122,8 +127,11 @@ const CotizacionForm = ({
       estado: formData.estado,
       garantia: formData.garantia.trim() || null,
       tiempoEntregaDias: formData.tiempoEntregaDias === "" ? null : Number(formData.tiempoEntregaDias),
+      vigenciaOfertaDias:
+        formData.vigenciaOfertaDias === "" ? null : Number(formData.vigenciaOfertaDias),
       lugarEntrega: formData.lugarEntrega.trim() || null,
       formaPago: formData.formaPago || null,
+      observaciones: formData.observaciones.trim() || null,
       items: formData.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
         cantidadOfrecida: Number(item.cantidadOfrecida || 0),
@@ -291,6 +299,23 @@ const CotizacionForm = ({
             ))}
           </select>
         </label>
+
+        <label className="space-y-1 text-sm text-gray-700">
+          <span className="font-medium">Vigencia (dias)</span>
+          <input
+            type="number"
+            min="0"
+            value={formData.vigenciaOfertaDias}
+            name="cotizacion-form-input-286"
+            onChange={(event) =>
+              setFormData((prev) => ({
+                ...prev,
+                vigenciaOfertaDias: event.target.value,
+              }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
       </div>
 
       <label className="block space-y-1 text-sm text-gray-700">
@@ -304,6 +329,20 @@ const CotizacionForm = ({
           }
           className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Oficina central"
+        />
+      </label>
+
+      <label className="block space-y-1 text-sm text-gray-700">
+        <span className="font-medium">Observaciones</span>
+        <textarea
+          value={formData.observaciones}
+          name="cotizacion-form-textarea-304"
+          onChange={(event) =>
+            setFormData((prev) => ({ ...prev, observaciones: event.target.value }))
+          }
+          className="w-full rounded border border-gray-300 px-3 py-2"
+          rows={3}
+          placeholder="Condiciones comerciales u observaciones adicionales"
         />
       </label>
 
@@ -402,5 +441,4 @@ const CotizacionForm = ({
 };
 
 export default CotizacionForm;
-
 

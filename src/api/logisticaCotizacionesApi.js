@@ -1,4 +1,4 @@
-import apiFetch from "./apiFetch";
+import apiFetch, { buildApiUrl } from "./apiFetch";
 
 const logisticaCotizacionesApi = {
   obtenerBandejaJefatura: async (params = {}) => {
@@ -27,6 +27,9 @@ const logisticaCotizacionesApi = {
       }
       throw error;
     }
+  },
+  obtenerComparativoPdfUrl: (comparativoId) => {
+    return buildApiUrl(`logistica/comparativos/${comparativoId}/pdf`);
   },
   obtenerOperadores: async () => {
     return apiFetch("logistica/operadores");

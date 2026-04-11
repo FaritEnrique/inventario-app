@@ -6,7 +6,9 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
+  canAccessLogisticaOperativeTrayFromRequerimientosEffective,
   canSelectAreaRequerimientoEffective,
+  getLogisticaOperativeTrayPathEffective,
   getAvailableApprovalTraysEffective,
 } from "../accessRules";
 
@@ -23,6 +25,9 @@ const initialFilters = {
 const RequerimientosPage = () => {
   const { user } = useAuth();
   const canSelectArea = canSelectAreaRequerimientoEffective(user);
+  const canAccessLogisticaOperativeTray =
+    canAccessLogisticaOperativeTrayFromRequerimientosEffective(user);
+  const logisticaOperativeTrayPath = getLogisticaOperativeTrayPathEffective();
   const { areas } = useAreas({ enabled: canSelectArea });
   const {
     requerimientos,
@@ -63,6 +68,14 @@ const RequerimientosPage = () => {
               {tray.label}
             </Link>
           ))}
+          {canAccessLogisticaOperativeTray ? (
+            <Link
+              to={logisticaOperativeTrayPath}
+              className="rounded border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+            >
+              Atencion Logistica
+            </Link>
+          ) : null}
           <Link
             to="/requerimientos/nuevo"
             className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"

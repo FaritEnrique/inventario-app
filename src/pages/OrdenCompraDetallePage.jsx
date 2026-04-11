@@ -537,7 +537,7 @@ const OrdenCompraDetallePage = () => {
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">
-            Historial de aprobacion
+            Historial de orden de compra
           </h2>
           <div className="mt-4 space-y-3">
             {(ordenCompra.historialAprobacion || []).length > 0 ? (
@@ -559,7 +559,7 @@ const OrdenCompraDetallePage = () => {
               ))
             ) : (
               <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                Aun no hay historial de aprobacion visible.
+                Aun no hay historial visible para esta orden.
               </div>
             )}
           </div>

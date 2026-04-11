@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiFetch from "../api/apiFetch";
 import { useAuth } from "../context/authContext";
+import {
+  isPasswordPolicyValid,
+  PASSWORD_POLICY_MESSAGE,
+} from "../constants/passwordPolicy";
 
 const CrearPrimerUsuarioPage = () => {
   const navigate = useNavigate();
@@ -14,6 +18,7 @@ const CrearPrimerUsuarioPage = () => {
     email: "",
     password: "",
     cargo: "",
+    bootstrapSecret: "",
   });
 
   const handleChange = (event) => {
@@ -25,10 +30,20 @@ const CrearPrimerUsuarioPage = () => {
     event.preventDefault();
     setSubmitting(true);
 
+    if (!isPasswordPolicyValid(form.password)) {
+      toast.error(PASSWORD_POLICY_MESSAGE);
+      setSubmitting(false);
+      return;
+    }
+
     try {
+      const { bootstrapSecret, ...payload } = form;
       await apiFetch("usuarios/primer-usuario", {
         method: "POST",
-        body: JSON.stringify(form),
+        headers: {
+          "X-Bootstrap-Secret": bootstrapSecret.trim(),
+        },
+        body: JSON.stringify(payload),
       });
 
       completeInitialSetup();
@@ -49,10 +64,29 @@ const CrearPrimerUsuarioPage = () => {
           Crear administrador inicial
         </h1>
         <p className="mb-5 text-center text-sm text-gray-500">
-          Este formulario solo se usa una vez para inicializar el sistema.
+          Este formulario solo se usa una vez para inicializar el sistema y requiere el codigo de instalacion configurado en el backend.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+          <div>
+            <label
+              htmlFor="bootstrapSecret"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Codigo de instalacion
+            </label>
+            <input
+              id="bootstrapSecret"
+              type="password"
+              name="bootstrapSecret"
+              value={form.bootstrapSecret}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="off"
+              required
+            />
+          </div>
+
           <div>
             <label
               htmlFor="nombre"
@@ -125,6 +159,7 @@ const CrearPrimerUsuarioPage = () => {
                 autoComplete="new-password"
                 required
               />
+              <p className="mt-1 text-xs text-gray-500">{PASSWORD_POLICY_MESSAGE}</p>
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
@@ -137,7 +172,7 @@ const CrearPrimerUsuarioPage = () => {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !form.bootstrapSecret.trim()}
             className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
             {submitting ? "Creando..." : "Crear usuario administrador"}

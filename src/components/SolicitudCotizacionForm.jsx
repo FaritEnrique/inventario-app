@@ -9,7 +9,6 @@ const normalizeInitialData = (initialData) => ({
   requerimientoId: initialData?.requerimientoId
     ? String(initialData.requerimientoId)
     : "",
-  elaboradorId: initialData?.elaboradorId || null,
   cuerpoSolicitud: initialData?.cuerpoSolicitud || "",
   estado: initialData?.estado || "Creada",
   itemIds: Array.isArray(initialData?.items)
@@ -109,7 +108,6 @@ const SolicitudCotizacionForm = ({
     await onSubmit({
       proveedorId: Number(formData.proveedorId),
       requerimientoId: Number(formData.requerimientoId),
-      elaboradorId: Number(formData.elaboradorId),
       cuerpoSolicitud: formData.cuerpoSolicitud.trim() || null,
       estado: formData.estado,
       items: formData.itemIds.map((itemId) => ({

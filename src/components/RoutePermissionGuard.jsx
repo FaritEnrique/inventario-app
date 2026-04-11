@@ -1,9 +1,25 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import {
+  hasLogisticaJefaturaContext,
+  hasLogisticaOperadorContext,
+  hasAnyLogisticaContext,
+} from "../accessRules";
 import { useAuth } from "../context/authContext";
 
-const RoutePermissionGuard = ({ allow, redirectTo = "/dashboard", children }) => {
-  const { user, loading, activeContext, contextSelectionRequired } = useAuth();
+const RoutePermissionGuard = ({
+  allow,
+  redirectTo = "/dashboard",
+  contextGate,
+  children,
+}) => {
+  const {
+    user,
+    loading,
+    activeContext,
+    contextSelectionRequired,
+    availableContexts,
+  } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -21,6 +37,29 @@ const RoutePermissionGuard = ({ allow, redirectTo = "/dashboard", children }) =>
   }
 
   if (typeof allow === "function" && !allow(user)) {
+    const canSwitchLogistica =
+      contextGate === "logistica-jefatura"
+        ? hasLogisticaJefaturaContext(availableContexts)
+        : contextGate === "logistica-operador"
+          ? hasLogisticaOperadorContext(availableContexts)
+          : contextGate === "logistica-access"
+            ? hasAnyLogisticaContext(availableContexts)
+            : false;
+
+    if (canSwitchLogistica) {
+      return (
+        <Navigate
+          to="/seleccionar-contexto"
+          replace
+          state={{
+            from: location,
+            reason: "CONTEXT_INCOMPATIBLE",
+            expectedContext: contextGate,
+          }}
+        />
+      );
+    }
+
     return (
       <Navigate
         to={redirectTo}

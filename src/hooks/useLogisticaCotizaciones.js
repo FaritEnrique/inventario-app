@@ -71,6 +71,11 @@ const useLogisticaCotizaciones = () => {
     [run]
   );
 
+  const obtenerComparativoPdfUrl = useCallback(
+    (comparativoId) => logisticaCotizacionesApi.obtenerComparativoPdfUrl(comparativoId),
+    []
+  );
+
   const asignar = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -185,6 +190,7 @@ const useLogisticaCotizaciones = () => {
     obtenerDetalle,
     definirFlujo,
     obtenerComparativo,
+    obtenerComparativoPdfUrl,
     obtenerOperadores,
     asignar,
     iniciar,
