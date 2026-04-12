@@ -19,6 +19,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import {
   canAccessAreasManagementEffective,
+  canAccessCompanySettingsEffective,
   canAccessCotizacionesEffective,
   canManageCatalogMasterEffective,
   canAccessProveedorManagementEffective,
@@ -208,7 +209,7 @@ const AppRoutes = () => {
             <Route
               path="configuracion-empresa"
               element={
-                <RoutePermissionGuard allow={canAccessUserManagementEffective}>
+                <RoutePermissionGuard allow={canAccessCompanySettingsEffective}>
                   <ConfiguracionEmpresaPage />
                 </RoutePermissionGuard>
               }

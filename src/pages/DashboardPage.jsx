@@ -30,6 +30,7 @@ import {
   getAvailableApprovalTraysEffective,
   getCotizacionesHomePathEffective,
   getPedidosInternosHomePathEffective,
+  canAccessCompanySettingsEffective,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
@@ -203,7 +204,7 @@ const baseCards = [
       "Actualizar identidad institucional, logo y pie documental para la emision formal de solicitudes.",
     icon: <FaRegAddressCard />,
     path: "/configuracion-empresa",
-    visible: ({ user }) => canAccessUserManagementEffective(user),
+    visible: ({ user }) => canAccessCompanySettingsEffective(user),
   },
   {
     title: "Gestion de Usuarios",

@@ -1,4 +1,4 @@
-import { getActiveRoleAssignments, hasAnyRole, hasRole } from "./utils/userRoles";
+import { getActiveRoleAssignments, hasAnyRole, hasRole } from "./utils/userRoles.js";
 
 const privilegedInventoryRoles = Object.freeze([
   "ADMINISTRADOR_SISTEMA",
@@ -11,12 +11,19 @@ export const USER_MANAGEMENT_ADMIN_ROLES = Object.freeze([
   "GERENTE_ADMINISTRACION",
 ]);
 
+export const COMPANY_SETTINGS_ADMIN_ROLES = Object.freeze([
+  "ADMINISTRADOR_SISTEMA",
+  "GERENTE_ADMINISTRACION",
+]);
+
 const normalize = (value) =>
   String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+
+const LOGISTICA_SCOPE_ALIASES = Object.freeze(["logistica", "log"]);
 
 const isAdminOverride = (user = {}) => hasRole(user, "ADMINISTRADOR_SISTEMA");
 const hasOperationalSession = (user = {}) =>
@@ -25,13 +32,7 @@ const hasOperationalSession = (user = {}) =>
 const isLogisticaScope = (rawValues = []) => {
   const values = rawValues.map((value) => normalize(value)).filter(Boolean);
 
-  return values.some(
-    (value) =>
-      value === "logistica" ||
-      value === "log" ||
-      value.includes("logistica") ||
-      value.includes("log")
-  );
+  return values.some((value) => LOGISTICA_SCOPE_ALIASES.includes(value));
 };
 
 const isLogisticaAssignment = (assignment = {}) =>
@@ -446,6 +447,9 @@ export const getTrayEmptyStateEffective = (
 
 export const canAccessUserManagementEffective = (user = {}) =>
   hasAnyRole(user, USER_MANAGEMENT_ADMIN_ROLES);
+
+export const canAccessCompanySettingsEffective = (user = {}) =>
+  hasAnyRole(user, COMPANY_SETTINGS_ADMIN_ROLES);
 
 export const canAccessAreasManagementEffective = (user = {}) =>
   canAccessUserManagementEffective(user);
