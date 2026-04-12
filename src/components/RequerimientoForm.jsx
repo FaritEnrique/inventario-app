@@ -8,6 +8,7 @@ const createEmptyExistingItem = () => ({
   productoTemporalId: null,
   productoTemporal: null,
   producto: null,
+  descripcion: "",
   descripcionVisible: "",
   unidadMedida: "",
   cantidadRequerida: 1,
@@ -24,6 +25,11 @@ const normalizeInitialItems = (items = []) =>
     productoTemporalId: item.productoTemporalId || null,
     productoTemporal: item.productoTemporal || null,
     producto: item.producto || null,
+    descripcion:
+      item.descripcion ||
+      item.producto?.descripcion ||
+      item.productoTemporal?.descripcion ||
+      "",
     descripcionVisible: item.descripcionVisible || "",
     unidadMedida: item.unidadMedida || item.producto?.unidadMedida || item.productoTemporal?.unidadMedida || "",
     cantidadRequerida: item.cantidadRequerida || 1,
@@ -201,6 +207,7 @@ const RequerimientoForm = ({
         ...createEmptyExistingItem(),
         productoId: producto.id,
         producto: producto,
+        descripcion: producto.descripcion || "",
         descripcionVisible: producto.nombre,
         unidadMedida: producto.unidadMedida,
         cantidadRequerida: 1,
@@ -243,6 +250,7 @@ const RequerimientoForm = ({
           valorReferencialUnitario: valor,
           observaciones: tempDraft.observaciones.trim() || null,
         },
+        descripcion: tempDraft.descripcion.trim(),
         descripcionVisible: tempDraft.nombre.trim(),
         unidadMedida: tempDraft.unidadMedida.trim(),
         cantidadRequerida: cantidad,
@@ -615,8 +623,27 @@ const RequerimientoForm = ({
                       <button type="button" onClick={() => dispatch({ type: "REMOVE_ITEM", localId: item.localId })} className="rounded border border-red-200 px-3 py-2 text-sm text-red-700">Retirar</button>
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <textarea value={item.observaciones} name="requerimiento-form-textarea-472" onChange={(event) => dispatch({ type: "UPDATE_ITEM", localId: item.localId, name: "observaciones", value: event.target.value })} rows="2" className="w-full rounded border border-gray-300 px-3 py-2" placeholder="Observaciones del item" />
+                  <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_280px]">
+                    <div>
+                      <label htmlFor={`requerimiento-item-descripcion-${item.localId}`} className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Descripcion
+                      </label>
+                      <textarea
+                        id={`requerimiento-item-descripcion-${item.localId}`}
+                        value={item.descripcion}
+                        name="requerimiento-form-textarea-472"
+                        rows="2"
+                        readOnly
+                        className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                        placeholder="Sin descripcion registrada"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`requerimiento-item-observaciones-${item.localId}`} className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Observaciones
+                      </label>
+                      <textarea id={`requerimiento-item-observaciones-${item.localId}`} value={item.observaciones} name="requerimiento-form-textarea-473" onChange={(event) => dispatch({ type: "UPDATE_ITEM", localId: item.localId, name: "observaciones", value: event.target.value })} rows="2" className="w-full rounded border border-gray-300 px-3 py-2" placeholder="Observaciones del item" />
+                    </div>
                     <div className="rounded bg-gray-50 p-3 text-sm text-gray-600">
                       <p><span className="font-semibold">Subtotal referencial:</span> S/ {(Number(item.cantidadRequerida || 0) * Number(item.valorReferencialUnitario || 0)).toFixed(2)}</p>
                       <p><span className="font-semibold">Stock al momento:</span> {item.producto?.stock?.cantidadDisponible ?? item.stockAlMomento ?? "-"}</p>

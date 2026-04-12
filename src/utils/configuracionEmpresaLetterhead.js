@@ -1,6 +1,6 @@
 import { institutionalLetterheadMetrics } from "@document-branding/documentBrandingMetrics.js";
 
-const escapeHtml = (value) =>
+export const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -9,6 +9,34 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 const normalizeText = (value) => String(value ?? "").trim();
+
+export const buildUploadsBaseUrl = () => {
+  const rawApiUrl =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
+
+  return String(rawApiUrl || "").trim().replace(/\/+$/, "").replace(/\/api$/, "");
+};
+
+export const resolveInstitutionalAssetUrl = (assetUrl) => {
+  if (!assetUrl) return "";
+
+  if (
+    assetUrl.startsWith("blob:") ||
+    assetUrl.startsWith("data:") ||
+    assetUrl.startsWith("http://") ||
+    assetUrl.startsWith("https://")
+  ) {
+    return assetUrl;
+  }
+
+  const uploadsBaseUrl = buildUploadsBaseUrl();
+  if (!uploadsBaseUrl) {
+    return assetUrl;
+  }
+
+  return `${uploadsBaseUrl}${assetUrl.startsWith("/") ? "" : "/"}${assetUrl}`;
+};
 
 export const buildLetterheadDocumentData = (formData = {}, logoSrc = "") => {
   const razonSocial = normalizeText(formData.razonSocial) || "Empresa emisora";
@@ -54,7 +82,12 @@ const buildLetterheadIconSvg = (type) => {
   return "";
 };
 
-export const buildBlankLetterheadPrintHtml = (documentData) => {
+export const buildInstitutionalLetterheadPrintHtml = ({
+  documentData,
+  title = "Documento institucional",
+  bodyMarkup = '<div class="body-space"></div>',
+  extraStyles = "",
+}) => {
   const metrics = institutionalLetterheadMetrics.print;
   const {
     razonSocial,
@@ -93,7 +126,7 @@ export const buildBlankLetterheadPrintHtml = (documentData) => {
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>Membrete institucional</title>
+        <title>${escapeHtml(title)}</title>
         <style>
           @page { size: A4; margin: 0; }
           html, body {
@@ -262,6 +295,7 @@ export const buildBlankLetterheadPrintHtml = (documentData) => {
           .whatsapp-icon {
             color: #16a34a;
           }
+          ${extraStyles}
         </style>
       </head>
       <body>
@@ -288,7 +322,7 @@ export const buildBlankLetterheadPrintHtml = (documentData) => {
             }
           </div>
 
-          <div class="body-space"></div>
+          ${bodyMarkup}
 
           <div class="footer">
             ${footerContactsMarkup ? `<div class="footer-contacts">${footerContactsMarkup}</div>` : ""}
@@ -299,3 +333,10 @@ export const buildBlankLetterheadPrintHtml = (documentData) => {
     </html>
   `;
 };
+
+export const buildBlankLetterheadPrintHtml = (documentData) =>
+  buildInstitutionalLetterheadPrintHtml({
+    documentData,
+    title: "Membrete institucional",
+    bodyMarkup: '<div class="body-space"></div>',
+  });

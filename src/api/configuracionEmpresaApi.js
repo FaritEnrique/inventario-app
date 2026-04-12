@@ -2,6 +2,7 @@ import apiFetch, { buildApiUrl } from "./apiFetch";
 
 const configuracionEmpresaApi = {
   obtener: () => apiFetch("configuracion-empresa"),
+  obtenerDocumento: () => apiFetch("configuracion-empresa/documento"),
   guardar: (formData) =>
     apiFetch("configuracion-empresa", {
       method: "PUT",

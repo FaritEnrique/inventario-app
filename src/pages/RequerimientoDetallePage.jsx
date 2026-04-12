@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import configuracionEmpresaApi from "../api/configuracionEmpresaApi";
 import Loader from "../components/Loader";
-import PrintRequerimientoDocument from "../components/PrintRequerimientoDocument";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
 import { useAuth } from "../context/authContext";
 import useRequerimientos from "../hooks/useRequerimientos";
+import {
+  buildLetterheadDocumentData,
+  resolveInstitutionalAssetUrl,
+} from "../utils/configuracionEmpresaLetterhead";
+import { buildRequerimientoPrintHtml } from "../utils/requerimientoPrintDocument";
 import {
   canEditRequerimientoEffective,
   getAvailableApprovalTraysEffective,
@@ -97,12 +102,33 @@ const RequerimientoDetallePage = () => {
   const { getRequerimientoById, eliminarRequerimiento } = useRequerimientos();
   const [loading, setLoading] = useState(true);
   const [requerimiento, setRequerimiento] = useState(null);
+  const [configuracionEmpresa, setConfiguracionEmpresa] = useState(null);
+  const [configuracionEmpresaError, setConfiguracionEmpresaError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getRequerimientoById(id);
-        setRequerimiento(data);
+        const [requerimientoResult, empresaResult] = await Promise.allSettled([
+          getRequerimientoById(id),
+          configuracionEmpresaApi.obtenerDocumento(),
+        ]);
+
+        if (requerimientoResult.status !== "fulfilled") {
+          throw requerimientoResult.reason;
+        }
+
+        setRequerimiento(requerimientoResult.value);
+
+        if (empresaResult.status === "fulfilled") {
+          setConfiguracionEmpresa(empresaResult.value);
+          setConfiguracionEmpresaError(null);
+        } else {
+          setConfiguracionEmpresa(null);
+          setConfiguracionEmpresaError(
+            empresaResult.reason?.message ||
+              "No se pudo cargar la configuracion institucional para impresion."
+          );
+        }
       } catch (error) {
         toast.error(error.message || "No se pudo cargar el requerimiento.");
       } finally {
@@ -155,6 +181,16 @@ const RequerimientoDetallePage = () => {
     });
   }, [requerimiento?.historial, signatureLevels]);
 
+  const letterheadDocumentData = useMemo(
+    () =>
+      buildLetterheadDocumentData(
+        configuracionEmpresa || {},
+        configuracionEmpresa?.logoSrc ||
+          resolveInstitutionalAssetUrl(configuracionEmpresa?.logoUrl || "")
+      ),
+    [configuracionEmpresa]
+  );
+
   const handleAnular = async () => {
     if (!window.confirm("Se anulara logicamente el requerimiento. Deseas continuar?")) {
       return;
@@ -167,6 +203,38 @@ const RequerimientoDetallePage = () => {
     } catch (error) {
       toast.error(error.message || "No se pudo anular el requerimiento.");
     }
+  };
+
+  const handlePrint = () => {
+    if (!configuracionEmpresa) {
+      toast.error(
+        configuracionEmpresaError ||
+          "No se pudo cargar la configuracion institucional del documento."
+      );
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      toast.error("No se pudo abrir la ventana de impresion del requerimiento.");
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(
+      buildRequerimientoPrintHtml({
+        documentData: letterheadDocumentData,
+        requerimiento,
+        signatures,
+        applicableApprovalLevels: signatureLevels,
+      })
+    );
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   };
 
   if (loading) return <Loader />;
@@ -212,7 +280,7 @@ const RequerimientoDetallePage = () => {
           )}
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Imprimir
@@ -431,11 +499,6 @@ const RequerimientoDetallePage = () => {
         </div>
       </div>
       </div>
-      <PrintRequerimientoDocument
-        requerimiento={requerimiento}
-        signatures={signatures}
-        applicableApprovalLevels={signatureLevels}
-      />
     </div>
   );
 };
