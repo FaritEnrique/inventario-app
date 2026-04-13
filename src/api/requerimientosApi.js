@@ -36,7 +36,9 @@ const requerimientosApi = {
 
   obtenerBandeja: (nivel, options = {}) => {
     const params = new URLSearchParams();
-    Object.entries(options).forEach(([key, value]) => appendIfPresent(params, key, value));
+    Object.entries(options).forEach(([key, value]) =>
+      appendIfPresent(params, key, value),
+    );
     return apiFetch(`requerimientos/bandeja/${nivel}?${params.toString()}`);
   },
 
@@ -54,20 +56,24 @@ const requerimientosApi = {
     apiFetch("requerimientos", {
       method: "POST",
       body: JSON.stringify(datos),
+      sessionActivity: "interactive",
     }),
   actualizar: (id, datos) =>
     apiFetch(`requerimientos/${id}`, {
       method: "PUT",
       body: JSON.stringify(datos),
+      sessionActivity: "interactive",
     }),
   eliminar: (id) =>
     apiFetch(`requerimientos/${id}`, {
       method: "DELETE",
+      sessionActivity: "interactive",
     }),
   procesarAprobacion: (id, datos) =>
     apiFetch(`requerimientos/${id}/aprobacion`, {
       method: "POST",
       body: JSON.stringify(datos),
+      sessionActivity: "interactive",
     }),
 };
 

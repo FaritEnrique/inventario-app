@@ -7,6 +7,7 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
+  canEditRequerimientoEffective,
   canViewAllRequerimientosEffective,
   getTrayEmptyStateEffective,
   getTrayGuidanceEffective,
@@ -18,6 +19,8 @@ const titles = {
   "gerencia-administracion": "Bandeja de Gerencia de Administracion",
   "gerencia-general": "Bandeja de Gerencia General",
 };
+
+const editableTrayLevels = new Set(["jefatura", "gerencia-area"]);
 
 const RequerimientosBandejaPage = ({ nivel }) => {
   const { user } = useAuth();
@@ -52,6 +55,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
   }, [fetchTray, nivel, filters]);
 
   const title = useMemo(() => titles[nivel] || "Bandeja de aprobacion", [nivel]);
+  const canEditFromTray = editableTrayLevels.has(nivel);
   const filtersApplied = useMemo(
     () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
     [filters]
@@ -235,12 +239,24 @@ const RequerimientosBandejaPage = ({ nivel }) => {
               />
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <Link
-                  to={`/requerimientos/${req.id}`}
-                  className="text-sm font-medium text-indigo-700 hover:underline"
-                >
-                  Ver detalle completo
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to={`/requerimientos/${req.id}`}
+                    className="text-sm font-medium text-indigo-700 hover:underline"
+                  >
+                    Ver detalle completo
+                  </Link>
+                  {canEditFromTray && canEditRequerimientoEffective(user, req) ? (
+                    <Link
+                      to={`/requerimientos/${req.id}/editar?returnTo=${encodeURIComponent(
+                        `/requerimientos/bandeja/${nivel}`
+                      )}`}
+                      className="text-sm font-medium text-emerald-700 hover:underline"
+                    >
+                      Editar para completar
+                    </Link>
+                  ) : null}
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="button"

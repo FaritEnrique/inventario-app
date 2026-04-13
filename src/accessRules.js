@@ -347,6 +347,13 @@ export const canAccessTrayLevelEffective = (user = {}, nivel) => {
   }
 };
 
+const getPendingApprovalStageDetail = (requerimiento = {}) =>
+  Array.isArray(requerimiento?.rutaAprobacionDetalle)
+    ? requerimiento.rutaAprobacionDetalle.find(
+        (step) => step?.esPendiente || step?.estadoEtapa === "PENDIENTE"
+      ) || null
+    : null;
+
 export const canEditRequerimientoEffective = (user, requerimiento) => {
   if (!user || !requerimiento) return false;
   if (requerimiento.estadoDocumento === "ANULADO") return false;
@@ -357,22 +364,26 @@ export const canEditRequerimientoEffective = (user, requerimiento) => {
     return false;
   }
 
-  if (canViewAllRequerimientosEffective(user)) return true;
+  if (isAdminOverride(user)) return true;
 
-  const sameArea = Number(user?.areaId || 0) === Number(requerimiento.areaId || 0);
-  const isOwner = Number(requerimiento.solicitante?.id || 0) === Number(user?.id || 0);
-  const routeApproverIds = [
-    ...new Set(
-      Array.isArray(requerimiento.rutaAprobacionDetalle)
-        ? requerimiento.rutaAprobacionDetalle
-            .map((step) => Number(step?.aprobadorId || 0))
-            .filter((id) => id > 0)
-        : []
-    ),
-  ];
-  const isAssignedLeader = routeApproverIds.includes(Number(user?.id || 0));
+  const pendingStage = getPendingApprovalStageDetail(requerimiento);
+  const isOwner = Number(requerimiento.solicitante?.id || requerimiento.solicitanteId || 0) === Number(user?.id || 0);
+  const isCurrentPendingApprover =
+    Number(pendingStage?.aprobadorId || 0) > 0 &&
+    Number(pendingStage.aprobadorId) === Number(user?.id || 0);
 
-  return sameArea && (isOwner || isAssignedLeader);
+  if (isCurrentPendingApprover) return true;
+
+  if (!isOwner) return false;
+
+  if (!pendingStage) {
+    return (
+      requerimiento.estadoDocumento === "GENERADO" &&
+      requerimiento.estadoFlujo === "GENERADO"
+    );
+  }
+
+  return pendingStage.nivelLegacy === "JEFATURA";
 };
 
 export const getAvailableApprovalTraysEffective = (user = {}) => {

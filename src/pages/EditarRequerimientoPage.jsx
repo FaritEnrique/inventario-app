@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import RequerimientoForm from "../components/RequerimientoForm";
 import { useAuth } from "../context/authContext";
-import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
-import {
-  canEditRequerimientoEffective,
-  canSelectAreaRequerimientoEffective,
-} from "../accessRules";
+import { canEditRequerimientoEffective } from "../accessRules";
 
 const EditarRequerimientoPage = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { areas } = useAreas();
   const { prioridades, getRequerimientoById, actualizarRequerimiento, buscarCatalogoProductos } = useRequerimientos();
   const [loading, setLoading] = useState(true);
   const [requerimiento, setRequerimiento] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const requestedReturnTo = new URLSearchParams(location.search).get("returnTo");
+  const safeReturnTo =
+    requestedReturnTo && requestedReturnTo.startsWith("/") ? requestedReturnTo : null;
+  const fixedAreaLabel = requerimiento?.area?.branchDescription
+    ? `${requerimiento.area.nombre} - ${requerimiento.area.branchDescription}`
+    : requerimiento?.area?.nombre || requerimiento?.areaNombreSnapshot || "Area no disponible";
 
   useEffect(() => {
     const load = async () => {
@@ -41,7 +43,7 @@ const EditarRequerimientoPage = () => {
     try {
       const actualizado = await actualizarRequerimiento(id, payload);
       toast.success("Requerimiento actualizado correctamente.");
-      navigate(`/requerimientos/${actualizado.id}`);
+      navigate(safeReturnTo || `/requerimientos/${actualizado.id}`);
     } catch (error) {
       const details = Array.isArray(error?.errores) ? error.errores.join(". ") : null;
       toast.error(details || error.message || "No se pudo actualizar el requerimiento.");
@@ -65,6 +67,14 @@ const EditarRequerimientoPage = () => {
           <p className="mt-1 text-sm text-gray-600">Actualiza cabecera e items mientras el documento siga en flujo.</p>
         </div>
         <div className="flex gap-2">
+          {safeReturnTo ? (
+            <Link
+              to={safeReturnTo}
+              className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Volver a bandeja
+            </Link>
+          ) : null}
           <Link to={`/requerimientos/${id}`} className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Ver detalle</Link>
           <Link to="/requerimientos" className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Listado</Link>
         </div>
@@ -72,9 +82,8 @@ const EditarRequerimientoPage = () => {
 
       <RequerimientoForm
         initialData={requerimiento}
-        areas={areas}
         prioridades={prioridades.length ? prioridades : ["Normal", "Urgente", "Emergencia"]}
-        allowAreaSelection={canSelectAreaRequerimientoEffective(user)}
+        fixedAreaLabel={fixedAreaLabel}
         buscarCatalogoProductos={buscarCatalogoProductos}
         onSubmit={handleSubmit}
         submitting={submitting}

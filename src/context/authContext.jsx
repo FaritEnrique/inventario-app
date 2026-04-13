@@ -4,7 +4,6 @@
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { toast } from "react-toastify";
@@ -12,7 +11,6 @@ import apiFetch from "../api/apiFetch";
 import { normalizeSessionUser } from "../utils/userRoles";
 
 const AuthContext = createContext();
-const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 const SESSION_STORAGE_KEY = "auth-session-v2";
 
 const normalizeActiveContext = (context) => {
@@ -46,9 +44,7 @@ const normalizeActiveContext = (context) => {
 
 const normalizeAvailableContexts = (contexts) =>
   Array.isArray(contexts)
-    ? contexts
-        .map((context) => normalizeActiveContext(context))
-        .filter(Boolean)
+    ? contexts.map((context) => normalizeActiveContext(context)).filter(Boolean)
     : [];
 
 const buildOperationalUser = (identity, activeContext) => {
@@ -77,7 +73,9 @@ const buildOperationalUser = (identity, activeContext) => {
       normalizedIdentity.areaNombre ||
       null,
     areaAbreviatura:
-      normalizedContext.area?.abreviatura || normalizedIdentity.areaAbreviatura || null,
+      normalizedContext.area?.abreviatura ||
+      normalizedIdentity.areaAbreviatura ||
+      null,
     areaCodigo:
       normalizedContext.area?.codigo || normalizedIdentity.areaCodigo || null,
     area:
@@ -96,7 +94,11 @@ const buildOperationalUser = (identity, activeContext) => {
   };
 };
 
-const persistSessionSnapshot = ({ identity, availableContexts, activeContext }) => {
+const persistSessionSnapshot = ({
+  identity,
+  availableContexts,
+  activeContext,
+}) => {
   const payload = {
     identity,
     availableContexts,
@@ -127,7 +129,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [contextBusy, setContextBusy] = useState(false);
   const [needsInitialSetup, setNeedsInitialSetup] = useState(false);
-  const inactivityTimer = useRef(null);
 
   const clearSessionState = useCallback(() => {
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -141,17 +142,17 @@ export const AuthProvider = ({ children }) => {
   const applySessionState = useCallback(
     (sessionPayload) => {
       const normalizedIdentity = normalizeSessionUser(
-        sessionPayload?.identity || sessionPayload?.usuario || null
+        sessionPayload?.identity || sessionPayload?.usuario || null,
       );
       const normalizedContexts = normalizeAvailableContexts(
-        sessionPayload?.availableContexts
+        sessionPayload?.availableContexts,
       );
       const normalizedActiveContext = normalizeActiveContext(
-        sessionPayload?.activeContext
+        sessionPayload?.activeContext,
       );
       const operationalUser = buildOperationalUser(
         normalizedIdentity,
-        normalizedActiveContext
+        normalizedActiveContext,
       );
 
       if (!normalizedIdentity) {
@@ -178,12 +179,10 @@ export const AuthProvider = ({ children }) => {
         user: operationalUser,
       };
     },
-    [clearSessionState]
+    [clearSessionState],
   );
 
   const logout = useCallback(async () => {
-    clearTimeout(inactivityTimer.current);
-
     try {
       await apiFetch("auth/logout", { method: "POST" });
     } catch (error) {
@@ -194,19 +193,6 @@ export const AuthProvider = ({ children }) => {
       setContextBusy(false);
     }
   }, [clearSessionState]);
-
-  const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-    }
-
-    inactivityTimer.current = setTimeout(() => {
-      logout();
-      toast.error(
-        "Tu sesion ha expirado por inactividad. Por favor, vuelve a iniciar sesion."
-      );
-    }, INACTIVITY_TIMEOUT_MS);
-  }, [logout]);
 
   const refreshAuthSession = useCallback(async () => {
     const response = await apiFetch("auth/validate-token");
@@ -254,7 +240,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error(
           "Error al verificar el estado inicial de la aplicacion:",
-          error
+          error,
         );
       }
 
@@ -279,28 +265,6 @@ export const AuthProvider = ({ children }) => {
   }, [applySessionState, clearSessionState, refreshAuthSession]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      resetInactivityTimer();
-    }
-
-    const events = ["mousemove", "keydown", "click", "scroll"];
-    const handleActivity = () => {
-      if (isAuthenticated) {
-        resetInactivityTimer();
-      }
-    };
-
-    events.forEach((event) => window.addEventListener(event, handleActivity));
-
-    return () => {
-      events.forEach((event) =>
-        window.removeEventListener(event, handleActivity)
-      );
-      clearTimeout(inactivityTimer.current);
-    };
-  }, [isAuthenticated, resetInactivityTimer]);
-
-  useEffect(() => {
     const handleInvalidContext = async () => {
       try {
         await refreshAuthSession();
@@ -310,33 +274,69 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener("operational-context-invalidated", handleInvalidContext);
+    window.addEventListener(
+      "operational-context-invalidated",
+      handleInvalidContext,
+    );
 
     return () => {
       window.removeEventListener(
         "operational-context-invalidated",
-        handleInvalidContext
+        handleInvalidContext,
       );
     };
   }, [clearSessionState, refreshAuthSession]);
 
   useEffect(() => {
     const handleInvalidAuthSession = () => {
-      clearTimeout(inactivityTimer.current);
       clearSessionState();
       setLoading(false);
       setContextBusy(false);
     };
 
-    window.addEventListener("auth-session-invalidated", handleInvalidAuthSession);
+    window.addEventListener(
+      "auth-session-invalidated",
+      handleInvalidAuthSession,
+    );
 
     return () => {
       window.removeEventListener(
         "auth-session-invalidated",
-        handleInvalidAuthSession
+        handleInvalidAuthSession,
       );
     };
   }, [clearSessionState]);
+
+  // UX Timer: Supportive warning only; backend is authoritative for idle expiry.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const warningTime = 13 * 60 * 1000; // 13 min
+    const expiredTime = 15 * 60 * 1000; // 15 min
+
+    const warningTimer = setTimeout(() => {
+      toast.warn(
+        "Tu sesión expirará pronto por inactividad. Realiza una acción para continuar.",
+        {
+          autoClose: 10000,
+        },
+      );
+    }, warningTime);
+
+    const expiredTimer = setTimeout(() => {
+      toast.info(
+        "Si no realizas ninguna acción, tu sesión puede haber expirado. Vuelve a iniciar sesión si es necesario.",
+        {
+          autoClose: 10000,
+        },
+      );
+    }, expiredTime);
+
+    return () => {
+      clearTimeout(warningTimer);
+      clearTimeout(expiredTimer);
+    };
+  }, [isAuthenticated]);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -349,7 +349,6 @@ export const AuthProvider = ({ children }) => {
 
       if (response?.identity) {
         const session = applySessionState(response);
-        resetInactivityTimer();
         return {
           success: true,
           session,
@@ -377,6 +376,7 @@ export const AuthProvider = ({ children }) => {
       const response = await apiFetch("auth/context/activate", {
         method: "POST",
         body: JSON.stringify({ contextKey }),
+        sessionActivity: "interactive",
       });
       applySessionState(response);
       return response;
@@ -391,12 +391,13 @@ export const AuthProvider = ({ children }) => {
       const response = await apiFetch("auth/context/change", {
         method: "POST",
         body: JSON.stringify({ contextKey }),
+        sessionActivity: "interactive",
       });
       applySessionState(response);
       window.dispatchEvent(
         new CustomEvent("operational-context-changed", {
           detail: { contextKey },
-        })
+        }),
       );
       return response;
     } finally {
@@ -423,7 +424,7 @@ export const AuthProvider = ({ children }) => {
 
   const contextSelectionRequired = useMemo(
     () => isAuthenticated && !activeContext,
-    [activeContext, isAuthenticated]
+    [activeContext, isAuthenticated],
   );
 
   return (

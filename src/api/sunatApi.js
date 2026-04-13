@@ -4,12 +4,14 @@ const sunatApi = {
   actualizarPadronSunat: async () => {
     return apiFetch("sunat/actualizar", {
       method: "POST",
+      sessionActivity: "interactive",
     });
   },
 
   actualizarPadronReducido: async () => {
     return apiFetch("sunat/actualizar-reducido", {
       method: "POST",
+      sessionActivity: "interactive",
     });
   },
 
@@ -30,7 +32,9 @@ const sunatApi = {
       throw new Error("RUC invalido. Debe tener 11 digitos numericos.");
     }
 
-    return apiFetch(`sunat/consultar/${ruc}`);
+    return apiFetch(`sunat/consultar/${ruc}`, {
+      sessionActivity: "interactive",
+    });
   },
 };
 

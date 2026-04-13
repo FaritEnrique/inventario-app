@@ -119,6 +119,7 @@ const RequerimientoForm = ({
   allowAreaSelection = false,
   lockAreaToContext = false,
   contextualAreaLabel = "",
+  fixedAreaLabel = "",
   buscarCatalogoProductos,
   onSubmit,
   submitting,
@@ -365,14 +366,27 @@ const RequerimientoForm = ({
                   readOnly
                   className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Esta area se toma automaticamente de tu contexto activo.
-                </p>
-              </>
-            ) : (
-              <select
-                id="requerimiento-area-id"
-                value={state.areaId}
+                  <p className="mt-1 text-xs text-gray-500">
+                   Esta area se toma automaticamente de tu contexto activo.
+                  </p>
+                </>
+              ) : fixedAreaLabel ? (
+                <>
+                  <input
+                    id="requerimiento-area-id"
+                    type="text"
+                    value={fixedAreaLabel}
+                    readOnly
+                    className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    El area solicitante ya no puede modificarse en esta etapa.
+                  </p>
+                </>
+              ) : (
+                <select
+                  id="requerimiento-area-id"
+                  value={state.areaId}
                 name="requerimiento-form-select-318" onChange={(event) => dispatch({ type: "FIELD", name: "areaId", value: event.target.value })}
                 disabled={!allowAreaSelection}
                 className="w-full rounded border border-gray-300 px-3 py-2"

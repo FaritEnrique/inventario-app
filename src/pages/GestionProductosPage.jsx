@@ -20,7 +20,10 @@ const buildUploadsBaseUrl = () => {
     import.meta.env.VITE_API_URL ||
     (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
 
-  return String(rawApiUrl || "").trim().replace(/\/+$/, "").replace(/\/api$/, "");
+  return String(rawApiUrl || "")
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/api$/, "");
 };
 
 const resolveProductoImageUrl = (imageUrl) => {
@@ -125,13 +128,13 @@ const GestionProductosPage = () => {
       if (!modoEdicion && productoActual.tipoProductoId) {
         try {
           const siguienteCodigo = await productosApi.getSiguienteCodigo(
-            productoActual.tipoProductoId
+            productoActual.tipoProductoId,
           );
           setProductoActual((prev) => ({ ...prev, codigo: siguienteCodigo }));
         } catch (error) {
           console.error("Error al obtener el siguiente código:", error);
           toast.error(
-            "Error al generar código automático. Revise la consola para más detalles."
+            "Error al generar código automático. Revise la consola para más detalles.",
           );
           setProductoActual((prev) => ({ ...prev, codigo: "" }));
         }
@@ -151,10 +154,10 @@ const GestionProductosPage = () => {
         type === "checkbox"
           ? checked
           : type === "number"
-          ? value === ""
-            ? ""
-            : parseFloat(value)
-          : value,
+            ? value === ""
+              ? ""
+              : parseFloat(value)
+            : value,
     }));
   }, []);
 
@@ -165,7 +168,7 @@ const GestionProductosPage = () => {
 
       if (!nombre.trim() || !unidadMedida.trim() || !tipoProductoId) {
         toast.error(
-          "❌ Los campos obligatorios deben completarse correctamente"
+          "❌ Los campos obligatorios deben completarse correctamente",
         );
         return;
       }
@@ -177,7 +180,7 @@ const GestionProductosPage = () => {
         formData.append("tipoProductoId", tipoProductoId);
         formData.append(
           "valorReferencial",
-          Number(productoActual.valorReferencial || 0)
+          Number(productoActual.valorReferencial || 0),
         );
         if (productoActual.descripcion)
           formData.append("descripcion", productoActual.descripcion);
@@ -228,7 +231,7 @@ const GestionProductosPage = () => {
       page,
       limit,
       estadoFiltro,
-    ]
+    ],
   );
 
   const handleEditar = useCallback((producto) => {
@@ -267,7 +270,7 @@ const GestionProductosPage = () => {
                 toast.error(
                   `❌ Error al desactivar producto: ${
                     err.message || "Error desconocido"
-                  }`
+                  }`,
                 );
               }
             }}
@@ -281,7 +284,7 @@ const GestionProductosPage = () => {
           closeOnClick: false,
           draggable: false,
           pauseOnHover: false,
-        }
+        },
       );
     },
     [
@@ -293,7 +296,7 @@ const GestionProductosPage = () => {
       page,
       limit,
       estadoFiltro,
-    ]
+    ],
   );
 
   const handleReactivar = useCallback(
@@ -316,7 +319,7 @@ const GestionProductosPage = () => {
                 toast.error(
                   `❌ Error al reactivar producto: ${
                     err.message || "Error desconocido"
-                  }`
+                  }`,
                 );
               }
             }}
@@ -330,7 +333,7 @@ const GestionProductosPage = () => {
           closeOnClick: false,
           draggable: false,
           pauseOnHover: false,
-        }
+        },
       );
     },
     [
@@ -341,7 +344,7 @@ const GestionProductosPage = () => {
       page,
       limit,
       estadoFiltro,
-    ]
+    ],
   );
 
   const handleClearForm = useCallback(() => {
@@ -536,7 +539,8 @@ const GestionProductosPage = () => {
               className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Se usa como base para requerimientos cuando aun no hay historial de compra.
+              Se usa como base para requerimientos cuando aun no hay historial
+              de compra.
             </p>
           </div>
 
@@ -558,7 +562,8 @@ const GestionProductosPage = () => {
               className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              El stock se muestra como referencia y no se edita desde este formulario.
+              El stock se muestra como referencia y no se edita desde este
+              formulario.
             </p>
           </div>
 
@@ -626,14 +631,14 @@ const GestionProductosPage = () => {
 
           {/* Estado */}
           <div className="md:col-span-2">
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div className="px-4 py-3 text-sm border rounded-md border-slate-200 bg-slate-50 text-slate-700">
               <span className="font-semibold text-slate-900">
                 Estado del producto:
               </span>{" "}
               {productoActual.activo ? "Activo" : "Inactivo"}
               <p className="mt-1 text-xs text-slate-500">
-                El estado operativo del producto se administra desde las acciones
-                de la tabla mediante desactivacion o reactivacion.
+                El estado operativo del producto se administra desde las
+                acciones de la tabla mediante desactivacion o reactivacion.
               </p>
             </div>
           </div>
@@ -676,7 +681,7 @@ const GestionProductosPage = () => {
             setEstadoFiltro(e.target.value);
             setPage(1);
           }}
-          className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="w-full p-2 text-sm border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
         >
           <option value="activos">Solo activos</option>
           <option value="inactivos">Solo inactivos</option>
@@ -712,7 +717,9 @@ const GestionProductosPage = () => {
                 <tr
                   key={producto.id}
                   className={`text-center ${
-                    producto.activo === false ? "bg-slate-50 text-slate-500" : ""
+                    producto.activo === false
+                      ? "bg-slate-50 text-slate-500"
+                      : ""
                   }`}
                 >
                   <td className="px-4 py-2 border">{desde + index}</td>
@@ -751,7 +758,7 @@ const GestionProductosPage = () => {
                     {producto.activo === false ? (
                       <button
                         onClick={() => handleReactivar(producto.id)}
-                        className="px-2 py-1 text-sm font-semibold text-white bg-sky-600 rounded hover:bg-sky-700"
+                        className="px-2 py-1 text-sm font-semibold text-white rounded bg-sky-600 hover:bg-sky-700"
                       >
                         Reactivar
                       </button>
@@ -851,8 +858,8 @@ const GestionProductosPage = () => {
                 {productoEnDetalle.unidadMedida}
               </p>
               <p>
-                <strong className="font-semibold">Valor Referencial:</strong>{" "}
-                S/ {Number(productoEnDetalle.valorReferencial || 0).toFixed(2)}
+                <strong className="font-semibold">Valor Referencial:</strong> S/{" "}
+                {Number(productoEnDetalle.valorReferencial || 0).toFixed(2)}
               </p>
               <p>
                 <strong className="font-semibold">Stock Actual:</strong>{" "}

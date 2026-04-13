@@ -124,14 +124,14 @@ const translateValidationMessage = (message) => {
   }
 
   match = rawMessage.match(
-    /^"([^"]+)" length must be at least (\d+) characters long$/i
+    /^"([^"]+)" length must be at least (\d+) characters long$/i,
   );
   if (match) {
     return `El campo ${formatFieldLabel(match[1])} debe tener al menos ${match[2]} caracteres.`;
   }
 
   match = rawMessage.match(
-    /^"([^"]+)" length must be less than or equal to (\d+) characters long$/i
+    /^"([^"]+)" length must be less than or equal to (\d+) characters long$/i,
   );
   if (match) {
     return `El campo ${formatFieldLabel(match[1])} no puede tener mas de ${match[2]} caracteres.`;
@@ -142,12 +142,16 @@ const translateValidationMessage = (message) => {
     return `El campo ${formatFieldLabel(match[1])} debe contener al menos ${match[2]} elementos.`;
   }
 
-  match = rawMessage.match(/^"([^"]+)" must be greater than or equal to ([^ ]+)$/i);
+  match = rawMessage.match(
+    /^"([^"]+)" must be greater than or equal to ([^ ]+)$/i,
+  );
   if (match) {
     return `El campo ${formatFieldLabel(match[1])} debe ser mayor o igual a ${match[2]}.`;
   }
 
-  match = rawMessage.match(/^"([^"]+)" must be less than or equal to ([^ ]+)$/i);
+  match = rawMessage.match(
+    /^"([^"]+)" must be less than or equal to ([^ ]+)$/i,
+  );
   if (match) {
     return `El campo ${formatFieldLabel(match[1])} debe ser menor o igual a ${match[2]}.`;
   }
@@ -163,7 +167,7 @@ const translateValidationMessage = (message) => {
   }
 
   match = rawMessage.match(
-    /^"([^"]+)" with value "([^"]*)" fails to match the required pattern: .*$/i
+    /^"([^"]+)" with value "([^"]*)" fails to match the required pattern: .*$/i,
   );
   if (match) {
     return `El campo ${formatFieldLabel(match[1])} tiene un formato invalido.`;
@@ -193,7 +197,7 @@ const dispatchOperationalContextEvent = (code, error) => {
         status: error?.response?.status || null,
         message: error?.message || null,
       },
-    })
+    }),
   );
 };
 
@@ -213,7 +217,7 @@ const dispatchAuthSessionInvalidationEvent = (code, error) => {
         status: error?.response?.status || null,
         message: error?.message || null,
       },
-    })
+    }),
   );
 };
 
@@ -224,10 +228,15 @@ export const buildApiUrl = (endpoint) => {
 
 const apiFetch = async (endpoint, options = {}) => {
   try {
-    const isFormData = options.body instanceof FormData;
+    const { sessionActivity, ...fetchOptions } = options;
+    const isFormData = fetchOptions.body instanceof FormData;
     const headers = {
-      ...(options.headers || {}),
+      ...(fetchOptions.headers || {}),
     };
+
+    if (String(sessionActivity || "").toLowerCase() === "interactive") {
+      headers["X-Session-Activity"] = "interactive";
+    }
 
     if (!isFormData && !("Content-Type" in headers)) {
       headers["Content-Type"] = "application/json";
@@ -235,7 +244,7 @@ const apiFetch = async (endpoint, options = {}) => {
 
     const res = await fetch(buildApiUrl(endpoint), {
       headers,
-      ...options,
+      ...fetchOptions,
       credentials: "include",
     });
 
@@ -246,17 +255,17 @@ const apiFetch = async (endpoint, options = {}) => {
         data = await res.json();
       }
       const normalizedError = data?.error || null;
-      const errorMessage =
-        translateValidationMessage(
-          normalizedError?.message ||
-            data?.mensaje ||
-            data?.message ||
-            "Error al conectar con el servidor"
-        );
-      const validationErrors =
-        (data?.errores || normalizedError?.details?.errores || []).map(
-          translateValidationMessage
-        );
+      const errorMessage = translateValidationMessage(
+        normalizedError?.message ||
+          data?.mensaje ||
+          data?.message ||
+          "Error al conectar con el servidor",
+      );
+      const validationErrors = (
+        data?.errores ||
+        normalizedError?.details?.errores ||
+        []
+      ).map(translateValidationMessage);
 
       const fullError = new Error(errorMessage);
       fullError.response = { data, status: res.status };
@@ -276,7 +285,7 @@ const apiFetch = async (endpoint, options = {}) => {
       error.message = translateValidationMessage(error.message);
       if (Array.isArray(error.validationErrors)) {
         error.validationErrors = error.validationErrors.map(
-          translateValidationMessage
+          translateValidationMessage,
         );
       }
     }

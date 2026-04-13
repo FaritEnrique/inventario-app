@@ -7,6 +7,7 @@ import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
   canAccessLogisticaOperativeTrayFromRequerimientosEffective,
+  canEditRequerimientoEffective,
   canSelectAreaRequerimientoEffective,
   getLogisticaOperativeTrayPathEffective,
   getAvailableApprovalTraysEffective,
@@ -233,7 +234,7 @@ const RequerimientosPage = () => {
                       <Link to={`/requerimientos/${req.id}`} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50">
                         Ver
                       </Link>
-                      {req.estadoDocumento === "GENERADO" && (
+                      {canEditRequerimientoEffective(user, req) && (
                         <Link
                           to={`/requerimientos/${req.id}/editar`}
                           className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"

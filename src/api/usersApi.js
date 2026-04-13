@@ -1,5 +1,5 @@
 // src/api/usersApi.js
-import apiFetch from './apiFetch';
+import apiFetch from "./apiFetch";
 
 const normalizeRangosPayload = (rangos = []) =>
   (Array.isArray(rangos) ? rangos : [])
@@ -9,7 +9,7 @@ const normalizeRangosPayload = (rangos = []) =>
         rango.rol &&
         rango.areaId !== "" &&
         rango.areaId !== null &&
-        rango.areaId !== undefined
+        rango.areaId !== undefined,
     )
     .map((rango) => ({
       rol: rango.rol,
@@ -46,45 +46,53 @@ const serializeUserPayload = (usuario = {}) => {
 
 const usersApi = {
   // obtenerTodos acepta un objeto opcional { page, search }
-  obtenerTodos: async ({ page = 1, search = '', includeInactive = false } = {}) => {
+  obtenerTodos: async ({
+    page = 1,
+    search = "",
+    includeInactive = false,
+  } = {}) => {
     const q = [];
     if (page) q.push(`page=${page}`);
     if (search) q.push(`search=${encodeURIComponent(search)}`);
-    if (includeInactive) q.push('includeInactive=true');
-    const query = q.length ? `?${q.join('&')}` : '';
+    if (includeInactive) q.push("includeInactive=true");
+    const query = q.length ? `?${q.join("&")}` : "";
     // backend puede devolver array o { usuarios, totalPages, currentPage, totalItems }
-    return apiFetch(`usuarios${query}`);
+    return apiFetch(`usuarios${query}`, { sessionActivity: "interactive" });
   },
 
   obtenerPorId: async (id) => {
-    return apiFetch(`usuarios/${id}`);
+    return apiFetch(`usuarios/${id}`, { sessionActivity: "interactive" });
   },
 
   crear: async (usuario) => {
-    return apiFetch('usuarios', {
-      method: 'POST',
+    return apiFetch("usuarios", {
+      method: "POST",
       body: JSON.stringify(serializeUserPayload(usuario)),
+      sessionActivity: "interactive",
     });
   },
 
   actualizar: async (id, usuario) => {
     return apiFetch(`usuarios/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(serializeUserPayload(usuario)),
+      sessionActivity: "interactive",
     });
   },
 
   eliminar: async (id) => {
     return apiFetch(`usuarios/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
+      sessionActivity: "interactive",
     });
   },
 
   // patch para cambiar solo estado activo/inactivo
   toggleActivo: async (id, activo) => {
     return apiFetch(`usuarios/${id}/estado`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify({ activo }),
+      sessionActivity: "interactive",
     });
   },
 };
