@@ -15,13 +15,13 @@ import {
 } from "react-icons/fa";
 import {
   canAccessAreasManagementEffective,
-  canAccessCotizacionesEffective,
   canAccessProveedorManagementEffective,
   canManageCatalogMasterEffective,
   canAccessUserManagementEffective,
   canApprovePedidoInternoEffective,
   canCreatePedidoInternoEffective,
   canOperateInventoryEffective,
+  canViewAllCotizacionesLogisticaEffective,
   canViewOrdenCompraApprovalTrayEffective,
   canViewOrdenesCompraEffective,
   canViewPedidosInternosModuleEffective,
@@ -79,12 +79,12 @@ const baseCards = [
     visible: ({ user }) => canViewWarehouseTrayEffective(user),
   },
   {
-    title: "Cotizaciones",
+    title: "Atención Logística",
     description:
       "Entrar a la bandeja o vista logistica habilitada por el contexto activo.",
     icon: <FaFileInvoiceDollar />,
     path: ({ user }) => getCotizacionesHomePathEffective(user),
-    visible: ({ user }) => canAccessCotizacionesEffective(user),
+    visible: ({ user }) => canViewAllCotizacionesLogisticaEffective(user),
   },
   {
     title: "Ordenes de Compra",

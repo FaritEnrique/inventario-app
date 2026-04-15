@@ -549,10 +549,10 @@ export const getPrimaryNavigationLinksEffective = (user = {}) => {
     links.push({ to: "/inventario-stock", label: "Inventario" });
   }
 
-  if (canAccessCotizacionesEffective(user)) {
+  if (canViewAllCotizacionesLogisticaEffective(user)) {
     links.push({
       to: getCotizacionesHomePathEffective(user),
-      label: "Cotizaciones",
+      label: "Atención Logística",
     });
   }
 
