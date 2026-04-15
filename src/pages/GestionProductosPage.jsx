@@ -46,6 +46,12 @@ const resolveProductoImageUrl = (imageUrl) => {
   return `${uploadsBaseUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
 };
 
+const revokeIfBlobUrl = (url) => {
+  if (typeof url === "string" && url.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+};
+
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
 
@@ -88,6 +94,12 @@ const GestionProductosPage = () => {
   const [estadoFiltro, setEstadoFiltro] = useState("activos");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [productoEnDetalle, setProductoEnDetalle] = useState(null);
+  const [incluirStockInicial, setIncluirStockInicial] = useState(false);
+  const [stockInicialInput, setStockInicialInput] = useState("");
+  const [fechaMovimientoCreacion, setFechaMovimientoCreacion] = useState("");
+  const [observacionesStockCreacion, setObservacionesStockCreacion] =
+    useState("");
+  const [enviandoFormulario, setEnviandoFormulario] = useState(false);
 
   const {
     productos,
@@ -100,6 +112,7 @@ const GestionProductosPage = () => {
     setLimit,
     fetchProductos,
     crearProducto,
+    crearProductoConStockInicial,
     actualizarProducto,
     desactivarProducto,
     reactivarProducto,
@@ -164,67 +177,106 @@ const GestionProductosPage = () => {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      if (enviandoFormulario) return;
+  
       const { nombre, unidadMedida, tipoProductoId } = productoActual;
-
+  
       if (!nombre.trim() || !unidadMedida.trim() || !tipoProductoId) {
+        toast.error("❌ Los campos obligatorios deben completarse correctamente");
+        return;
+      }
+  
+      if (
+        !modoEdicion &&
+        incluirStockInicial &&
+        (stockInicialInput === "" ||
+          !Number.isFinite(Number(stockInicialInput)) ||
+          Number(stockInicialInput) <= 0)
+      ) {
         toast.error(
-          "❌ Los campos obligatorios deben completarse correctamente",
+          "❌ Con stock inicial activado, indique una cantidad mayor que cero.",
         );
         return;
       }
-
+  
+      setEnviandoFormulario(true);
+  
       try {
         const formData = new FormData();
-        formData.append("nombre", nombre);
-        formData.append("unidadMedida", unidadMedida);
-        formData.append("tipoProductoId", tipoProductoId);
+        formData.append("nombre", nombre.trim());
+        formData.append("unidadMedida", unidadMedida.trim());
+        formData.append("tipoProductoId", String(tipoProductoId));
         formData.append(
           "valorReferencial",
-          Number(productoActual.valorReferencial || 0),
+          String(Number(productoActual.valorReferencial || 0)),
         );
-        if (productoActual.descripcion)
-          formData.append("descripcion", productoActual.descripcion);
-        if (productoActual.marcaId)
-          formData.append("marcaId", productoActual.marcaId);
-
+  
+        if (productoActual.descripcion?.trim()) {
+          formData.append("descripcion", productoActual.descripcion.trim());
+        }
+  
+        if (productoActual.marcaId) {
+          formData.append("marcaId", String(productoActual.marcaId));
+        }
+  
         if (productoActual.imagenFile) {
           formData.append("imagen", productoActual.imagenFile);
         }
-
+  
         if (modoEdicion) {
-          await actualizarProducto(productoActual.id, formData, true);
-          toast.success("✅ Producto actualizado correctamente");
+          await actualizarProducto(productoActual.id, formData);
+        } else if (incluirStockInicial) {
+          formData.append("stockInicial", String(Number(stockInicialInput)));
+  
+          if (fechaMovimientoCreacion.trim()) {
+            const d = new Date(fechaMovimientoCreacion);
+            if (!Number.isNaN(d.getTime())) {
+              formData.append("fechaMovimiento", d.toISOString());
+            }
+          }
+  
+          if (observacionesStockCreacion.trim()) {
+            formData.append(
+              "observaciones",
+              observacionesStockCreacion.trim(),
+            );
+          }
+  
+          await crearProductoConStockInicial(formData);
         } else {
           await crearProducto(formData);
-          toast.success("✅ Producto creado correctamente");
         }
-
-        if (
-          productoActual.imagenUrl &&
-          !productoActual.imagenUrl.startsWith("http")
-        ) {
-          URL.revokeObjectURL(productoActual.imagenUrl);
-        }
-
+  
+        revokeIfBlobUrl(productoActual.imagenUrl);
+  
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-
+  
         setProductoActual({ ...initialProducto, imagenFile: null });
         setModoEdicion(false);
+        setIncluirStockInicial(false);
+        setStockInicialInput("");
+        setFechaMovimientoCreacion("");
+        setObservacionesStockCreacion("");
+  
         fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
       } catch (err) {
-        const msg =
-          err.response?.data?.message ||
-          err.message ||
-          "Error al guardar producto";
-        toast.error(`❌ ${msg}`);
+        console.error("Error al guardar producto:", err);
+      } finally {
+        setEnviandoFormulario(false);
       }
     },
     [
       productoActual,
       modoEdicion,
+      incluirStockInicial,
+      stockInicialInput,
+      fechaMovimientoCreacion,
+      observacionesStockCreacion,
+      enviandoFormulario,
       crearProducto,
+      crearProductoConStockInicial,
       actualizarProducto,
       fetchProductos,
       debouncedBusqueda,
@@ -244,6 +296,10 @@ const GestionProductosPage = () => {
       activo: typeof producto.activo === "boolean" ? producto.activo : true,
     });
     setModoEdicion(true);
+    setIncluirStockInicial(false);
+    setStockInicialInput("");
+    setFechaMovimientoCreacion("");
+    setObservacionesStockCreacion("");
   }, []);
 
   const handleDesactivar = useCallback(
@@ -348,15 +404,15 @@ const GestionProductosPage = () => {
   );
 
   const handleClearForm = useCallback(() => {
-    if (
-      productoActual.imagenUrl &&
-      !productoActual.imagenUrl.startsWith("http")
-    ) {
-      URL.revokeObjectURL(productoActual.imagenUrl);
-    }
+    revokeIfBlobUrl(productoActual.imagenUrl);
+  
     setProductoActual({ ...initialProducto });
     setModoEdicion(false);
-
+    setIncluirStockInicial(false);
+    setStockInicialInput("");
+    setFechaMovimientoCreacion("");
+    setObservacionesStockCreacion("");
+  
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -607,11 +663,16 @@ const GestionProductosPage = () => {
                       maxWidthOrHeight: 800,
                       useWebWorker: true,
                     });
-                    setProductoActual((prev) => ({
-                      ...prev,
-                      imagenFile: compressedFile,
-                      imagenUrl: URL.createObjectURL(compressedFile),
-                    }));
+              
+                    setProductoActual((prev) => {
+                      revokeIfBlobUrl(prev.imagenUrl);
+              
+                      return {
+                        ...prev,
+                        imagenFile: compressedFile,
+                        imagenUrl: URL.createObjectURL(compressedFile),
+                      };
+                    });
                   } catch (error) {
                     console.error("Error al comprimir la imagen:", error);
                     toast.error("❌ Error al comprimir la imagen");
@@ -643,11 +704,100 @@ const GestionProductosPage = () => {
             </div>
           </div>
 
+          {!modoEdicion && (
+            <div className="p-4 border rounded-md md:col-span-2 border-amber-200 bg-amber-50/80">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={incluirStockInicial}
+                  onChange={(e) => {
+                    setIncluirStockInicial(e.target.checked);
+                    if (!e.target.checked) {
+                      setStockInicialInput("");
+                      setFechaMovimientoCreacion("");
+                      setObservacionesStockCreacion("");
+                    }
+                  }}
+                  className="mt-1 border-gray-300 rounded text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-gray-800">
+                  <span className="font-semibold">
+                    Registrar stock inicial al crear
+                  </span>
+                  <span className="block mt-0.5 text-xs text-gray-600">
+                    Si lo activa, el producto se crea y se registra carga inicial
+                    en inventario (almacén principal si no indica otro en backend).
+                  </span>
+                </span>
+              </label>
+              {incluirStockInicial && (
+                <div className="grid grid-cols-1 gap-3 mt-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="stockInicialCreacion"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Cantidad stock inicial <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      id="stockInicialCreacion"
+                      name="stockInicialCreacion"
+                      min="0"
+                      step="any"
+                      value={stockInicialInput}
+                      onChange={(e) => setStockInicialInput(e.target.value)}
+                      className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      required={incluirStockInicial}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="fechaMovimientoCreacion"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Fecha del movimiento (opcional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="fechaMovimientoCreacion"
+                      name="fechaMovimientoCreacion"
+                      value={fechaMovimientoCreacion}
+                      onChange={(e) =>
+                        setFechaMovimientoCreacion(e.target.value)
+                      }
+                      className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="observacionesStockCreacion"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Observaciones (opcional)
+                    </label>
+                    <textarea
+                      id="observacionesStockCreacion"
+                      name="observacionesStockCreacion"
+                      rows={2}
+                      value={observacionesStockCreacion}
+                      onChange={(e) =>
+                        setObservacionesStockCreacion(e.target.value)
+                      }
+                      className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Botones */}
           <div className="flex space-x-2 md:col-span-2">
             <button
               type="submit"
-              className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700"
+              disabled={enviandoFormulario}
+              className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {modoEdicion ? "Actualizar" : "Crear"}
             </button>

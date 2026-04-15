@@ -1,7 +1,17 @@
 // src/hooks/useProductos.js
-import { useState, useEffect, useCallback } from 'react';
-import productosApi from '../api/productosApi';
-import { toast } from 'react-toastify';
+import { useState, useEffect, useCallback } from "react";
+import productosApi from "../api/productosApi";
+import { toast } from "react-toastify";
+
+const normalizarStock = (valor) => {
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : 0;
+};
+
+const normalizarProducto = (producto) => ({
+  ...producto,
+  stock: normalizarStock(producto?.stock),
+});
 
 const useProductos = () => {
   const [productos, setProductos] = useState([]);
@@ -13,36 +23,45 @@ const useProductos = () => {
   const [desde, setDesde] = useState(1);
   const [hasta, setHasta] = useState(0);
 
-  const obtenerProductos = useCallback(async (
-    buscar = '',
-    pageNumber = page,
-    limitNumber = limit,
-    estado = 'activos'
-  ) => {
-    try {
-      setCargando(true);
-      setError(null);
-      const data = await productosApi.getTodos(buscar, pageNumber, limitNumber, estado);
+  const obtenerProductos = useCallback(
+    async (
+      buscar = "",
+      pageNumber = page,
+      limitNumber = limit,
+      estado = "activos",
+    ) => {
+      try {
+        setCargando(true);
+        setError(null);
 
-      const formateados = Array.isArray(data.productos)
-        ? data.productos.map((producto) => ({ ...producto, stock: parseFloat(producto.stock) }))
-        : [];
+        const data = await productosApi.getTodos(
+          buscar,
+          pageNumber,
+          limitNumber,
+          estado,
+        );
 
-      setProductos(formateados);
-      setTotal(data.total);
-      setPage(data.page);
-      setLimit(data.limit);
-      setDesde(data.desde);
-      setHasta(data.hasta);
-    } catch (err) {
-      console.error('❌ Error al obtener productos:', err);
-      toast.error('❌ Error al obtener productos');
-      setProductos([]);
-      setError(err.message);
-    } finally {
-      setCargando(false);
-    }
-  }, [page, limit]);
+        const formateados = Array.isArray(data.productos)
+          ? data.productos.map(normalizarProducto)
+          : [];
+
+        setProductos(formateados);
+        setTotal(data.total);
+        setPage(data.page);
+        setLimit(data.limit);
+        setDesde(data.desde);
+        setHasta(data.hasta);
+      } catch (err) {
+        console.error("❌ Error al obtener productos:", err);
+        toast.error("❌ Error al obtener productos");
+        setProductos([]);
+        setError(err.message);
+      } finally {
+        setCargando(false);
+      }
+    },
+    [page, limit],
+  );
 
   useEffect(() => {
     obtenerProductos();
@@ -50,56 +69,79 @@ const useProductos = () => {
 
   const crearProducto = useCallback(async (nuevoProducto) => {
     try {
+      setError(null);
       const creado = await productosApi.crear(nuevoProducto);
-      setProductos((prev) => [...prev, { ...creado, stock: parseFloat(creado.stock) }]);
-      toast.success('✅ Producto creado correctamente');
+      setProductos((prev) => [...prev, normalizarProducto(creado)]);
+      toast.success("✅ Producto creado correctamente");
       return creado;
     } catch (err) {
-      console.error('❌ Error al crear producto:', err);
-      toast.error(`❌ ${err.message || 'Error desconocido'}`);
+      console.error("❌ Error al crear producto:", err);
+      toast.error(`❌ ${err.message || "Error desconocido"}`);
+      setError(err.message || "Error desconocido");
+      throw err;
+    }
+  }, []);
+
+  const crearProductoConStockInicial = useCallback(async (formData) => {
+    try {
+      setError(null);
+      const creado = await productosApi.crearConStockInicial(formData);
+      setProductos((prev) => [...prev, normalizarProducto(creado)]);
+      toast.success("✅ Producto creado con stock inicial correctamente");
+      return creado;
+    } catch (err) {
+      console.error("❌ Error al crear producto con stock inicial:", err);
+      toast.error(`❌ ${err.message || "Error desconocido"}`);
+      setError(err.message || "Error desconocido");
       throw err;
     }
   }, []);
 
   const actualizarProducto = useCallback(async (id, datos) => {
     try {
+      setError(null);
       const { message, producto } = await productosApi.actualizar(id, datos);
       setProductos((prev) =>
-        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
+        prev.map((p) => (p.id === id ? normalizarProducto(producto) : p)),
       );
-      toast.success(`✅ ${message || 'Producto actualizado correctamente'}`);
+      toast.success(`✅ ${message || "Producto actualizado correctamente"}`);
       return producto;
     } catch (err) {
-      console.error('❌ Error al actualizar producto:', err);
-      toast.error(`❌ ${err.message || 'Error desconocido'}`);
+      console.error("❌ Error al actualizar producto:", err);
+      toast.error(`❌ ${err.message || "Error desconocido"}`);
+      setError(err.message || "Error desconocido");
       throw err;
     }
   }, []);
 
   const desactivarProducto = useCallback(async (id) => {
     try {
+      setError(null);
       const { message, producto } = await productosApi.desactivar(id);
       setProductos((prev) =>
-        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
+        prev.map((p) => (p.id === id ? normalizarProducto(producto) : p)),
       );
-      toast.success(`✅ ${message || 'Producto desactivado correctamente'}`);
+      toast.success(`✅ ${message || "Producto desactivado correctamente"}`);
     } catch (err) {
-      console.error('❌ Error al desactivar producto:', err);
-      toast.error(`❌ ${err.message || 'Error desconocido'}`);
+      console.error("❌ Error al desactivar producto:", err);
+      toast.error(`❌ ${err.message || "Error desconocido"}`);
+      setError(err.message || "Error desconocido");
       throw err;
     }
   }, []);
 
   const reactivarProducto = useCallback(async (id) => {
     try {
+      setError(null);
       const { message, producto } = await productosApi.reactivar(id);
       setProductos((prev) =>
-        prev.map((p) => (p.id === id ? { ...producto, stock: parseFloat(producto.stock) } : p))
+        prev.map((p) => (p.id === id ? normalizarProducto(producto) : p)),
       );
-      toast.success(`✅ ${message || 'Producto reactivado correctamente'}`);
+      toast.success(`✅ ${message || "Producto reactivado correctamente"}`);
     } catch (err) {
-      console.error('❌ Error al reactivar producto:', err);
-      toast.error(`❌ ${err.message || 'Error desconocido'}`);
+      console.error("❌ Error al reactivar producto:", err);
+      toast.error(`❌ ${err.message || "Error desconocido"}`);
+      setError(err.message || "Error desconocido");
       throw err;
     }
   }, []);
@@ -115,6 +157,7 @@ const useProductos = () => {
     setLimit,
     fetchProductos: obtenerProductos,
     crearProducto,
+    crearProductoConStockInicial,
     actualizarProducto,
     desactivarProducto,
     reactivarProducto,

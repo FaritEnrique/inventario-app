@@ -43,6 +43,18 @@ const productosApi = {
     });
   },
 
+  crearConStockInicial: async (producto) => {
+    if (!(producto instanceof FormData)) {
+      throw new Error("crearConStockInicial requiere FormData.");
+    }
+    return await apiFetch("productos/crear-con-stock-inicial", {
+      method: "POST",
+      body: producto,
+      headers: {},
+      sessionActivity: "interactive",
+    });
+  },
+
   actualizar: async (id, producto) => {
     const isFormData = producto instanceof FormData;
     return await apiFetch(`productos/${id}`, {
