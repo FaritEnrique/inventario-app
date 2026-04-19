@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
 import RequerimientoForm from "../components/RequerimientoForm";
 import { useAuth } from "../context/authContext";
+import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
+import { hasRole } from "../utils/userRoles";
 
 const FeedbackModal = ({ isOpen, feedback, onClose }) => {
   if (!feedback) return null;
@@ -63,6 +65,8 @@ const FeedbackModal = ({ isOpen, feedback, onClose }) => {
 const CrearRequerimientoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const canSelectAnyArea = hasRole(user, "ADMINISTRADOR_SISTEMA");
+  const { areas } = useAreas({ enabled: canSelectAnyArea });
   const { prioridades, crearRequerimiento, buscarCatalogoProductos } = useRequerimientos();
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -123,6 +127,14 @@ const CrearRequerimientoPage = () => {
       : areaNombre;
   }, [user]);
 
+  const selectableAreas = useMemo(
+    () =>
+      Array.isArray(areas)
+        ? areas.filter((area) => area?.activo !== false)
+        : [],
+    [areas]
+  );
+
   return (
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -135,8 +147,10 @@ const CrearRequerimientoPage = () => {
 
       <RequerimientoForm
         initialData={initialData}
+        areas={selectableAreas}
         prioridades={prioridades.length ? prioridades : ["Normal", "Urgente", "Emergencia"]}
-        lockAreaToContext
+        allowAreaSelection={canSelectAnyArea}
+        lockAreaToContext={!canSelectAnyArea}
         contextualAreaLabel={contextualAreaLabel}
         buscarCatalogoProductos={buscarCatalogoProductos}
         onSubmit={handleSubmit}

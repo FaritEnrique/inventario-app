@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "react-toastify";
+import { resolveProductoImageUrl } from "../utils/productoImage";
 
 const createEmptyExistingItem = () => ({
   localId: `item-${Date.now()}-${Math.random()}`,
@@ -91,7 +92,11 @@ const ProductDetailModal = ({ producto, onClose }) => {
         <div className="grid gap-4 md:grid-cols-[220px,1fr]">
           <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-4">
             {producto.imagenUrl ? (
-              <img src={producto.imagenUrl} alt={producto.nombre} className="max-h-56 rounded object-contain" />
+              <img
+                src={resolveProductoImageUrl(producto.imagenUrl)}
+                alt={producto.nombre}
+                className="max-h-56 rounded object-contain"
+              />
             ) : (
               <span className="text-sm text-gray-500">Sin imagen</span>
             )}
@@ -311,6 +316,7 @@ const RequerimientoForm = ({
     }
 
     const payload = {
+      areaId: Number(state.areaId),
       prioridad: state.prioridad,
       descripcion: state.descripcion.trim() || null,
       usoFinalidad: state.usoFinalidad.trim(),

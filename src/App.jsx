@@ -28,6 +28,7 @@ import {
   canOperateInventoryEffective,
   canViewOrdenesCompraEffective,
   canViewAllCotizacionesLogisticaEffective,
+  canViewWarehouseTrayEffective,
   isLogisticaOperadorEffective,
 } from "./accessRules";
 import { canAccessTrayLevelEffective } from "./accessRules";
@@ -294,7 +295,7 @@ const AppRoutes = () => {
             <Route
               path="notas-pedido/almacen"
               element={
-                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                <RoutePermissionGuard allow={canViewWarehouseTrayEffective}>
                   <BandejaAlmacenNotasPedidoPage />
                 </RoutePermissionGuard>
               }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
+  canViewOrdenCompraListEffective,
   canViewOrdenesCompraEffective,
   canViewOrdenCompraApprovalTrayEffective,
 } from "../accessRules";
@@ -58,7 +59,21 @@ const OrdenesCompraPage = () => {
   const filtersRef = useRef(filters);
 
   const canView = canViewOrdenesCompraEffective(user);
+  const canViewList = canViewOrdenCompraListEffective(user);
   const canViewApprovalTray = canViewOrdenCompraApprovalTrayEffective(user);
+
+  const switchView = useCallback(
+    (view) => {
+      const next = new URLSearchParams(searchParams);
+      if (view === "aprobacion") {
+        next.set("view", "aprobacion");
+      } else {
+        next.delete("view");
+      }
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   useEffect(() => {
     setFilters(buildDefaultFilters(currentView));
@@ -112,10 +127,22 @@ const OrdenesCompraPage = () => {
   );
 
   useEffect(() => {
+    if (!canViewList && canViewApprovalTray && currentView !== "aprobacion") {
+      switchView("aprobacion");
+      return;
+    }
+
+    if (!canViewApprovalTray && canViewList && currentView === "aprobacion") {
+      switchView("listado");
+    }
+  }, [canViewApprovalTray, canViewList, currentView, switchView]);
+
+  useEffect(() => {
     if (!canView) return;
     if (currentView === "aprobacion" && !canViewApprovalTray) return;
+    if (currentView === "listado" && !canViewList) return;
     load();
-  }, [canView, canViewApprovalTray, currentView, load]);
+  }, [canView, canViewApprovalTray, canViewList, currentView, load]);
 
   const resumen = useMemo(
     () => ({
@@ -143,16 +170,6 @@ const OrdenesCompraPage = () => {
     await load(nextPage);
   };
 
-  const switchView = (view) => {
-    const next = new URLSearchParams(searchParams);
-    if (view === "aprobacion") {
-      next.set("view", "aprobacion");
-    } else {
-      next.delete("view");
-    }
-    setSearchParams(next, { replace: true });
-  };
-
   if (!canView) {
     return (
       <div className="mx-auto max-w-5xl p-6">
@@ -173,6 +190,16 @@ const OrdenesCompraPage = () => {
     );
   }
 
+  if (currentView === "listado" && !canViewList) {
+    return (
+      <div className="mx-auto max-w-5xl p-6">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          Tu usuario no tiene acceso al listado general de ordenes de compra para este contexto activo.
+        </div>
+      </div>
+    );
+  }
+
   const labels = viewLabels[currentView];
 
   return (
@@ -183,17 +210,19 @@ const OrdenesCompraPage = () => {
           <p className="mt-1 text-sm text-gray-600">{labels.description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => switchView("listado")}
-            className={`rounded px-4 py-2 text-sm font-medium ${
-              currentView === "listado"
-                ? "bg-indigo-600 text-white"
-                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            Listado general
-          </button>
+          {canViewList ? (
+            <button
+              type="button"
+              onClick={() => switchView("listado")}
+              className={`rounded px-4 py-2 text-sm font-medium ${
+                currentView === "listado"
+                  ? "bg-indigo-600 text-white"
+                  : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Listado general
+            </button>
+          ) : null}
           {canViewApprovalTray ? (
             <button
               type="button"

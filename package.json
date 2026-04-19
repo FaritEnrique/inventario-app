@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "csp:sync": "node scripts/sync-frontend-csp.mjs",
+    "build": "npm run csp:sync && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"

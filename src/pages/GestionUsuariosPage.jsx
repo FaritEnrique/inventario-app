@@ -92,7 +92,12 @@ const GestionUsuariosPage = () => {
     const fetchAreas = async () => {
       try {
         const response = await areasApi.getAreas();
-        setAreas(response || []);
+        const normalizedAreas = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
+        setAreas(normalizedAreas);
       } catch (error) {
         console.error("Error al cargar areas:", error);
         toast.error("No se pudieron cargar las areas.");
@@ -246,12 +251,20 @@ const GestionUsuariosPage = () => {
       ) : null}
 
       <div className="mb-4">
+        <label
+          htmlFor="gestion-usuarios-search"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          Buscar usuarios
+        </label>
         <input
+          id="gestion-usuarios-search"
           type="text"
           placeholder="Buscar por nombre, codigo o correo electronico..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
-          name="gestion-usuarios-page-input-135"
+          name="search"
+          autoComplete="off"
           onChange={(event) => setSearchTerm(event.target.value)}
         />
       </div>

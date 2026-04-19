@@ -38,14 +38,31 @@ export const resolveInstitutionalAssetUrl = (assetUrl) => {
   return `${uploadsBaseUrl}${assetUrl.startsWith("/") ? "" : "/"}${assetUrl}`;
 };
 
-export const buildLetterheadDocumentData = (formData = {}, logoSrc = "") => {
-  const razonSocial = normalizeText(formData.razonSocial) || "Empresa emisora";
-  const ruc = normalizeText(formData.ruc) || "Sin RUC";
+export const buildLetterheadDocumentData = (
+  formData = {},
+  logoSrc = "",
+  { usePlaceholderIdentity = true } = {},
+) => {
+  const razonSocial =
+    normalizeText(formData.razonSocial) ||
+    (usePlaceholderIdentity ? "Empresa emisora" : "");
+  const ruc =
+    normalizeText(formData.ruc) || (usePlaceholderIdentity ? "Sin RUC" : "");
   const frase = normalizeText(formData.fraseEncabezado);
   const comentario = normalizeText(formData.pieInstitucional);
   const direccion = normalizeText(formData.direccion);
   const correo = normalizeText(formData.correo);
   const telefono = normalizeText(formData.telefono);
+  const hasInstitutionalBranding = Boolean(
+    normalizeText(formData.razonSocial) ||
+      normalizeText(formData.ruc) ||
+      frase ||
+      comentario ||
+      direccion ||
+      correo ||
+      telefono ||
+      logoSrc,
+  );
 
   return {
     razonSocial,
@@ -55,6 +72,7 @@ export const buildLetterheadDocumentData = (formData = {}, logoSrc = "") => {
     logoSrc: logoSrc || "",
     hasPhrase: Boolean(frase),
     hasComentario: Boolean(comentario),
+    hasInstitutionalBranding,
     contacts: {
       direccion,
       correo,
@@ -62,6 +80,61 @@ export const buildLetterheadDocumentData = (formData = {}, logoSrc = "") => {
     },
   };
 };
+
+export const buildSharedPrintDocumentStyles = () => `
+  @page { size: A4; margin: 0; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #ffffff;
+    color: #0f172a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  * { box-sizing: border-box; }
+  img {
+    max-width: 100%;
+  }
+  .print-document,
+  .print-sheet {
+    color: #0f172a;
+  }
+  .print-document table,
+  .print-table,
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .print-document thead,
+  .print-table thead,
+  .items-table thead {
+    display: table-header-group;
+  }
+  .print-document tfoot,
+  .print-table tfoot,
+  .items-table tfoot {
+    display: table-footer-group;
+  }
+  .print-document tr,
+  .print-document td,
+  .print-document th,
+  .print-table tr,
+  .print-table td,
+  .print-table th,
+  .items-table tr,
+  .items-table td,
+  .items-table th,
+  .print-avoid-break {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  .print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+`;
 
 const buildLetterheadIconSvg = (type) => {
   const common =
@@ -99,6 +172,8 @@ export const buildInstitutionalLetterheadPrintHtml = ({
     logoSrc,
     contacts,
   } = documentData;
+  const shouldRenderInstitutionalBranding =
+    documentData?.hasInstitutionalBranding !== false;
 
   const logoMarkup = logoSrc
     ? `<img class="brand-logo" src="${escapeHtml(logoSrc)}" alt="Logo institucional" />`
@@ -128,15 +203,7 @@ export const buildInstitutionalLetterheadPrintHtml = ({
         <meta charset="utf-8" />
         <title>${escapeHtml(title)}</title>
         <style>
-          @page { size: A4; margin: 0; }
-          html, body {
-            margin: 0;
-            padding: 0;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background: #ffffff;
-            color: #0f172a;
-          }
-          * { box-sizing: border-box; }
+          ${buildSharedPrintDocumentStyles()}
           .sheet {
             width: 210mm;
             min-height: 297mm;
@@ -144,6 +211,9 @@ export const buildInstitutionalLetterheadPrintHtml = ({
             display: flex;
             flex-direction: column;
             background: #ffffff;
+          }
+          .sheet--plain {
+            padding: 14mm;
           }
           .header {
             display: grid;
@@ -242,6 +312,7 @@ export const buildInstitutionalLetterheadPrintHtml = ({
           }
           .body-space { flex: 1; }
           .footer {
+            margin-top: auto;
             padding-top: ${metrics.footerPaddingTop};
             border-top: ${metrics.logoBorderWidth} solid #dbe3ef;
           }
@@ -299,35 +370,43 @@ export const buildInstitutionalLetterheadPrintHtml = ({
         </style>
       </head>
       <body>
-        <div class="sheet">
-          <div class="header ${hasPhrase ? "" : "header--no-phrase"}">
-            <div class="brand-column">
-              <div class="brand-row">
-                ${logoMarkup}
-                <div class="brand-copy">
-                  <div class="brand-company">${escapeHtml(razonSocial)}</div>
-                  <div class="brand-tax-id">
-                    <strong>RUC</strong>
-                    <span>${escapeHtml(ruc)}</span>
+        <div class="sheet print-sheet print-document ${shouldRenderInstitutionalBranding ? "" : "sheet--plain"}">
+          ${
+            shouldRenderInstitutionalBranding
+              ? `<div class="header ${hasPhrase ? "" : "header--no-phrase"}">
+                  <div class="brand-column">
+                    <div class="brand-row">
+                      ${logoMarkup}
+                      <div class="brand-copy">
+                        <div class="brand-company">${escapeHtml(razonSocial)}</div>
+                        <div class="brand-tax-id">
+                          <strong>RUC</strong>
+                          <span>${escapeHtml(ruc)}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-            ${
-              hasPhrase
-                ? `<div class="phrase-column">
-                    <div class="phrase-box">${escapeHtml(frase)}</div>
-                  </div>`
-                : ""
-            }
-          </div>
+                  ${
+                    hasPhrase
+                      ? `<div class="phrase-column">
+                          <div class="phrase-box">${escapeHtml(frase)}</div>
+                        </div>`
+                      : ""
+                  }
+                </div>`
+              : ""
+          }
 
           ${bodyMarkup}
 
-          <div class="footer">
-            ${footerContactsMarkup ? `<div class="footer-contacts">${footerContactsMarkup}</div>` : ""}
-            ${hasComentario ? `<div class="footer-copy">${escapeHtml(comentario)}</div>` : ""}
-          </div>
+          ${
+            shouldRenderInstitutionalBranding
+              ? `<div class="footer">
+                  ${footerContactsMarkup ? `<div class="footer-contacts">${footerContactsMarkup}</div>` : ""}
+                  ${hasComentario ? `<div class="footer-copy">${escapeHtml(comentario)}</div>` : ""}
+                </div>`
+              : ""
+          }
         </div>
       </body>
     </html>

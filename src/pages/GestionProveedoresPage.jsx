@@ -9,13 +9,14 @@ import Modal from "../components/Modal";
 import ProveedorDetalleModal from "../components/ProveedorDetalleModal";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
+import { useAuth } from "../context/authContext";
+import { canManageSunatEffective } from "../accessRules";
 
 const RUC_REGEX = /^(10|20)\d{9}$/;
 
 const pickFirstTextValue = (...values) =>
-  values.find(
-    (value) => typeof value === "string" && value.trim() !== ""
-  ) || "";
+  values.find((value) => typeof value === "string" && value.trim() !== "") ||
+  "";
 
 const TYPE_LABEL_MAP = {
   "AV.": "Av.",
@@ -272,20 +273,20 @@ const normalizeSunatProveedorDraft = (proveedor = {}, fallbackRuc = "") => ({
     proveedor.nombreORazonSocial,
     proveedor.nombreOrazonSocial,
     proveedor.nombreOrazonSocialDelContribuyente,
-    proveedor.nombre
+    proveedor.nombre,
   ),
   direccion: pickFirstTextValue(
     proveedor.direccion,
     proveedor.domicilioFiscal,
     proveedor.direccionCompleta,
-    buildSunatAddress(proveedor)
+    buildSunatAddress(proveedor),
   ),
 });
 
 const hasSunatAutofillData = (proveedor = {}) =>
   Boolean(
     pickFirstTextValue(proveedor.razonSocial) ||
-      pickFirstTextValue(proveedor.direccion)
+    pickFirstTextValue(proveedor.direccion),
   );
 
 const renderEstadoImportacion = (job) => {
@@ -324,7 +325,8 @@ const GestionProveedoresPage = () => {
   const [detailProveedor, setDetailProveedor] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false);
-  const [resultadoImportacionModal, setResultadoImportacionModal] = useState(null);
+  const [resultadoImportacionModal, setResultadoImportacionModal] =
+    useState(null);
   const handledImportResultRef = useRef({
     PADRON_COMPLETO: null,
     PADRON_REDUCIDO: null,
@@ -355,6 +357,9 @@ const GestionProveedoresPage = () => {
     estadoImportacionReducido,
   } = useSunat();
 
+  const { user: currentUser } = useAuth();
+  const canManageSunat = canManageSunatEffective(currentUser);
+
   useEffect(() => {
     fetchProveedores(lastAppliedSearchQuery);
   }, [fetchProveedores, lastAppliedSearchQuery]);
@@ -372,10 +377,9 @@ const GestionProveedoresPage = () => {
   ]);
 
   useEffect(() => {
-    const jobs = [
-      estadoImportacionSunat,
-      estadoImportacionReducido,
-    ].filter(Boolean);
+    const jobs = [estadoImportacionSunat, estadoImportacionReducido].filter(
+      Boolean,
+    );
 
     jobs.forEach((job) => {
       if (
@@ -432,7 +436,9 @@ const GestionProveedoresPage = () => {
     const localResults = await consultarProveedores(query);
 
     if (localResults.length > 0) {
-      toast.info(`Se encontraron ${localResults.length} coincidencias locales.`);
+      toast.info(
+        `Se encontraron ${localResults.length} coincidencias locales.`,
+      );
       return;
     }
 
@@ -446,24 +452,26 @@ const GestionProveedoresPage = () => {
 
         if (hasSunatAutofillData(proveedorDraft)) {
           toast.success(
-            "Proveedor encontrado en SUNAT. Completa los datos para registrarlo."
+            "Proveedor encontrado en SUNAT. Completa los datos para registrarlo.",
           );
         } else {
           toast.warn(
-            "Se encontro el RUC en ProveedoresSunat, pero sin razon social o direccion. Completa esos campos manualmente o actualiza el padron reducido."
+            "Se encontro el RUC en ProveedoresSunat, pero sin razon social o direccion. Completa esos campos manualmente o actualiza el padron reducido.",
           );
         }
       } else {
         setSelectedProveedor(proveedorDraft);
         setIsFormVisible(true);
         toast.info(
-          "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC."
+          "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC.",
         );
       }
       return;
     }
 
-    toast.info("Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC.");
+    toast.info(
+      "Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC.",
+    );
   };
 
   const handleCreateNew = () => {
@@ -472,7 +480,7 @@ const GestionProveedoresPage = () => {
     setIsRucDisabledForNewForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
     toast.info(
-      "Formulario para nuevo proveedor. El RUC depende de la procedencia seleccionada."
+      "Formulario para nuevo proveedor. El RUC depende de la procedencia seleccionada.",
     );
   };
 
@@ -495,7 +503,7 @@ const GestionProveedoresPage = () => {
           }}
         />
       ),
-      { autoClose: false, closeButton: false }
+      { autoClose: false, closeButton: false },
     );
   };
 
@@ -585,26 +593,30 @@ const GestionProveedoresPage = () => {
               >
                 Crear nuevo
               </button>
-              <button
-                type="button"
-                onClick={handleActualizarPadron}
-                disabled={actualizandoSunat}
-                className="rounded-md bg-amber-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {actualizandoSunat
-                  ? "Actualizando padron SUNAT..."
-                  : "Actualizar padron SUNAT"}
-              </button>
-              <button
-                type="button"
-                onClick={handleActualizarPadronReducido}
-                disabled={actualizandoReducido}
-                className="rounded-md bg-teal-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {actualizandoReducido
-                  ? "Actualizando padron reducido..."
-                  : "Actualizar padron reducido"}
-              </button>
+              {canManageSunat && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleActualizarPadron}
+                    disabled={actualizandoSunat}
+                    className="rounded-md bg-amber-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {actualizandoSunat
+                      ? "Actualizando padron SUNAT..."
+                      : "Actualizar padron SUNAT"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleActualizarPadronReducido}
+                    disabled={actualizandoReducido}
+                    className="rounded-md bg-teal-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {actualizandoReducido
+                      ? "Actualizando padron reducido..."
+                      : "Actualizar padron reducido"}
+                  </button>
+                </>
+              )}
               <Link
                 to="/solicitudes-tipo-producto"
                 className="rounded-md bg-slate-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800"
@@ -612,23 +624,25 @@ const GestionProveedoresPage = () => {
                 Bandeja de solicitudes
               </Link>
             </div>
-            <div className="max-w-md text-sm text-gray-600">
-              <p className="font-medium text-gray-700">
-                Actualizacion manual del padron SUNAT
-              </p>
-              <p>
-                Usala cuando necesites refrescar la base externa para que la
-                busqueda por RUC recupere datos recientes del proveedor.
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Ultima actualizacion padron SUNAT:{" "}
-                {ultimaActualizacion || "Sin informacion disponible"}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Ultima actualizacion padron reducido:{" "}
-                {ultimaActualizacionReducido || "Sin informacion disponible"}
-              </p>
-            </div>
+            {canManageSunat && (
+              <div className="max-w-md text-sm text-gray-600">
+                <p className="font-medium text-gray-700">
+                  Actualizacion manual del padron SUNAT
+                </p>
+                <p>
+                  Usala cuando necesites refrescar la base externa para que la
+                  busqueda por RUC recupere datos recientes del proveedor.
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Ultima actualizacion padron SUNAT:{" "}
+                  {ultimaActualizacion || "Sin informacion disponible"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Ultima actualizacion padron reducido:{" "}
+                  {ultimaActualizacionReducido || "Sin informacion disponible"}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -703,7 +717,9 @@ const GestionProveedoresPage = () => {
                   className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm transition-shadow focus:ring-2 focus:ring-blue-500"
                   placeholder="Buscar por razon social, RUC o tipo de producto..."
                   value={registeredFilterQuery}
-                  onChange={(event) => setRegisteredFilterQuery(event.target.value)}
+                  onChange={(event) =>
+                    setRegisteredFilterQuery(event.target.value)
+                  }
                 />
                 <div className="flex gap-2">
                   <button
@@ -776,7 +792,10 @@ const GestionProveedoresPage = () => {
                     <td className="border-b px-5 py-4 text-sm">
                       {(proveedor.especialidades || []).length > 0
                         ? proveedor.especialidades
-                            .map((especialidad) => especialidad.tipoProducto?.nombre)
+                            .map(
+                              (especialidad) =>
+                                especialidad.tipoProducto?.nombre,
+                            )
                             .filter(Boolean)
                             .join(", ")
                         : "Sin definir"}

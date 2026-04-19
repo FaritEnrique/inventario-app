@@ -45,7 +45,6 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const [nuevoUsuario, setNuevoUsuario] = useState({
-    bootstrapSecret: "",
     nombre: "",
     email: "",
     password: "",
@@ -80,13 +79,9 @@ const HomePage = () => {
       return;
     }
     try {
-      const { bootstrapSecret, ...payload } = nuevoUsuario;
       await apiFetch("usuarios/primer-usuario", {
         method: "POST",
-        headers: {
-          "X-Bootstrap-Secret": bootstrapSecret.trim(),
-        },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(nuevoUsuario),
       });
 
       toast.success(
@@ -115,26 +110,9 @@ const HomePage = () => {
             Crear cuenta de administrador del sistema
           </h1>
           <p className="mb-4 text-center text-sm text-gray-500">
-            Solo se puede realizar una vez para inicializar el sistema y requiere el codigo de instalacion configurado en el backend.
+            Solo se puede realizar una vez para inicializar el sistema.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="bootstrapSecret"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Codigo de instalacion
-              </label>
-              <input
-                id="bootstrapSecret"
-                type="password"
-                name="bootstrapSecret"
-                value={nuevoUsuario.bootstrapSecret}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-400 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
-            </div>
             <div>
               <label
                 htmlFor="nombre"
@@ -183,7 +161,6 @@ const HomePage = () => {
                 value={nuevoUsuario.cargo}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-lg border border-gray-400 p-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
               />
             </div>
             <div>
@@ -215,7 +192,6 @@ const HomePage = () => {
             </div>
             <button
               type="submit"
-              disabled={!nuevoUsuario.bootstrapSecret.trim()}
               className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white shadow-md transition duration-300 hover:bg-blue-700"
             >
               Crear usuario administrador

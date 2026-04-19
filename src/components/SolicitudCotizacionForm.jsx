@@ -14,6 +14,17 @@ const normalizeInitialData = (initialData) => ({
   itemIds: Array.isArray(initialData?.items)
     ? initialData.items.map((item) => String(item.itemRequerimientoId))
     : [],
+  vigenciaOfertaDias:
+    initialData?.vigenciaOfertaDias != null
+      ? String(initialData.vigenciaOfertaDias)
+      : "",
+  tiempoEntregaDias:
+    initialData?.tiempoEntregaDias != null
+      ? String(initialData.tiempoEntregaDias)
+      : "",
+  lugarEntrega: initialData?.lugarEntrega || "",
+  formaPago: initialData?.formaPago || "",
+  garantia: initialData?.garantia || "",
 });
 
 const getProveedorTipoProductoIds = (proveedor) => {
@@ -38,7 +49,9 @@ const SolicitudCotizacionForm = ({
   submitting,
 }) => {
   const { tiposProducto, cargando: loadingTiposProducto } = useTipoProductos();
-  const [formData, setFormData] = useState(() => normalizeInitialData(initialData));
+  const [formData, setFormData] = useState(() =>
+    normalizeInitialData(initialData),
+  );
   const [proveedorSearch, setProveedorSearch] = useState("");
   const [tipoProductoFiltroId, setTipoProductoFiltroId] = useState("");
 
@@ -57,7 +70,7 @@ const SolicitudCotizacionForm = ({
       Array.isArray(requerimientoDetalle?.items)
         ? requerimientoDetalle.items.filter((item) => item.activo !== false)
         : [],
-    [requerimientoDetalle?.items]
+    [requerimientoDetalle?.items],
   );
 
   const filteredProveedores = useMemo(() => {
@@ -69,8 +82,12 @@ const SolicitudCotizacionForm = ({
     return proveedores.filter((proveedor) => {
       const matchesSearch =
         !normalizedSearch ||
-        String(proveedor.razonSocial || "").toLowerCase().includes(normalizedSearch) ||
-        String(proveedor.ruc || "").toLowerCase().includes(normalizedSearch);
+        String(proveedor.razonSocial || "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        String(proveedor.ruc || "")
+          .toLowerCase()
+          .includes(normalizedSearch);
 
       const proveedorTipoProductoIds = getProveedorTipoProductoIds(proveedor);
       const matchesTipoProducto =
@@ -84,7 +101,7 @@ const SolicitudCotizacionForm = ({
     if (!formData.proveedorId) return;
 
     const stillVisible = filteredProveedores.some(
-      (proveedor) => String(proveedor.id) === formData.proveedorId
+      (proveedor) => String(proveedor.id) === formData.proveedorId,
     );
 
     if (!stillVisible) {
@@ -110,6 +127,17 @@ const SolicitudCotizacionForm = ({
       requerimientoId: Number(formData.requerimientoId),
       cuerpoSolicitud: formData.cuerpoSolicitud.trim() || null,
       estado: formData.estado,
+      vigenciaOfertaDias:
+        formData.vigenciaOfertaDias !== ""
+          ? Number(formData.vigenciaOfertaDias)
+          : null,
+      tiempoEntregaDias:
+        formData.tiempoEntregaDias !== ""
+          ? Number(formData.tiempoEntregaDias)
+          : null,
+      lugarEntrega: formData.lugarEntrega.trim() || null,
+      formaPago: formData.formaPago || null,
+      garantia: formData.garantia.trim() || null,
       items: formData.itemIds.map((itemId) => ({
         itemRequerimientoId: Number(itemId),
       })),
@@ -117,7 +145,7 @@ const SolicitudCotizacionForm = ({
   };
 
   const tiposProductoActivos = tiposProducto.filter(
-    (tipoProducto) => tipoProducto.activo !== false
+    (tipoProducto) => tipoProducto.activo !== false,
   );
 
   return (
@@ -131,7 +159,8 @@ const SolicitudCotizacionForm = ({
             {formData.id ? "Editar solicitud" : "Nueva solicitud de cotizacion"}
           </h2>
           <p className="text-sm text-gray-600">
-            Documento emitido a un proveedor para cotizar items de un requerimiento aprobado.
+            Documento emitido a un proveedor para cotizar items de un
+            requerimiento aprobado.
           </p>
         </div>
         {onCancel ? (
@@ -200,7 +229,10 @@ const SolicitudCotizacionForm = ({
             value={formData.proveedorId}
             name="solicitud-cotizacion-form-select-proveedor"
             onChange={(event) =>
-              setFormData((prev) => ({ ...prev, proveedorId: event.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                proveedorId: event.target.value,
+              }))
             }
             className="w-full rounded border border-gray-300 px-3 py-2"
             required
@@ -214,7 +246,8 @@ const SolicitudCotizacionForm = ({
             ))}
           </select>
           <p className="text-xs text-gray-500">
-            {filteredProveedores.length} proveedor(es) coinciden con el filtro actual.
+            {filteredProveedores.length} proveedor(es) coinciden con el filtro
+            actual.
           </p>
         </label>
 
@@ -245,24 +278,122 @@ const SolicitudCotizacionForm = ({
       </div>
 
       <label className="block space-y-1 text-sm text-gray-700">
-        <span className="font-medium">Cuerpo / observaciones de la solicitud</span>
+        <span className="font-medium">
+          Cuerpo / observaciones de la solicitud
+        </span>
         <textarea
           rows="3"
           value={formData.cuerpoSolicitud}
           name="solicitud-cotizacion-form-textarea"
           onChange={(event) =>
-            setFormData((prev) => ({ ...prev, cuerpoSolicitud: event.target.value }))
+            setFormData((prev) => ({
+              ...prev,
+              cuerpoSolicitud: event.target.value,
+            }))
           }
           className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Detalle breve para el proveedor o notas internas."
         />
       </label>
 
+      <div>
+        <p className="text-sm font-medium text-gray-900">
+          Condiciones comerciales (opcional)
+        </p>
+        <p className="text-xs text-gray-500 mb-3">
+          Estos campos aparecen en el PDF de la solicitud. El proveedor puede
+          responder con valores distintos.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <label className="space-y-1 text-sm text-gray-700">
+            <span className="font-medium">Vigencia de oferta (dias)</span>
+            <input
+              type="number"
+              min="1"
+              value={formData.vigenciaOfertaDias}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  vigenciaOfertaDias: event.target.value,
+                }))
+              }
+              className="w-full rounded border border-gray-300 px-3 py-2"
+              placeholder="Ej: 15"
+            />
+          </label>
+          <label className="space-y-1 text-sm text-gray-700">
+            <span className="font-medium">Tiempo de entrega (dias)</span>
+            <input
+              type="number"
+              min="1"
+              value={formData.tiempoEntregaDias}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  tiempoEntregaDias: event.target.value,
+                }))
+              }
+              className="w-full rounded border border-gray-300 px-3 py-2"
+              placeholder="Ej: 7"
+            />
+          </label>
+          <label className="space-y-1 text-sm text-gray-700">
+            <span className="font-medium">Forma de pago</span>
+            <select
+              value={formData.formaPago}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  formaPago: event.target.value,
+                }))
+              }
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            >
+              <option value="">Sin especificar</option>
+              <option value="ContraEntrega">Contra entrega</option>
+              <option value="Adelanto">Adelanto</option>
+              <option value="Credito">Al credito</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm text-gray-700">
+            <span className="font-medium">Lugar de entrega</span>
+            <input
+              type="text"
+              value={formData.lugarEntrega}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  lugarEntrega: event.target.value,
+                }))
+              }
+              className="w-full rounded border border-gray-300 px-3 py-2"
+              placeholder="Ej: Almacen central"
+            />
+          </label>
+          <label className="space-y-1 text-sm text-gray-700">
+            <span className="font-medium">Garantia</span>
+            <input
+              type="text"
+              value={formData.garantia}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  garantia: event.target.value,
+                }))
+              }
+              className="w-full rounded border border-gray-300 px-3 py-2"
+              placeholder="Ej: 6 meses contra defectos de fabrica"
+            />
+          </label>
+        </div>
+      </div>
+
       <div className="space-y-2">
         <div>
           <p className="text-sm font-medium text-gray-900">Items a cotizar</p>
           <p className="text-xs text-gray-500">
-            Selecciona solo los items del requerimiento que iran en esta solicitud.
+            Selecciona solo los items del requerimiento que iran en esta
+            solicitud.
           </p>
         </div>
         {availableItems.length > 0 ? (

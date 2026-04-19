@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import Modal from "../components/Modal";
+import CatalogoSelectorModal from "../components/CatalogoSelectorModal";
 import productosApi from "../api/productosApi";
 import { FaSearch, FaRegistered } from "react-icons/fa";
 import { TbArrowBackUpDouble } from "react-icons/tb";
@@ -14,43 +15,10 @@ import { MdCategory } from "react-icons/md";
 import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
 import imageCompression from "browser-image-compression";
-
-const buildUploadsBaseUrl = () => {
-  const rawApiUrl =
-    import.meta.env.VITE_API_URL ||
-    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
-
-  return String(rawApiUrl || "")
-    .trim()
-    .replace(/\/+$/, "")
-    .replace(/\/api$/, "");
-};
-
-const resolveProductoImageUrl = (imageUrl) => {
-  if (!imageUrl) return "";
-
-  if (
-    imageUrl.startsWith("blob:") ||
-    imageUrl.startsWith("data:") ||
-    imageUrl.startsWith("http://") ||
-    imageUrl.startsWith("https://")
-  ) {
-    return imageUrl;
-  }
-
-  const uploadsBaseUrl = buildUploadsBaseUrl();
-  if (!uploadsBaseUrl) {
-    return imageUrl;
-  }
-
-  return `${uploadsBaseUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
-};
-
-const revokeIfBlobUrl = (url) => {
-  if (typeof url === "string" && url.startsWith("blob:")) {
-    URL.revokeObjectURL(url);
-  }
-};
+import {
+  resolveProductoImageUrl,
+  revokeIfBlobUrl,
+} from "../utils/productoImage";
 
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
@@ -88,6 +56,7 @@ const initialProducto = {
 
 const GestionProductosPage = () => {
   const fileInputRef = useRef(null);
+  const formCardRef = useRef(null);
   const [productoActual, setProductoActual] = useState(initialProducto);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -100,6 +69,10 @@ const GestionProductosPage = () => {
   const [observacionesStockCreacion, setObservacionesStockCreacion] =
     useState("");
   const [enviandoFormulario, setEnviandoFormulario] = useState(false);
+  const [marcaModalOpen, setMarcaModalOpen] = useState(false);
+  const [tipoModalOpen, setTipoModalOpen] = useState(false);
+  const [marcaSearch, setMarcaSearch] = useState("");
+  const [tipoSearch, setTipoSearch] = useState("");
 
   const {
     productos,
@@ -126,15 +99,22 @@ const GestionProductosPage = () => {
   } = useTipoProductos();
 
   const debouncedBusqueda = useDebounce(busqueda, 2000);
+  const debouncedMarcaSearch = useDebounce(marcaSearch, 300);
+  const debouncedTipoSearch = useDebounce(tipoSearch, 300);
 
   useEffect(() => {
     fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
   }, [fetchProductos, debouncedBusqueda, page, limit, estadoFiltro]);
 
   useEffect(() => {
-    fetchMarcas();
-    fetchTiposProducto();
-  }, [fetchMarcas, fetchTiposProducto]);
+    if (!marcaModalOpen) return;
+    fetchMarcas(debouncedMarcaSearch);
+  }, [fetchMarcas, marcaModalOpen, debouncedMarcaSearch]);
+
+  useEffect(() => {
+    if (!tipoModalOpen) return;
+    fetchTiposProducto(debouncedTipoSearch);
+  }, [fetchTiposProducto, tipoModalOpen, debouncedTipoSearch]);
 
   useEffect(() => {
     const generarCodigoAutomatico = async () => {
@@ -287,10 +267,15 @@ const GestionProductosPage = () => {
   );
 
   const handleEditar = useCallback((producto) => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
     setProductoActual({
       ...producto,
       stock: parseFloat(producto.stock),
       valorReferencial: Number(producto.valorReferencial || 0),
+      imagenFile: null,
       marcaId: producto.marcaId ? String(producto.marcaId) : "",
       tipoProductoId: String(producto.tipoProductoId),
       activo: typeof producto.activo === "boolean" ? producto.activo : true,
@@ -300,6 +285,13 @@ const GestionProductosPage = () => {
     setStockInicialInput("");
     setFechaMovimientoCreacion("");
     setObservacionesStockCreacion("");
+
+    window.setTimeout(() => {
+      formCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
   }, []);
 
   const handleDesactivar = useCallback(
@@ -428,7 +420,69 @@ const GestionProductosPage = () => {
     setProductoEnDetalle(null);
   }, []);
 
-  const cargandoGeneral = cargandoProductos || cargandoMarcas || cargandoTipos;
+  const openMarcaModal = useCallback(() => {
+    setMarcaSearch("");
+    setMarcaModalOpen(true);
+  }, []);
+
+  const closeMarcaModal = useCallback(() => {
+    setMarcaModalOpen(false);
+  }, []);
+
+  const openTipoModal = useCallback(() => {
+    setTipoSearch("");
+    setTipoModalOpen(true);
+  }, []);
+
+  const closeTipoModal = useCallback(() => {
+    setTipoModalOpen(false);
+  }, []);
+
+  const handleSelectMarca = useCallback((marca) => {
+    setProductoActual((prev) => ({
+      ...prev,
+      marcaId: String(marca.id),
+      marca,
+    }));
+  }, []);
+
+  const handleClearMarca = useCallback(() => {
+    setProductoActual((prev) => ({
+      ...prev,
+      marcaId: "",
+      marca: null,
+    }));
+  }, []);
+
+  const handleSelectTipoProducto = useCallback((tipoProducto) => {
+    setProductoActual((prev) => ({
+      ...prev,
+      tipoProductoId: String(tipoProducto.id),
+      tipoProducto,
+    }));
+  }, []);
+
+  const handleClearTipoProducto = useCallback(() => {
+    setProductoActual((prev) => ({
+      ...prev,
+      tipoProductoId: "",
+      tipoProducto: null,
+    }));
+  }, []);
+
+  const marcaSeleccionada =
+    productoActual.marca ||
+    marcas.find((marca) => String(marca.id) === String(productoActual.marcaId)) ||
+    null;
+
+  const tipoProductoSeleccionado =
+    productoActual.tipoProducto ||
+    tiposProducto.find(
+      (tipo) => String(tipo.id) === String(productoActual.tipoProductoId),
+    ) ||
+    null;
+
+  const cargandoGeneral = cargandoProductos;
   return (
     <div className="max-w-5xl p-6 mx-auto">
       <h1 className="text-2xl font-bold text-center text-indigo-700">
@@ -436,7 +490,10 @@ const GestionProductosPage = () => {
       </h1>
 
       {/* Tarjetas de gestión */}
-      <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
+      <div
+        ref={formCardRef}
+        className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg"
+      >
         <div className="flex items-center justify-end w-full mb-2">
           <Link
             to="/dashboard"
@@ -480,21 +537,42 @@ const GestionProductosPage = () => {
             >
               Tipo de Producto
             </label>
-            <select
-              id="tipoProductoId"
-              name="tipoProductoId"
-              value={productoActual.tipoProductoId}
-              onChange={handleChange}
-              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            >
-              <option value="">Seleccione un tipo</option>
-              {tiposProducto.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-start">
+              <input
+                id="tipoProductoId"
+                name="tipoProductoId"
+                type="text"
+                value={tipoProductoSeleccionado?.nombre || ""}
+                readOnly
+                placeholder="Sin tipo de producto seleccionado"
+                className="block w-full flex-1 rounded-md border bg-white p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
+              <div className="flex flex-wrap gap-2 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={openTipoModal}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                >
+                  <FaSearch className="h-4 w-4" />
+                  {productoActual.tipoProductoId ? "Cambiar" : "Seleccionar"}
+                </button>
+                {productoActual.tipoProductoId ? (
+                  <button
+                    type="button"
+                    onClick={handleClearTipoProducto}
+                    className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    Limpiar
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {tipoProductoSeleccionado?.prefijo ? (
+              <p className="mt-2 text-xs text-gray-500">
+                Prefijo: {tipoProductoSeleccionado.prefijo}
+              </p>
+            ) : null}
           </div>
 
           {/* Marca */}
@@ -505,20 +583,36 @@ const GestionProductosPage = () => {
             >
               Marca
             </label>
-            <select
-              id="marcaId"
-              name="marcaId"
-              value={productoActual.marcaId}
-              onChange={handleChange}
-              className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="">Seleccione una marca</option>
-              {marcas.map((marca) => (
-                <option key={marca.id} value={marca.id}>
-                  {marca.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-start">
+              <input
+                id="marcaId"
+                name="marcaId"
+                type="text"
+                value={marcaSeleccionada?.nombre || ""}
+                readOnly
+                placeholder="Sin marca seleccionada"
+                className="block w-full flex-1 rounded-md border bg-white p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+              <div className="flex flex-wrap gap-2 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={openMarcaModal}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                >
+                  <FaSearch className="h-4 w-4" />
+                  {productoActual.marcaId ? "Cambiar" : "Seleccionar"}
+                </button>
+                {productoActual.marcaId ? (
+                  <button
+                    type="button"
+                    onClick={handleClearMarca}
+                    className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    Limpiar
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           {/* Código */}
@@ -653,6 +747,7 @@ const GestionProductosPage = () => {
               ref={fileInputRef}
               type="file"
               id="imagenFile"
+              name="imagenFile"
               accept="image/*"
               onChange={async (e) => {
                 const file = e.target.files[0];
@@ -706,9 +801,14 @@ const GestionProductosPage = () => {
 
           {!modoEdicion && (
             <div className="p-4 border rounded-md md:col-span-2 border-amber-200 bg-amber-50/80">
-              <label className="flex items-start gap-2 cursor-pointer">
+              <label
+                htmlFor="incluirStockInicial"
+                className="flex items-start gap-2 cursor-pointer"
+              >
                 <input
                   type="checkbox"
+                  id="incluirStockInicial"
+                  name="incluirStockInicial"
                   checked={incluirStockInicial}
                   onChange={(e) => {
                     setIncluirStockInicial(e.target.checked);
@@ -818,14 +918,17 @@ const GestionProductosPage = () => {
           <FaSearch size={18} className="text-gray-500" />
           <input
             type="text"
+            id="gestionProductosBusqueda"
+            name="gestionProductosBusqueda"
             placeholder="Buscar producto..."
             value={busqueda}
-            name="gestion-productos-page-input-592"
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
         <select
+          id="gestionProductosEstadoFiltro"
+          name="gestionProductosEstadoFiltro"
           value={estadoFiltro}
           onChange={(e) => {
             setEstadoFiltro(e.target.value);
@@ -900,6 +1003,7 @@ const GestionProductosPage = () => {
                   </td>
                   <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
                     <button
+                      type="button"
                       onClick={() => handleVerDetalles(producto)}
                       className="px-2 py-1 text-sm font-semibold text-white bg-green-500 rounded hover:bg-green-600"
                     >
@@ -907,6 +1011,7 @@ const GestionProductosPage = () => {
                     </button>
                     {producto.activo === false ? (
                       <button
+                        type="button"
                         onClick={() => handleReactivar(producto.id)}
                         className="px-2 py-1 text-sm font-semibold text-white rounded bg-sky-600 hover:bg-sky-700"
                       >
@@ -915,12 +1020,14 @@ const GestionProductosPage = () => {
                     ) : (
                       <>
                         <button
+                          type="button"
                           onClick={() => handleEditar(producto)}
                           className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
                         >
                           Editar
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDesactivar(producto.id)}
                           className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
                         >
@@ -1053,6 +1160,50 @@ const GestionProductosPage = () => {
           </div>
         )}
       </Modal>
+
+      <CatalogoSelectorModal
+        isOpen={tipoModalOpen}
+        onClose={closeTipoModal}
+        title="Seleccionar tipo de producto"
+        searchValue={tipoSearch}
+        onSearchChange={setTipoSearch}
+        searchLabel="Buscar dentro del catalogo de tipos"
+        searchPlaceholder="Buscar por nombre o prefijo..."
+        items={tiposProducto}
+        loading={cargandoTipos}
+        selectedId={productoActual.tipoProductoId}
+        onSelect={handleSelectTipoProducto}
+        onClearSelection={handleClearTipoProducto}
+        getOptionLabel={(tipo) => tipo.nombre}
+        getOptionDescription={(tipo) => tipo.prefijo || "Sin prefijo"}
+        emptyMessage="No se encontraron tipos de producto para la búsqueda actual."
+        emptyStateHint="Puedes ajustar la búsqueda o ir a la gestión de tipos para registrar uno nuevo."
+        emptyStateActionLabel="Ir a Gestión de Tipos"
+        emptyStateActionTo="/gestion-tipo-producto"
+      />
+
+      <CatalogoSelectorModal
+        isOpen={marcaModalOpen}
+        onClose={closeMarcaModal}
+        title="Seleccionar marca"
+        searchValue={marcaSearch}
+        onSearchChange={setMarcaSearch}
+        searchLabel="Buscar dentro del catalogo de marcas"
+        searchPlaceholder="Buscar por nombre de marca..."
+        items={marcas}
+        loading={cargandoMarcas}
+        selectedId={productoActual.marcaId}
+        onSelect={handleSelectMarca}
+        onClearSelection={handleClearMarca}
+        getOptionLabel={(marca) => marca.nombre}
+        getOptionDescription={(marca) =>
+          marca.descripcion?.trim() || "Marca disponible para asignación"
+        }
+        emptyMessage="No se encontraron marcas para la búsqueda actual."
+        emptyStateHint="Puedes ajustar la búsqueda o ir a la gestión de marcas para registrar una nueva."
+        emptyStateActionLabel="Ir a Gestión de Marcas"
+        emptyStateActionTo="/gestion-marcas"
+      />
 
       <ToastContainer position="top-center" autoClose={3000} />
     </div>

@@ -4,14 +4,15 @@ export const PASSWORD_POLICY = Object.freeze({
 });
 
 export const PASSWORD_POLICY_MESSAGE =
-  "La contrasena debe tener entre 8 y 72 caracteres e incluir al menos una letra y un numero.";
+  "La contrasena debe tener entre 8 y 72 caracteres e incluir al menos una letra mayuscula, una minuscula y un numero.";
 
 export const isPasswordPolicyValid = (password) => {
   const normalizedPassword = String(password || "");
   return (
     normalizedPassword.length >= PASSWORD_POLICY.minLength &&
     normalizedPassword.length <= PASSWORD_POLICY.maxLength &&
-    /[A-Za-z]/.test(normalizedPassword) &&
+    /[A-Z]/.test(normalizedPassword) &&
+    /[a-z]/.test(normalizedPassword) &&
     /\d/.test(normalizedPassword)
   );
 };

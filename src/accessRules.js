@@ -1,6 +1,11 @@
-import { getActiveRoleAssignments, hasAnyRole, hasRole } from "./utils/userRoles.js";
+import {
+  getActiveRoleAssignments,
+  hasAnyRole,
+  hasRole,
+} from "./utils/userRoles.js";
 
-const privilegedInventoryRoles = Object.freeze([
+const inventoryOverrideRoles = Object.freeze(["ADMINISTRADOR_SISTEMA"]);
+const pedidoInternoApprovalRoles = Object.freeze([
   "ADMINISTRADOR_SISTEMA",
   "GERENTE_GENERAL",
   "GERENTE_ADMINISTRACION",
@@ -16,43 +21,15 @@ export const COMPANY_SETTINGS_ADMIN_ROLES = Object.freeze([
   "GERENTE_ADMINISTRACION",
 ]);
 
-const normalize = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-const LOGISTICA_SCOPE_ALIASES = Object.freeze(["logistica", "log"]);
-
 const isAdminOverride = (user = {}) => hasRole(user, "ADMINISTRADOR_SISTEMA");
 const hasOperationalSession = (user = {}) =>
   Boolean(user?.id && user?.activo !== false && user?.activeContext);
 
-const isLogisticaScope = (rawValues = []) => {
-  const values = rawValues.map((value) => normalize(value)).filter(Boolean);
-
-  return values.some((value) => LOGISTICA_SCOPE_ALIASES.includes(value));
-};
-
 const isLogisticaAssignment = (assignment = {}) =>
-  isLogisticaScope([
-    assignment?.branchDescription,
-    assignment?.area?.nombre,
-    assignment?.area?.abreviatura,
-    assignment?.area?.codigo,
-  ]);
+  assignment?.area?.esAreaLogistica === true;
 
 export const isLogisticaContext = (context = {}) =>
-  isLogisticaScope([
-    context?.branchDescription,
-    context?.areaNombre,
-    context?.area?.nombre,
-    context?.areaAbreviatura,
-    context?.area?.abreviatura,
-    context?.areaCodigo,
-    context?.area?.codigo,
-  ]);
+  context?.area?.esAreaLogistica === true;
 
 export const isLogisticaJefaturaContext = (context = {}) =>
   (context?.rolOperativo || context?.role) === "JEFE_AREA" &&
@@ -71,39 +48,21 @@ export const hasLogisticaJefaturaContext = (contexts = []) =>
 export const hasLogisticaOperadorContext = (contexts = []) =>
   Array.isArray(contexts) && contexts.some(isLogisticaOperadorContext);
 
-const isWarehouseContext = (assignment = {}) => {
-  const areaNombre = normalize(assignment.area?.nombre);
-  const areaAbreviatura = normalize(assignment.area?.abreviatura);
+const isWarehouseContext = (assignment = {}) =>
+  assignment?.area?.esAreaAlmacen === true;
 
-  return (
-    areaNombre.includes("almacen") ||
-    areaAbreviatura === "alm" ||
-    areaAbreviatura === "alma"
-  );
-};
+const isAdministracionContext = (assignment = {}) =>
+  assignment?.area?.tipoUnidad === "GERENCIA_ADMINISTRACION";
 
-const isOperationsContext = (assignment = {}) => {
-  const areaNombre = normalize(assignment.area?.nombre);
-  const areaAbreviatura = normalize(assignment.area?.abreviatura);
+const isLogisticaJefaturaAssignment = (assignment = {}) =>
+  assignment?.rol === "JEFE_AREA" && isLogisticaAssignment(assignment);
 
-  return (
-    areaNombre.includes("operaciones") ||
-    areaNombre.includes("operacion") ||
-    areaAbreviatura === "ope" ||
-    areaAbreviatura === "opr"
-  );
-};
+const isAdministracionOperativeAssignment = (assignment = {}) =>
+  ["JEFE_AREA", "OPERADOR"].includes(assignment?.rol) &&
+  isAdministracionContext(assignment);
 
-const isAdministracionContext = (assignment = {}) => {
-  const areaNombre = normalize(assignment.area?.nombre);
-  const areaAbreviatura = normalize(assignment.area?.abreviatura);
-
-  return (
-    areaNombre === "administracion" ||
-    areaNombre.includes("administracion") ||
-    areaAbreviatura === "adm"
-  );
-};
+const isAdministracionJefaturaAssignment = (assignment = {}) =>
+  assignment?.rol === "JEFE_AREA" && isAdministracionContext(assignment);
 
 const trayDefinitions = {
   jefatura: {
@@ -139,15 +98,15 @@ const trayDefinitions = {
 export const isLogisticaOperadorEffective = (user) =>
   getActiveRoleAssignments(user).some(
     (assignment) =>
-      assignment.rol === "OPERADOR" && isLogisticaAssignment(assignment)
+      assignment.rol === "OPERADOR" && isLogisticaAssignment(assignment),
   );
 
 export const canAccessCotizacionesEffective = (user) =>
   isAdminOverride(user) ||
   getActiveRoleAssignments(user).some(
     (assignment) =>
-      (["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
-        isLogisticaAssignment(assignment))
+      ["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
+      isLogisticaAssignment(assignment),
   );
 
 export const canAccessProveedorManagementEffective = (user = {}) =>
@@ -156,18 +115,18 @@ export const canAccessProveedorManagementEffective = (user = {}) =>
   getActiveRoleAssignments(user).some(
     (assignment) =>
       ["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
-      isLogisticaAssignment(assignment)
+      isLogisticaAssignment(assignment),
   );
 
 export const canViewAllCotizacionesLogisticaEffective = (user) =>
   isAdminOverride(user) ||
   getActiveRoleAssignments(user).some(
     (assignment) =>
-      assignment.rol === "JEFE_AREA" && isLogisticaAssignment(assignment)
+      assignment.rol === "JEFE_AREA" && isLogisticaAssignment(assignment),
   );
 
 export const canAccessLogisticaOperativeTrayFromRequerimientosEffective = (
-  user
+  user,
 ) => canViewAllCotizacionesLogisticaEffective(user);
 
 export const getLogisticaOperativeTrayPathEffective = () =>
@@ -182,7 +141,8 @@ export const canAdjudicateCotizacionesLogisticaEffective = (user) =>
 export const canOperateCotizacionesLogisticaEffective = (user, requerimiento) =>
   canViewAllCotizacionesLogisticaEffective(user) ||
   Number(
-    requerimiento?.responsableLogisticaId || requerimiento?.responsableLogistica?.id
+    requerimiento?.responsableLogisticaId ||
+      requerimiento?.responsableLogistica?.id,
   ) === Number(user?.id || 0);
 
 export const getCotizacionesHomePathEffective = (user) => {
@@ -198,19 +158,23 @@ export const getCotizacionesHomePathEffective = (user) => {
 };
 
 export const canOperateInventoryEffective = (user = {}) => {
-  if (hasAnyRole(user, privilegedInventoryRoles)) return true;
+  if (hasAnyRole(user, inventoryOverrideRoles)) return true;
 
   return getActiveRoleAssignments(user).some(
     (assignment) =>
-      (["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
-        isWarehouseContext(assignment)) ||
-      (["GERENTE_FUNCIONAL", "GERENTE_GENERAL"].includes(assignment.rol) &&
-        isOperationsContext(assignment))
+      ["JEFE_AREA", "OPERADOR"].includes(assignment.rol) &&
+      isWarehouseContext(assignment),
   );
 };
 
-export const canAdjustInventoryEffective = (user = {}) =>
-  canOperateInventoryEffective(user);
+export const canAdjustInventoryEffective = (user = {}) => {
+  if (hasAnyRole(user, inventoryOverrideRoles)) return true;
+
+  return getActiveRoleAssignments(user).some(
+    (assignment) =>
+      assignment.rol === "JEFE_AREA" && isWarehouseContext(assignment),
+  );
+};
 
 export const canViewWarehouseTrayEffective = (user = {}) =>
   canOperateInventoryEffective(user);
@@ -223,35 +187,33 @@ export const canViewPedidosInternosModuleEffective = (user = {}) =>
 
 export const canApprovePedidoInternoEffective = (user = {}) =>
   hasAnyRole(user, [
-    ...privilegedInventoryRoles,
+    ...pedidoInternoApprovalRoles,
     "JEFE_AREA",
     "GERENTE_FUNCIONAL",
   ]);
 
-export const canViewOrdenesCompraEffective = (user = {}) =>
-  canManageOrdenCompraLifecycleEffective(user) ||
-  canViewOrdenCompraApprovalTrayEffective(user);
+export const canViewOrdenCompraListEffective = (user = {}) =>
+  isAdminOverride(user) ||
+  getActiveRoleAssignments(user).some(
+    (assignment) =>
+      isAdministracionOperativeAssignment(assignment) ||
+      isLogisticaJefaturaAssignment(assignment),
+  );
 
 export const canViewOrdenCompraApprovalTrayEffective = (user = {}) =>
-  hasAnyRole(user, [
-    "ADMINISTRADOR_SISTEMA",
-    "GERENTE_ADMINISTRACION",
-    "GERENTE_GENERAL",
-  ]);
+  isAdminOverride(user) ||
+  hasAnyRole(user, ["GERENTE_ADMINISTRACION", "GERENTE_GENERAL"]) ||
+  getActiveRoleAssignments(user).some(isLogisticaJefaturaAssignment);
+
+export const canViewOrdenesCompraEffective = (user = {}) =>
+  canViewOrdenCompraListEffective(user) ||
+  canViewOrdenCompraApprovalTrayEffective(user);
 
 export const canManageOrdenCompraLifecycleEffective = (user = {}) => {
-  if (
-    hasAnyRole(user, [
-      "ADMINISTRADOR_SISTEMA",
-      "GERENTE_GENERAL",
-      "GERENTE_ADMINISTRACION",
-    ])
-  ) {
-    return true;
-  }
+  if (isAdminOverride(user)) return true;
 
-  return getActiveRoleAssignments(user).some((assignment) =>
-    isAdministracionContext(assignment)
+  return getActiveRoleAssignments(user).some(
+    isAdministracionJefaturaAssignment,
   );
 };
 
@@ -264,11 +226,20 @@ export const canApproveOrdenCompraStageEffective = (user, ordenCompra) => {
     ordenCompra?.snapshotFormal?.nivelPendienteActualSnapshot ||
     null;
 
+  if (pendingLevel === "JEFATURA_LOGISTICA") {
+    return (
+      getActiveRoleAssignments(user).some(isLogisticaJefaturaAssignment) &&
+      Number(ordenCompra?.snapshotFormal?.aprobadorLogisticaIdSnapshot || 0) ===
+        Number(user?.id || 0)
+    );
+  }
+
   if (pendingLevel === "GERENCIA_ADMINISTRACION") {
     return (
       hasRole(user, "GERENTE_ADMINISTRACION") &&
-      Number(ordenCompra?.snapshotFormal?.aprobadorAdministracionIdSnapshot || 0) ===
-        Number(user?.id || 0)
+      Number(
+        ordenCompra?.snapshotFormal?.aprobadorAdministracionIdSnapshot || 0,
+      ) === Number(user?.id || 0)
     );
   }
 
@@ -276,7 +247,7 @@ export const canApproveOrdenCompraStageEffective = (user, ordenCompra) => {
     if (!hasRole(user, "GERENTE_GENERAL")) return false;
 
     const approverId = Number(
-      ordenCompra?.snapshotFormal?.aprobadorGerenciaGeneralIdSnapshot || 0
+      ordenCompra?.snapshotFormal?.aprobadorGerenciaGeneralIdSnapshot || 0,
     );
 
     return approverId > 0 ? approverId === Number(user?.id || 0) : true;
@@ -293,11 +264,17 @@ export const canActOnNoteDocument = (user, documentoFormal) => {
   if (!pendingLevel) return false;
 
   if (pendingLevel === "APROBACION_ALMACEN") {
-    return Number(documentoFormal?.aprobadorAlmacenIdSnapshot || 0) === Number(user?.id || 0);
+    return (
+      Number(documentoFormal?.aprobadorAlmacenIdSnapshot || 0) ===
+      Number(user?.id || 0)
+    );
   }
 
   if (pendingLevel === "CONFORMIDAD_GERENCIA") {
-    return Number(documentoFormal?.gerenteConformidadIdSnapshot || 0) === Number(user?.id || 0);
+    return (
+      Number(documentoFormal?.gerenteConformidadIdSnapshot || 0) ===
+      Number(user?.id || 0)
+    );
   }
 
   return false;
@@ -350,7 +327,7 @@ export const canAccessTrayLevelEffective = (user = {}, nivel) => {
 const getPendingApprovalStageDetail = (requerimiento = {}) =>
   Array.isArray(requerimiento?.rutaAprobacionDetalle)
     ? requerimiento.rutaAprobacionDetalle.find(
-        (step) => step?.esPendiente || step?.estadoEtapa === "PENDIENTE"
+        (step) => step?.esPendiente || step?.estadoEtapa === "PENDIENTE",
       ) || null
     : null;
 
@@ -367,7 +344,10 @@ export const canEditRequerimientoEffective = (user, requerimiento) => {
   if (isAdminOverride(user)) return true;
 
   const pendingStage = getPendingApprovalStageDetail(requerimiento);
-  const isOwner = Number(requerimiento.solicitante?.id || requerimiento.solicitanteId || 0) === Number(user?.id || 0);
+  const isOwner =
+    Number(
+      requerimiento.solicitante?.id || requerimiento.solicitanteId || 0,
+    ) === Number(user?.id || 0);
   const isCurrentPendingApprover =
     Number(pendingStage?.aprobadorId || 0) > 0 &&
     Number(pendingStage.aprobadorId) === Number(user?.id || 0);
@@ -397,7 +377,10 @@ export const getAvailableApprovalTraysEffective = (user = {}) => {
     trays.push(trayDefinitions["gerencia-area"]);
   }
 
-  if (canApproveGerenciaAdministracionEffective(user) || isAdminOverride(user)) {
+  if (
+    canApproveGerenciaAdministracionEffective(user) ||
+    isAdminOverride(user)
+  ) {
     trays.push(trayDefinitions["gerencia-administracion"]);
   }
 
@@ -423,7 +406,7 @@ export const getTrayGuidanceEffective = (user = {}, nivel) => {
 export const getTrayEmptyStateEffective = (
   user = {},
   nivel,
-  hasActiveFilters = false
+  hasActiveFilters = false,
 ) => {
   if (hasActiveFilters) {
     return {
@@ -459,6 +442,12 @@ export const getTrayEmptyStateEffective = (
 export const canAccessUserManagementEffective = (user = {}) =>
   hasAnyRole(user, USER_MANAGEMENT_ADMIN_ROLES);
 
+// Regla explícita para operaciones de mantenimiento SUNAT (actualización de padrón).
+// Separada de canAccessUserManagementEffective para que si los roles divergen en el futuro
+// se pueda ajustar de forma independiente sin afectar la gestión de usuarios.
+export const canManageSunatEffective = (user = {}) =>
+  hasAnyRole(user, USER_MANAGEMENT_ADMIN_ROLES);
+
 export const canAccessCompanySettingsEffective = (user = {}) =>
   hasAnyRole(user, COMPANY_SETTINGS_ADMIN_ROLES);
 
@@ -467,10 +456,9 @@ export const canAccessAreasManagementEffective = (user = {}) =>
 
 export const canManageCatalogMasterEffective = (user = {}) =>
   hasRole(user, "ADMINISTRADOR_SISTEMA") ||
-  hasRole(user, "GERENTE_ADMINISTRACION") ||
   getActiveRoleAssignments(user).some(
     (assignment) =>
-      assignment.rol === "JEFE_AREA" && isWarehouseContext(assignment)
+      assignment.rol === "JEFE_AREA" && isWarehouseContext(assignment),
   );
 
 export const canAccessAdministrationCatalogsEffective = (user = {}) => {
@@ -485,7 +473,7 @@ export const canAccessAdministrationCatalogsEffective = (user = {}) => {
   }
 
   return getActiveRoleAssignments(user).some((assignment) =>
-    isAdministracionContext(assignment)
+    isAdministracionContext(assignment),
   );
 };
 
@@ -508,7 +496,8 @@ export const getRequerimientosHomePathEffective = (user = {}) => {
 
 export const getPedidosInternosHomePathEffective = (user = {}) => {
   if (canViewWarehouseTrayEffective(user)) return "/notas-pedido/almacen";
-  if (canApprovePedidoInternoEffective(user)) return "/notas-pedido/aprobaciones";
+  if (canApprovePedidoInternoEffective(user))
+    return "/notas-pedido/aprobaciones";
   if (canCreatePedidoInternoEffective(user)) return "/notas-pedido/nueva";
   return "/notas-pedido";
 };
@@ -572,6 +561,6 @@ export const getPrimaryNavigationLinksEffective = (user = {}) => {
 
   return links.filter(
     (link, index, collection) =>
-      collection.findIndex((current) => current.to === link.to) === index
+      collection.findIndex((current) => current.to === link.to) === index,
   );
 };

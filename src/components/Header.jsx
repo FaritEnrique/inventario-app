@@ -54,9 +54,12 @@ const Header = () => {
     };
   }, [isMobileMenuOpen, isAuthenticated, activeContext, contextSelectionRequired]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    const result = await logout();
+
+    if (result?.success) {
+      navigate("/login");
+    }
   };
 
   const commonLinkClasses =

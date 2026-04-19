@@ -3,14 +3,14 @@ import {
   escapeHtml,
 } from "./configuracionEmpresaLetterhead";
 
-const approvalLabels = {
+export const approvalLabels = {
   JEFATURA: "Aprobacion Jefatura",
   GERENCIA_AREA: "Aprobacion Gerencia",
   GERENCIA_ADMINISTRACION: "Aprobacion Gerencia Adm.",
   GERENCIA_GENERAL: "Aprobacion Gerencia General",
 };
 
-const defaultApprovalLevels = [
+export const defaultApprovalLevels = [
   "JEFATURA",
   "GERENCIA_AREA",
   "GERENCIA_ADMINISTRACION",
@@ -49,7 +49,7 @@ const joinUniqueSegments = (segments) => {
     .join(" - ");
 };
 
-const buildPrintedItemDescription = (item) => {
+export const buildPrintedItemDescription = (item) => {
   if (!item) return "-";
 
   if (!item.esTemporal && item.producto) {
@@ -73,6 +73,39 @@ const buildPrintedItemDescription = (item) => {
 };
 
 const renderText = (value, fallback = "-") => normalizeText(value) || fallback;
+
+export const buildRequerimientoPrintModel = ({
+  requerimiento,
+  signatures = [],
+  applicableApprovalLevels = [],
+}) => {
+  const activeItems = Array.isArray(requerimiento?.items)
+    ? requerimiento.items.filter((item) => item?.activo !== false)
+    : [];
+
+  const approvalLevels =
+    Array.isArray(applicableApprovalLevels) && applicableApprovalLevels.length
+      ? applicableApprovalLevels
+      : defaultApprovalLevels;
+  const signatureGridColumns =
+    approvalLevels.length >= 4 ? 2 : Math.max(1, Math.min(approvalLevels.length, 3));
+  const approvalMap = new Map(
+    (Array.isArray(signatures) ? signatures : []).map((signature) => [
+      signature.level,
+      signature.approval || null,
+    ]),
+  );
+
+  return {
+    activeItems,
+    approvalLevels,
+    approvalMap,
+    signatureGridColumns,
+    observaciones: renderText(
+      requerimiento?.observacionesGenerales || requerimiento?.descripcion,
+    ),
+  };
+};
 
 const buildItemRowsMarkup = (items) => {
   if (!items.length) {
@@ -147,24 +180,24 @@ export const buildRequerimientoPrintHtml = ({
   signatures = [],
   applicableApprovalLevels = [],
 }) => {
-  const activeItems = Array.isArray(requerimiento?.items)
-    ? requerimiento.items.filter((item) => item?.activo !== false)
-    : [];
-
-  const approvalLevels =
-    Array.isArray(applicableApprovalLevels) && applicableApprovalLevels.length
-      ? applicableApprovalLevels
-      : defaultApprovalLevels;
-  const signatureGridColumns =
-    approvalLevels.length >= 4 ? 2 : Math.max(1, Math.min(approvalLevels.length, 3));
+  const {
+    activeItems,
+    approvalLevels,
+    signatureGridColumns,
+    observaciones,
+  } = buildRequerimientoPrintModel({
+    requerimiento,
+    signatures,
+    applicableApprovalLevels,
+  });
 
   const bodyMarkup = `
-    <div class="document-body body-space">
-      <section class="document-heading">
+    <div class="document-body print-document">
+      <section class="document-heading print-avoid-break">
         <h1>REQUERIMIENTO</h1>
       </section>
 
-      <section class="document-summary">
+      <section class="document-summary print-avoid-break">
         <div class="summary-grid">
           <div><span>Codigo:</span> ${escapeHtml(renderText(requerimiento?.codigo))}</div>
           <div><span>Fecha:</span> ${escapeHtml(formatPrintDate(requerimiento?.fechaCreacion))}</div>
@@ -172,14 +205,12 @@ export const buildRequerimientoPrintHtml = ({
           <div><span>Solicitante:</span> ${escapeHtml(renderText(requerimiento?.solicitante?.nombre))}</div>
           <div class="summary-grid__full"><span>Uso:</span> ${escapeHtml(renderText(requerimiento?.usoFinalidad))}</div>
           <div class="summary-grid__full"><span>Ubicacion:</span> ${escapeHtml(renderText(requerimiento?.ubicacionUso))}</div>
-          <div class="summary-grid__full"><span>Observaciones:</span> ${escapeHtml(
-            renderText(requerimiento?.observacionesGenerales || requerimiento?.descripcion)
-          )}</div>
+          <div class="summary-grid__full"><span>Observaciones:</span> ${escapeHtml(observaciones)}</div>
         </div>
       </section>
 
       <section class="items-section">
-        <table class="items-table">
+        <table class="items-table print-table">
           <thead>
             <tr>
               <th class="items-table__head items-table__head--center">Item</th>
@@ -286,6 +317,10 @@ export const buildRequerimientoPrintHtml = ({
     .items-table__head:nth-child(3) { width: 12%; }
     .items-table__head:nth-child(4) { width: 17%; }
     .items-table__head:nth-child(5) { width: 17%; }
+    .items-table tbody tr {
+      break-inside: avoid-page;
+      page-break-inside: avoid;
+    }
     .items-table__total-label,
     .items-table__total-value {
       font-weight: 700;

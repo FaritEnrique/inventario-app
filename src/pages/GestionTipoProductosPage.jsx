@@ -1,5 +1,5 @@
 // src/pages/GestionTipoProductosPage.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import useTipoProductos from "../hooks/useTipoProductos";
 import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
@@ -8,12 +8,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import ConfirmToast from "../components/ConfirmToast";
-
-const devLog = (...args) => {
-  if (import.meta.env.MODE === "development") {
-    console.log("[DEV_LOG_GESTION_TIPOS]", ...args);
-  }
-};
 
 const FRECUENCIA_REPOSICION_OPTIONS = [
   "diaria",
@@ -46,8 +40,14 @@ const GestionTipoProductosPage = () => {
   const [tipoSeleccionadoId, setTipoSeleccionadoId] = useState(null);
   const [searchTermInput, setSearchTermInput] = useState("");
   const debouncedSearchTerm = useDebounce(searchTermInput, 2000);
+  const didRunInitialSearchEffect = useRef(false);
 
   useEffect(() => {
+    if (!didRunInitialSearchEffect.current) {
+      didRunInitialSearchEffect.current = true;
+      return;
+    }
+
     fetchTiposProducto(debouncedSearchTerm);
   }, [fetchTiposProducto, debouncedSearchTerm]);
 
@@ -207,8 +207,6 @@ const GestionTipoProductosPage = () => {
     setTipoSeleccionadoId(null);
     clearTipo();
   }, [clearTipo]);
-
-  devLog("Datos de tiposProducto en GestionTipoProductosPage:", tiposProducto);
 
   return (
     <div className="max-w-4xl p-5 mx-auto my-5 border border-gray-200 shadow-2xl bg-gray-50 rounded-xl">

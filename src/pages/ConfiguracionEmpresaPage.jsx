@@ -8,42 +8,17 @@ import Loader from "../components/Loader";
 import {
   buildBlankLetterheadPrintHtml,
   buildLetterheadDocumentData,
+  resolveInstitutionalAssetUrl,
 } from "../utils/configuracionEmpresaLetterhead";
+import { printHtmlInNewWindow } from "../utils/printWindow";
 import { institutionalLetterheadMetrics } from "@document-branding/documentBrandingMetrics.js";
-
-const buildUploadsBaseUrl = () => {
-  const rawApiUrl =
-    import.meta.env.VITE_API_URL ||
-    (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
-
-  return String(rawApiUrl || "").trim().replace(/\/+$/, "").replace(/\/api$/, "");
-};
-
-const resolveAssetUrl = (assetUrl) => {
-  if (!assetUrl) return "";
-
-  if (
-    assetUrl.startsWith("blob:") ||
-    assetUrl.startsWith("data:") ||
-    assetUrl.startsWith("http://") ||
-    assetUrl.startsWith("https://")
-  ) {
-    return assetUrl;
-  }
-
-  const uploadsBaseUrl = buildUploadsBaseUrl();
-  if (!uploadsBaseUrl) {
-    return assetUrl;
-  }
-
-  return `${uploadsBaseUrl}${assetUrl.startsWith("/") ? "" : "/"}${assetUrl}`;
-};
 
 const emptyForm = {
   razonSocial: "",
   ruc: "",
   fraseEncabezado: "",
   direccion: "",
+  ciudad: "",
   telefono: "",
   correo: "",
   pieInstitucional: "",
@@ -51,20 +26,38 @@ const emptyForm = {
   logoFile: null,
 };
 
-const buildTextPayload = (formData) => {
+const buildConfigurationPayload = (formData) => {
   const payload = new FormData();
   payload.append("razonSocial", formData.razonSocial);
   payload.append("ruc", formData.ruc || "");
   payload.append("fraseEncabezado", formData.fraseEncabezado || "");
   payload.append("direccion", formData.direccion || "");
+  payload.append("ciudad", formData.ciudad || "");
   payload.append("telefono", formData.telefono || "");
   payload.append("correo", formData.correo || "");
   payload.append("pieInstitucional", formData.pieInstitucional || "");
+  payload.append("logoUrl", formData.logoUrl || "");
   payload.append("removeLogo", "false");
+
+  if (formData.logoFile) {
+    payload.append("logo", formData.logoFile);
+  }
+
   return payload;
 };
 
-const FooterPreviewItem = ({ value, icon, extraIcon = null, className = "" }) => {
+const normalizePersistedConfiguration = (data) => ({
+  ...emptyForm,
+  ...data,
+  logoFile: null,
+});
+
+const FooterPreviewItem = ({
+  value,
+  icon,
+  extraIcon = null,
+  className = "",
+}) => {
   if (!value) return null;
 
   return (
@@ -248,31 +241,34 @@ const ConfiguracionEmpresaPage = () => {
   const [formData, setFormData] = useState(emptyForm);
   const objectUrlRef = useRef(null);
 
+  const loadPersistedConfiguration = async () => {
+    const data = await configuracionEmpresaApi.obtener();
+    setFormData(normalizePersistedConfiguration(data));
+    return data;
+  };
+
   const logoPreviewUrl = useMemo(() => {
     if (formData.logoFile && objectUrlRef.current) {
       return objectUrlRef.current;
     }
 
-    return resolveAssetUrl(formData.logoUrl);
+    return resolveInstitutionalAssetUrl(formData.logoUrl);
   }, [formData.logoFile, formData.logoUrl]);
 
   const letterheadDocumentData = useMemo(
     () => buildLetterheadDocumentData(formData, logoPreviewUrl),
-    [formData, logoPreviewUrl]
+    [formData, logoPreviewUrl],
   );
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await configuracionEmpresaApi.obtener();
-        setFormData({
-          ...emptyForm,
-          ...data,
-          logoFile: null,
-        });
+        await loadPersistedConfiguration();
       } catch (error) {
-        toast.error(error.message || "No se pudo cargar la configuracion de empresa.");
+        toast.error(
+          error.message || "No se pudo cargar la configuracion de empresa.",
+        );
       } finally {
         setLoading(false);
       }
@@ -317,65 +313,45 @@ const ConfiguracionEmpresaPage = () => {
     }));
   };
 
-  const persistPendingLogoIfNeeded = async () => {
-    if (!formData.logoFile) {
-      return formData.logoUrl || "";
-    }
-
-    const payload = new FormData();
-    payload.append("logo", formData.logoFile);
-
-    const response = await configuracionEmpresaApi.guardarLogo(payload);
-    const persistedLogoUrl = response.configuracion?.logoUrl || "";
-
-    setFormData((current) => ({
-      ...current,
-      logoUrl: persistedLogoUrl,
-      logoFile: null,
-    }));
-
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-
-    return persistedLogoUrl;
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const missingFields = getMissingRequiredLetterheadFields(formData);
     if (missingFields.length) {
       toast.error(
-        `Completa los campos obligatorios: ${missingFields.join(", ")}.`
+        `Completa los campos obligatorios: ${missingFields.join(", ")}.`,
       );
       return;
     }
 
     setSaving(true);
     try {
-      const persistedLogoUrl = await persistPendingLogoIfNeeded();
       const response = await configuracionEmpresaApi.guardar(
-        buildTextPayload({
-          ...formData,
-          logoUrl: persistedLogoUrl || formData.logoUrl || "",
-          logoFile: null,
-        })
+        buildConfigurationPayload(formData),
       );
-      setFormData((current) => ({
-        ...emptyForm,
-        ...response.configuracion,
-        logoUrl:
-          response.configuracion.logoUrl ||
-          persistedLogoUrl ||
-          current.logoUrl,
-        logoFile: null,
-      }));
+
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+
+      try {
+        await loadPersistedConfiguration();
+      } catch {
+        if (response?.configuracion) {
+          setFormData(normalizePersistedConfiguration(response.configuracion));
+        } else {
+          throw new Error(
+            "La configuracion se guardo, pero no se pudo recargar desde el servidor.",
+          );
+        }
+      }
 
       toast.success("Configuracion institucional actualizada.");
     } catch (error) {
-      toast.error(error.message || "No se pudo guardar la configuracion de empresa.");
+      toast.error(
+        error.message || "No se pudo guardar la configuracion de empresa.",
+      );
     } finally {
       setSaving(false);
     }
@@ -416,7 +392,7 @@ const ConfiguracionEmpresaPage = () => {
     const missingFields = getMissingRequiredLetterheadFields(formData);
     if (missingFields.length) {
       toast.error(
-        `Para abrir el membrete PDF completa: ${missingFields.join(", ")}.`
+        `Para abrir el membrete PDF completa: ${missingFields.join(", ")}.`,
       );
       return;
     }
@@ -430,42 +406,35 @@ const ConfiguracionEmpresaPage = () => {
       window.open(
         configuracionEmpresaApi.obtenerMembretePdfUrl(),
         "_blank",
-        "noopener,noreferrer"
+        "noopener,noreferrer",
       );
     } catch (error) {
       toast.error(
-        error.message || "No se pudo preparar el logo para el membrete PDF."
+        error.message || "No se pudo preparar el logo para el membrete PDF.",
       );
     } finally {
       setSavingLogo(false);
     }
   };
 
-  const handlePrintBlankLetterhead = () => {
+  const handlePrintBlankLetterhead = async () => {
     const missingFields = getMissingRequiredLetterheadFields(formData);
     if (missingFields.length) {
       toast.error(
-        `Para imprimir el membrete completa: ${missingFields.join(", ")}.`
+        `Para imprimir el membrete completa: ${missingFields.join(", ")}.`,
       );
       return;
     }
 
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-      toast.error("No se pudo abrir la ventana de impresion del membrete.");
-      return;
+    try {
+      await printHtmlInNewWindow(
+        buildBlankLetterheadPrintHtml(letterheadDocumentData),
+      );
+    } catch (error) {
+      toast.error(
+        error.message || "No se pudo abrir la ventana de impresion del membrete.",
+      );
     }
-
-    printWindow.document.open();
-    printWindow.document.write(
-      buildBlankLetterheadPrintHtml(letterheadDocumentData)
-    );
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.onload = () => {
-      printWindow.print();
-    };
   };
 
   if (loading) {
@@ -487,9 +456,10 @@ const ConfiguracionEmpresaPage = () => {
               <p className="mt-2 max-w-3xl text-sm text-slate-600">
                 Aqui definimos el membrete institucional que alimenta los
                 documentos comerciales. El logo ahora se gestiona por separado y
-                la previsualizacion muestra una hoja A4 para revisar el resultado
-                antes de emitir PDFs. Cuando ya exista una configuracion guardada,
-                este mismo formulario se precarga y funciona como edicion.
+                la previsualizacion muestra una hoja A4 para revisar el
+                resultado antes de emitir PDFs. Cuando ya exista una
+                configuracion guardada, este mismo formulario se precarga y
+                funciona como edicion.
               </p>
             </div>
             <Link
@@ -524,7 +494,9 @@ const ConfiguracionEmpresaPage = () => {
                   id="configuracion-empresa-razon-social"
                   name="razonSocial"
                   value={formData.razonSocial}
-                  onChange={(event) => updateField("razonSocial", event.target.value)}
+                  onChange={(event) =>
+                    updateField("razonSocial", event.target.value)
+                  }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="Empresa emisora"
                   required
@@ -550,7 +522,9 @@ const ConfiguracionEmpresaPage = () => {
                   id="configuracion-empresa-telefono"
                   name="telefono"
                   value={formData.telefono}
-                  onChange={(event) => updateField("telefono", event.target.value)}
+                  onChange={(event) =>
+                    updateField("telefono", event.target.value)
+                  }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="+51 999 999 999"
                   required
@@ -578,10 +552,26 @@ const ConfiguracionEmpresaPage = () => {
                   id="configuracion-empresa-direccion"
                   name="direccion"
                   value={formData.direccion}
-                  onChange={(event) => updateField("direccion", event.target.value)}
+                  onChange={(event) =>
+                    updateField("direccion", event.target.value)
+                  }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="Direccion institucional"
                   required
+                />
+              </label>
+
+              <label className="space-y-1 text-sm text-slate-700">
+                <span className="font-medium">Ciudad</span>
+                <input
+                  id="configuracion-empresa-ciudad"
+                  name="ciudad"
+                  value={formData.ciudad}
+                  onChange={(event) =>
+                    updateField("ciudad", event.target.value)
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  placeholder="Iquitos, Lima, etc."
                 />
               </label>
 
@@ -592,7 +582,9 @@ const ConfiguracionEmpresaPage = () => {
                   name="correo"
                   type="email"
                   value={formData.correo}
-                  onChange={(event) => updateField("correo", event.target.value)}
+                  onChange={(event) =>
+                    updateField("correo", event.target.value)
+                  }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="logistica@empresa.pe"
                   required
@@ -635,9 +627,9 @@ const ConfiguracionEmpresaPage = () => {
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               Selecciona y guarda el logo por separado. La previsualizacion A4
-              usa de inmediato el archivo local para que veamos el membrete antes
-              de publicarlo. El logo es obligatorio para guardar y emitir el
-              membrete institucional.
+              usa de inmediato el archivo local para que veamos el membrete
+              antes de publicarlo. El logo es obligatorio para guardar y emitir
+              el membrete institucional.
             </p>
 
             <div className="mt-5 grid gap-5 md:grid-cols-[auto,1fr]">
@@ -695,9 +687,10 @@ const ConfiguracionEmpresaPage = () => {
               Asi se veria el papel membretado
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Esta vista muestra una hoja membretada en blanco con la composicion
-              real del encabezado y el pie institucional. Tambien puedes abrir el
-              PDF del membrete guardado o imprimir una hoja membretada de utilidad.
+              Esta vista muestra una hoja membretada en blanco con la
+              composicion real del encabezado y el pie institucional. Tambien
+              puedes abrir el PDF del membrete guardado o imprimir una hoja
+              membretada de utilidad.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">

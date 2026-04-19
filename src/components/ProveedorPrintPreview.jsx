@@ -1,5 +1,8 @@
 import React from "react";
-import { buildApiUrl } from "../api/apiFetch";
+import {
+  collectPrintableHeadMarkup,
+  printHtmlInNewWindow,
+} from "../utils/printWindow";
 
 const PrintField = ({ label, value }) => (
   <div className="break-inside-avoid py-2">
@@ -13,20 +16,20 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
     const printArea = document.getElementById("print-area");
 
     if (!printArea) {
-      console.error("No se encontró el área de impresión.");
+      console.error("No se encontro el area de impresion.");
       return;
     }
 
     try {
-      const tailwindCssLink =
-        '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
+      const currentStyles = collectPrintableHeadMarkup(document);
 
       const fullHtmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="utf-8" />
           <title>Documento de Proveedor</title>
-          ${tailwindCssLink}
+          ${currentStyles}
           <style>
             body {
               font-family: sans-serif;
@@ -49,38 +52,26 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
               margin-top: 0 !important;
               padding-top: 0 !important;
             }
-            .columns-2 { column-count: 2 !important; }
-            .gap-x-12 { column-gap: 3rem !important; }
+            .columns-2 {
+              column-count: 2 !important;
+            }
+            .gap-x-12 {
+              column-gap: 3rem !important;
+            }
           </style>
         </head>
         <body>
-          ${printArea.outerHTML}
+          <div class="print-document">
+            ${printArea.outerHTML}
+          </div>
         </body>
         </html>
       `;
 
-      const response = await fetch(buildApiUrl("pdf/generate-from-html"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ htmlContent: fullHtmlContent }),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Error HTTP al generar el PDF. Estado: ${response.status}`
-        );
-      }
-
-      const pdfBlob = await response.blob();
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, "_blank");
-      URL.revokeObjectURL(pdfUrl);
+      await printHtmlInNewWindow(fullHtmlContent);
     } catch (error) {
-      console.error("Error al generar el PDF:", error);
-      alert("Error al generar el PDF. Por favor, intentalo de nuevo.");
+      console.error("Error al preparar la impresion:", error);
+      alert("Error al preparar la impresion. Por favor, intentalo de nuevo.");
     }
   };
 

@@ -1,16 +1,9 @@
 import React from "react";
-
-const approvalLabels = {
-  JEFATURA: "Aprobacion Jefatura",
-  GERENCIA_AREA: "Aprobacion Gerencia",
-  GERENCIA_ADMINISTRACION: "Aprobacion Gerencia Adm.",
-};
-
-const printApprovalLevels = [
-  "JEFATURA",
-  "GERENCIA_AREA",
-  "GERENCIA_ADMINISTRACION",
-];
+import {
+  approvalLabels,
+  buildPrintedItemDescription,
+  buildRequerimientoPrintModel,
+} from "../utils/requerimientoPrintDocument";
 
 const moneyFormatter = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
@@ -30,43 +23,6 @@ const normalizeText = (value) => {
   return normalized || null;
 };
 
-const joinUniqueSegments = (segments) => {
-  const seen = new Set();
-  return segments
-    .map(normalizeText)
-    .filter((segment) => {
-      if (!segment) return false;
-      const key = segment.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .join(" - ");
-};
-
-export const buildPrintedItemDescription = (item) => {
-  if (!item) return "-";
-
-  if (!item.esTemporal && item.producto) {
-    const base = normalizeText(item.producto.nombre) || normalizeText(item.descripcionVisible);
-    const description = normalizeText(item.producto.descripcion);
-    const brand = normalizeText(item.producto.marca?.nombre)
-      ? `Marca: ${normalizeText(item.producto.marca?.nombre)}`
-      : null;
-
-    return joinUniqueSegments([base, description, brand]) || "-";
-  }
-
-  const temporal = item.productoTemporal || {};
-  const base =
-    normalizeText(temporal.nombre) ||
-    normalizeText(item.descripcionVisible) ||
-    "Producto temporal";
-  const description = normalizeText(temporal.descripcion);
-
-  return joinUniqueSegments([base, description]) || "Producto temporal";
-};
-
 const renderValue = (value) => normalizeText(value) || "-";
 
 const PrintRequerimientoDocument = ({
@@ -74,22 +30,12 @@ const PrintRequerimientoDocument = ({
   signatures = [],
   applicableApprovalLevels = [],
 }) => {
-  const activeItems = Array.isArray(requerimiento?.items)
-    ? requerimiento.items.filter((item) => item?.activo !== false)
-    : [];
-  const applicableLevels = new Set(
-    Array.isArray(applicableApprovalLevels) ? applicableApprovalLevels : []
-  );
-
-  const approvalMap = new Map(
-    (Array.isArray(signatures) ? signatures : []).map((signature) => [
-      signature.level,
-      signature.approval || null,
-    ])
-  );
-  const observaciones = renderValue(
-    requerimiento?.observacionesGenerales || requerimiento?.descripcion
-  );
+  const { activeItems, approvalLevels, approvalMap, observaciones } =
+    buildRequerimientoPrintModel({
+      requerimiento,
+      signatures,
+      applicableApprovalLevels,
+    });
 
   return (
     <section className="print-document hidden print:block">
@@ -203,10 +149,9 @@ const PrintRequerimientoDocument = ({
         </div>
 
         <section className="mt-5 grid grid-cols-3 items-stretch gap-3 text-[10px] leading-[1.35]">
-          {printApprovalLevels.map((level) => {
+          {approvalLevels.map((level) => {
             const approval = approvalMap.get(level);
-            const appliesToRoute = applicableLevels.has(level);
-            const fallbackLabel = appliesToRoute ? "Pendiente" : "No aplica";
+            const fallbackLabel = "Pendiente";
             const approverName =
               normalizeText(approval?.aprobador?.nombre) || fallbackLabel;
             const approvalDate = approval

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import {
   isPasswordPolicyValid,
   PASSWORD_POLICY_MESSAGE,
@@ -26,6 +27,17 @@ const createEmptyRango = () => ({
   activo: true,
 });
 
+const createEmptyForm = () => ({
+  name: "",
+  email: "",
+  password: "",
+  cargo: "",
+  areaId: "",
+  activo: true,
+  rol: "OPERADOR",
+  rangos: [],
+});
+
 const normalizeRangos = (rangos = []) =>
   (Array.isArray(rangos) ? rangos : [])
     .filter((rango) => rango && rango.activo !== false)
@@ -42,13 +54,13 @@ const formatValidationMessage = (message) =>
   String(message || "")
     .replace(/["]/g, "")
     .replace(/\bnombre\b/g, "nombre")
-    .replace(/\bemail\b/g, "correo electrónico")
-    .replace(/\bpassword\b/g, "contraseña")
+    .replace(/\bemail\b/g, "correo electronico")
+    .replace(/\bpassword\b/g, "contrasena")
     .replace(/\bcargo\b/g, "cargo")
-    .replace(/\bareaId\b/g, "área")
+    .replace(/\bareaId\b/g, "area")
     .replace(/\brol\b/g, "rol")
     .replace(/\brangos\[\d+\]\.rol\b/g, "rol adicional")
-    .replace(/\brangos\[\d+\]\.areaId\b/g, "área del rango adicional");
+    .replace(/\brangos\[\d+\]\.areaId\b/g, "area del rango adicional");
 
 const buildErrorMessage = (error) => {
   if (Array.isArray(error?.validationErrors) && error.validationErrors.length) {
@@ -65,30 +77,13 @@ const UsuarioForm = ({
   onSave = async () => {},
   disableAdminRole = false,
 }) => {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    cargo: "",
-    areaId: "",
-    activo: true,
-    rol: "OPERADOR",
-    rangos: [],
-  });
+  const [form, setForm] = useState(createEmptyForm);
   const [formError, setFormError] = useState("");
+  const hasAreasAvailable = Array.isArray(areas) && areas.length > 0;
 
   useEffect(() => {
     if (!initialValues) {
-      setForm({
-        name: "",
-        email: "",
-        password: "",
-        cargo: "",
-        areaId: "",
-        activo: true,
-        rol: "OPERADOR",
-        rangos: [],
-      });
+      setForm(createEmptyForm());
       setFormError("");
       return;
     }
@@ -108,14 +103,14 @@ const UsuarioForm = ({
           : true,
       rol: initialValues.rol ?? "OPERADOR",
       rangos: normalizeRangos(
-        initialValues.rangos ?? initialValues.userRangos ?? []
+        initialValues.rangos ?? initialValues.userRangos ?? [],
       ),
     });
     setFormError("");
   }, [initialValues]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
     const nextValue = type === "checkbox" ? checked : value;
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     setFormError("");
@@ -125,7 +120,7 @@ const UsuarioForm = ({
     setForm((prev) => ({
       ...prev,
       rangos: prev.rangos.map((rango, currentIndex) =>
-        currentIndex === index ? { ...rango, [field]: value } : rango
+        currentIndex === index ? { ...rango, [field]: value } : rango,
       ),
     }));
     setFormError("");
@@ -166,7 +161,7 @@ const UsuarioForm = ({
 
       const key = `${rango.rol}::${rango.areaId}`;
       if (duplicateAssignments.has(key)) {
-        return "No se pueden repetir asignaciones de rol y área en el mismo usuario.";
+        return "No se pueden repetir asignaciones de rol y area en el mismo usuario.";
       }
 
       duplicateAssignments.add(key);
@@ -179,12 +174,13 @@ const UsuarioForm = ({
     return "";
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     const validationMessage = validateForm();
     if (validationMessage) {
       setFormError(validationMessage);
+      toast.error(validationMessage);
       return;
     }
 
@@ -199,16 +195,7 @@ const UsuarioForm = ({
       });
 
       if (!initialValues) {
-        setForm({
-          name: "",
-          email: "",
-          password: "",
-          cargo: "",
-          areaId: "",
-          activo: true,
-          rol: "OPERADOR",
-          rangos: [],
-        });
+        setForm(createEmptyForm());
       }
     } catch (error) {
       setFormError(buildErrorMessage(error));
@@ -216,10 +203,20 @@ const UsuarioForm = ({
     }
   };
 
+  const handleCancelClick = () => {
+    if (!initialValues) {
+      setForm(createEmptyForm());
+      setFormError("");
+    }
+
+    onCancel();
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
       className="grid grid-cols-1 gap-4 rounded-lg border bg-white p-4 md:grid-cols-3"
+      autoComplete="on"
     >
       {formError ? (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 md:col-span-3">
@@ -228,60 +225,114 @@ const UsuarioForm = ({
       ) : null}
 
       <div className="md:col-span-3">
-        <h2 className="text-sm font-semibold text-gray-900">Datos principales</h2>
+        <h2 className="text-sm font-semibold text-gray-900">
+          Datos principales
+        </h2>
         <p className="mt-1 text-xs text-gray-600">
-          El rol principal y el área principal se mantienen separados de los rangos adicionales.
+          El rol principal y el area principal se mantienen separados de los
+          rangos adicionales.
         </p>
       </div>
 
-      <input
-        name="name"
-        value={form.name}
-        onChange={handleChange}
-        placeholder="Nombre completo"
-        className="rounded border p-2 md:col-span-1"
-        required
-      />
-      <input
-        name="email"
-        value={form.email}
-        onChange={handleChange}
-        placeholder="Correo electrónico"
-        type="email"
-        className="rounded border p-2 md:col-span-1"
-        required
-      />
-      <input
-        name="password"
-        value={form.password}
-        onChange={handleChange}
-        placeholder={initialValues ? "Dejar vacío si no cambia" : "Contraseña"}
-        type="password"
-        className="rounded border p-2 md:col-span-1"
-        {...(initialValues ? {} : { required: true })}
-      />
-      <p className="text-xs text-gray-500 md:col-span-3">{PASSWORD_POLICY_MESSAGE}</p>
-      <input
-        name="cargo"
-        value={form.cargo}
-        onChange={handleChange}
-        placeholder="Cargo"
-        className="rounded border p-2 md:col-span-1"
-        required
-      />
+      <div className="md:col-span-1">
+        <label
+          htmlFor="usuario-nombre"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          Nombre completo
+        </label>
+        <input
+          id="usuario-nombre"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="Nombre completo"
+          autoComplete="name"
+          className="w-full rounded border p-2"
+          required
+        />
+      </div>
 
       <div className="md:col-span-1">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Área principal
+        <label
+          htmlFor="usuario-email"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          Correo electronico
+        </label>
+        <input
+          id="usuario-email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="Correo electronico"
+          type="email"
+          autoComplete="email"
+          className="w-full rounded border p-2"
+          required
+        />
+      </div>
+
+      <div className="md:col-span-1">
+        <label
+          htmlFor="usuario-password"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          {initialValues ? "Nueva contrasena" : "Contrasena"}
+        </label>
+        <input
+          id="usuario-password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          placeholder={initialValues ? "Dejar vacio si no cambia" : "Contrasena"}
+          type="password"
+          autoComplete="new-password"
+          className="w-full rounded border p-2"
+          {...(initialValues ? {} : { required: true })}
+        />
+      </div>
+
+      <p className="text-xs text-gray-500 md:col-span-3">
+        {PASSWORD_POLICY_MESSAGE}
+      </p>
+
+      <div className="md:col-span-1">
+        <label
+          htmlFor="usuario-cargo"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          Cargo
+        </label>
+        <input
+          id="usuario-cargo"
+          name="cargo"
+          value={form.cargo}
+          onChange={handleChange}
+          placeholder="Cargo"
+          autoComplete="organization-title"
+          className="w-full rounded border p-2"
+          required
+        />
+      </div>
+
+      <div className="md:col-span-1">
+        <label
+          htmlFor="usuario-area"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
+          Area principal
         </label>
         <select
+          id="usuario-area"
           name="areaId"
           value={form.areaId}
           onChange={handleChange}
+          autoComplete="organization"
           className="w-full rounded border p-2"
           required
         >
-          <option value="">-- Área principal --</option>
+          <option value="">-- Area principal --</option>
           {areas.map((area) => (
             <option key={area.id} value={area.id}>
               {area.nombre}
@@ -291,13 +342,18 @@ const UsuarioForm = ({
       </div>
 
       <div className="md:col-span-1">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="usuario-rol"
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
           Rol principal
         </label>
         <select
+          id="usuario-rol"
           name="rol"
           value={form.rol}
           onChange={handleChange}
+          autoComplete="off"
           className="w-full rounded border p-2"
           required
         >
@@ -313,6 +369,13 @@ const UsuarioForm = ({
           ))}
         </select>
       </div>
+
+      {!hasAreasAvailable ? (
+        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 md:col-span-3">
+          No hay areas disponibles para asignar al usuario. Sin un area
+          principal valida no se podra crear ni editar el usuario.
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-2 md:col-span-3">
         <input
@@ -335,7 +398,8 @@ const UsuarioForm = ({
                 Rangos adicionales
               </h3>
               <p className="text-xs text-gray-600">
-                Usa esta sección para asignaciones organizacionales por área, como jefatura o gerencia funcional.
+                Usa esta seccion para asignaciones organizacionales por area,
+                como jefatura o gerencia funcional.
               </p>
             </div>
             <button
@@ -358,45 +422,67 @@ const UsuarioForm = ({
                   key={`${rango.rol}-${rango.areaId}-${index}`}
                   className="grid grid-cols-1 gap-3 rounded border border-gray-200 bg-white p-3 md:grid-cols-[1fr_1fr_auto]"
                 >
-                  <select
-                    value={rango.rol}
-                    onChange={(event) =>
-                      handleRangoChange(index, "rol", event.target.value)
-                    }
-                    className="rounded border p-2"
-                    required
-                  >
-                    <option value="">-- Rol adicional --</option>
-                    {additionalRolesList.map((rol) => (
-                      <option key={rol} value={rol}>
-                        {rol}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label
+                      htmlFor={`usuario-rango-rol-${index}`}
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      Rol adicional
+                    </label>
+                    <select
+                      id={`usuario-rango-rol-${index}`}
+                      value={rango.rol}
+                      onChange={(event) =>
+                        handleRangoChange(index, "rol", event.target.value)
+                      }
+                      autoComplete="off"
+                      className="w-full rounded border p-2"
+                      required
+                    >
+                      <option value="">-- Rol adicional --</option>
+                      {additionalRolesList.map((rol) => (
+                        <option key={rol} value={rol}>
+                          {rol}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    value={rango.areaId}
-                    onChange={(event) =>
-                      handleRangoChange(index, "areaId", event.target.value)
-                    }
-                    className="rounded border p-2"
-                    required
-                  >
-                    <option value="">-- Área del rango --</option>
-                    {areas.map((area) => (
-                      <option key={area.id} value={area.id}>
-                        {area.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label
+                      htmlFor={`usuario-rango-area-${index}`}
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      Area del rango
+                    </label>
+                    <select
+                      id={`usuario-rango-area-${index}`}
+                      value={rango.areaId}
+                      onChange={(event) =>
+                        handleRangoChange(index, "areaId", event.target.value)
+                      }
+                      autoComplete="off"
+                      className="w-full rounded border p-2"
+                      required
+                    >
+                      <option value="">-- Area del rango --</option>
+                      {areas.map((area) => (
+                        <option key={area.id} value={area.id}>
+                          {area.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveRango(index)}
-                    className="rounded bg-red-100 px-3 py-2 text-sm font-medium text-red-700"
-                  >
-                    Quitar
-                  </button>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRango(index)}
+                      className="rounded bg-red-100 px-3 py-2 text-sm font-medium text-red-700"
+                    >
+                      Quitar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -407,14 +493,15 @@ const UsuarioForm = ({
       <div className="flex justify-end gap-2 md:col-span-3">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancelClick}
           className="rounded bg-gray-200 px-4 py-2"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="rounded bg-blue-600 px-4 py-2 text-white"
+          disabled={!hasAreasAvailable}
+          className="rounded bg-blue-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-blue-300"
         >
           {initialValues ? "Guardar cambios" : "Crear usuario"}
         </button>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -61,6 +61,14 @@ const InventarioOperacionesPage = () => {
 
   const canOperate = canOperateInventoryEffective(user);
   const canAdjust = canAdjustInventoryEffective(user);
+  const availableOperationOptions = useMemo(
+    () =>
+      operationOptions.filter(
+        (option) =>
+          !["cargaInicial", "ajuste"].includes(option.value) || canAdjust,
+      ),
+    [canAdjust],
+  );
 
   const canSubmit = useMemo(() => {
     if (["cargaInicial", "ajuste"].includes(modo)) {
@@ -68,6 +76,15 @@ const InventarioOperacionesPage = () => {
     }
     return canOperate;
   }, [canAdjust, canOperate, modo]);
+
+  useEffect(() => {
+    if (availableOperationOptions.some((option) => option.value === modo)) {
+      return;
+    }
+
+    setModo(availableOperationOptions[0]?.value || "entrada");
+    setResultado(null);
+  }, [availableOperationOptions, modo]);
 
   const setField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -214,7 +231,7 @@ const InventarioOperacionesPage = () => {
                 }}
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
-                {operationOptions.map((option) => (
+                {availableOperationOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

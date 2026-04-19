@@ -1,25 +1,27 @@
+import { describe, expect, it } from "vitest";
 import {
   PASSWORD_POLICY,
   isPasswordPolicyValid,
 } from "./passwordPolicy";
-import { describe, expect, it } from "vitest";
 
 describe("isPasswordPolicyValid", () => {
-  it("acepta una contraseña válida dentro del rango permitido", () => {
+  it("accepts a valid password within the allowed range", () => {
     expect(isPasswordPolicyValid("Clave123")).toBe(true);
   });
 
-  it("rechaza contraseñas más cortas que el mínimo", () => {
+  it("rejects passwords shorter than the minimum", () => {
     expect(isPasswordPolicyValid("Abc123")).toBe(false);
   });
 
-  it("rechaza contraseñas sin letras o sin números", () => {
+  it("rejects passwords without number, uppercase, or lowercase", () => {
     expect(isPasswordPolicyValid("12345678")).toBe(false);
     expect(isPasswordPolicyValid("SoloLetras")).toBe(false);
+    expect(isPasswordPolicyValid("sololetras1")).toBe(false);
+    expect(isPasswordPolicyValid("SOLOLETRAS1")).toBe(false);
   });
 
-  it("rechaza contraseñas más largas que el máximo", () => {
-    const password = `A1${"x".repeat(PASSWORD_POLICY.maxLength - 1)}`;
+  it("rejects passwords longer than the maximum", () => {
+    const password = `Aa1${"x".repeat(PASSWORD_POLICY.maxLength - 2)}`;
 
     expect(isPasswordPolicyValid(password)).toBe(false);
   });

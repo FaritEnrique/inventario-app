@@ -16,6 +16,9 @@ const normalizeArea = (area, fallback = {}) => {
       branchDescription:
         area.branchDescription || fallback.branchDescription || null,
       tipoUnidad: area.tipoUnidad || fallback.tipoUnidad || null,
+      esAreaLogistica:
+        area.esAreaLogistica ?? fallback.esAreaLogistica ?? null,
+      esAreaAlmacen: area.esAreaAlmacen ?? fallback.esAreaAlmacen ?? null,
     };
   }
 
@@ -26,6 +29,8 @@ const normalizeArea = (area, fallback = {}) => {
     codigo: fallback.areaCodigo || null,
     branchDescription: fallback.branchDescription || null,
     tipoUnidad: fallback.tipoUnidad || null,
+    esAreaLogistica: fallback.esAreaLogistica ?? null,
+    esAreaAlmacen: fallback.esAreaAlmacen ?? null,
   };
 };
 
@@ -79,6 +84,16 @@ export const getActiveRoleAssignments = (user) => {
       areaCodigo: user.areaCodigo,
       branchDescription: user.activeContext.branchDescription,
       tipoUnidad: user.activeContext.area?.tipoUnidad,
+      esAreaLogistica:
+        user.activeContext.area?.esAreaLogistica ??
+        user.activeContext.esAreaLogistica ??
+        user.esAreaLogistica ??
+        null,
+      esAreaAlmacen:
+        user.activeContext.area?.esAreaAlmacen ??
+        user.activeContext.esAreaAlmacen ??
+        user.esAreaAlmacen ??
+        null,
     });
 
     return [

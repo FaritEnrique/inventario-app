@@ -1,4 +1,9 @@
-﻿const normalizeBaseUrl = (rawUrl) => {
+import {
+  AUTH_SESSION_INVALIDATION_CODES,
+  CONTEXT_INVALIDATION_CODES,
+} from "../constants/authErrorCodes";
+
+const normalizeBaseUrl = (rawUrl) => {
   const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
 
   if (!trimmedUrl) {
@@ -221,6 +226,20 @@ const dispatchAuthSessionInvalidationEvent = (code, error) => {
   );
 };
 
+const dispatchAuthSessionActivityEvent = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("auth-session-activity", {
+      detail: {
+        occurredAt: Date.now(),
+      },
+    }),
+  );
+};
+
 export const buildApiUrl = (endpoint) => {
   const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
   return `${baseURL}/${normalizedEndpoint}`;
@@ -229,12 +248,18 @@ export const buildApiUrl = (endpoint) => {
 const apiFetch = async (endpoint, options = {}) => {
   try {
     const { sessionActivity, ...fetchOptions } = options;
+    const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
+    const isPassiveAuthValidationRequest =
+      normalizedEndpoint === "auth/validate-token";
+    const isInteractiveSessionRequest =
+      !isPassiveAuthValidationRequest &&
+      String(sessionActivity || "").toLowerCase() === "interactive";
     const isFormData = fetchOptions.body instanceof FormData;
     const headers = {
       ...(fetchOptions.headers || {}),
     };
 
-    if (String(sessionActivity || "").toLowerCase() === "interactive") {
+    if (isInteractiveSessionRequest) {
       headers["X-Session-Activity"] = "interactive";
     }
 
@@ -245,6 +270,7 @@ const apiFetch = async (endpoint, options = {}) => {
     const res = await fetch(buildApiUrl(endpoint), {
       headers,
       ...fetchOptions,
+      cache: "no-store",
       credentials: "include",
     });
 
@@ -272,14 +298,31 @@ const apiFetch = async (endpoint, options = {}) => {
       fullError.validationErrors = validationErrors;
       fullError.code = normalizedError?.code || data?.code || null;
       fullError.details = normalizedError?.details || data?.detalles || null;
+      if (
+        isInteractiveSessionRequest &&
+        !AUTH_SESSION_INVALIDATION_CODES.includes(fullError.code)
+      ) {
+        dispatchAuthSessionActivityEvent();
+      }
       dispatchOperationalContextEvent(fullError.code, fullError);
       dispatchAuthSessionInvalidationEvent(fullError.code, fullError);
       throw fullError;
     }
 
-    if (res.status === 204) return null;
+    if (res.status === 204) {
+      if (isInteractiveSessionRequest) {
+        dispatchAuthSessionActivityEvent();
+      }
+      return null;
+    }
 
-    return await res.json();
+    const payload = await res.json();
+
+    if (isInteractiveSessionRequest) {
+      dispatchAuthSessionActivityEvent();
+    }
+
+    return payload;
   } catch (error) {
     if (error instanceof Error) {
       error.message = translateValidationMessage(error.message);
@@ -295,7 +338,3 @@ const apiFetch = async (endpoint, options = {}) => {
 };
 
 export default apiFetch;
-import {
-  AUTH_SESSION_INVALIDATION_CODES,
-  CONTEXT_INVALIDATION_CODES,
-} from "../constants/authErrorCodes";

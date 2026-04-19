@@ -19,7 +19,7 @@ const tiposUnidad = [
 ];
 
 const tipoUnidadLabel = Object.freeze(
-  tiposUnidad.reduce((acc, item) => ({ ...acc, [item.value]: item.label }), {})
+  tiposUnidad.reduce((acc, item) => ({ ...acc, [item.value]: item.label }), {}),
 );
 
 const allowedParentTypesByUnit = Object.freeze({
@@ -27,6 +27,13 @@ const allowedParentTypesByUnit = Object.freeze({
   GERENCIA_ADMINISTRACION: ["GERENCIA_GENERAL"],
   GERENCIA_FUNCIONAL: ["GERENCIA_GENERAL"],
   JEFATURA: ["GERENCIA_FUNCIONAL", "GERENCIA_ADMINISTRACION"],
+});
+
+const responsibleRoleByUnit = Object.freeze({
+  GERENCIA_GENERAL: "GERENTE_GENERAL",
+  GERENCIA_ADMINISTRACION: "GERENTE_ADMINISTRACION",
+  GERENCIA_FUNCIONAL: "GERENTE_FUNCIONAL",
+  JEFATURA: "JEFE_AREA",
 });
 
 const estadoUnidadMeta = Object.freeze({
@@ -41,7 +48,8 @@ const estadoUnidadMeta = Object.freeze({
   },
   INCOMPLETA_SIN_ADSCRIPCIONES: {
     label: "Incompleta sin adscripciones",
-    className: "bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-200",
+    className:
+      "bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-200",
   },
 });
 
@@ -51,6 +59,8 @@ const createEmptyForm = () => ({
   tipoUnidad: "",
   parentAreaId: "",
   responsableId: "",
+  esAreaLogistica: false,
+  esAreaAlmacen: false,
 });
 
 const formatAreaLabel = (area) => {
@@ -95,12 +105,18 @@ const GestionAreasPage = () => {
   }, [fetchAreas, search]);
 
   useEffect(() => {
+    if (!formData.tipoUnidad) {
+      setResponsablesDisponibles([]);
+      setLoadingResponsables(false);
+      return undefined;
+    }
+
     let active = true;
 
     const loadResponsables = async () => {
       try {
         setLoadingResponsables(true);
-        const data = await areasApi.getResponsablesDisponibles();
+        const data = await areasApi.getResponsablesDisponibles(formData.tipoUnidad);
         if (active) {
           setResponsablesDisponibles(Array.isArray(data) ? data : []);
         }
@@ -120,40 +136,55 @@ const GestionAreasPage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [formData.tipoUnidad]);
 
   const areasActivas = useMemo(
     () => areas.filter((area) => area.activo),
-    [areas]
+    [areas],
   );
 
-  const parentCandidates = useMemo(
-    () => {
-      if (!formData.tipoUnidad) {
-        return areasActivas.filter((area) => area.id !== editingId);
-      }
+  const parentCandidates = useMemo(() => {
+    if (!formData.tipoUnidad) {
+      return areasActivas.filter((area) => area.id !== editingId);
+    }
 
-      const allowedParentTypes =
-        allowedParentTypesByUnit[formData.tipoUnidad] || [];
+    const allowedParentTypes =
+      allowedParentTypesByUnit[formData.tipoUnidad] || [];
 
-      return areasActivas.filter(
-        (area) =>
-          area.id !== editingId &&
-          (allowedParentTypes.length === 0 ||
-            allowedParentTypes.includes(area.tipoUnidad))
-      );
-    },
-    [areasActivas, editingId, formData.tipoUnidad]
-  );
+    return areasActivas.filter(
+      (area) =>
+        area.id !== editingId &&
+        (allowedParentTypes.length === 0 ||
+          allowedParentTypes.includes(area.tipoUnidad)),
+    );
+  }, [areasActivas, editingId, formData.tipoUnidad]);
 
   const responsablesCompatibles = useMemo(() => {
-    if (!formData.tipoUnidad) return responsablesDisponibles;
-    return responsablesDisponibles.filter((user) =>
-      Array.isArray(user.tiposUnidadCompatibles)
-        ? user.tiposUnidadCompatibles.includes(formData.tipoUnidad)
-        : false
-    );
-  }, [formData.tipoUnidad, responsablesDisponibles]);
+    const compatibles = Array.isArray(responsablesDisponibles)
+      ? [...responsablesDisponibles]
+      : [];
+
+    const selectedResponsableId = Number(formData.responsableId || 0);
+    if (!selectedResponsableId) return compatibles;
+
+    if (compatibles.some((user) => Number(user.id) === selectedResponsableId)) {
+      return compatibles;
+    }
+
+    const areaEnEdicion = areasActivas.find((area) => area.id === editingId);
+    if (
+      areaEnEdicion?.responsable &&
+      Number(areaEnEdicion.responsable.id) === selectedResponsableId
+    ) {
+      return [areaEnEdicion.responsable, ...compatibles];
+    }
+
+    return compatibles;
+  }, [areasActivas, editingId, formData.responsableId, responsablesDisponibles]);
+
+  const expectedResponsibleRole = formData.tipoUnidad
+    ? responsibleRoleByUnit[formData.tipoUnidad] || null
+    : null;
 
   const resetForm = () => {
     setFormData(createEmptyForm());
@@ -161,13 +192,11 @@ const GestionAreasPage = () => {
   };
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
+    const { name, type, value, checked } = event.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
-      ...(name === "tipoUnidad"
-        ? { parentAreaId: "", responsableId: "" }
-        : {}),
+      [name]: type === "checkbox" ? checked : value,
+      ...(name === "tipoUnidad" ? { parentAreaId: "", responsableId: "" } : {}),
     }));
   };
 
@@ -178,8 +207,14 @@ const GestionAreasPage = () => {
       nombre: formData.nombre.trim(),
       branchDescription: formData.branchDescription.trim() || null,
       tipoUnidad: formData.tipoUnidad,
-      parentAreaId: formData.parentAreaId ? Number(formData.parentAreaId) : null,
-      responsableId: formData.responsableId ? Number(formData.responsableId) : null,
+      parentAreaId: formData.parentAreaId
+        ? Number(formData.parentAreaId)
+        : null,
+      responsableId: formData.responsableId
+        ? Number(formData.responsableId)
+        : null,
+      esAreaLogistica: formData.esAreaLogistica === true,
+      esAreaAlmacen: formData.esAreaAlmacen === true,
     };
 
     try {
@@ -194,13 +229,13 @@ const GestionAreasPage = () => {
       toast.success(
         editingId
           ? "Unidad organizacional actualizada correctamente."
-          : "Unidad organizacional creada correctamente."
+          : "Unidad organizacional creada correctamente.",
       );
     } catch (err) {
       toast.error(
         err.response?.data?.message ||
           err.message ||
-          "Error al guardar la unidad organizacional."
+          "Error al guardar la unidad organizacional.",
       );
     }
   };
@@ -218,6 +253,8 @@ const GestionAreasPage = () => {
         area.responsableId !== null && area.responsableId !== undefined
           ? String(area.responsableId)
           : "",
+      esAreaLogistica: area.esAreaLogistica === true,
+      esAreaAlmacen: area.esAreaAlmacen === true,
     });
     setEditingId(area.id);
   };
@@ -256,7 +293,7 @@ const GestionAreasPage = () => {
           }}
         />
       ),
-      { autoClose: false }
+      { autoClose: false },
     );
   };
 
@@ -296,78 +333,140 @@ const GestionAreasPage = () => {
         onSubmit={handleSubmit}
         className="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-2 xl:grid-cols-3"
       >
-        <input
-          type="text"
-          placeholder="Nombre de la unidad"
-          value={formData.nombre}
-          name="nombre"
-          onChange={handleChange}
-          className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-          required
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="area-nombre"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Nombre de la unidad
+          </label>
+          <input
+            id="area-nombre"
+            type="text"
+            placeholder="Nombre de la unidad"
+            value={formData.nombre}
+            name="nombre"
+            onChange={handleChange}
+            autoComplete="organization-title"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
 
-        <input
-          type="text"
-          placeholder="Descripcion complementaria"
-          value={formData.branchDescription}
-          name="branchDescription"
-          onChange={handleChange}
-          className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="area-branch-description"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Descripcion complementaria
+          </label>
+          <input
+            id="area-branch-description"
+            type="text"
+            placeholder="Descripcion complementaria"
+            value={formData.branchDescription}
+            name="branchDescription"
+            onChange={handleChange}
+            autoComplete="off"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
 
-        <select
-          name="tipoUnidad"
-          value={formData.tipoUnidad}
-          onChange={handleChange}
-          className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-          required
-        >
-          <option value="">Selecciona tipo de unidad</option>
-          {tiposUnidad.map((tipo) => (
-            <option key={tipo.value} value={tipo.value}>
-              {tipo.label}
+        <div className="space-y-2">
+          <label
+            htmlFor="area-tipo-unidad"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Tipo de unidad
+          </label>
+          <select
+            id="area-tipo-unidad"
+            name="tipoUnidad"
+            value={formData.tipoUnidad}
+            onChange={handleChange}
+            autoComplete="off"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            required
+          >
+            <option value="">Selecciona tipo de unidad</option>
+            {tiposUnidad.map((tipo) => (
+              <option key={tipo.value} value={tipo.value}>
+                {tipo.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="area-parent"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Unidad padre
+          </label>
+          <select
+            id="area-parent"
+            name="parentAreaId"
+            value={formData.parentAreaId}
+            onChange={handleChange}
+            autoComplete="off"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            disabled={formData.tipoUnidad === "GERENCIA_GENERAL"}
+            required={
+              formData.tipoUnidad && formData.tipoUnidad !== "GERENCIA_GENERAL"
+            }
+          >
+            <option value="">
+              {formData.tipoUnidad === "GERENCIA_GENERAL"
+                ? "Sin unidad padre"
+                : "Selecciona unidad padre"}
             </option>
-          ))}
-        </select>
+            {parentCandidates.map((area) => (
+              <option key={area.id} value={area.id}>
+                {formatAreaLabel(area)}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          name="parentAreaId"
-          value={formData.parentAreaId}
-          onChange={handleChange}
-          className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-          disabled={formData.tipoUnidad === "GERENCIA_GENERAL"}
-          required={formData.tipoUnidad && formData.tipoUnidad !== "GERENCIA_GENERAL"}
-        >
-          <option value="">
-            {formData.tipoUnidad === "GERENCIA_GENERAL"
-              ? "Sin unidad padre"
-              : "Selecciona unidad padre"}
-          </option>
-          {parentCandidates.map((area) => (
-            <option key={area.id} value={area.id}>
-              {formatAreaLabel(area)}
+        <div className="space-y-2">
+          <label
+            htmlFor="area-responsable"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Responsable principal
+          </label>
+          <select
+            id="area-responsable"
+            name="responsableId"
+            value={formData.responsableId}
+            onChange={handleChange}
+            autoComplete="off"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            disabled={!formData.tipoUnidad || loadingResponsables}
+          >
+            <option value="">
+              {loadingResponsables
+                ? "Cargando responsables..."
+                : "Selecciona responsable principal"}
             </option>
-          ))}
-        </select>
+            {responsablesCompatibles.map((user) => (
+              <option key={user.id} value={user.id}>
+                {formatUserLabel(user)}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          name="responsableId"
-          value={formData.responsableId}
-          onChange={handleChange}
-          className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-          disabled={!formData.tipoUnidad || loadingResponsables}
-        >
-          <option value="">
-            {loadingResponsables
-              ? "Cargando responsables..."
-              : "Selecciona responsable principal"}
-          </option>
-          {responsablesCompatibles.map((user) => (
-            <option key={user.id} value={user.id}>
-              {formatUserLabel(user)}
-            </option>
-          ))}
-        </select>
+        <div className="text-xs text-slate-600 md:col-span-2 xl:col-span-3">
+          {!formData.tipoUnidad
+            ? "Selecciona primero el tipo de unidad para cargar responsables compatibles."
+            : loadingResponsables
+              ? "Cargando responsables compatibles..."
+              : responsablesCompatibles.length === 0
+                ? "No hay usuarios activos disponibles para asignar como responsable principal."
+                : `Al asignar un responsable principal, el sistema sincroniza la responsabilidad estructural esperada para ${expectedResponsibleRole}.`}
+        </div>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 md:col-span-2 xl:col-span-3">
           El tipo de unidad define el responsable estructural esperado para la
@@ -375,6 +474,42 @@ const GestionAreasPage = () => {
           <span className="font-semibold"> ADMINISTRADOR_SISTEMA</span>, porque
           ese rol no se usa como responsable principal de unidad.
         </div>
+
+        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 md:col-span-2 xl:col-span-3">
+          <input
+            type="checkbox"
+            name="esAreaLogistica"
+            checked={formData.esAreaLogistica === true}
+            onChange={handleChange}
+            className="h-4 w-4 rounded border-blue-400 accent-blue-600"
+          />
+          <span className="text-sm font-medium text-blue-900">
+            Es area de Logistica
+          </span>
+          <span className="text-xs text-blue-600">
+            Activa esta opcion para que los usuarios con rol JEFE_AREA u
+            OPERADOR en esta unidad puedan acceder al modulo logistico de
+            cotizaciones.
+          </span>
+        </label>
+
+        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 md:col-span-2 xl:col-span-3">
+          <input
+            type="checkbox"
+            name="esAreaAlmacen"
+            checked={formData.esAreaAlmacen === true}
+            onChange={handleChange}
+            className="h-4 w-4 rounded border-amber-400 accent-amber-600"
+          />
+          <span className="text-sm font-medium text-amber-900">
+            Es area de Almacen
+          </span>
+          <span className="text-xs text-amber-600">
+            Activa esta opcion para que los usuarios con rol JEFE_AREA u
+            OPERADOR en esta unidad puedan acceder al modulo de inventario y
+            almacen.
+          </span>
+        </label>
 
         <div className="flex items-center gap-2">
           <button
@@ -389,8 +524,8 @@ const GestionAreasPage = () => {
             {cargando
               ? "Guardando..."
               : editingId
-              ? "Actualizar unidad"
-              : "Crear unidad"}
+                ? "Actualizar unidad"
+                : "Crear unidad"}
           </button>
           {editingId ? (
             <button
@@ -409,14 +544,7 @@ const GestionAreasPage = () => {
           </div>
           <div className="mt-1">
             {formData.tipoUnidad
-              ? `${tipoUnidadLabel[formData.tipoUnidad]}: ${
-                  {
-                    GERENCIA_GENERAL: "GERENTE_GENERAL",
-                    GERENCIA_ADMINISTRACION: "GERENTE_ADMINISTRACION",
-                    GERENCIA_FUNCIONAL: "GERENTE_FUNCIONAL",
-                    JEFATURA: "JEFE_AREA",
-                  }[formData.tipoUnidad]
-                }`
+              ? `${tipoUnidadLabel[formData.tipoUnidad]}: ${expectedResponsibleRole}`
               : "Selecciona un tipo de unidad para ver el rol responsable esperado."}
           </div>
           {formData.tipoUnidad && responsablesCompatibles.length === 0 ? (
@@ -427,14 +555,24 @@ const GestionAreasPage = () => {
         </div>
       </form>
 
-      <input
-        type="text"
-        placeholder="Buscar unidad por codigo, nombre o descripcion..."
-        value={search}
-        name="search"
-        onChange={(event) => setSearch(event.target.value)}
-        className="mb-6 w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500"
-      />
+      <div className="mb-6 space-y-2">
+        <label
+          htmlFor="areas-search"
+          className="block text-sm font-medium text-gray-800 dark:text-gray-200"
+        >
+          Buscar unidades
+        </label>
+        <input
+          id="areas-search"
+          type="text"
+          placeholder="Buscar unidad por codigo, nombre o descripcion..."
+          value={search}
+          name="search"
+          onChange={(event) => setSearch(event.target.value)}
+          autoComplete="off"
+          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500"
+        />
+      </div>
 
       <h2 className="mb-3 text-xl font-semibold text-gray-800 dark:text-gray-200">
         Unidades activas ({areasActivas.length})
@@ -485,10 +623,12 @@ const GestionAreasPage = () => {
                     <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-800 dark:border-gray-700 dark:text-gray-200">
                       <div className="font-semibold">{area.nombre}</div>
                       <div className="text-xs italic text-gray-500 dark:text-gray-400">
-                        {area.branchDescription || "Sin descripcion complementaria"}
+                        {area.branchDescription ||
+                          "Sin descripcion complementaria"}
                       </div>
                       <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                        {tipoUnidadLabel[area.tipoUnidad] || "Sin tipo definido"}
+                        {tipoUnidadLabel[area.tipoUnidad] ||
+                          "Sin tipo definido"}
                       </div>
                     </td>
                     <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
@@ -520,7 +660,8 @@ const GestionAreasPage = () => {
                       ) : null}
                     </td>
                     <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
-                      {Array.isArray(area.adscritos) && area.adscritos.length > 0 ? (
+                      {Array.isArray(area.adscritos) &&
+                      area.adscritos.length > 0 ? (
                         <div className="space-y-1">
                           {area.adscritos.map((user) => (
                             <div key={user.id}>
@@ -539,12 +680,17 @@ const GestionAreasPage = () => {
                     <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
                       <div>
                         <span className="font-medium">Padre:</span>{" "}
-                        {area.parent ? formatAreaLabel(area.parent) : "Sin padre"}
+                        {area.parent
+                          ? formatAreaLabel(area.parent)
+                          : "Sin padre"}
                       </div>
                       <div className="mt-1">
                         <span className="font-medium">Hijos:</span>{" "}
-                        {Array.isArray(area.children) && area.children.length > 0
-                          ? area.children.map((child) => child.nombre).join(", ")
+                        {Array.isArray(area.children) &&
+                        area.children.length > 0
+                          ? area.children
+                              .map((child) => child.nombre)
+                              .join(", ")
                           : "Sin hijos"}
                       </div>
                     </td>
@@ -591,8 +737,9 @@ const GestionAreasPage = () => {
       >
         <div className="space-y-4 text-sm text-slate-700">
           <p>
-            La unidad <span className="font-semibold">{blockedEditAreaName}</span>{" "}
-            tiene un usuario con rol
+            La unidad{" "}
+            <span className="font-semibold">{blockedEditAreaName}</span> tiene
+            un usuario con rol
             <span className="font-semibold"> ADMINISTRADOR_SISTEMA</span>{" "}
             asociado.
           </p>
