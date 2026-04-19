@@ -1,4 +1,4 @@
-import { institutionalLetterheadMetrics } from "@document-branding/documentBrandingMetrics.js";
+import { institutionalLetterheadMetrics } from "@/shared/documentBrandingMetrics.js";
 
 export const escapeHtml = (value) =>
   String(value ?? "")
@@ -15,7 +15,10 @@ export const buildUploadsBaseUrl = () => {
     import.meta.env.VITE_API_URL ||
     (import.meta.env.MODE === "development" ? "http://localhost:3000" : "");
 
-  return String(rawApiUrl || "").trim().replace(/\/+$/, "").replace(/\/api$/, "");
+  return String(rawApiUrl || "")
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/api$/, "");
 };
 
 export const resolveInstitutionalAssetUrl = (assetUrl) => {
@@ -55,13 +58,13 @@ export const buildLetterheadDocumentData = (
   const telefono = normalizeText(formData.telefono);
   const hasInstitutionalBranding = Boolean(
     normalizeText(formData.razonSocial) ||
-      normalizeText(formData.ruc) ||
-      frase ||
-      comentario ||
-      direccion ||
-      correo ||
-      telefono ||
-      logoSrc,
+    normalizeText(formData.ruc) ||
+    frase ||
+    comentario ||
+    direccion ||
+    correo ||
+    telefono ||
+    logoSrc,
   );
 
   return {
@@ -192,7 +195,7 @@ export const buildInstitutionalLetterheadPrintHtml = ({
             <span class="footer-contact-value">${escapeHtml(value)}</span>
           </div>
         `
-        : ""
+        : "",
     )
     .filter(Boolean)
     .join("");

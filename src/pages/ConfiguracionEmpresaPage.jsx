@@ -11,7 +11,7 @@ import {
   resolveInstitutionalAssetUrl,
 } from "../utils/configuracionEmpresaLetterhead";
 import { printHtmlInNewWindow } from "../utils/printWindow";
-import { institutionalLetterheadMetrics } from "@document-branding/documentBrandingMetrics.js";
+import { institutionalLetterheadMetrics } from "@/shared/documentBrandingMetrics.js";
 
 const emptyForm = {
   razonSocial: "",
@@ -74,7 +74,7 @@ const FooterPreviewItem = ({
           </span>
         ) : null}
       </div>
-      <div className="min-w-0 flex-1 text-left">
+      <div className="flex-1 min-w-0 text-left">
         <span className="block break-words text-[12px] font-medium leading-[1.45] text-slate-800">
           {value}
         </span>
@@ -432,7 +432,8 @@ const ConfiguracionEmpresaPage = () => {
       );
     } catch (error) {
       toast.error(
-        error.message || "No se pudo abrir la ventana de impresion del membrete.",
+        error.message ||
+          "No se pudo abrir la ventana de impresion del membrete.",
       );
     }
   };
@@ -442,9 +443,9 @@ const ConfiguracionEmpresaPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="min-h-screen px-4 py-6 bg-slate-100">
+      <div className="mx-auto space-y-6 max-w-7xl">
+        <div className="p-6 bg-white border shadow-sm rounded-2xl border-slate-200">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -453,7 +454,7 @@ const ConfiguracionEmpresaPage = () => {
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Configuracion de empresa emisora
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-slate-600">
+              <p className="max-w-3xl mt-2 text-sm text-slate-600">
                 Aqui definimos el membrete institucional que alimenta los
                 documentos comerciales. El logo ahora se gestiona por separado y
                 la previsualizacion muestra una hoja A4 para revisar el
@@ -464,7 +465,7 @@ const ConfiguracionEmpresaPage = () => {
             </div>
             <Link
               to="/dashboard"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition border rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50"
             >
               Volver al dashboard
             </Link>
@@ -474,7 +475,7 @@ const ConfiguracionEmpresaPage = () => {
         <div className="space-y-6">
           <form
             onSubmit={handleSubmit}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="p-6 bg-white border shadow-sm rounded-2xl border-slate-200"
           >
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -487,7 +488,7 @@ const ConfiguracionEmpresaPage = () => {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 mt-5 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-700 md:col-span-2">
                 <span className="font-medium">Razon social</span>
                 <input
@@ -497,7 +498,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("razonSocial", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="Empresa emisora"
                   required
                 />
@@ -510,7 +511,7 @@ const ConfiguracionEmpresaPage = () => {
                   name="ruc"
                   value={formData.ruc}
                   onChange={(event) => updateField("ruc", event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="20123456789"
                   required
                 />
@@ -525,7 +526,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("telefono", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="+51 999 999 999"
                   required
                 />
@@ -541,7 +542,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("fraseEncabezado", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="Los mejores precios en materiales de construccion"
                 />
               </label>
@@ -555,7 +556,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("direccion", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="Direccion institucional"
                   required
                 />
@@ -570,7 +571,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("ciudad", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="Iquitos, Lima, etc."
                 />
               </label>
@@ -585,7 +586,7 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("correo", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="logistica@empresa.pe"
                   required
                 />
@@ -601,24 +602,24 @@ const ConfiguracionEmpresaPage = () => {
                   onChange={(event) =>
                     updateField("pieInstitucional", event.target.value)
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   placeholder="Comentario breve que aparecera debajo de los datos de contacto."
                 />
               </label>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 mt-6">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="px-4 py-2 text-sm font-semibold text-white transition rounded-lg bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Guardando..." : "Guardar configuracion"}
               </button>
             </div>
           </form>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="p-6 bg-white border shadow-sm rounded-2xl border-slate-200">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               Logo institucional
             </p>
@@ -638,7 +639,7 @@ const ConfiguracionEmpresaPage = () => {
                   <img
                     src={logoPreviewUrl}
                     alt="Logo institucional"
-                    className="h-28 w-28 rounded-3xl border border-slate-200 bg-white object-contain p-3 shadow-sm"
+                    className="object-contain p-3 bg-white border shadow-sm h-28 w-28 rounded-3xl border-slate-200"
                   />
                 ) : (
                   <div className="flex h-28 w-28 items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -656,7 +657,7 @@ const ConfiguracionEmpresaPage = () => {
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
                     onChange={handleLogoChange}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    className="w-full px-3 py-2 border rounded-lg border-slate-300"
                   />
                 </label>
 
@@ -670,7 +671,7 @@ const ConfiguracionEmpresaPage = () => {
                     type="button"
                     onClick={handleSaveLogo}
                     disabled={savingLogo || !formData.logoFile}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="px-4 py-2 text-sm font-semibold text-white transition rounded-lg bg-slate-900 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {savingLogo ? "Guardando logo..." : "Guardar logo"}
                   </button>
@@ -679,7 +680,7 @@ const ConfiguracionEmpresaPage = () => {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="p-6 bg-white border shadow-sm rounded-2xl border-slate-200">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               Previsualizacion A4
             </p>
@@ -693,19 +694,19 @@ const ConfiguracionEmpresaPage = () => {
               membretada de utilidad.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 mt-5">
               <button
                 type="button"
                 onClick={handleOpenPdfPreviewWithPendingLogo}
                 disabled={savingLogo}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="px-4 py-2 text-sm font-medium transition border rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50"
               >
                 Ver membrete en visor PDF
               </button>
               <button
                 type="button"
                 onClick={handlePrintBlankLetterhead}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="px-4 py-2 text-sm font-semibold text-white transition rounded-lg bg-slate-900 hover:bg-slate-800"
               >
                 Imprimir hoja membretada en blanco
               </button>
@@ -714,7 +715,7 @@ const ConfiguracionEmpresaPage = () => {
             <div className="mt-5 rounded-[2rem] bg-slate-200/70 p-4">
               <div className="mx-auto aspect-[210/297] w-full max-w-[900px] overflow-hidden rounded-[28px] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.14)]">
                 <style>{letterheadPreviewStyles}</style>
-                <div className="letterhead-preview-sheet flex h-full flex-col">
+                <div className="flex flex-col h-full letterhead-preview-sheet">
                   <div
                     className={`letterhead-preview-header ${
                       letterheadDocumentData.hasPhrase
@@ -728,7 +729,7 @@ const ConfiguracionEmpresaPage = () => {
                           <img
                             src={letterheadDocumentData.logoSrc}
                             alt="Logo en membrete"
-                            className="letterhead-preview-logo border border-slate-200 bg-white"
+                            className="bg-white border letterhead-preview-logo border-slate-200"
                           />
                         ) : (
                           <div className="letterhead-preview-logo-fallback flex items-center justify-start border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -737,11 +738,11 @@ const ConfiguracionEmpresaPage = () => {
                         )}
 
                         <div className="letterhead-preview-brand-copy">
-                          <div className="letterhead-preview-company font-bold text-slate-900">
+                          <div className="font-bold letterhead-preview-company text-slate-900">
                             {letterheadDocumentData.razonSocial}
                           </div>
 
-                          <div className="letterhead-preview-tax-id inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 font-semibold text-slate-700">
+                          <div className="inline-flex items-center gap-2 font-semibold border rounded-full letterhead-preview-tax-id border-slate-200 bg-slate-50 text-slate-700">
                             <span className="uppercase tracking-[0.16em] text-slate-500">
                               RUC
                             </span>
@@ -755,14 +756,14 @@ const ConfiguracionEmpresaPage = () => {
 
                     {letterheadDocumentData.hasPhrase ? (
                       <div className="letterhead-preview-phrase-shell">
-                        <div className="letterhead-preview-phrase flex h-full w-full items-center justify-center text-center font-bold italic leading-6 text-sky-900">
+                        <div className="flex items-center justify-center w-full h-full italic font-bold leading-6 text-center letterhead-preview-phrase text-sky-900">
                           {letterheadDocumentData.frase}
                         </div>
                       </div>
                     ) : null}
                   </div>
 
-                  <div className="letterhead-preview-body flex-1 bg-gradient-to-b from-slate-50/65 to-white">
+                  <div className="flex-1 letterhead-preview-body bg-gradient-to-b from-slate-50/65 to-white">
                     <div className="letterhead-preview-body-inner h-full rounded-[16px] bg-white/80">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                         Hoja membretada en blanco
@@ -778,7 +779,7 @@ const ConfiguracionEmpresaPage = () => {
                     </div>
                   </div>
 
-                  <div className="letterhead-preview-footer border-t border-slate-200">
+                  <div className="border-t letterhead-preview-footer border-slate-200">
                     <div className="letterhead-preview-footer-contacts">
                       <FooterPreviewItem
                         value={letterheadDocumentData.contacts.direccion}
@@ -799,7 +800,7 @@ const ConfiguracionEmpresaPage = () => {
                     </div>
 
                     {letterheadDocumentData.hasComentario ? (
-                      <div className="letterhead-preview-comment text-center text-sm leading-6 text-slate-600">
+                      <div className="text-sm leading-6 text-center letterhead-preview-comment text-slate-600">
                         {letterheadDocumentData.comentario}
                       </div>
                     ) : null}

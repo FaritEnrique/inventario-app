@@ -26,17 +26,11 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        "@document-branding": path.resolve(
-          __dirname,
-          "../inventario-backend/src/documents",
-        ),
+        "@": path.resolve(__dirname, "./src"),
       },
     },
     server: {
       headers: devSecurityHeaders,
-      fs: {
-        allow: [path.resolve(__dirname, "..")],
-      },
     },
     preview: {
       headers: previewSecurityHeaders,
