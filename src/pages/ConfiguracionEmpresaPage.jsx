@@ -313,6 +313,31 @@ const ConfiguracionEmpresaPage = () => {
     }));
   };
 
+  const persistPendingLogoIfNeeded = async () => {
+    if (!formData.logoFile) {
+      return formData.logoUrl || "";
+    }
+
+    const payload = new FormData();
+    payload.append("logo", formData.logoFile);
+
+    const response = await configuracionEmpresaApi.guardarLogo(payload);
+    const persistedLogoUrl = response.configuracion?.logoUrl || "";
+
+    setFormData((current) => ({
+      ...current,
+      logoUrl: persistedLogoUrl,
+      logoFile: null,
+    }));
+
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    return persistedLogoUrl;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
