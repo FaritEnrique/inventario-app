@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canOperateInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
@@ -594,9 +595,7 @@ const InventarioRecepcionesPage = () => {
 
                   <div className="max-h-80 space-y-2 overflow-y-auto">
                     {ordenesCompraLoading ? (
-                      <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
-                        Cargando ordenes de compra...
-                      </div>
+                      <SkeletonSection rows={3} className="shadow-none" />
                     ) : pendingOrdenesCompra.length === 0 ? (
                       <div className="rounded border border-dashed border-gray-300 p-3 text-sm text-gray-500">
                         No hay ordenes de compra aprobadas y con saldo pendiente

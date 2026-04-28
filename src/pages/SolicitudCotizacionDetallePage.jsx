@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FaArrowLeft, FaEnvelope, FaFilePdf } from "react-icons/fa";
-import Loader from "../components/Loader";
 import Modal from "../components/Modal";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
+import SolicitudCotizacionDetalleSkeleton from "../components/ui/skeletons/SolicitudCotizacionDetalleSkeleton";
 import useSolicitudCotizacionDetalleData from "../hooks/useSolicitudCotizacionDetalleData";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import {
@@ -253,7 +253,7 @@ const SolicitudCotizacionDetallePage = () => {
     }
   };
 
-  if (loading) return <Loader />;
+  if (loading) return <SolicitudCotizacionDetalleSkeleton />;
 
   if (!solicitud) {
     return (
@@ -266,7 +266,7 @@ const SolicitudCotizacionDetallePage = () => {
   }
 
   if (!documentContract || !traceContract) {
-    return <Loader />;
+    return <SolicitudCotizacionDetalleSkeleton />;
   }
 
   return (

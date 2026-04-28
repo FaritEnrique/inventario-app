@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProductoSearchField from "../components/ProductoSearchField";
+import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useInventario from "../hooks/useInventario";
 
 const InventarioKardexPage = () => {
@@ -22,6 +24,7 @@ const InventarioKardexPage = () => {
     fechaHasta: "",
   });
   const [kardex, setKardex] = useState(null);
+  const isInitialLoading = loading && !kardex && Boolean(producto?.id);
 
   const consultarKardex = async (event) => {
     if (event) event.preventDefault();
@@ -136,7 +139,16 @@ const InventarioKardexPage = () => {
         </div>
       </form>
 
-      {kardex && (
+      {isInitialLoading ? (
+        <>
+          <div className="mb-6 grid gap-4 md:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <SkeletonCard key={index} lines={1} />
+            ))}
+          </div>
+          <SkeletonTable columns={10} rows={7} className="rounded-lg" />
+        </>
+      ) : kardex && (
         <>
           <div className="mb-6 rounded-lg bg-white p-4 shadow">
             <div className="mb-4">

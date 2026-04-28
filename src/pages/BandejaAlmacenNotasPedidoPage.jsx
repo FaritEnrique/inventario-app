@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canViewWarehouseTrayEffective } from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
 
@@ -127,6 +128,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
   const [submittingId, setSubmittingId] = useState(null);
 
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
+  const isInitialLoading = loading && pedidos.length === 0;
 
   const cargarBandeja = async () => {
     try {
@@ -273,7 +275,13 @@ const BandejaAlmacenNotasPedidoPage = () => {
         </div>
       </div>
 
-      {pedidos.length === 0 ? (
+      {isInitialLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonSection key={index} rows={5} />
+          ))}
+        </div>
+      ) : pedidos.length === 0 ? (
         <div className="rounded-lg bg-white p-6 shadow">
           <p className="text-sm text-slate-500">
             No hay notas aprobadas pendientes de atencion.

@@ -12,6 +12,7 @@ import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import CotizacionForm from "../components/CotizacionForm";
 import Loader from "../components/Loader";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
+import ProcesoLogisticoDetalleSkeleton from "../components/ui/skeletons/ProcesoLogisticoDetalleSkeleton";
 import usersApi from "../api/usersApi";
 import { useAuth } from "../context/authContext";
 import useCotizaciones from "../hooks/useCotizaciones";
@@ -1036,7 +1037,7 @@ const ProcesoLogisticoDetallePage = () => {
     }
   };
 
-  if (cargando && !detalle) return <Loader />;
+  if (cargando && !detalle) return <ProcesoLogisticoDetalleSkeleton />;
 
   if (!detalle) {
     return (
@@ -1085,8 +1086,6 @@ const ProcesoLogisticoDetallePage = () => {
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
   const canPrepareExceptionalDecision =
     canAdjudicate && !expedienteBloqueado && isFlujoExcepcional;
-  const canFormalizeExceptional =
-    canPrepareExceptionalDecision && !bloqueadoPorAprobacionFinal;
   const canApproveComparativo =
     canAdjudicate &&
     isFlujoRegular &&

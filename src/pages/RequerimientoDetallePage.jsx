@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import configuracionEmpresaApi from "../api/configuracionEmpresaApi";
-import Loader from "../components/Loader";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
+import RequerimientoDetalleSkeleton from "../components/ui/skeletons/RequerimientoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
@@ -238,7 +238,7 @@ const RequerimientoDetallePage = () => {
     }
   };
 
-  if (loading) return <Loader />;
+  if (loading) return <RequerimientoDetalleSkeleton />;
   if (!requerimiento)
     return (
       <div className="p-6 text-sm text-red-600">

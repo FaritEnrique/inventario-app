@@ -6,6 +6,8 @@ import {
   canCreatePedidoInternoEffective,
   canViewWarehouseTrayEffective,
 } from "../accessRules";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 
@@ -19,6 +21,7 @@ const InventarioStockPage = () => {
   const canCreate = canCreatePedidoInternoEffective(user);
   const canApprove = canApprovePedidoInternoEffective(user);
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
+  const isInitialLoading = loading && rows.length === 0;
 
   const cargarStock = async (filters = {}) => {
     try {
@@ -161,7 +164,12 @@ const InventarioStockPage = () => {
         </div>
       </form>
 
-      {rows.length === 0 ? (
+      {isInitialLoading ? (
+        <div className="space-y-4">
+          <SkeletonSection rows={3} />
+          <SkeletonTable columns={7} rows={5} className="rounded-lg" />
+        </div>
+      ) : rows.length === 0 ? (
         <div className="rounded-lg bg-white p-6 shadow">
           <p className="text-sm text-gray-600">
             No hay stock registrado con los filtros aplicados.

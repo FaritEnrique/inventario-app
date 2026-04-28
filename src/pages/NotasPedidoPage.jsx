@@ -7,6 +7,7 @@ import {
   canViewWarehouseTrayEffective,
 } from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
 const initialFilters = {
@@ -34,6 +35,7 @@ const NotasPedidoPage = () => {
   const canCreate = canCreatePedidoInternoEffective(user);
   const canApprove = canApprovePedidoInternoEffective(user);
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
+  const isInitialLoading = loading && result.data.length === 0;
 
   const cargarPedidos = async (params = filters) => {
     try {
@@ -172,6 +174,9 @@ const NotasPedidoPage = () => {
         </button>
       </form>
 
+      {isInitialLoading ? (
+        <SkeletonTable columns={7} rows={6} className="rounded-lg" />
+      ) : (
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-slate-700">
@@ -223,6 +228,7 @@ const NotasPedidoPage = () => {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between">
         <button

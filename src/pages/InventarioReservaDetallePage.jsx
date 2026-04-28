@@ -1,9 +1,10 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canOperateInventoryEffective } from "../accessRules";
 import Loader from "../components/Loader";
 import ReservaEstadoBadge from "../components/ReservaEstadoBadge";
+import InventarioReservaDetalleSkeleton from "../components/ui/skeletons/InventarioReservaDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 
@@ -41,11 +42,6 @@ const InventarioReservaDetallePage = () => {
     reserva &&
     actionableStates.has(reserva.estado) &&
     pendingAmount > 0;
-
-  const salidaPrincipal = useMemo(
-    () => reserva?.salidasDocumentadas?.[0] || null,
-    [reserva]
-  );
 
   const cargarReserva = useCallback(async () => {
     const data = await obtenerReservaPorId(id);
@@ -99,7 +95,7 @@ const InventarioReservaDetallePage = () => {
     );
   };
 
-  if (loading && !reserva) return <Loader />;
+  if (loading && !reserva) return <InventarioReservaDetalleSkeleton />;
 
   if (!reserva) {
     return (
@@ -538,4 +534,3 @@ const InventarioReservaDetallePage = () => {
 };
 
 export default InventarioReservaDetallePage;
-

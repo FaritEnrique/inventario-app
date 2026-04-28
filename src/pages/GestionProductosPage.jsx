@@ -19,6 +19,7 @@ import {
   resolveProductoImageUrl,
   revokeIfBlobUrl,
 } from "../utils/productoImage";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
@@ -82,7 +83,6 @@ const GestionProductosPage = () => {
     desde,
     hasta,
     setPage,
-    setLimit,
     fetchProductos,
     crearProducto,
     crearProductoConStockInicial,
@@ -943,10 +943,11 @@ const GestionProductosPage = () => {
       </div>
 
       {/* Tabla de Productos */}
+      {cargandoGeneral && productos.length === 0 ? (
+        <SkeletonTable columns={9} rows={6} className="rounded-lg shadow-lg" />
+      ) : (
       <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-        {cargandoGeneral ? (
-          <p className="p-6 text-center text-gray-500">Cargando productos...</p>
-        ) : productos.length === 0 ? (
+        {productos.length === 0 ? (
           <p className="p-6 text-center text-gray-500">
             No hay productos registrados para el filtro actual.
           </p>
@@ -1042,6 +1043,7 @@ const GestionProductosPage = () => {
           </table>
         )}
       </div>
+      )}
 
       {/* Paginación */}
       {total > limit && (

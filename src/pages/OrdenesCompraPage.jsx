@@ -8,6 +8,7 @@ import {
 } from "../accessRules";
 import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
@@ -61,6 +62,7 @@ const OrdenesCompraPage = () => {
   const canView = canViewOrdenesCompraEffective(user);
   const canViewList = canViewOrdenCompraListEffective(user);
   const canViewApprovalTray = canViewOrdenCompraApprovalTrayEffective(user);
+  const isInitialLoading = loading && rows.length === 0 && !pageError;
 
   const switchView = useCallback(
     (view) => {
@@ -345,8 +347,12 @@ const OrdenesCompraPage = () => {
         </div>
       ) : null}
 
-      {loading ? <Loader /> : null}
+      {loading && rows.length > 0 ? <Loader size="sm" /> : null}
 
+      {isInitialLoading ? (
+        <SkeletonTable columns={7} rows={6} />
+      ) : (
+      <>
       <div className="space-y-4 md:hidden">
         {rows.length > 0 ? (
           rows.map((ordenCompra) => (
@@ -513,6 +519,8 @@ const OrdenesCompraPage = () => {
           </table>
         </div>
       </div>
+      </>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-gray-600">

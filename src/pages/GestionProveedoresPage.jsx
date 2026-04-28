@@ -7,6 +7,7 @@ import FormularioProveedor from "../components/FormularioProveedor";
 import Loader from "../components/Loader";
 import Modal from "../components/Modal";
 import ProveedorDetalleModal from "../components/ProveedorDetalleModal";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useProveedores from "../hooks/useProveedores";
 import useSunat from "../hooks/useSunat";
 import { useAuth } from "../context/authContext";
@@ -541,6 +542,8 @@ const GestionProveedoresPage = () => {
   };
 
   const loading = proveedoresLoading || sunatLoading;
+  const isInitialProvidersLoading =
+    proveedoresLoading && proveedores.length === 0;
   const estadoSunatUi = renderEstadoImportacion(estadoImportacionSunat);
   const estadoReducidoUi = renderEstadoImportacion(estadoImportacionReducido);
 
@@ -741,6 +744,13 @@ const GestionProveedoresPage = () => {
               </form>
             </div>
           </div>
+          {isInitialProvidersLoading ? (
+            <SkeletonTable
+              columns={8}
+              rows={6}
+              className="rounded-none border-0 shadow-none"
+            />
+          ) : (
           <table className="min-w-full leading-normal">
             <thead>
               <tr className="bg-gray-100">
@@ -842,6 +852,7 @@ const GestionProveedoresPage = () => {
               )}
             </tbody>
           </table>
+          )}
         </div>
 
         <ProveedorDetalleModal

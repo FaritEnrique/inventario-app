@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Loader from "../components/Loader";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
+import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import {
   canAssignCotizacionesLogisticaEffective,
   hasLogisticaJefaturaContext,
@@ -439,6 +440,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     },
     [items]
   );
+  const isInitialLoading = cargando && items.length === 0 && !contextError;
 
   const handleAssign = async (requerimientoId) => {
     const item = items.find((currentItem) => currentItem.id === requerimientoId);
@@ -624,7 +626,14 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {isInitialLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonCard key={index} lines={1} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Total expedientes
@@ -647,6 +656,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           );
         })}
       </div>
+      )}
 
       <div className="grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-3">
         <input
@@ -671,11 +681,12 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </select>
       </div>
 
-      {cargando && <Loader />}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="space-y-4">
-        {contextError ? (
+        {isInitialLoading ? (
+          <SkeletonTable columns={5} rows={5} />
+        ) : contextError ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
             <p className="font-semibold">
               No tienes acceso a esta bandeja con el contexto activo actual.

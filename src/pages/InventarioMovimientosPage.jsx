@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useInventario from "../hooks/useInventario";
 
 const buildInitialFilters = (searchParams) => ({
@@ -29,6 +30,7 @@ const InventarioMovimientosPage = () => {
     currentPage: 1,
   });
   const [selectedMovimiento, setSelectedMovimiento] = useState(null);
+  const isInitialLoading = loading && result.data.length === 0;
 
   const cargarMovimientos = async (nextFilters = filters) => {
     try {
@@ -187,6 +189,9 @@ const InventarioMovimientosPage = () => {
         </button>
       </form>
 
+      {isInitialLoading ? (
+        <SkeletonTable columns={10} rows={8} className="rounded-lg" />
+      ) : (
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
@@ -252,6 +257,7 @@ const InventarioMovimientosPage = () => {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between">
         <button

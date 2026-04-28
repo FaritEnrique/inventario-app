@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FaArrowLeft, FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
-import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
 } from "../accessRules";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
-import Loader from "../components/Loader";
+import SolicitudesRequerimientoSkeleton from "../components/ui/skeletons/SolicitudesRequerimientoSkeleton";
 import { useAuth } from "../context/authContext";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
@@ -96,7 +95,7 @@ const SolicitudesRequerimientoPage = () => {
     await load();
   };
 
-  if (cargando && !detalle) return <Loader />;
+  if (cargando && !detalle) return <SolicitudesRequerimientoSkeleton />;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">

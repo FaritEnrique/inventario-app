@@ -4,12 +4,9 @@ import { toast } from "react-toastify";
 import { canActOnNoteDocument } from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
-import Loader from "../components/Loader";
+import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
-
-const formatDate = (value) =>
-  value ? new Date(value).toLocaleDateString() : "-";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -77,7 +74,7 @@ const InventarioNotaIngresoDetallePage = () => {
     }
   };
 
-  if (loading && !nota) return <Loader />;
+  if (loading && !nota) return <InventarioDocumentoDetalleSkeleton />;
 
   if (!nota) {
     return (

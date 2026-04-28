@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
@@ -60,6 +61,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
     () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
     [filters]
   );
+  const isInitialLoading = (loading || cargando) && items.length === 0;
   const trayGuidance = useMemo(() => getTrayGuidanceEffective(user, nivel), [nivel, user]);
   const emptyState = useMemo(
     () => getTrayEmptyStateEffective(user, nivel, filtersApplied),
@@ -96,8 +98,6 @@ const RequerimientosBandejaPage = ({ nivel }) => {
       toast.error(error.message || "No se pudo procesar la aprobacion.");
     }
   };
-
-  if (loading || cargando) return <Loader />;
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -156,8 +156,18 @@ const RequerimientosBandejaPage = ({ nivel }) => {
         />
       </div>
 
+      {loading || cargando ? (
+        items.length > 0 ? <Loader size="sm" /> : null
+      ) : null}
+
       <div className="space-y-4">
-        {items.length > 0 ? (
+        {isInitialLoading ? (
+          <>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonSection key={index} rows={5} />
+            ))}
+          </>
+        ) : items.length > 0 ? (
           items.map((req) => (
             <div key={req.id} className="rounded-xl bg-white p-5 shadow">
               <div className="flex flex-wrap items-start justify-between gap-4">

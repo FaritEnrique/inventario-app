@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import useSolicitudesTipoProducto from "../hooks/useSolicitudesTipoProducto";
 import useTipoProductos from "../hooks/useTipoProductos";
 
@@ -53,6 +54,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
     search: "",
   });
   const [acciones, setAcciones] = useState({});
+  const isInitialLoading = loading && solicitudes.length === 0;
 
   const tiposProductoActivos = tiposProducto.filter(
     (tipoProducto) => tipoProducto.activo !== false
@@ -180,10 +182,12 @@ const BandejaSolicitudesTipoProductoPage = () => {
         </div>
 
         <div className="space-y-4">
-          {loading ? (
-            <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow-md">
-              Cargando solicitudes...
-            </div>
+          {isInitialLoading ? (
+            <>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <SkeletonSection key={index} rows={4} />
+              ))}
+            </>
           ) : solicitudes.length > 0 ? (
             solicitudes.map((solicitud) => {
               const accion = getAccion(solicitud.id);

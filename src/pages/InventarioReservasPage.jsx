@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import ProductoSearchField from "../components/ProductoSearchField";
 import ReservaEstadoBadge from "../components/ReservaEstadoBadge";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useInventario from "../hooks/useInventario";
 
 const buildInitialProducto = (searchParams) =>
@@ -45,6 +46,7 @@ const InventarioReservasPage = () => {
       filters.fechaHasta ||
       producto?.id
   );
+  const isInitialLoading = loading && result.data.length === 0;
 
   const cargarReservas = async (params = filters, selectedProducto = producto) => {
     try {
@@ -218,8 +220,11 @@ const InventarioReservasPage = () => {
         </div>
       </form>
 
-      {loading ? <Loader /> : null}
+      {loading && result.data.length > 0 ? <Loader size="sm" /> : null}
 
+      {isInitialLoading ? (
+        <SkeletonTable columns={6} rows={6} className="rounded-lg" />
+      ) : (
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-slate-700">
@@ -314,6 +319,7 @@ const InventarioReservasPage = () => {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between">
         <button
@@ -341,5 +347,4 @@ const InventarioReservasPage = () => {
 };
 
 export default InventarioReservasPage;
-
 

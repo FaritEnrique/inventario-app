@@ -9,6 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import ConfirmToast from "../components/ConfirmToast";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 
 const GestionMarcasPage = () => {
   const {
@@ -236,9 +237,7 @@ const GestionMarcasPage = () => {
           Listado de Marcas
         </h2>
         {cargando && marcas.length === 0 && (
-          <p className="py-4 text-lg text-center text-gray-600 bg-gray-100 rounded-lg">
-            Cargando marcas...
-          </p>
+          <SkeletonSection rows={3} className="shadow-none" />
         )}
         {error && (
           <p className="py-4 text-lg text-center text-red-700 bg-red-100 border border-red-400 rounded-lg">

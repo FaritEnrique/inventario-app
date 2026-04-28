@@ -8,6 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import ConfirmToast from "../components/ConfirmToast";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 
 const FRECUENCIA_REPOSICION_OPTIONS = [
   "diaria",
@@ -338,9 +339,7 @@ const GestionTipoProductosPage = () => {
           Listado de Tipos de Producto
         </h2>
         {cargando && tiposProducto.length === 0 && (
-          <p className="py-4 text-lg text-center text-gray-600 bg-gray-100 rounded-lg">
-            Cargando tipos de producto...
-          </p>
+          <SkeletonSection rows={3} className="shadow-none" />
         )}
         {error && (
           <p className="py-4 text-lg text-center text-red-700 bg-red-100 border border-red-400 rounded-lg">

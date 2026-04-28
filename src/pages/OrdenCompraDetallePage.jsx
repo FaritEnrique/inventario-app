@@ -7,11 +7,14 @@ import {
 } from "../accessRules";
 import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
+import OrdenCompraDetalleSkeleton from "../components/ui/skeletons/OrdenCompraDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
+const formatDateTime = (value) =>
+  value ? new Date(value).toLocaleString() : "-";
 const finalReceptionStates = new Set([
   "CANCELADA",
   "CERRADA",
@@ -200,7 +203,7 @@ const OrdenCompraDetallePage = () => {
     );
   };
 
-  if (loading && !ordenCompra) return <Loader />;
+  if (loading && !ordenCompra) return <OrdenCompraDetalleSkeleton />;
 
   if (!ordenCompra) {
     return (

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import Loader from "../components/Loader";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
+import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useRequerimientos from "../hooks/useRequerimientos";
@@ -43,6 +43,7 @@ const RequerimientosPage = () => {
     () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
     [filters]
   );
+  const isInitialLoading = cargando && requerimientos.length === 0;
 
   useEffect(() => {
     fetchRequerimientos(filters).catch(() => {});
@@ -194,9 +195,11 @@ const RequerimientosPage = () => {
         ) : null}
       </div>
 
-      {cargando && <Loader />}
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
+      {isInitialLoading ? (
+        <SkeletonTable columns={7} rows={6} />
+      ) : (
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -256,6 +259,7 @@ const RequerimientosPage = () => {
           </tbody>
         </table>
       </div>
+      )}
 
       <p className="mt-3 text-sm text-gray-500">{pagination.totalItems} requerimientos encontrados.</p>
     </div>

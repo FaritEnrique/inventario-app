@@ -1,5 +1,6 @@
 // src/pages/TipoProductosPage.jsx
 import React, { useEffect } from 'react';
+import SkeletonSection from '../components/ui/skeletons/SkeletonSection';
 import useTipoProductos from '../hooks/useTipoProductos';
 
 const TipoProductosPage = () => {
@@ -20,9 +21,11 @@ const TipoProductosPage = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-indigo-700 mb-4">Tipos de Producto</h1>
 
-        {cargando && <p className="text-gray-600">Cargando tipos...</p>}
         {error && <p className="text-red-500">{error}</p>}
 
+        {cargando && tipos.length === 0 ? (
+          <SkeletonSection rows={4} />
+        ) : (
         <ul className="space-y-3">
           {tipos.map((tipo) => (
             <li key={tipo.id} className="bg-white shadow p-4 rounded flex justify-between items-center">
@@ -39,6 +42,7 @@ const TipoProductosPage = () => {
             </li>
           ))}
         </ul>
+        )}
       </div>
     </div>
   );
