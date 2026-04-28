@@ -70,7 +70,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
 
   useEffect(() => {
     fetchTiposProducto();
-  }, []);
+  }, [fetchTiposProducto]);
 
   const updateAccion = (solicitudId, changes) => {
     setAcciones((prev) => ({
