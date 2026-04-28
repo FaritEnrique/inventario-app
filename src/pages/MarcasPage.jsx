@@ -1,14 +1,14 @@
 // src/pages/MarcasPage.jsx
-import React, { useEffect } from 'react';
-import SkeletonSection from '../components/ui/skeletons/SkeletonSection';
-import useMarcas from '../hooks/useMarcas';
+import React, { useEffect } from "react";
+import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
+import useMarcas from "../hooks/useMarcas";
 
 const MarcasPage = () => {
   const { marcas, cargando, fetchMarcas } = useMarcas();
 
   useEffect(() => {
     fetchMarcas();
-  }, []);
+  }, [fetchMarcas]);
 
   return (
     <div className="p-4">

@@ -30,7 +30,7 @@ const NotaPedidoDetallePage = () => {
     };
 
     cargarPedido();
-  }, [id]);
+  }, [id, obtenerPedidoPorId]);
 
   const quickLinks = useMemo(() => {
     const links = [
@@ -60,7 +60,7 @@ const NotaPedidoDetallePage = () => {
     if (
       canUseWarehouseTray &&
       ["APROBADO", "PARCIALMENTE_ATENDIDO", "EN_ATENCION"].includes(
-        pedido?.estadoFlujo
+        pedido?.estadoFlujo,
       )
     ) {
       links.push({
