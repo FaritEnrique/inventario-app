@@ -34,11 +34,11 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     try {
       const nuevaCotizacion = await cotizacionesApi.crear(cotizacion);
       setCotizaciones((prev) => [...prev, nuevaCotizacion]);
-      toast.success("Cotización creada con éxito.");
+      toast.success("Cotizacion creada con exito.");
       return nuevaCotizacion;
     } catch (err) {
-      console.error("Error creando cotización:", err);
-      const errorMessage = err.message || "Error al crear cotización.";
+      console.error("Error creando cotizacion:", err);
+      const errorMessage = err.message || "Error al crear cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -52,11 +52,11 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
           cotizacion.id === id ? cotizacionActualizada : cotizacion
         )
       );
-      toast.success("Cotización actualizada con éxito.");
+      toast.success("Cotizacion actualizada con exito.");
       return cotizacionActualizada;
     } catch (err) {
-      console.error("Error actualizando cotización:", err);
-      const errorMessage = err.message || "Error al actualizar cotización.";
+      console.error("Error actualizando cotizacion:", err);
+      const errorMessage = err.message || "Error al actualizar cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -96,28 +96,48 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
         })
       );
 
-      toast.success(
-        "Adjudicación directa excepcional registrada con éxito."
-      );
+      toast.success("Adjudicacion directa excepcional registrada con exito.");
       return cotizacionAdjudicada;
     } catch (err) {
-      console.error("Error adjudicando cotización:", err);
+      console.error("Error adjudicando cotizacion:", err);
       const errorMessage =
-        err.message ||
-        "Error al registrar la adjudicación directa excepcional.";
+        err.message || "Error al registrar la adjudicacion directa excepcional.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
   };
 
-  const eliminarCotizacion = async (id) => {
+  const inactivarCotizacion = async (id, payload = {}) => {
     try {
-      await cotizacionesApi.eliminar(id);
-      setCotizaciones((prev) => prev.filter((cotizacion) => cotizacion.id !== id));
-      toast.success("Cotización eliminada con éxito.");
+      const cotizacionActualizada = await cotizacionesApi.inactivar(id, payload);
+      setCotizaciones((prev) =>
+        prev.map((cotizacion) =>
+          cotizacion.id === id ? cotizacionActualizada : cotizacion
+        )
+      );
+      toast.success("Cotizacion inactivada con exito.");
+      return cotizacionActualizada;
     } catch (err) {
-      console.error("Error eliminando cotización:", err);
-      const errorMessage = err.message || "Error al eliminar cotización.";
+      console.error("Error inactivando cotizacion:", err);
+      const errorMessage = err.message || "Error al inactivar cotizacion.";
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const reactivarCotizacion = async (id, payload = {}) => {
+    try {
+      const cotizacionActualizada = await cotizacionesApi.reactivar(id, payload);
+      setCotizaciones((prev) =>
+        prev.map((cotizacion) =>
+          cotizacion.id === id ? cotizacionActualizada : cotizacion
+        )
+      );
+      toast.success("Cotizacion reactivada con exito.");
+      return cotizacionActualizada;
+    } catch (err) {
+      console.error("Error reactivando cotizacion:", err);
+      const errorMessage = err.message || "Error al reactivar cotizacion.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -133,7 +153,8 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     crearCotizacion,
     actualizarCotizacion,
     adjudicarCotizacion,
-    eliminarCotizacion,
+    inactivarCotizacion,
+    reactivarCotizacion,
     obtenerCotizacionPdfUrl,
   };
 };

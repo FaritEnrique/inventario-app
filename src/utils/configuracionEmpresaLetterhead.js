@@ -1,4 +1,4 @@
-import { institutionalLetterheadMetrics } from "@/shared/documentBrandingMetrics.js";
+import { institutionalLetterheadMetrics } from "./documentBrandingMetrics";
 
 export const escapeHtml = (value) =>
   String(value ?? "")

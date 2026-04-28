@@ -21,7 +21,14 @@ export const COMPANY_SETTINGS_ADMIN_ROLES = Object.freeze([
   "GERENTE_ADMINISTRACION",
 ]);
 
-const isAdminOverride = (user = {}) => hasRole(user, "ADMINISTRADOR_SISTEMA");
+const hasIdentityRole = (user = {}, role) =>
+  Boolean(role) &&
+  Array.isArray(user?.identityRoles) &&
+  user.identityRoles.includes(role);
+
+const isAdminOverride = (user = {}) =>
+  hasRole(user, "ADMINISTRADOR_SISTEMA") ||
+  hasIdentityRole(user, "ADMINISTRADOR_SISTEMA");
 const hasOperationalSession = (user = {}) =>
   Boolean(user?.id && user?.activo !== false && user?.activeContext);
 

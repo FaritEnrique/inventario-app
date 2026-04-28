@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
 import apiFetch from "../api/apiFetch";
 import { AUTH_SESSION_INVALIDATION_CODES } from "../constants/authErrorCodes";
-import { normalizeSessionUser } from "../utils/userRoles";
+import { getActiveRoles, normalizeSessionUser } from "../utils/userRoles";
 
 const AuthContext = createContext();
 const SESSION_STORAGE_KEY = "auth-session-v2";
@@ -371,6 +371,9 @@ const buildOperationalUser = (identity, activeContext) => {
     cargo: normalizedIdentity.cargo,
     codigoUsuario: normalizedIdentity.codigoUsuario || null,
     activo: normalizedIdentity.activo,
+    identityRoles: getActiveRoles(normalizedIdentity),
+    userRangos: normalizedIdentity.userRangos,
+    asignacionesOperativas: normalizedIdentity.asignacionesOperativas,
     rol: normalizedContext.role || normalizedContext.rolOperativo,
     areaId:
       normalizedContext.areaId ||

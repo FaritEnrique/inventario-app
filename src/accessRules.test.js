@@ -116,6 +116,15 @@ describe("effective functions con usuario que tiene esAreaLogistica === true", (
     ).toBe(false);
   });
 
+  it("mantiene el override de ADMINISTRADOR_SISTEMA aunque el contexto activo sea operativo", () => {
+    expect(
+      canViewAllCotizacionesLogisticaEffective({
+        ...buildUser("JEFE_AREA", { esAreaLogistica: true }),
+        identityRoles: ["ADMINISTRADOR_SISTEMA", "JEFE_AREA"],
+      }),
+    ).toBe(true);
+  });
+
   it("isLogisticaOperadorEffective acepta OPERADOR con esAreaLogistica === true", () => {
     expect(
       isLogisticaOperadorEffective(

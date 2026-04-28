@@ -122,6 +122,15 @@ const ProcesoLogisticoDetallePage = lazy(() =>
   import("./pages/ProcesoLogisticoDetallePage")
 );
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
+const SolicitudCotizacionDetallePage = lazy(() =>
+  import("./pages/SolicitudCotizacionDetallePage")
+);
+const SolicitudCotizacionDocumentoPage = lazy(() =>
+  import("./pages/SolicitudCotizacionDocumentoPage")
+);
+const SolicitudesRequerimientoPage = lazy(() =>
+  import("./pages/SolicitudesRequerimientoPage")
+);
 
 const SeleccionContextoPage = lazy(() => import("./pages/SeleccionContextoPage"));
 
@@ -264,6 +273,39 @@ const AppRoutes = () => {
               element={
                 <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
                   <ProcesoLogisticoDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="cotizaciones/requerimientos/:id/solicitudes"
+              element={
+                <RoutePermissionGuard
+                  allow={canAccessCotizacionesEffective}
+                  contextGate="logistica-access"
+                >
+                  <SolicitudesRequerimientoPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="solicitudes-cotizacion/:id"
+              element={
+                <RoutePermissionGuard
+                  allow={canAccessCotizacionesEffective}
+                  contextGate="logistica-access"
+                >
+                  <SolicitudCotizacionDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="solicitudes-cotizacion/:id/documento"
+              element={
+                <RoutePermissionGuard
+                  allow={canAccessCotizacionesEffective}
+                  contextGate="logistica-access"
+                >
+                  <SolicitudCotizacionDocumentoPage />
                 </RoutePermissionGuard>
               }
             />

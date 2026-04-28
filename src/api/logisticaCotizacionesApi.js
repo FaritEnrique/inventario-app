@@ -45,6 +45,18 @@ const logisticaCotizacionesApi = {
       method: "POST",
     });
   },
+  cerrarEmision: async (requerimientoId, payload = {}) => {
+    return apiFetch(`logistica/requerimientos/${requerimientoId}/cerrar-emision`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+  reabrirEmision: async (requerimientoId, payload = {}) => {
+    return apiFetch(`logistica/requerimientos/${requerimientoId}/reabrir-emision`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
   formalizarDecisionExcepcional: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/decision-excepcional`, {
       method: "POST",

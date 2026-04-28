@@ -33,9 +33,17 @@ const cotizacionesApi = {
       sessionActivity: "interactive",
     });
   },
-  eliminar: async (id) => {
-    return apiFetch(`cotizaciones/${id}`, {
-      method: "DELETE",
+  inactivar: async (id, payload = {}) => {
+    return apiFetch(`cotizaciones/${id}/inactivar`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    });
+  },
+  reactivar: async (id, payload = {}) => {
+    return apiFetch(`cotizaciones/${id}/reactivar`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
       sessionActivity: "interactive",
     });
   },

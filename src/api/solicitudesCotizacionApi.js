@@ -7,6 +7,9 @@ const solicitudesCotizacionApi = {
   obtenerPorId: async (id) => {
     return await apiFetch(`solicitudes-cotizacion/${id}`);
   },
+  obtenerPorRequerimiento: async (requerimientoId) => {
+    return await apiFetch(`solicitudes-cotizacion/requerimiento/${requerimientoId}`);
+  },
   obtenerPdfUrl: (id) => {
     return buildApiUrl(`solicitudes-cotizacion/${id}/pdf`);
   },
@@ -22,7 +25,7 @@ const solicitudesCotizacionApi = {
       body: JSON.stringify(solicitud),
     });
   },
-  eliminar: async (id) => {
+  inactivar: async (id) => {
     return apiFetch(`solicitudes-cotizacion/${id}`, {
       method: 'DELETE',
     });

@@ -94,6 +94,24 @@ const useLogisticaCotizaciones = () => {
     [run]
   );
 
+  const cerrarEmision = useCallback(
+    async (requerimientoId, payload = {}) =>
+      run(
+        () => logisticaCotizacionesApi.cerrarEmision(requerimientoId, payload),
+        "No se pudo cerrar la emision de solicitudes."
+      ),
+    [run]
+  );
+
+  const reabrirEmision = useCallback(
+    async (requerimientoId, payload = {}) =>
+      run(
+        () => logisticaCotizacionesApi.reabrirEmision(requerimientoId, payload),
+        "No se pudo reabrir la emision de solicitudes."
+      ),
+    [run]
+  );
+
   const formalizarDecisionExcepcional = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -194,6 +212,8 @@ const useLogisticaCotizaciones = () => {
     obtenerOperadores,
     asignar,
     iniciar,
+    cerrarEmision,
+    reabrirEmision,
     formalizarDecisionExcepcional,
     marcarListoAdjudicacion,
     crearComparativo,

@@ -11,7 +11,7 @@ import {
   resolveInstitutionalAssetUrl,
 } from "../utils/configuracionEmpresaLetterhead";
 import { printHtmlInNewWindow } from "../utils/printWindow";
-import { institutionalLetterheadMetrics } from "@/shared/documentBrandingMetrics.js";
+import { institutionalLetterheadMetrics } from "../utils/documentBrandingMetrics";
 
 const emptyForm = {
   razonSocial: "",

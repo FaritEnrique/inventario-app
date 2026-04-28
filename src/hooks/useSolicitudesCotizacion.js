@@ -11,12 +11,35 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     try {
       setCargando(true);
       const data = await solicitudesCotizacionApi.obtenerTodas();
-      setSolicitudes(data);
+      setSolicitudes(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
       console.error("Error cargando solicitudes de cotización:", err);
       setError("No se pudieron cargar las solicitudes de cotización.");
       toast.error("Error al cargar solicitudes de cotización.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const cargarSolicitudesPorRequerimiento = async (requerimientoId) => {
+    try {
+      setCargando(true);
+      const data = await solicitudesCotizacionApi.obtenerPorRequerimiento(
+        requerimientoId
+      );
+      const normalizedData = Array.isArray(data) ? data : [];
+      setSolicitudes(normalizedData);
+      setError(null);
+      return normalizedData;
+    } catch (err) {
+      console.error("Error cargando solicitudes por requerimiento:", err);
+      const errorMessage =
+        err.message ||
+        "No se pudieron cargar las solicitudes de cotización del requerimiento.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setCargando(false);
     }
@@ -67,17 +90,20 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const eliminarSolicitud = async (id) => {
+  const inactivarSolicitud = async (id) => {
     try {
-      await solicitudesCotizacionApi.eliminar(id);
+      const solicitudInactivada = await solicitudesCotizacionApi.inactivar(id);
       setSolicitudes((prev) =>
-        prev.filter((solicitud) => solicitud.id !== id)
+        prev.map((solicitud) =>
+          solicitud.id === id ? solicitudInactivada : solicitud
+        )
       );
-      toast.success("Solicitud de cotización eliminada con éxito.");
+      toast.success("Solicitud de cotización inactivada con éxito.");
+      return solicitudInactivada;
     } catch (err) {
-      console.error("Error eliminando solicitud de cotización:", err);
+      console.error("Error inactivando solicitud de cotización:", err);
       const errorMessage =
-        err.message || "Error al eliminar solicitud de cotización.";
+        err.message || "Error al inactivar solicitud de cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -105,9 +131,10 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     cargando,
     error,
     cargarSolicitudes,
+    cargarSolicitudesPorRequerimiento,
     crearSolicitud,
     actualizarSolicitud,
-    eliminarSolicitud,
+    inactivarSolicitud,
     obtenerSolicitudPdfUrl,
     enviarSolicitudCorreo,
   };

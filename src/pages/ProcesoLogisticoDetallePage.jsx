@@ -5,17 +5,26 @@ import {
   canAdjudicateCotizacionesLogisticaEffective,
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
+  isLogisticaJefaturaContext,
 } from "../accessRules";
 import ComparativoEstadoBadge from "../components/ComparativoEstadoBadge";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import CotizacionForm from "../components/CotizacionForm";
 import Loader from "../components/Loader";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
+import usersApi from "../api/usersApi";
 import { useAuth } from "../context/authContext";
 import useCotizaciones from "../hooks/useCotizaciones";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
+import {
+  buildLogisticaResponsableOptions,
+  canSubmitLogisticaAssignment,
+  createDirectResponsableOption,
+  findLogisticaJefaturaResponsable,
+  getDefaultLogisticaResponsableSelection,
+} from "../utils/logisticaAssignment";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
@@ -124,6 +133,16 @@ const buildSolicitudDraft = (solicitud) => ({
   requerimientoId: solicitud.requerimientoId,
   cuerpoSolicitud: solicitud.cuerpoSolicitud || "",
   estado: solicitud.estado,
+  moneda: solicitud.moneda || "PEN",
+  incluyeIgv:
+    typeof solicitud.incluyeIgv === "boolean" ? solicitud.incluyeIgv : true,
+  fechaLimiteRecepcion: solicitud.fechaLimiteRecepcion || "",
+  medioRecepcion: solicitud.medioRecepcion || "CORREO",
+  vigenciaOfertaDias: solicitud.vigenciaOfertaDias,
+  tiempoEntregaDias: solicitud.tiempoEntregaDias,
+  lugarEntrega: solicitud.lugarEntrega || "",
+  formaPago: solicitud.formaPago || "",
+  garantia: solicitud.garantia || "",
   items: Array.isArray(solicitud.items)
     ? solicitud.items.map((item) => ({ itemRequerimientoId: item.itemRequerimientoId }))
     : [],
@@ -144,6 +163,7 @@ const buildCotizacionDraft = (cotizacion) => ({
   items: Array.isArray(cotizacion.items)
     ? cotizacion.items.map((item) => ({
         itemRequerimientoId: item.itemRequerimientoId,
+        estadoRespuesta: item.estadoRespuesta || "COTIZADO",
         cantidadOfrecida: item.cantidadOfrecida,
         precioUnidad: item.precioUnidad,
         precioTotal: item.precioTotal,
@@ -164,8 +184,11 @@ const createCotizacionDraftFromSolicitud = (solicitud) => ({
   items: Array.isArray(solicitud?.items)
     ? solicitud.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
-        cantidadOfrecida: Number(item.itemRequerimiento?.cantidadRequerida || 0),
-        precioUnidad: 0,
+        estadoRespuesta: "COTIZADO",
+        cantidadOfrecida: String(
+          Number(item.itemRequerimiento?.cantidadRequerida || 0)
+        ),
+        precioUnidad: "",
         precioTotal: 0,
       }))
     : [],
@@ -175,7 +198,13 @@ const getCotizacionItemsMap = (cotizaciones = []) =>
   cotizaciones.reduce((acc, cotizacion) => {
     acc[String(cotizacion.id)] = new Set(
       Array.isArray(cotizacion.items)
-        ? cotizacion.items.map((item) => String(item.itemRequerimientoId))
+        ? cotizacion.items
+            .filter(
+              (item) =>
+                String(item.estadoRespuesta || "COTIZADO").toUpperCase() ===
+                "COTIZADO"
+            )
+            .map((item) => String(item.itemRequerimientoId))
         : []
     );
     return acc;
@@ -261,10 +290,73 @@ const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
   return null;
 };
 
+const promptLogisticaReassignmentPayload = ({
+  currentResponsableId,
+  nextResponsableId,
+}) => {
+  if (
+    !currentResponsableId ||
+    Number(currentResponsableId) === Number(nextResponsableId)
+  ) {
+    return { responsableId: Number(nextResponsableId) };
+  }
+
+  const tipoInput = window.prompt(
+    "Tipo de reasignacion: TEMPORAL o DEFINITIVA.",
+    "DEFINITIVA"
+  );
+  if (tipoInput === null) return null;
+
+  const tipoReasignacion = String(tipoInput || "")
+    .trim()
+    .toUpperCase();
+
+  if (!["TEMPORAL", "DEFINITIVA"].includes(tipoReasignacion)) {
+    toast.error("La reasignacion debe ser TEMPORAL o DEFINITIVA.");
+    return null;
+  }
+
+  const motivoInput = window.prompt(
+    "Motivo obligatorio de la reasignacion.",
+    ""
+  );
+  if (motivoInput === null) return null;
+
+  const motivo = String(motivoInput || "").trim();
+  if (!motivo) {
+    toast.error("Debes registrar un motivo para la reasignacion.");
+    return null;
+  }
+
+  const comentarioInput = window.prompt(
+    "Comentario adicional de la reasignacion (opcional).",
+    ""
+  );
+  if (comentarioInput === null) return null;
+
+  let vigenteHasta = null;
+  if (tipoReasignacion === "TEMPORAL") {
+    const vigenteHastaInput = window.prompt(
+      "Vigente hasta (AAAA-MM-DD) opcional para la reasignacion temporal.",
+      ""
+    );
+    if (vigenteHastaInput === null) return null;
+    vigenteHasta = String(vigenteHastaInput || "").trim() || null;
+  }
+
+  return {
+    responsableId: Number(nextResponsableId),
+    tipoReasignacion,
+    motivo,
+    comentario: String(comentarioInput || "").trim() || null,
+    vigenteHasta,
+  };
+};
+
 const ProcesoLogisticoDetallePage = () => {
   const { id } = useParams();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, activeContext } = useAuth();
   const { proveedores } = useProveedores();
   const {
     cargando,
@@ -276,6 +368,8 @@ const ProcesoLogisticoDetallePage = () => {
     obtenerOperadores,
     asignar,
     iniciar,
+    cerrarEmision,
+    reabrirEmision,
     formalizarDecisionExcepcional,
     marcarListoAdjudicacion,
     crearComparativo,
@@ -288,14 +382,15 @@ const ProcesoLogisticoDetallePage = () => {
   const {
     crearSolicitud,
     actualizarSolicitud,
-    eliminarSolicitud,
+    inactivarSolicitud,
     obtenerSolicitudPdfUrl,
     enviarSolicitudCorreo,
   } = useSolicitudesCotizacion({ autoLoad: false });
   const {
     crearCotizacion,
     actualizarCotizacion,
-    eliminarCotizacion,
+    inactivarCotizacion,
+    reactivarCotizacion,
     obtenerCotizacionPdfUrl,
   } = useCotizaciones({ autoLoad: false });
 
@@ -315,9 +410,22 @@ const ProcesoLogisticoDetallePage = () => {
   const [submittingComparativo, setSubmittingComparativo] = useState(false);
   const [submittingAction, setSubmittingAction] = useState(false);
   const [sendingSolicitudId, setSendingSolicitudId] = useState(null);
+  const [jefaturaResponsableOption, setJefaturaResponsableOption] =
+    useState(null);
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canAdjudicate = canAdjudicateCotizacionesLogisticaEffective(user);
+  const isAdminUser = Array.isArray(user?.identityRoles)
+    ? user.identityRoles.includes("ADMINISTRADOR_SISTEMA")
+    : false;
+  const canProcessDirectly =
+    canAssign &&
+    (isLogisticaJefaturaContext(activeContext || {}) || isAdminUser);
+  const directResponsableOption = createDirectResponsableOption(
+    user,
+    canProcessDirectly
+  );
+  const directResponsableId = directResponsableOption?.id || null;
 
   const load = async () => {
     const [data, comparativoData] = await Promise.all([
@@ -338,7 +446,13 @@ const ProcesoLogisticoDetallePage = () => {
         ? buildComparativoDraft(comparativoData)
         : createEmptyComparativoDraft()
     );
-    setResponsableId(String(data?.responsableLogisticaId || ""));
+    setResponsableId(
+      getDefaultLogisticaResponsableSelection({
+        responsableActualId:
+          data?.responsableLogisticaId || data?.responsableLogistica?.id,
+        directResponsableId,
+      })
+    );
     setSolicitudDraft((prev) => prev || {
       requerimientoId: data.id,
     });
@@ -346,7 +460,7 @@ const ProcesoLogisticoDetallePage = () => {
 
   useEffect(() => {
     load().catch(() => {});
-  }, [id]);
+  }, [id, directResponsableId]);
 
   useEffect(() => {
     if (!canAssign) return;
@@ -354,6 +468,37 @@ const ProcesoLogisticoDetallePage = () => {
       .then((data) => setOperadores(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [canAssign, obtenerOperadores]);
+
+  useEffect(() => {
+    if (!canAssign || !isAdminUser) {
+      setJefaturaResponsableOption(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    usersApi
+      .obtenerTodosPaginados()
+      .then((usuarios) => {
+        if (cancelled) return;
+
+        setJefaturaResponsableOption(
+          findLogisticaJefaturaResponsable(
+            usuarios,
+            activeContext?.areaId || activeContext?.area?.id || null
+          )
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setJefaturaResponsableOption(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeContext?.area?.id, activeContext?.areaId, canAssign, isAdminUser]);
 
   useEffect(() => {
     if (!location.hash || !detalle?.id) return;
@@ -373,6 +518,11 @@ const ProcesoLogisticoDetallePage = () => {
     () => Array.isArray(detalle?.cotizaciones) ? detalle.cotizaciones : [],
     [detalle?.cotizaciones]
   );
+  const resumenCotizacionesActivas = useMemo(
+    () =>
+      resumenCotizaciones.filter((cotizacion) => cotizacion.activo !== false),
+    [resumenCotizaciones]
+  );
   const ordenesCompraRelacionadas = useMemo(
     () => (Array.isArray(detalle?.ordenesCompra) ? detalle.ordenesCompra : []),
     [detalle?.ordenesCompra]
@@ -385,23 +535,75 @@ const ProcesoLogisticoDetallePage = () => {
     () => getComparativoDecisionMeta(comparativo),
     [comparativo]
   );
+  const coberturaItems = useMemo(
+    () =>
+      Array.isArray(detalle?.resumenComparativo?.coberturaItems)
+        ? detalle.resumenComparativo.coberturaItems
+        : [],
+    [detalle?.resumenComparativo?.coberturaItems]
+  );
 
   const handleAsignar = async () => {
-    if (!responsableId) return;
+    const responsableActualId =
+      detalle?.responsableLogisticaId || detalle?.responsableLogistica?.id;
+
+    if (
+      !canSubmitLogisticaAssignment({
+        selectedResponsableId: responsableId,
+        responsableActualId,
+      })
+    ) {
+      return;
+    }
+
+    const payload = promptLogisticaReassignmentPayload({
+      currentResponsableId: responsableActualId,
+      nextResponsableId: responsableId,
+    });
+    if (!payload) return;
+
     setSubmittingAction(true);
     try {
-      const result = await asignar(detalle.id, { responsableId: Number(responsableId) });
+      const result = await asignar(detalle.id, payload);
       setDetalle(result);
+      setResponsableId(
+        getDefaultLogisticaResponsableSelection({
+          responsableActualId:
+            result?.responsableLogisticaId || result?.responsableLogistica?.id,
+          directResponsableId,
+        })
+      );
     } finally {
       setSubmittingAction(false);
     }
   };
 
   const handleTomarDirecto = async () => {
+    if (!directResponsableId) {
+      toast.error(
+        "Procesar directamente solo esta disponible con la jefatura logistica activa."
+      );
+      return;
+    }
+
+    const payload = promptLogisticaReassignmentPayload({
+      currentResponsableId:
+        detalle?.responsableLogisticaId || detalle?.responsableLogistica?.id,
+      nextResponsableId: directResponsableId,
+    });
+    if (!payload) return;
+
     setSubmittingAction(true);
     try {
-      const result = await asignar(detalle.id, { responsableId: Number(user.id) });
+      const result = await asignar(detalle.id, payload);
       setDetalle(result);
+      setResponsableId(
+        getDefaultLogisticaResponsableSelection({
+          responsableActualId:
+            result?.responsableLogisticaId || result?.responsableLogistica?.id,
+          directResponsableId,
+        })
+      );
     } finally {
       setSubmittingAction(false);
     }
@@ -488,20 +690,90 @@ const ProcesoLogisticoDetallePage = () => {
     }
   };
 
-  const handleDeleteSolicitud = async (solicitudId) => {
-    if (!window.confirm("Se eliminara la solicitud de cotizacion. Deseas continuar?")) {
+  const handleInactivateSolicitud = async (solicitudId) => {
+    if (
+      !window.confirm(
+        "La solicitud de cotizacion se inactivara logicamente. Deseas continuar?"
+      )
+    ) {
       return;
     }
-    await eliminarSolicitud(solicitudId);
+    await inactivarSolicitud(solicitudId);
     await load();
   };
 
-  const handleDeleteCotizacion = async (cotizacionId) => {
-    if (!window.confirm("Se eliminara la cotizacion. Deseas continuar?")) {
+  const handleInactivateCotizacion = async (cotizacionId) => {
+    const motivo = window.prompt(
+      "Motivo para inactivar la cotizacion (opcional):",
+      ""
+    );
+
+    if (motivo === null) {
       return;
     }
-    await eliminarCotizacion(cotizacionId);
+
+    await inactivarCotizacion(cotizacionId, {
+      motivoInactivacion: motivo.trim() || null,
+    });
     await load();
+  };
+
+  const handleReactivateCotizacion = async (cotizacionId) => {
+    const motivo = window.prompt(
+      "Motivo para reactivar la cotizacion (opcional):",
+      ""
+    );
+
+    if (motivo === null) {
+      return;
+    }
+
+    await reactivarCotizacion(cotizacionId, {
+      motivoReactivacion: motivo.trim() || null,
+    });
+    await load();
+  };
+
+  const handleCerrarEmision = async () => {
+    const motivo = window.prompt(
+      "Motivo para cerrar la emision de solicitudes (opcional):",
+      ""
+    );
+
+    if (motivo === null) {
+      return;
+    }
+
+    setSubmittingAction(true);
+    try {
+      const result = await cerrarEmision(detalle.id, {
+        motivo: motivo.trim() || null,
+      });
+      setDetalle(result);
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleReabrirEmision = async () => {
+    const motivo = window.prompt(
+      "Motivo para reabrir la emision de solicitudes (opcional):",
+      ""
+    );
+
+    if (motivo === null) {
+      return;
+    }
+
+    setSubmittingAction(true);
+    try {
+      const result = await reabrirEmision(detalle.id, {
+        motivo: motivo.trim() || null,
+      });
+      setDetalle(result);
+    } finally {
+      setSubmittingAction(false);
+    }
   };
 
   const scrollToSection = (sectionId) => {
@@ -586,6 +858,7 @@ const ProcesoLogisticoDetallePage = () => {
 
     setSubmittingAction(true);
     try {
+      const wasEmisionClosed = detalle.emisionSolicitudesCerrada === true;
       const result = await definirFlujo(detalle.id, {
         modalidadFlujoLogistico: modalidad,
         causalFlujoExcepcional:
@@ -599,7 +872,11 @@ const ProcesoLogisticoDetallePage = () => {
       });
       setDetalle(result);
       await load();
-      toast.success("Flujo logistico definido correctamente.");
+      toast.success(
+        wasEmisionClosed && result?.emisionSolicitudesCerrada === false
+          ? "Flujo logistico actualizado y emision reabierta automaticamente por cobertura insuficiente."
+          : "Flujo logistico definido correctamente."
+      );
     } finally {
       setSubmittingAction(false);
     }
@@ -686,7 +963,14 @@ const ProcesoLogisticoDetallePage = () => {
   const handleComparativoSubmit = async (event) => {
     event.preventDefault();
 
-    if (!comparativoDraft.cotizacionIdsConsideradas.length) {
+    const activeCotizacionIds = new Set(
+      resumenCotizacionesActivas.map((cotizacion) => String(cotizacion.id))
+    );
+    const cotizacionIdsConsideradas = comparativoDraft.cotizacionIdsConsideradas.filter(
+      (value) => activeCotizacionIds.has(String(value))
+    );
+
+    if (!cotizacionIdsConsideradas.length) {
       toast.error("Debes considerar al menos una cotizacion en el comparativo.");
       return;
     }
@@ -695,14 +979,12 @@ const ProcesoLogisticoDetallePage = () => {
       (entry) =>
         entry?.cotizacionId &&
         entry?.itemRequerimientoId &&
-        comparativoDraft.cotizacionIdsConsideradas.includes(String(entry.cotizacionId))
+        cotizacionIdsConsideradas.includes(String(entry.cotizacionId))
     );
 
     const payload = {
       observaciones: comparativoDraft.observaciones.trim() || null,
-      cotizacionIdsConsideradas: comparativoDraft.cotizacionIdsConsideradas.map((value) =>
-        Number(value)
-      ),
+      cotizacionIdsConsideradas: cotizacionIdsConsideradas.map((value) => Number(value)),
       cotizacionSeleccionadaId: comparativoDraft.cotizacionSeleccionadaId
         ? Number(comparativoDraft.cotizacionSeleccionadaId)
         : null,
@@ -775,6 +1057,12 @@ const ProcesoLogisticoDetallePage = () => {
   ];
 
   const canOperate = canOperateCotizacionesLogisticaEffective(user, detalle);
+  const responsableActualId =
+    detalle.responsableLogisticaId || detalle.responsableLogistica?.id || null;
+  const assignedToCurrentUser =
+    Number(responsableActualId || 0) === Number(user?.id || 0);
+  const assignedToOtherResponsable =
+    Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
   const expedienteBloqueado = ["ADJUDICADO", "OC_GENERADA"].includes(
     detalle.estadoLogistica
   );
@@ -782,15 +1070,17 @@ const ProcesoLogisticoDetallePage = () => {
   const flujoDefinido = Boolean(detalle.modalidadFlujoLogistico);
   const isFlujoRegular = detalle.modalidadFlujoLogistico === "REGULAR";
   const isFlujoExcepcional = detalle.modalidadFlujoLogistico === "EXCEPCIONAL";
+  const emisionCerrada = detalle.emisionSolicitudesCerrada === true;
+  const responsableNoOperativo = detalle.requiereReasignacionResponsable === true;
   const canDefineFlow = canAdjudicate && !expedienteBloqueado;
   const canEditFlowDefinition =
     canDefineFlow &&
-    !detalle.resumenComparativo?.totalSolicitudes &&
-    !detalle.resumenComparativo?.totalCotizaciones &&
-    !comparativo?.id &&
-    !ordenesCompraRelacionadas.length &&
-    !detalle.cotizacionSeleccionadaExcepcionalId;
+    detalle.puedeCambiarFlujoLogistico === true;
   const canManageDrafts = canOperate && !expedienteBloqueado && flujoDefinido;
+  const canManageSolicitudes =
+    canManageDrafts &&
+    !emisionCerrada &&
+    (!assignedToOtherResponsable || !canAssign || assignedToCurrentUser);
   const canManageComparativo =
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
   const canPrepareExceptionalDecision =
@@ -880,6 +1170,10 @@ const ProcesoLogisticoDetallePage = () => {
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solicitudes / cotizaciones</p>
           <p className="mt-2 text-lg font-semibold text-gray-900">
             {detalle.resumenComparativo?.totalSolicitudes || 0} / {detalle.resumenComparativo?.totalCotizaciones || 0}
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Emisión {emisionCerrada ? "cerrada" : "abierta"} · cobertura mínima por ítem{" "}
+            {detalle.resumenComparativo?.coberturaMinimaPorItem || 0}
           </p>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -983,41 +1277,120 @@ const ProcesoLogisticoDetallePage = () => {
           </div>
 
           <div className="mt-4 space-y-4 text-sm">
+            {responsableNoOperativo ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                El responsable logistico actual ya no se encuentra operativo para continuar este expediente. La jefatura debe reasignarlo para asegurar continuidad.
+              </div>
+            ) : null}
+
             {canAssign && (
               <div className="space-y-2 rounded-lg border border-gray-200 p-4">
                 <p className="font-medium text-gray-900">Asignacion / reasignacion</p>
                 <div className="flex flex-wrap gap-2">
-                  <select
-                    value={responsableId}
-                    name="proceso-logistico-detalle-page-select-359" onChange={(event) => setResponsableId(event.target.value)}
-                    className="min-w-[220px] rounded border border-gray-300 px-3 py-2"
-                  >
-                    <option value="">Selecciona operador</option>
-                    {operadores.map((operador) => (
-                      <option key={operador.id} value={operador.id}>
-                        {operador.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAsignar}
-                    disabled={submittingAction || !responsableId}
-                    className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {detalle.responsableLogisticaId ? "Reasignar" : "Asignar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleTomarDirecto}
-                    disabled={submittingAction}
-                    className="rounded border border-emerald-300 px-4 py-2 font-medium text-emerald-700 hover:bg-emerald-50"
-                  >
-                    Procesar directamente
-                  </button>
+                  {(() => {
+                    const responsableActualId =
+                      detalle.responsableLogisticaId ||
+                      detalle.responsableLogistica?.id ||
+                      null;
+                    const opcionesResponsables =
+                      buildLogisticaResponsableOptions({
+                        operadores,
+                        responsableActual: detalle.responsableLogistica,
+                        directResponsable: directResponsableOption,
+                        extraResponsables: [jefaturaResponsableOption],
+                      });
+                    const canSubmitAssignment =
+                      canSubmitLogisticaAssignment({
+                        selectedResponsableId: responsableId,
+                        responsableActualId,
+                      });
+
+                    return (
+                      <>
+                        <select
+                          value={responsableId}
+                          name="proceso-logistico-detalle-page-select-359"
+                          onChange={(event) => setResponsableId(event.target.value)}
+                          className="min-w-[220px] rounded border border-gray-300 px-3 py-2"
+                        >
+                          <option value="">Selecciona operador</option>
+                          {opcionesResponsables.map((operador) => (
+                            <option key={operador.id} value={operador.id}>
+                              {operador.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAsignar}
+                          disabled={submittingAction || !canSubmitAssignment}
+                          className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {responsableActualId ? "Reasignar" : "Asignar"}
+                        </button>
+                      </>
+                    );
+                  })()}
+                  {canProcessDirectly ? (
+                    <button
+                      type="button"
+                      onClick={handleTomarDirecto}
+                      disabled={submittingAction}
+                      className="rounded border border-emerald-300 px-4 py-2 font-medium text-emerald-700 hover:bg-emerald-50"
+                    >
+                      Procesar directamente
+                    </button>
+                  ) : null}
                 </div>
+                {!canProcessDirectly ? (
+                  <p className="text-xs text-gray-500">
+                    Procesar directamente esta disponible para la jefatura de
+                    logistica y para administradores del sistema.
+                  </p>
+                ) : null}
               </div>
             )}
+
+            {Array.isArray(detalle.historialAsignacionesLogistica) &&
+            detalle.historialAsignacionesLogistica.length > 0 ? (
+              <div className="space-y-2 rounded-lg border border-gray-200 p-4">
+                <p className="font-medium text-gray-900">
+                  Historial de asignacion
+                </p>
+                <div className="space-y-2 text-xs text-gray-600">
+                  {detalle.historialAsignacionesLogistica.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <p className="font-medium text-slate-900">
+                        {entry.responsableAnterior?.nombre
+                          ? `${entry.responsableAnterior.nombre} -> ${entry.responsableNuevo?.nombre || "-"}`
+                          : `Asignado a ${entry.responsableNuevo?.nombre || "-"}`}
+                      </p>
+                      <p className="mt-1">
+                        {formatDateTime(entry.fechaAccion)} ·{" "}
+                        {entry.tipoReasignacion || "ASIGNACION_INICIAL"} ·{" "}
+                        {entry.reasignadoPor?.nombre || "-"}
+                      </p>
+                      {entry.motivo ? (
+                        <p className="mt-1 text-slate-700">Motivo: {entry.motivo}</p>
+                      ) : null}
+                      {entry.comentario ? (
+                        <p className="mt-1 text-slate-700">
+                          Comentario: {entry.comentario}
+                        </p>
+                      ) : null}
+                      {entry.vigenteHasta ? (
+                        <p className="mt-1 text-slate-700">
+                          Vigente hasta: {formatDate(entry.vigenteHasta)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {detalle.estadoLogistica === "ASIGNADO" && (
               <button
@@ -1065,6 +1438,14 @@ const ProcesoLogisticoDetallePage = () => {
                   Todavia no se definio la modalidad del expediente. Hasta hacerlo, el sistema bloquea acciones operativas clave.
                 </div>
               )}
+
+              {canDefineFlow &&
+              !canEditFlowDefinition &&
+              detalle.motivoBloqueoCambioFlujo ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                  {detalle.motivoBloqueoCambioFlujo}
+                </div>
+              ) : null}
 
               {canEditFlowDefinition ? (
                 <div className="space-y-3">
@@ -1140,6 +1521,81 @@ const ProcesoLogisticoDetallePage = () => {
               ) : null}
             </div>
 
+            {flujoDefinido ? (
+              <div className="space-y-3 rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-gray-900">Emision de solicitudes</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Controla el pase entre la etapa de emisión y el registro de
+                      respuestas del proveedor.
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                      emisionCerrada
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    {emisionCerrada ? "Emisión cerrada" : "Emisión abierta"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {emisionCerrada ? (
+                    <button
+                      type="button"
+                      onClick={handleReabrirEmision}
+                      disabled={submittingAction || !canManageDrafts}
+                      className="rounded border border-amber-300 px-4 py-2 font-medium text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Reabrir emisión
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCerrarEmision}
+                      disabled={
+                        submittingAction ||
+                        !canManageDrafts ||
+                        !detalle.resumenComparativo?.totalSolicitudes
+                      }
+                      className="rounded border border-emerald-300 px-4 py-2 font-medium text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Cerrar emisión
+                    </button>
+                  )}
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {coberturaItems.map((item) => (
+                    <div
+                      key={`coverage-item-${item.itemRequerimientoId}`}
+                      className="rounded border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <p className="font-medium text-slate-900">
+                        {item.descripcionVisible}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Cobertura válida {item.coberturaValida} /{" "}
+                        {item.coverageMinimum}
+                      </p>
+                      <p
+                        className={`mt-2 text-xs font-medium ${
+                          item.cumpleCoberturaValida
+                            ? "text-emerald-700"
+                            : "text-amber-700"
+                        }`}
+                      >
+                        {item.cumpleCoberturaValida
+                          ? "Cobertura mínima alcanzada"
+                          : "Cobertura mínima pendiente"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {canOperate && !expedienteBloqueado && isFlujoRegular && (
               <button
                 type="button"
@@ -1175,7 +1631,7 @@ const ProcesoLogisticoDetallePage = () => {
                   className="w-full rounded border border-emerald-300 px-3 py-2"
                 >
                   <option value="">Selecciona cotizacion</option>
-                  {resumenCotizaciones.map((cotizacion) => (
+                  {resumenCotizacionesActivas.map((cotizacion) => (
                     <option key={cotizacion.id} value={cotizacion.id}>
                       {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"} · {formatCurrency(cotizacion.totalOferta)}
                     </option>
@@ -1255,20 +1711,31 @@ const ProcesoLogisticoDetallePage = () => {
         </div>
       </div>
 
-      {canManageDrafts ? (
+      {canManageSolicitudes || canManageDrafts ? (
         <div className="grid gap-6 xl:grid-cols-2">
-          <div id="solicitudes">
-            <SolicitudCotizacionForm
-              initialData={solicitudDraft || { requerimientoId: Number(id) }}
-              proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
-              requerimientos={requerimientoOption}
-              requerimientoDetalle={detalle}
-              onRequerimientoChange={() => {}}
-              onSubmit={handleSolicitudSubmit}
-              onCancel={() => setSolicitudDraft({ requerimientoId: Number(id) })}
-              submitting={submittingSolicitud}
-            />
-          </div>
+          {canManageSolicitudes ? (
+            <div id="solicitudes">
+              <SolicitudCotizacionForm
+                initialData={solicitudDraft || { requerimientoId: Number(id) }}
+                proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
+                requerimientos={requerimientoOption}
+                requerimientoDetalle={detalle}
+                onRequerimientoChange={() => {}}
+                onSubmit={handleSolicitudSubmit}
+                onCancel={() => setSolicitudDraft({ requerimientoId: Number(id) })}
+                submitting={submittingSolicitud}
+              />
+            </div>
+          ) : (
+            <div
+              id="solicitudes"
+              className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm"
+            >
+              {emisionCerrada
+                ? "La emision de solicitudes se encuentra cerrada. Reabre la etapa para emitir nuevas invitaciones."
+                : "La emision y edicion de solicitudes de cotizacion queda deshabilitada mientras el expediente este asignado a otro responsable logistico."}
+            </div>
+          )}
 
           <div id="cotizaciones">
             <CotizacionForm
@@ -1388,8 +1855,8 @@ const ProcesoLogisticoDetallePage = () => {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  {resumenCotizaciones.length > 0 ? (
-                    resumenCotizaciones.map((cotizacion) => {
+                  {resumenCotizacionesActivas.length > 0 ? (
+                    resumenCotizacionesActivas.map((cotizacion) => {
                       const checked = comparativoDraft.cotizacionIdsConsideradas.includes(
                         String(cotizacion.id)
                       );
@@ -1449,7 +1916,7 @@ const ProcesoLogisticoDetallePage = () => {
                   </p>
                   <div className="mt-3 space-y-3">
                     {(detalle.items || []).map((item) => {
-                      const availableCotizaciones = resumenCotizaciones.filter(
+                      const availableCotizaciones = resumenCotizacionesActivas.filter(
                         (cotizacion) =>
                           comparativoDraft.cotizacionIdsConsideradas.includes(
                             String(cotizacion.id)
@@ -1548,7 +2015,9 @@ const ProcesoLogisticoDetallePage = () => {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="submit"
-                    disabled={submittingComparativo || !resumenCotizaciones.length}
+                    disabled={
+                      submittingComparativo || !resumenCotizacionesActivas.length
+                    }
                     className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submittingComparativo
@@ -1747,14 +2216,32 @@ const ProcesoLogisticoDetallePage = () => {
             {(detalle.solicitudes || []).length > 0 ? (
               detalle.solicitudes.map((solicitud) => (
                 <div key={solicitud.id} className="rounded-lg border border-gray-200 p-4">
-                  <p className="font-medium text-gray-900">{solicitud.codigo}</p>
+                  <Link
+                    to={`/solicitudes-cotizacion/${solicitud.id}`}
+                    state={{ from: location }}
+                    className="font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
+                  >
+                    {solicitud.codigo}
+                  </Link>
                   <p className="mt-1 text-sm text-gray-700">
                     {solicitud.proveedor?.razonSocial || "-"}
                   </p>
                   <div className="mt-2">
                     <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
+                    {solicitud.activo === false ? (
+                      <p className="mt-2 text-xs font-medium text-rose-700">
+                        Inactiva
+                      </p>
+                    ) : null}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      to={`/solicitudes-cotizacion/${solicitud.id}`}
+                      state={{ from: location }}
+                      className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
+                    >
+                      Ver detalle
+                    </Link>
                     <button
                       type="button"
                       onClick={() => handlePrintSolicitud(solicitud.id)}
@@ -1773,7 +2260,7 @@ const ProcesoLogisticoDetallePage = () => {
                         : "Enviar correo"}
                     </button>
                   </div>
-                  {canManageDrafts ? (
+                  {canManageDrafts && solicitud.activo !== false ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1784,10 +2271,10 @@ const ProcesoLogisticoDetallePage = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDeleteSolicitud(solicitud.id)}
+                        onClick={() => handleInactivateSolicitud(solicitud.id)}
                         className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
                       >
-                        Eliminar
+                        Inactivar
                       </button>
                     </div>
                   ) : null}
@@ -1814,15 +2301,33 @@ const ProcesoLogisticoDetallePage = () => {
                   detalle.solicitudes.map((solicitud) => (
                     <tr key={solicitud.id}>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        <p className="font-medium text-gray-900">{solicitud.codigo}</p>
+                        <Link
+                          to={`/solicitudes-cotizacion/${solicitud.id}`}
+                          state={{ from: location }}
+                          className="font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
+                        >
+                          {solicitud.codigo}
+                        </Link>
                         <p className="text-xs text-gray-500">{formatDate(solicitud.fechaEmision)}</p>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.proveedor?.razonSocial || "-"}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
+                        {solicitud.activo === false ? (
+                          <p className="mt-1 text-xs font-medium text-rose-700">
+                            Inactiva
+                          </p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
                         <div className="flex flex-wrap justify-end gap-2">
+                          <Link
+                            to={`/solicitudes-cotizacion/${solicitud.id}`}
+                            state={{ from: location }}
+                            className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
+                          >
+                            Ver detalle
+                          </Link>
                           <button
                             type="button"
                             onClick={() => handlePrintSolicitud(solicitud.id)}
@@ -1840,7 +2345,7 @@ const ProcesoLogisticoDetallePage = () => {
                               ? "Enviando..."
                               : "Enviar correo"}
                           </button>
-                          {canManageDrafts && (
+                          {canManageDrafts && solicitud.activo !== false && (
                             <>
                               <button
                                 type="button"
@@ -1851,10 +2356,10 @@ const ProcesoLogisticoDetallePage = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteSolicitud(solicitud.id)}
+                                onClick={() => handleInactivateSolicitud(solicitud.id)}
                                 className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
                               >
-                                Eliminar
+                                Inactivar
                               </button>
                             </>
                           )}
@@ -1904,6 +2409,13 @@ const ProcesoLogisticoDetallePage = () => {
                   <div className="mt-2">
                     <CotizacionEstadoBadge estado={cotizacion.estado} />
                   </div>
+                  {cotizacion.activo === false ? (
+                    <p className="mt-2 text-xs font-medium text-rose-700">
+                      Inactiva{cotizacion.motivoInactivacion
+                        ? ` · ${cotizacion.motivoInactivacion}`
+                        : ""}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -1916,6 +2428,7 @@ const ProcesoLogisticoDetallePage = () => {
                       <button
                         type="button"
                         onClick={() => setCotizacionDraft(buildCotizacionDraft(cotizacion))}
+                        disabled={cotizacion.activo === false}
                         className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                       >
                         Editar
@@ -1924,10 +2437,18 @@ const ProcesoLogisticoDetallePage = () => {
                     {canManageDrafts ? (
                       <button
                         type="button"
-                        onClick={() => handleDeleteCotizacion(cotizacion.id)}
-                        className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
+                        onClick={() =>
+                          cotizacion.activo === false
+                            ? handleReactivateCotizacion(cotizacion.id)
+                            : handleInactivateCotizacion(cotizacion.id)
+                        }
+                        className={`rounded px-3 py-1 ${
+                          cotizacion.activo === false
+                            ? "border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                            : "border border-red-300 text-red-700 hover:bg-red-50"
+                        }`}
                       >
-                        Eliminar
+                        {cotizacion.activo === false ? "Reactivar" : "Inactivar"}
                       </button>
                     ) : null}
                   </div>
@@ -1974,6 +2495,11 @@ const ProcesoLogisticoDetallePage = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <CotizacionEstadoBadge estado={cotizacion.estado} />
+                        {cotizacion.activo === false ? (
+                          <p className="mt-1 text-xs font-medium text-rose-700">
+                            Inactiva
+                          </p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
                         <div className="flex flex-wrap justify-end gap-2">
@@ -1988,6 +2514,7 @@ const ProcesoLogisticoDetallePage = () => {
                             <button
                               type="button"
                               onClick={() => setCotizacionDraft(buildCotizacionDraft(cotizacion))}
+                              disabled={cotizacion.activo === false}
                               className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                             >
                               Editar
@@ -1996,10 +2523,20 @@ const ProcesoLogisticoDetallePage = () => {
                           {canManageDrafts && (
                             <button
                               type="button"
-                              onClick={() => handleDeleteCotizacion(cotizacion.id)}
-                              className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
+                              onClick={() =>
+                                cotizacion.activo === false
+                                  ? handleReactivateCotizacion(cotizacion.id)
+                                  : handleInactivateCotizacion(cotizacion.id)
+                              }
+                              className={`rounded px-3 py-1 ${
+                                cotizacion.activo === false
+                                  ? "border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                  : "border border-red-300 text-red-700 hover:bg-red-50"
+                              }`}
                             >
-                              Eliminar
+                              {cotizacion.activo === false
+                                ? "Reactivar"
+                                : "Inactivar"}
                             </button>
                           )}
                         </div>

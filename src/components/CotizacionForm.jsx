@@ -1,32 +1,56 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-const cotizacionStates = [
-  "Pendiente",
-  "Rechazada",
+const cotizacionStates = ["Pendiente", "Rechazada"];
+const formasPago = ["", "ContraEntrega", "Adelanto", "Credito"];
+const itemResponseOptions = [
+  { value: "COTIZADO", label: "Cotiza" },
+  { value: "NO_COTIZA", label: "No cotiza" },
 ];
 
-const formasPago = ["", "ContraEntrega", "Adelanto", "Credito"];
+const formatNumberInput = (value) =>
+  value === null || value === undefined || Number.isNaN(Number(value))
+    ? ""
+    : String(value);
+
+const buildDraftItem = (solicitudItem, existing = null) => {
+  const itemId =
+    solicitudItem.itemRequerimientoId || solicitudItem.itemRequerimiento?.id;
+  const requiredQuantity = Number(
+    solicitudItem.itemRequerimiento?.cantidadRequerida || 0
+  );
+  const estadoRespuesta =
+    String(existing?.estadoRespuesta || "COTIZADO").toUpperCase() === "NO_COTIZA"
+      ? "NO_COTIZA"
+      : "COTIZADO";
+
+  return {
+    itemRequerimientoId: Number(itemId),
+    estadoRespuesta,
+    cantidadOfrecida:
+      estadoRespuesta === "NO_COTIZA"
+        ? ""
+        : formatNumberInput(existing?.cantidadOfrecida ?? requiredQuantity),
+    precioUnidad:
+      estadoRespuesta === "NO_COTIZA"
+        ? ""
+        : formatNumberInput(existing?.precioUnidad),
+    precioTotal:
+      estadoRespuesta === "NO_COTIZA"
+        ? null
+        : Number(existing?.precioTotal ?? 0),
+  };
+};
 
 const buildItemsFromSolicitud = (solicitud, sourceItems = []) => {
   const solicitudItems = Array.isArray(solicitud?.items) ? solicitud.items : [];
 
   return solicitudItems.map((solicitudItem) => {
-    const itemId = solicitudItem.itemRequerimientoId || solicitudItem.itemRequerimiento?.id;
+    const itemId =
+      solicitudItem.itemRequerimientoId || solicitudItem.itemRequerimiento?.id;
     const existing = sourceItems.find(
       (item) => Number(item.itemRequerimientoId) === Number(itemId)
     );
-    const cantidadBase = Number(
-      existing?.cantidadOfrecida ?? solicitudItem.itemRequerimiento?.cantidadRequerida ?? 0
-    );
-    const precioUnidad = Number(existing?.precioUnidad ?? 0);
-    const precioTotal = Number(existing?.precioTotal ?? cantidadBase * precioUnidad);
-
-    return {
-      itemRequerimientoId: Number(itemId),
-      cantidadOfrecida: cantidadBase,
-      precioUnidad,
-      precioTotal,
-    };
+    return buildDraftItem(solicitudItem, existing);
   });
 };
 
@@ -40,11 +64,13 @@ const normalizeInitialData = (initialData) => ({
   estado: initialData?.estado || "Pendiente",
   garantia: initialData?.garantia || "",
   tiempoEntregaDias:
-    initialData?.tiempoEntregaDias === null || initialData?.tiempoEntregaDias === undefined
+    initialData?.tiempoEntregaDias === null ||
+    initialData?.tiempoEntregaDias === undefined
       ? ""
       : String(initialData.tiempoEntregaDias),
   vigenciaOfertaDias:
-    initialData?.vigenciaOfertaDias === null || initialData?.vigenciaOfertaDias === undefined
+    initialData?.vigenciaOfertaDias === null ||
+    initialData?.vigenciaOfertaDias === undefined
       ? ""
       : String(initialData.vigenciaOfertaDias),
   lugarEntrega: initialData?.lugarEntrega || "",
@@ -53,9 +79,17 @@ const normalizeInitialData = (initialData) => ({
   items: Array.isArray(initialData?.items)
     ? initialData.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
-        cantidadOfrecida: Number(item.cantidadOfrecida || 0),
-        precioUnidad: Number(item.precioUnidad || 0),
-        precioTotal: Number(item.precioTotal || 0),
+        estadoRespuesta:
+          String(item.estadoRespuesta || "COTIZADO").toUpperCase() ===
+          "NO_COTIZA"
+            ? "NO_COTIZA"
+            : "COTIZADO",
+        cantidadOfrecida: formatNumberInput(item.cantidadOfrecida),
+        precioUnidad: formatNumberInput(item.precioUnidad),
+        precioTotal:
+          item.precioTotal === null || item.precioTotal === undefined
+            ? null
+            : Number(item.precioTotal),
       }))
     : [],
 });
@@ -90,29 +124,58 @@ const CotizacionForm = ({
     }));
   }, [selectedSolicitud]);
 
-  const updateItem = (itemRequerimientoId, field, value) => {
+  const updateItemField = (itemRequerimientoId, field, value) => {
     setFormData((prev) => ({
       ...prev,
       items: prev.items.map((item) => {
-        if (item.itemRequerimientoId !== itemRequerimientoId) {
+        if (Number(item.itemRequerimientoId) !== Number(itemRequerimientoId)) {
           return item;
         }
 
         const nextItem = {
           ...item,
-          [field]: Number(value),
+          [field]: value,
         };
+
+        if (field === "estadoRespuesta" && value === "NO_COTIZA") {
+          return {
+            ...nextItem,
+            cantidadOfrecida: "",
+            precioUnidad: "",
+            precioTotal: null,
+          };
+        }
+
+        if (nextItem.estadoRespuesta === "NO_COTIZA") {
+          return {
+            ...nextItem,
+            precioTotal: null,
+          };
+        }
+
+        const cantidad = Number(nextItem.cantidadOfrecida || 0);
+        const precioUnidad = Number(nextItem.precioUnidad || 0);
 
         return {
           ...nextItem,
-          precioTotal: Number(nextItem.cantidadOfrecida || 0) * Number(nextItem.precioUnidad || 0),
+          precioTotal:
+            Number.isFinite(cantidad) && Number.isFinite(precioUnidad)
+              ? cantidad * precioUnidad
+              : 0,
         };
       }),
     }));
   };
 
   const totalOferta = useMemo(
-    () => formData.items.reduce((acc, item) => acc + Number(item.precioTotal || 0), 0),
+    () =>
+      formData.items.reduce(
+        (acc, item) =>
+          item.estadoRespuesta === "COTIZADO"
+            ? acc + Number(item.precioTotal || 0)
+            : acc,
+        0
+      ),
     [formData.items]
   );
 
@@ -126,7 +189,8 @@ const CotizacionForm = ({
       fechaEmision: formData.fechaEmision,
       estado: formData.estado,
       garantia: formData.garantia.trim() || null,
-      tiempoEntregaDias: formData.tiempoEntregaDias === "" ? null : Number(formData.tiempoEntregaDias),
+      tiempoEntregaDias:
+        formData.tiempoEntregaDias === "" ? null : Number(formData.tiempoEntregaDias),
       vigenciaOfertaDias:
         formData.vigenciaOfertaDias === "" ? null : Number(formData.vigenciaOfertaDias),
       lugarEntrega: formData.lugarEntrega.trim() || null,
@@ -134,22 +198,36 @@ const CotizacionForm = ({
       observaciones: formData.observaciones.trim() || null,
       items: formData.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
-        cantidadOfrecida: Number(item.cantidadOfrecida || 0),
-        precioUnidad: Number(item.precioUnidad || 0),
-        precioTotal: Number(item.precioTotal || 0),
+        estadoRespuesta: item.estadoRespuesta,
+        cantidadOfrecida:
+          item.estadoRespuesta === "NO_COTIZA"
+            ? null
+            : Number(item.cantidadOfrecida),
+        precioUnidad:
+          item.estadoRespuesta === "NO_COTIZA"
+            ? null
+            : Number(item.precioUnidad),
+        precioTotal:
+          item.estadoRespuesta === "NO_COTIZA"
+            ? null
+            : Number(item.precioTotal || 0),
       })),
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+    >
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
             {formData.id ? "Editar cotizacion" : "Nueva cotizacion"}
           </h2>
           <p className="text-sm text-gray-600">
-            Propuesta economica y comercial registrada contra una solicitud concreta. La adjudicacion final la define la jefatura desde el cuadro comparativo.
+            Registra una sola respuesta activa del proveedor y resuelve cada item
+            de la solicitud como cotizado o no cotizado.
           </p>
         </div>
         {onCancel && (
@@ -169,7 +247,7 @@ const CotizacionForm = ({
           <input
             type="text"
             value={formData.codigo}
-            name="cotizacion-form-input-161"
+            name="cotizacion-form-input-codigo"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, codigo: event.target.value }))
             }
@@ -183,7 +261,7 @@ const CotizacionForm = ({
           <span className="font-medium">Solicitud de cotizacion</span>
           <select
             value={formData.solicitudId}
-            name="cotizacion-form-select-175"
+            name="cotizacion-form-select-solicitud"
             onChange={(event) =>
               setFormData((prev) => ({
                 ...prev,
@@ -208,7 +286,7 @@ const CotizacionForm = ({
           <input
             type="date"
             value={formData.fechaEmision}
-            name="cotizacion-form-input-198"
+            name="cotizacion-form-input-fecha"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, fechaEmision: event.target.value }))
             }
@@ -221,16 +299,28 @@ const CotizacionForm = ({
       {selectedSolicitud && (
         <div className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 md:grid-cols-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Proveedor</p>
-            <p className="font-medium text-gray-900">{selectedSolicitud.proveedor?.razonSocial || "-"}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Proveedor
+            </p>
+            <p className="font-medium text-gray-900">
+              {selectedSolicitud.proveedor?.razonSocial || "-"}
+            </p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Requerimiento</p>
-            <p className="font-medium text-gray-900">{selectedSolicitud.requerimiento?.codigo || "-"}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Requerimiento
+            </p>
+            <p className="font-medium text-gray-900">
+              {selectedSolicitud.requerimiento?.codigo || "-"}
+            </p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Estado solicitud</p>
-            <p className="font-medium text-gray-900">{selectedSolicitud.estado || "-"}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Estado solicitud
+            </p>
+            <p className="font-medium text-gray-900">
+              {selectedSolicitud.estado || "-"}
+            </p>
           </div>
         </div>
       )}
@@ -240,7 +330,7 @@ const CotizacionForm = ({
           <span className="font-medium">Estado</span>
           <select
             value={formData.estado}
-            name="cotizacion-form-select-230"
+            name="cotizacion-form-select-estado"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, estado: event.target.value }))
             }
@@ -259,54 +349,39 @@ const CotizacionForm = ({
           <input
             type="text"
             value={formData.garantia}
-            name="cotizacion-form-input-247"
+            name="cotizacion-form-input-garantia"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, garantia: event.target.value }))
             }
             className="w-full rounded border border-gray-300 px-3 py-2"
-            placeholder="12 meses"
+            placeholder="Ej. Carta fianza"
           />
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Entrega (dias)</span>
+          <span className="font-medium">Tiempo de entrega (dias)</span>
           <input
             type="number"
             min="0"
             value={formData.tiempoEntregaDias}
-            name="cotizacion-form-input-260"
+            name="cotizacion-form-input-entrega"
             onChange={(event) =>
-              setFormData((prev) => ({ ...prev, tiempoEntregaDias: event.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                tiempoEntregaDias: event.target.value,
+              }))
             }
             className="w-full rounded border border-gray-300 px-3 py-2"
           />
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Forma de pago</span>
-          <select
-            value={formData.formaPago}
-            name="cotizacion-form-select-273"
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, formaPago: event.target.value }))
-            }
-            className="w-full rounded border border-gray-300 px-3 py-2"
-          >
-            {formasPago.map((formaPago) => (
-              <option key={formaPago || "vacio"} value={formaPago}>
-                {formaPago || "Sin definir"}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Vigencia (dias)</span>
+          <span className="font-medium">Vigencia de oferta (dias)</span>
           <input
             type="number"
             min="0"
             value={formData.vigenciaOfertaDias}
-            name="cotizacion-form-input-286"
+            name="cotizacion-form-input-vigencia"
             onChange={(event) =>
               setFormData((prev) => ({
                 ...prev,
@@ -318,122 +393,217 @@ const CotizacionForm = ({
         </label>
       </div>
 
-      <label className="block space-y-1 text-sm text-gray-700">
-        <span className="font-medium">Lugar de entrega</span>
-        <input
-          type="text"
-          value={formData.lugarEntrega}
-          name="cotizacion-form-input-291"
-          onChange={(event) =>
-            setFormData((prev) => ({ ...prev, lugarEntrega: event.target.value }))
-          }
-          className="w-full rounded border border-gray-300 px-3 py-2"
-          placeholder="Oficina central"
-        />
-      </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-1 text-sm text-gray-700">
+          <span className="font-medium">Lugar de entrega</span>
+          <input
+            type="text"
+            value={formData.lugarEntrega}
+            name="cotizacion-form-input-lugar"
+            onChange={(event) =>
+              setFormData((prev) => ({ ...prev, lugarEntrega: event.target.value }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
+
+        <label className="space-y-1 text-sm text-gray-700">
+          <span className="font-medium">Forma de pago</span>
+          <select
+            value={formData.formaPago}
+            name="cotizacion-form-select-forma-pago"
+            onChange={(event) =>
+              setFormData((prev) => ({ ...prev, formaPago: event.target.value }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+          >
+            {formasPago.map((formaPago) => (
+              <option key={formaPago || "empty"} value={formaPago}>
+                {formaPago || "Seleccionar"}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <label className="block space-y-1 text-sm text-gray-700">
         <span className="font-medium">Observaciones</span>
         <textarea
           value={formData.observaciones}
-          name="cotizacion-form-textarea-304"
+          name="cotizacion-form-textarea-observaciones"
           onChange={(event) =>
             setFormData((prev) => ({ ...prev, observaciones: event.target.value }))
           }
-          className="w-full rounded border border-gray-300 px-3 py-2"
           rows={3}
-          placeholder="Condiciones comerciales u observaciones adicionales"
+          className="w-full rounded border border-gray-300 px-3 py-2"
+          placeholder="Notas comerciales o condiciones particulares."
         />
       </label>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-gray-900">Detalle economico</p>
-            <p className="text-xs text-gray-500">Carga cantidades y precio unitario por item solicitado.</p>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Respuesta por item
+            </h3>
+            <p className="text-sm text-gray-600">
+              Cada item invitado debe quedar resuelto como oferta cotizada o no
+              cotizada.
+            </p>
           </div>
-          <p className="text-sm font-semibold text-gray-900">
-            Total oferta: S/ {totalOferta.toFixed(2)}
-          </p>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-right">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Total oferta
+            </p>
+            <p className="text-lg font-semibold text-emerald-900">
+              S/ {totalOferta.toFixed(2)}
+            </p>
+          </div>
         </div>
 
-        {selectedSolicitud?.items?.length ? (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Item</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Cantidad</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">P. unitario</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">P. total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {selectedSolicitud.items.map((solicitudItem) => {
-                  const itemId = solicitudItem.itemRequerimientoId || solicitudItem.itemRequerimiento?.id;
-                  const currentItem = formData.items.find(
-                    (item) => item.itemRequerimientoId === Number(itemId)
-                  );
+        {selectedSolicitud ? (
+          <div className="space-y-3">
+            {formData.items.map((item) => {
+              const solicitudItem = selectedSolicitud.items?.find(
+                (entry) =>
+                  Number(entry.itemRequerimientoId || entry.itemRequerimiento?.id) ===
+                  Number(item.itemRequerimientoId)
+              );
 
-                  return (
-                    <tr key={itemId}>
-                      <td className="px-3 py-3 text-sm text-gray-700">
-                        <p className="font-medium text-gray-900">
-                          {solicitudItem.itemRequerimiento?.descripcionVisible || "Item"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {solicitudItem.itemRequerimiento?.cantidadRequerida || 0} {solicitudItem.itemRequerimiento?.unidadMedida || ""}
-                        </p>
-                      </td>
-                      <td className="px-3 py-3 text-sm text-gray-700">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={currentItem?.cantidadOfrecida ?? 0}
-                          name="cotizacion-form-input-342"
-                          onChange={(event) =>
-                            updateItem(Number(itemId), "cantidadOfrecida", event.target.value)
-                          }
-                          className="w-24 rounded border border-gray-300 px-2 py-1"
-                        />
-                      </td>
-                      <td className="px-3 py-3 text-sm text-gray-700">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={currentItem?.precioUnidad ?? 0}
-                          name="cotizacion-form-input-354"
-                          onChange={(event) =>
-                            updateItem(Number(itemId), "precioUnidad", event.target.value)
-                          }
-                          className="w-28 rounded border border-gray-300 px-2 py-1"
-                        />
-                      </td>
-                      <td className="px-3 py-3 text-sm font-medium text-gray-900">
-                        S/ {Number(currentItem?.precioTotal || 0).toFixed(2)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              return (
+                <div
+                  key={item.itemRequerimientoId}
+                  className="rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {solicitudItem?.itemRequerimiento?.descripcionVisible ||
+                          `Item ${item.itemRequerimientoId}`}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Cantidad requerida:{" "}
+                        {Number(
+                          solicitudItem?.itemRequerimiento?.cantidadRequerida || 0
+                        )}{" "}
+                        {solicitudItem?.itemRequerimiento?.unidadMedida || ""}
+                      </p>
+                    </div>
+
+                    <label className="space-y-1 text-sm text-gray-700">
+                      <span className="font-medium">Respuesta</span>
+                      <select
+                        value={item.estadoRespuesta}
+                        name={`cotizacion-form-select-respuesta-${item.itemRequerimientoId}`}
+                        onChange={(event) =>
+                          updateItemField(
+                            item.itemRequerimientoId,
+                            "estadoRespuesta",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded border border-gray-300 px-3 py-2"
+                      >
+                        {itemResponseOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1 text-sm text-gray-700">
+                      <span className="font-medium">Cantidad ofrecida</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.cantidadOfrecida}
+                        disabled={item.estadoRespuesta === "NO_COTIZA"}
+                        name={`cotizacion-form-input-cantidad-${item.itemRequerimientoId}`}
+                        onChange={(event) =>
+                          updateItemField(
+                            item.itemRequerimientoId,
+                            "cantidadOfrecida",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded border border-gray-300 px-3 py-2 disabled:bg-gray-100"
+                        required={item.estadoRespuesta === "COTIZADO"}
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-sm text-gray-700">
+                      <span className="font-medium">Precio unitario</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.precioUnidad}
+                        disabled={item.estadoRespuesta === "NO_COTIZA"}
+                        name={`cotizacion-form-input-precio-${item.itemRequerimientoId}`}
+                        onChange={(event) =>
+                          updateItemField(
+                            item.itemRequerimientoId,
+                            "precioUnidad",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded border border-gray-300 px-3 py-2 disabled:bg-gray-100"
+                        required={item.estadoRespuesta === "COTIZADO"}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-sm">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 font-medium ${
+                        item.estadoRespuesta === "NO_COTIZA"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      {item.estadoRespuesta === "NO_COTIZA"
+                        ? "Proveedor no cotiza este item"
+                        : "Item cotizado"}
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {item.estadoRespuesta === "NO_COTIZA"
+                        ? "Sin oferta"
+                        : `Subtotal: S/ ${Number(item.precioTotal || 0).toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="rounded border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500">
-            Selecciona una solicitud para cargar sus items.
-          </div>
+          <p className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+            Selecciona una solicitud para registrar la respuesta del proveedor.
+          </p>
         )}
       </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex items-center justify-end gap-3">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancelar
+          </button>
+        )}
         <button
           type="submit"
-          disabled={submitting || !formData.codigo.trim() || !formData.solicitudId || formData.items.length === 0}
-          className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={submitting}
+          className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? "Guardando..." : formData.id ? "Actualizar cotizacion" : "Crear cotizacion"}
+          {submitting
+            ? "Guardando..."
+            : formData.id
+              ? "Actualizar cotizacion"
+              : "Registrar cotizacion"}
         </button>
       </div>
     </form>
@@ -441,4 +611,3 @@ const CotizacionForm = ({
 };
 
 export default CotizacionForm;
-

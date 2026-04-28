@@ -10,7 +10,8 @@ const deepFreeze = (value) => {
   return Object.freeze(value);
 };
 
-// Fuente unica de verdad para metricas documentales consumidas por backend y frontend.
+// Metricas documentales locales del repo frontend.
+// Si backend necesita la misma regla visual, debe mantener su propia implementacion.
 export const institutionalLetterheadMetrics = deepFreeze({
   print: {
     sheetPadding: "13mm 14mm 14mm",
