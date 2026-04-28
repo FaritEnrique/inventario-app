@@ -33,16 +33,11 @@ const areasApi = {
       sessionActivity: "interactive",
     }),
 
-  deleteArea: async (id) => {
-    try {
-      return await apiFetch(`areas/${id}`, {
-        method: "DELETE",
-        sessionActivity: "interactive",
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
+  deleteArea: async (id) =>
+    apiFetch(`areas/${id}`, {
+      method: "DELETE",
+      sessionActivity: "interactive",
+    }),
 };
 
 export default areasApi;

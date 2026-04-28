@@ -1,7 +1,7 @@
 // src/components/ConfirmDeleteToast.jsx
-import React from 'react';
+import React from "react";
 
-const ConfirmDeleteToast = ({ closeToast, toastProps, message, onConfirm }) => {
+const ConfirmDeleteToast = ({ closeToast, message, onConfirm }) => {
   const handleConfirm = () => {
     onConfirm(); // Ejecuta la función de confirmación pasada
     closeToast(); // Cierra el toast
@@ -13,7 +13,9 @@ const ConfirmDeleteToast = ({ closeToast, toastProps, message, onConfirm }) => {
 
   return (
     <div className="p-4 bg-sky-200 rounded-lg shadow-xl border border-blue-700">
-      <h3 className="text-xl font-semibold text-gray-800 mb-3">Confirmar Eliminación</h3>
+      <h3 className="text-xl font-semibold text-gray-800 mb-3">
+        Confirmar Eliminación
+      </h3>
       <p className="text-gray-700 text-base mb-5">{message}</p>
       <div className="flex justify-end gap-3">
         <button

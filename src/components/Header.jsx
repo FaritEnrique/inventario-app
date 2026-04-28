@@ -6,7 +6,6 @@ const Header = () => {
   const {
     isAuthenticated,
     logout,
-    user,
     activeContext,
     availableContexts,
     contextSelectionRequired,
@@ -28,7 +27,7 @@ const Header = () => {
     const updateHeaderHeight = () => {
       root.style.setProperty(
         "--app-header-height",
-        `${headerElement.offsetHeight}px`
+        `${headerElement.offsetHeight}px`,
       );
     };
 
@@ -52,7 +51,12 @@ const Header = () => {
         window.removeEventListener("resize", updateHeaderHeight);
       }
     };
-  }, [isMobileMenuOpen, isAuthenticated, activeContext, contextSelectionRequired]);
+  }, [
+    isMobileMenuOpen,
+    isAuthenticated,
+    activeContext,
+    contextSelectionRequired,
+  ]);
 
   const handleLogout = async () => {
     const result = await logout();
@@ -74,7 +78,10 @@ const Header = () => {
     ? "Cambiar contexto"
     : "Seleccionar contexto";
   const contextSummary = activeContext
-    ? [activeContext.role, activeContext.areaNombre || activeContext.area?.nombre]
+    ? [
+        activeContext.role,
+        activeContext.areaNombre || activeContext.area?.nombre,
+      ]
         .filter(Boolean)
         .join(" | ")
     : null;
@@ -104,8 +111,22 @@ const Header = () => {
                     aria-hidden="true"
                     fill="none"
                   >
-                    <rect x="8" y="12" width="24" height="18" rx="3" className="fill-white/90" />
-                    <rect x="20" y="34" width="20" height="14" rx="3" className="fill-indigo-100" />
+                    <rect
+                      x="8"
+                      y="12"
+                      width="24"
+                      height="18"
+                      rx="3"
+                      className="fill-white/90"
+                    />
+                    <rect
+                      x="20"
+                      y="34"
+                      width="20"
+                      height="14"
+                      rx="3"
+                      className="fill-indigo-100"
+                    />
                     <path d="M34 24h11l7 8v10H34z" className="fill-white/90" />
                     <circle cx="40" cy="46" r="4" className="fill-indigo-700" />
                     <circle cx="49" cy="46" r="4" className="fill-indigo-700" />
@@ -146,7 +167,10 @@ const Header = () => {
                 )}
 
                 {shouldShowContextAction && (
-                  <Link to="/seleccionar-contexto" className={commonLinkClasses}>
+                  <Link
+                    to="/seleccionar-contexto"
+                    className={commonLinkClasses}
+                  >
                     {contextActionLabel}
                   </Link>
                 )}
@@ -200,7 +224,13 @@ const Header = () => {
                   {summaryText}
                 </p>
               )}
-              <nav className={summaryText ? "mt-3 flex flex-col gap-2" : "flex flex-col gap-2"}>
+              <nav
+                className={
+                  summaryText
+                    ? "mt-3 flex flex-col gap-2"
+                    : "flex flex-col gap-2"
+                }
+              >
                 <Link
                   to="/"
                   className="rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10"

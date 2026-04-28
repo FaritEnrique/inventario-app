@@ -24,8 +24,10 @@ const ProductoSearchField = ({
       setLoading(true);
       try {
         const response = await productosApi.getTodos(query, 1, 10);
-        setResults(Array.isArray(response?.productos) ? response.productos : []);
-      } catch (error) {
+        setResults(
+          Array.isArray(response?.productos) ? response.productos : [],
+        );
+      } catch {
         setResults([]);
       } finally {
         setLoading(false);
@@ -37,21 +39,26 @@ const ProductoSearchField = ({
 
   return (
     <div>
-      <label htmlFor={searchInputId} className="mb-1 block text-sm font-medium text-gray-700">
+      <label
+        htmlFor={searchInputId}
+        className="mb-1 block text-sm font-medium text-gray-700"
+      >
         {label}
       </label>
       <input
         id={searchInputId}
         type="text"
         value={search}
-        name="producto-search-field-input-42" onChange={(event) => setSearch(event.target.value)}
+        name="producto-search-field-input-42"
+        onChange={(event) => setSearch(event.target.value)}
         className="w-full rounded border border-gray-300 px-3 py-2"
         placeholder={placeholder}
       />
 
       {selectedProduct && (
         <div className="mt-2 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm">
-          Seleccionado: <strong>{selectedProduct.nombre}</strong> ({selectedProduct.codigo})
+          Seleccionado: <strong>{selectedProduct.nombre}</strong> (
+          {selectedProduct.codigo})
         </div>
       )}
 

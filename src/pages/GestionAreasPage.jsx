@@ -116,11 +116,13 @@ const GestionAreasPage = () => {
     const loadResponsables = async () => {
       try {
         setLoadingResponsables(true);
-        const data = await areasApi.getResponsablesDisponibles(formData.tipoUnidad);
+        const data = await areasApi.getResponsablesDisponibles(
+          formData.tipoUnidad,
+        );
         if (active) {
           setResponsablesDisponibles(Array.isArray(data) ? data : []);
         }
-      } catch (error) {
+      } catch {
         if (active) {
           toast.error("No se pudieron cargar los responsables disponibles.");
         }
@@ -180,7 +182,12 @@ const GestionAreasPage = () => {
     }
 
     return compatibles;
-  }, [areasActivas, editingId, formData.responsableId, responsablesDisponibles]);
+  }, [
+    areasActivas,
+    editingId,
+    formData.responsableId,
+    responsablesDisponibles,
+  ]);
 
   const expectedResponsibleRole = formData.tipoUnidad
     ? responsibleRoleByUnit[formData.tipoUnidad] || null

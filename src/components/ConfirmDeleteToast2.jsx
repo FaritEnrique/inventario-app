@@ -1,6 +1,6 @@
 // src/components/ConfirmDeleteToast2.jsx
 import React from "react";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import { Trash2, XCircle } from "lucide-react";
 
 const ConfirmDeleteToast2 = ({ closeToast, message, onConfirm }) => {
@@ -14,7 +14,7 @@ const ConfirmDeleteToast2 = ({ closeToast, message, onConfirm }) => {
   };
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
@@ -41,7 +41,7 @@ const ConfirmDeleteToast2 = ({ closeToast, message, onConfirm }) => {
           Eliminar
         </button>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 };
 
