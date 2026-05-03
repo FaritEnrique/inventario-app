@@ -39,9 +39,8 @@ const getInitialFormData = () => ({
 });
 
 const pickFirstTextValue = (...values) =>
-  values.find(
-    (value) => typeof value === "string" && value.trim() !== ""
-  ) || "";
+  values.find((value) => typeof value === "string" && value.trim() !== "") ||
+  "";
 
 const TYPE_LABEL_MAP = {
   "AV.": "Av.",
@@ -300,13 +299,13 @@ const normalizeProveedorData = (proveedor = {}) => ({
     proveedor.nombreORazonSocial,
     proveedor.nombreOrazonSocial,
     proveedor.nombreOrazonSocialDelContribuyente,
-    proveedor.nombre
+    proveedor.nombre,
   ),
   direccion: pickFirstTextValue(
     proveedor.direccion,
     proveedor.domicilioFiscal,
     proveedor.direccionCompleta,
-    buildSunatAddress(proveedor)
+    buildSunatAddress(proveedor),
   ),
 });
 
@@ -375,7 +374,7 @@ const getSolicitudTipoProductoIdsFromProveedor = (proveedor) => {
 
   return proveedor.solicitudesTipoProducto
     .filter((solicitud) =>
-      ["PENDIENTE", "OBSERVADO"].includes(String(solicitud?.estado || ""))
+      ["PENDIENTE", "OBSERVADO"].includes(String(solicitud?.estado || "")),
     )
     .map((solicitud) => Number(solicitud.id))
     .filter((value) => Number.isInteger(value) && value > 0);
@@ -436,10 +435,13 @@ const FormularioProveedor = ({
       setFormData(nextState);
       setSolicitudesRegistradas([]);
 
-      if (normalizedProveedor.procedencia === "NACIONAL" && !normalizedProveedor.ruc) {
+      if (
+        normalizedProveedor.procedencia === "NACIONAL" &&
+        !normalizedProveedor.ruc
+      ) {
         toast.warn(
           "Este proveedor nacional no tiene RUC. Por favor, asigna un RUC o cambia su procedencia a Extranjero.",
-          { autoClose: 8000 }
+          { autoClose: 8000 },
         );
         setIsProcedenciaDisabled(false);
       } else {
@@ -483,12 +485,12 @@ const FormularioProveedor = ({
             toast.success("Datos de SUNAT cargados correctamente.");
           } else {
             toast.warn(
-              "El RUC existe en ProveedoresSunat, pero no tiene razon social o direccion disponibles para autocompletar."
+              "El RUC existe en ProveedoresSunat, pero no tiene razon social o direccion disponibles para autocompletar.",
             );
           }
         } else {
           toast.info(
-            "RUC no encontrado en SUNAT. Puedes continuar con el registro manual."
+            "RUC no encontrado en SUNAT. Puedes continuar con el registro manual.",
           );
         }
       }
@@ -572,8 +574,7 @@ const FormularioProveedor = ({
     if (!direccion) {
       errors.direccion = "La Direccion es obligatoria.";
     } else if (direccion.length > 255) {
-      errors.direccion =
-        "La Direccion no puede superar los 255 caracteres.";
+      errors.direccion = "La Direccion no puede superar los 255 caracteres.";
     }
 
     if (!telefono) {
@@ -648,7 +649,7 @@ const FormularioProveedor = ({
         ? formData.tipoProductoIds.map((value) => Number(value))
         : [];
       payload.solicitudTipoProductoIds = Array.isArray(
-        formData.solicitudTipoProductoIds
+        formData.solicitudTipoProductoIds,
       )
         ? formData.solicitudTipoProductoIds.map((value) => Number(value))
         : [];
@@ -671,7 +672,7 @@ const FormularioProveedor = ({
       ) {
         toast.error(
           `Validacion fallida: ${error.validationErrors.join(". ")}`,
-          { autoClose: 5000 }
+          { autoClose: 5000 },
         );
       } else {
         toast.error(error.message || "Error al guardar proveedor");
@@ -744,7 +745,7 @@ const FormularioProveedor = ({
   );
 
   const tiposProductoActivos = tiposProducto.filter(
-    (tipoProducto) => tipoProducto.activo !== false
+    (tipoProducto) => tipoProducto.activo !== false,
   );
 
   const tipoProductoMap = buildTipoProductoMap(tiposProducto, proveedor);
@@ -758,9 +759,7 @@ const FormularioProveedor = ({
     ...solicitudesRegistradas,
   ].reduce((acc, solicitud) => {
     if (!solicitud?.id) return acc;
-    if (
-      !["PENDIENTE", "OBSERVADO"].includes(String(solicitud.estado || ""))
-    ) {
+    if (!["PENDIENTE", "OBSERVADO"].includes(String(solicitud.estado || ""))) {
       return acc;
     }
     if (!acc.some((item) => item.id === solicitud.id)) {
@@ -771,8 +770,8 @@ const FormularioProveedor = ({
   const solicitudesTemporalesSeleccionadas = formData.solicitudTipoProductoIds
     .map((solicitudId) =>
       solicitudesTemporalesDisponibles.find(
-        (solicitud) => Number(solicitud.id) === Number(solicitudId)
-      )
+        (solicitud) => Number(solicitud.id) === Number(solicitudId),
+      ),
     )
     .filter(Boolean);
 
@@ -832,7 +831,7 @@ const FormularioProveedor = ({
                   { value: "NACIONAL", label: "Nacional" },
                   { value: "EXTRANJERO", label: "Extranjero" },
                 ],
-                { disabled: isProcedenciaDisabled }
+                { disabled: isProcedenciaDisabled },
               )}
 
               {formData.procedencia === "NACIONAL"
@@ -929,7 +928,7 @@ const FormularioProveedor = ({
                   </p>
                   <p className="mt-1 text-xs text-amber-800">
                     Estos tipos permiten registrar el proveedor, pero no se
-                    usaran en solicitudes de cotizacion ni en el flujo operativo
+                    usarán en solicitudes de cotización ni en el flujo operativo
                     hasta ser homologados.
                   </p>
                   <div className="mt-3 space-y-2">
@@ -951,7 +950,7 @@ const FormularioProveedor = ({
               {solicitudesRegistradas.length > 0 ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                   <p className="text-sm font-semibold text-amber-900">
-                    Solicitudes registradas en esta edicion
+                    Solicitudes registradas en esta edición
                   </p>
                   <div className="mt-3 space-y-2">
                     {solicitudesRegistradas.map((solicitud) => (
@@ -986,19 +985,27 @@ const FormularioProveedor = ({
                 {renderInputField("Estado", "estado", { readOnly: true })}
                 {renderInputField("Condicion", "condicion", { readOnly: true })}
                 {renderInputField("Tipo", "tipo", { readOnly: true })}
-                {renderInputField("Act. CIIU3 Principal", "actividadCIIU3Principal", {
-                  readOnly: true,
-                })}
+                {renderInputField(
+                  "Act. CIIU3 Principal",
+                  "actividadCIIU3Principal",
+                  {
+                    readOnly: true,
+                  },
+                )}
                 {renderInputField(
                   "Act. CIIU3 Secundaria",
                   "actividadCIIU3Secundaria",
                   {
                     readOnly: true,
-                  }
+                  },
                 )}
-                {renderInputField("Act. CIIU4 Principal", "actividadCIIU4Principal", {
-                  readOnly: true,
-                })}
+                {renderInputField(
+                  "Act. CIIU4 Principal",
+                  "actividadCIIU4Principal",
+                  {
+                    readOnly: true,
+                  },
+                )}
                 {renderInputField("Nro. Trabajadores", "nroTrabajadores", {
                   readOnly: true,
                 })}

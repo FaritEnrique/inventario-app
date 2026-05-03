@@ -12,7 +12,8 @@ import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
-const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : "-";
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 const finalReceptionStates = new Set([
@@ -77,14 +78,18 @@ const OrdenCompraDetallePage = () => {
 
   const requerimientos = useMemo(
     () => buildRequerimientos(ordenCompra),
-    [ordenCompra]
+    [ordenCompra],
   );
 
   const canApprove = canApproveOrdenCompraStageEffective(user, ordenCompra);
   const canManageLifecycle = canManageOrdenCompraLifecycleEffective(user);
-  const isReceptionFinal = finalReceptionStates.has(ordenCompra?.estadoRecepcion);
-  const hasPendingBalance = Number(ordenCompra?.resumen?.totalPendiente || 0) > 0;
-  const hasAcceptedReception = Number(ordenCompra?.resumen?.totalAceptado || 0) > 0;
+  const isReceptionFinal = finalReceptionStates.has(
+    ordenCompra?.estadoRecepcion,
+  );
+  const hasPendingBalance =
+    Number(ordenCompra?.resumen?.totalPendiente || 0) > 0;
+  const hasAcceptedReception =
+    Number(ordenCompra?.resumen?.totalAceptado || 0) > 0;
   const allowApprovalAction =
     canApprove &&
     ordenCompra?.estadoAprobacion === "PENDIENTE_APROBACION" &&
@@ -123,7 +128,7 @@ const OrdenCompraDetallePage = () => {
 
     if (
       !window.confirm(
-        `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`
+        `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`,
       )
     ) {
       return;
@@ -134,7 +139,7 @@ const OrdenCompraDetallePage = () => {
         actualizarAprobacionOrdenCompra(ordenCompra.id, {
           estadoAprobacion,
         }),
-      `Orden de compra ${estadoAprobacion.toLowerCase()} correctamente.`
+      `Orden de compra ${estadoAprobacion.toLowerCase()} correctamente.`,
     );
   };
 
@@ -143,19 +148,19 @@ const OrdenCompraDetallePage = () => {
       "Describe brevemente la decision sobre el saldo pendiente (opcional).",
       estadoRecepcionFinal === "INCUMPLIDA"
         ? "Cierre por incumplimiento del proveedor."
-        : "Saldo pendiente cerrado manualmente."
+        : "Saldo pendiente cerrado manualmente.",
     );
 
     if (decisionSaldoPendiente === null) return;
 
     const motivoIncidencia = requestOptionalText(
       "Motivo o incidencia adicional (opcional).",
-      ""
+      "",
     );
 
     if (
       !window.confirm(
-        `Se registrara el cierre documental ${estadoRecepcionFinal.toLowerCase()} para la orden ${ordenCompra.codigo}. Deseas continuar?`
+        `Se registrara el cierre documental ${estadoRecepcionFinal.toLowerCase()} para la orden ${ordenCompra.codigo}. Deseas continuar?`,
       )
     ) {
       return;
@@ -168,26 +173,26 @@ const OrdenCompraDetallePage = () => {
           decisionSaldoPendiente: decisionSaldoPendiente || undefined,
           motivoIncidencia: motivoIncidencia || undefined,
         }),
-      "Cierre documental registrado correctamente."
+      "Cierre documental registrado correctamente.",
     );
   };
 
   const handleCancel = async () => {
     const decisionSaldoPendiente = requestOptionalText(
       "Describe brevemente la razon de cancelacion (opcional).",
-      "Orden de compra cancelada antes de la recepcion."
+      "Orden de compra cancelada antes de la recepcion.",
     );
 
     if (decisionSaldoPendiente === null) return;
 
     const motivoIncidencia = requestOptionalText(
       "Motivo o incidencia adicional (opcional).",
-      ""
+      "",
     );
 
     if (
       !window.confirm(
-        `Se cancelara la orden de compra ${ordenCompra.codigo}. Deseas continuar?`
+        `Se cancelara la orden de compra ${ordenCompra.codigo}. Deseas continuar?`,
       )
     ) {
       return;
@@ -199,7 +204,7 @@ const OrdenCompraDetallePage = () => {
           decisionSaldoPendiente: decisionSaldoPendiente || undefined,
           motivoIncidencia: motivoIncidencia || undefined,
         }),
-      "Orden de compra cancelada correctamente."
+      "Orden de compra cancelada correctamente.",
     );
   };
 
@@ -226,7 +231,8 @@ const OrdenCompraDetallePage = () => {
             Detalle de orden de compra
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {ordenCompra.codigo} · {ordenCompra.proveedor?.razonSocial || "Sin proveedor"}
+            {ordenCompra.codigo} ·{" "}
+            {ordenCompra.proveedor?.razonSocial || "Sin proveedor"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -303,7 +309,9 @@ const OrdenCompraDetallePage = () => {
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Cabecera documental</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Cabecera documental
+          </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -318,7 +326,8 @@ const OrdenCompraDetallePage = () => {
                 Proveedor
               </p>
               <p className="mt-1 text-sm text-gray-700">
-                {ordenCompra.proveedor?.razonSocial || "-"} · {ordenCompra.proveedor?.ruc || "Sin RUC"}
+                {ordenCompra.proveedor?.razonSocial || "-"} ·{" "}
+                {ordenCompra.proveedor?.ruc || "Sin RUC"}
               </p>
             </div>
           </div>
@@ -328,29 +337,33 @@ const OrdenCompraDetallePage = () => {
               Snapshot formal
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">Logistica</p>
-                  <p>{snapshotFormal.aprobadorLogisticaNombreSnapshot || "-"}</p>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">Administracion</p>
-                  <p>{snapshotFormal.aprobadorAdministracionNombreSnapshot || "-"}</p>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">Gerencia general</p>
-                  <p>{snapshotFormal.aprobadorGerenciaGeneralNombreSnapshot || "-"}</p>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">Umbral GG</p>
-                  <p>
-                    {snapshotFormal.requiereGerenciaGeneralSnapshot
-                      ? `Si · S/ ${Number(
-                          snapshotFormal.umbralGerenciaGeneralSnapshot || 0
-                        ).toFixed(2)}`
-                      : "No aplica"}
-                  </p>
-                </div>
+              <div className="text-sm text-gray-700">
+                <p className="font-medium text-gray-900">Logistica</p>
+                <p>{snapshotFormal.aprobadorLogisticaNombreSnapshot || "-"}</p>
               </div>
+              <div className="text-sm text-gray-700">
+                <p className="font-medium text-gray-900">Administración</p>
+                <p>
+                  {snapshotFormal.aprobadorAdministracionNombreSnapshot || "-"}
+                </p>
+              </div>
+              <div className="text-sm text-gray-700">
+                <p className="font-medium text-gray-900">Gerencia general</p>
+                <p>
+                  {snapshotFormal.aprobadorGerenciaGeneralNombreSnapshot || "-"}
+                </p>
+              </div>
+              <div className="text-sm text-gray-700">
+                <p className="font-medium text-gray-900">Umbral GG</p>
+                <p>
+                  {snapshotFormal.requiereGerenciaGeneralSnapshot
+                    ? `Si · S/ ${Number(
+                        snapshotFormal.umbralGerenciaGeneralSnapshot || 0,
+                      ).toFixed(2)}`
+                    : "No aplica"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -438,11 +451,10 @@ const OrdenCompraDetallePage = () => {
 
             {allowCancelAction ? (
               <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
-                <p className="text-sm font-medium text-rose-900">
-                  Cancelacion
-                </p>
+                <p className="text-sm font-medium text-rose-900">Cancelacion</p>
                 <p className="mt-1 text-sm text-rose-800">
-                  Solo disponible si aun no existen recepciones aceptadas ni cierre final.
+                  Solo disponible si aun no existen recepciones aceptadas ni
+                  cierre final.
                 </p>
                 <button
                   type="button"
@@ -457,7 +469,8 @@ const OrdenCompraDetallePage = () => {
 
             {!allowApprovalAction && !allowCloseAction && !allowCancelAction ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                No hay acciones manuales habilitadas para tu perfil o para el estado actual.
+                No hay acciones manuales habilitadas para tu perfil o para el
+                estado actual.
               </div>
             ) : null}
           </div>
@@ -469,9 +482,7 @@ const OrdenCompraDetallePage = () => {
           <h2 className="text-lg font-semibold text-gray-900">
             Ruta de aprobacion
           </h2>
-          <span className="text-sm text-gray-500">
-
-          </span>
+          <span className="text-sm text-gray-500"></span>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {snapshotRoute.map((step) => (
@@ -490,8 +501,12 @@ const OrdenCompraDetallePage = () => {
               <p className="font-semibold text-gray-900">
                 {approvalLabels[step.nivel] || step.nivel}
               </p>
-              <p className="mt-1 text-gray-700">{step.aprobadorNombre || "-"}</p>
-              <p className="mt-1 text-xs text-gray-500">{step.estado || "PENDIENTE"}</p>
+              <p className="mt-1 text-gray-700">
+                {step.aprobadorNombre || "-"}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {step.estado || "PENDIENTE"}
+              </p>
             </div>
           ))}
         </div>
@@ -545,12 +560,18 @@ const OrdenCompraDetallePage = () => {
           <div className="mt-4 space-y-3">
             {(ordenCompra.historialAprobacion || []).length > 0 ? (
               ordenCompra.historialAprobacion.map((entry) => (
-                <div key={entry.id} className="rounded-lg border border-gray-200 p-4 text-sm">
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-gray-200 p-4 text-sm"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-semibold text-gray-900">
-                      {approvalLabels[entry.nivel] || entry.nivel} · {entry.tipoEvento}
+                      {approvalLabels[entry.nivel] || entry.nivel} ·{" "}
+                      {entry.tipoEvento}
                     </p>
-                    <p className="text-gray-500">{formatDateTime(entry.fechaAccion)}</p>
+                    <p className="text-gray-500">
+                      {formatDateTime(entry.fechaAccion)}
+                    </p>
                   </div>
                   <p className="mt-1 text-gray-700">
                     Actor: {entry.actor?.nombre || "-"}
@@ -570,7 +591,9 @@ const OrdenCompraDetallePage = () => {
       </div>
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Requerimientos origen</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Requerimientos origen
+        </h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {requerimientos.length > 0 ? (
             requerimientos.map((requerimiento) => (
@@ -592,12 +615,16 @@ const OrdenCompraDetallePage = () => {
 
       <div className="space-y-4 md:hidden">
         {(ordenCompra.items || []).map((item) => (
-          <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div
+            key={item.id}
+            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+          >
             <p className="font-semibold text-gray-900">
               {item.producto?.nombre || "-"}
             </p>
             <p className="text-xs text-gray-500">
-              {item.producto?.codigo || "Sin codigo"} · {item.producto?.unidadMedida || "-"}
+              {item.producto?.codigo || "Sin codigo"} ·{" "}
+              {item.producto?.unidadMedida || "-"}
             </p>
             <div className="mt-3 grid gap-2 text-sm text-gray-700">
               <p>Ordenada: {item.cantidadOrdenada}</p>
@@ -611,7 +638,9 @@ const OrdenCompraDetallePage = () => {
 
       <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
         <div className="border-b border-gray-200 px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Lineas principales</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Lineas principales
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -642,7 +671,8 @@ const OrdenCompraDetallePage = () => {
                       {item.producto?.nombre || "-"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {item.producto?.codigo || "Sin codigo"} · {item.producto?.unidadMedida || "-"}
+                      {item.producto?.codigo || "Sin codigo"} ·{" "}
+                      {item.producto?.unidadMedida || "-"}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
@@ -685,4 +715,3 @@ const OrdenCompraDetallePage = () => {
 };
 
 export default OrdenCompraDetallePage;
-

@@ -28,7 +28,8 @@ import {
 } from "../utils/logisticaAssignment";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
-const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "-");
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : "-";
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
@@ -58,7 +59,9 @@ const createEmptyDecisionExcepcionalDraft = () => ({
 });
 
 const buildComparativoDraft = (comparativo) => {
-  const adjudicacionesItems = Array.isArray(comparativo?.adjudicacionesPorItemSnapshot)
+  const adjudicacionesItems = Array.isArray(
+    comparativo?.adjudicacionesPorItemSnapshot,
+  )
     ? comparativo.adjudicacionesPorItemSnapshot.map((item) => ({
         itemRequerimientoId: String(item.itemRequerimientoId),
         cotizacionId: String(item.cotizacionId),
@@ -66,17 +69,19 @@ const buildComparativoDraft = (comparativo) => {
     : Array.isArray(comparativo?.cotizacionSeleccionadaSnapshot?.items)
       ? comparativo.cotizacionSeleccionadaSnapshot.items.map((item) => ({
           itemRequerimientoId: String(item.itemRequerimientoId),
-          cotizacionId: String(comparativo.cotizacionSeleccionadaSnapshot.cotizacionId),
+          cotizacionId: String(
+            comparativo.cotizacionSeleccionadaSnapshot.cotizacionId,
+          ),
         }))
       : [];
 
   return {
     observaciones: comparativo?.observaciones || "",
     cotizacionIdsConsideradas: Array.isArray(
-      comparativo?.cotizacionesConsideradasSnapshot?.cotizaciones
+      comparativo?.cotizacionesConsideradasSnapshot?.cotizaciones,
     )
       ? comparativo.cotizacionesConsideradasSnapshot.cotizaciones.map((item) =>
-          String(item.cotizacionId)
+          String(item.cotizacionId),
         )
       : [],
     cotizacionSeleccionadaId:
@@ -96,11 +101,10 @@ const buildComparativoDraft = (comparativo) => {
 const comparativoCanEdit = (comparativo) =>
   !comparativo ||
   ["BORRADOR", "OBSERVADO"].includes(
-    String(comparativo?.estadoDocumento || "").toUpperCase()
+    String(comparativo?.estadoDocumento || "").toUpperCase(),
   );
 
-const ADJUDICACION_DIRECTA_EXCEPCIONAL_VIA =
-  "ADJUDICACION_DIRECTA_EXCEPCIONAL";
+const ADJUDICACION_DIRECTA_EXCEPCIONAL_VIA = "ADJUDICACION_DIRECTA_EXCEPCIONAL";
 
 const getComparativoDecisionMeta = (comparativo) => {
   if (!comparativo || comparativo.estadoDocumento !== "APROBADO") {
@@ -117,12 +121,16 @@ const getComparativoDecisionMeta = (comparativo) => {
     via,
     criterio,
     cotizacionId: Number(
-      comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId || 0
+      comparativo?.cotizacionSeleccionadaSnapshot?.cotizacionId || 0,
     ),
-    adjudicacionesPorItem: Array.isArray(comparativo?.adjudicacionesPorItemSnapshot)
+    adjudicacionesPorItem: Array.isArray(
+      comparativo?.adjudicacionesPorItemSnapshot,
+    )
       ? comparativo.adjudicacionesPorItemSnapshot
       : [],
-    proveedoresAdjudicados: Array.isArray(comparativo?.proveedoresAdjudicadosSnapshot)
+    proveedoresAdjudicados: Array.isArray(
+      comparativo?.proveedoresAdjudicadosSnapshot,
+    )
       ? comparativo.proveedoresAdjudicadosSnapshot
       : [],
   };
@@ -145,7 +153,9 @@ const buildSolicitudDraft = (solicitud) => ({
   formaPago: solicitud.formaPago || "",
   garantia: solicitud.garantia || "",
   items: Array.isArray(solicitud.items)
-    ? solicitud.items.map((item) => ({ itemRequerimientoId: item.itemRequerimientoId }))
+    ? solicitud.items.map((item) => ({
+        itemRequerimientoId: item.itemRequerimientoId,
+      }))
     : [],
 });
 
@@ -187,7 +197,7 @@ const createCotizacionDraftFromSolicitud = (solicitud) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
         estadoRespuesta: "COTIZADO",
         cantidadOfrecida: String(
-          Number(item.itemRequerimiento?.cantidadRequerida || 0)
+          Number(item.itemRequerimiento?.cantidadRequerida || 0),
         ),
         precioUnidad: "",
         precioTotal: 0,
@@ -203,17 +213,18 @@ const getCotizacionItemsMap = (cotizaciones = []) =>
             .filter(
               (item) =>
                 String(item.estadoRespuesta || "COTIZADO").toUpperCase() ===
-                "COTIZADO"
+                "COTIZADO",
             )
             .map((item) => String(item.itemRequerimientoId))
-        : []
+        : [],
     );
     return acc;
   }, {});
 
 const getAdjudicacionCotizacionId = (draft, itemRequerimientoId) =>
   draft.adjudicacionesItems.find(
-    (entry) => String(entry.itemRequerimientoId) === String(itemRequerimientoId)
+    (entry) =>
+      String(entry.itemRequerimientoId) === String(itemRequerimientoId),
   )?.cotizacionId || "";
 
 const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
@@ -222,10 +233,10 @@ const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
   }
 
   const totalSolicitudes = Number(
-    detalle?.resumenComparativo?.totalSolicitudes || 0
+    detalle?.resumenComparativo?.totalSolicitudes || 0,
   );
   const totalCotizaciones = Number(
-    detalle?.resumenComparativo?.totalCotizaciones || 0
+    detalle?.resumenComparativo?.totalCotizaciones || 0,
   );
 
   if (!totalSolicitudes) {
@@ -304,7 +315,7 @@ const promptLogisticaReassignmentPayload = ({
 
   const tipoInput = window.prompt(
     "Tipo de reasignacion: TEMPORAL o DEFINITIVA.",
-    "DEFINITIVA"
+    "DEFINITIVA",
   );
   if (tipoInput === null) return null;
 
@@ -319,7 +330,7 @@ const promptLogisticaReassignmentPayload = ({
 
   const motivoInput = window.prompt(
     "Motivo obligatorio de la reasignacion.",
-    ""
+    "",
   );
   if (motivoInput === null) return null;
 
@@ -331,7 +342,7 @@ const promptLogisticaReassignmentPayload = ({
 
   const comentarioInput = window.prompt(
     "Comentario adicional de la reasignacion (opcional).",
-    ""
+    "",
   );
   if (comentarioInput === null) return null;
 
@@ -339,7 +350,7 @@ const promptLogisticaReassignmentPayload = ({
   if (tipoReasignacion === "TEMPORAL") {
     const vigenteHastaInput = window.prompt(
       "Vigente hasta (AAAA-MM-DD) opcional para la reasignacion temporal.",
-      ""
+      "",
     );
     if (vigenteHastaInput === null) return null;
     vigenteHasta = String(vigenteHastaInput || "").trim() || null;
@@ -401,10 +412,12 @@ const ProcesoLogisticoDetallePage = () => {
   const [cotizacionDraft, setCotizacionDraft] = useState(null);
   const [flujoDraft, setFlujoDraft] = useState(createEmptyFlujoDraft);
   const [decisionExcepcionalDraft, setDecisionExcepcionalDraft] = useState(
-    createEmptyDecisionExcepcionalDraft
+    createEmptyDecisionExcepcionalDraft,
   );
   const [comparativo, setComparativo] = useState(null);
-  const [comparativoDraft, setComparativoDraft] = useState(createEmptyComparativoDraft);
+  const [comparativoDraft, setComparativoDraft] = useState(
+    createEmptyComparativoDraft,
+  );
   const [responsableId, setResponsableId] = useState("");
   const [submittingSolicitud, setSubmittingSolicitud] = useState(false);
   const [submittingCotizacion, setSubmittingCotizacion] = useState(false);
@@ -424,7 +437,7 @@ const ProcesoLogisticoDetallePage = () => {
     (isLogisticaJefaturaContext(activeContext || {}) || isAdminUser);
   const directResponsableOption = createDirectResponsableOption(
     user,
-    canProcessDirectly
+    canProcessDirectly,
   );
   const directResponsableId = directResponsableOption?.id || null;
 
@@ -445,18 +458,21 @@ const ProcesoLogisticoDetallePage = () => {
     setComparativoDraft(
       comparativoData
         ? buildComparativoDraft(comparativoData)
-        : createEmptyComparativoDraft()
+        : createEmptyComparativoDraft(),
     );
     setResponsableId(
       getDefaultLogisticaResponsableSelection({
         responsableActualId:
           data?.responsableLogisticaId || data?.responsableLogistica?.id,
         directResponsableId,
-      })
+      }),
     );
-    setSolicitudDraft((prev) => prev || {
-      requerimientoId: data.id,
-    });
+    setSolicitudDraft(
+      (prev) =>
+        prev || {
+          requerimientoId: data.id,
+        },
+    );
   };
 
   useEffect(() => {
@@ -486,8 +502,8 @@ const ProcesoLogisticoDetallePage = () => {
         setJefaturaResponsableOption(
           findLogisticaJefaturaResponsable(
             usuarios,
-            activeContext?.areaId || activeContext?.area?.id || null
-          )
+            activeContext?.areaId || activeContext?.area?.id || null,
+          ),
         );
       })
       .catch(() => {
@@ -516,32 +532,32 @@ const ProcesoLogisticoDetallePage = () => {
   }, [location.hash, detalle?.id]);
 
   const resumenCotizaciones = useMemo(
-    () => Array.isArray(detalle?.cotizaciones) ? detalle.cotizaciones : [],
-    [detalle?.cotizaciones]
+    () => (Array.isArray(detalle?.cotizaciones) ? detalle.cotizaciones : []),
+    [detalle?.cotizaciones],
   );
   const resumenCotizacionesActivas = useMemo(
     () =>
       resumenCotizaciones.filter((cotizacion) => cotizacion.activo !== false),
-    [resumenCotizaciones]
+    [resumenCotizaciones],
   );
   const ordenesCompraRelacionadas = useMemo(
     () => (Array.isArray(detalle?.ordenesCompra) ? detalle.ordenesCompra : []),
-    [detalle?.ordenesCompra]
+    [detalle?.ordenesCompra],
   );
   const cotizacionItemsMap = useMemo(
     () => getCotizacionItemsMap(resumenCotizaciones),
-    [resumenCotizaciones]
+    [resumenCotizaciones],
   );
   const comparativoDecisionMeta = useMemo(
     () => getComparativoDecisionMeta(comparativo),
-    [comparativo]
+    [comparativo],
   );
   const coberturaItems = useMemo(
     () =>
       Array.isArray(detalle?.resumenComparativo?.coberturaItems)
         ? detalle.resumenComparativo.coberturaItems
         : [],
-    [detalle?.resumenComparativo?.coberturaItems]
+    [detalle?.resumenComparativo?.coberturaItems],
   );
 
   const handleAsignar = async () => {
@@ -572,7 +588,7 @@ const ProcesoLogisticoDetallePage = () => {
           responsableActualId:
             result?.responsableLogisticaId || result?.responsableLogistica?.id,
           directResponsableId,
-        })
+        }),
       );
     } finally {
       setSubmittingAction(false);
@@ -582,7 +598,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleTomarDirecto = async () => {
     if (!directResponsableId) {
       toast.error(
-        "Procesar directamente solo esta disponible con la jefatura logistica activa."
+        "Procesar directamente solo esta disponible con la jefatura logistica activa.",
       );
       return;
     }
@@ -603,7 +619,7 @@ const ProcesoLogisticoDetallePage = () => {
           responsableActualId:
             result?.responsableLogisticaId || result?.responsableLogistica?.id,
           directResponsableId,
-        })
+        }),
       );
     } finally {
       setSubmittingAction(false);
@@ -633,7 +649,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleGenerarOrdenCompra = async () => {
     if (
       !window.confirm(
-        "Se generaran las ordenes de compra a partir de la buena pro vigente del expediente. Deseas continuar?"
+        "Se generaran las ordenes de compra a partir de la buena pro vigente del expediente. Deseas continuar?",
       )
     ) {
       return;
@@ -651,7 +667,7 @@ const ProcesoLogisticoDetallePage = () => {
       toast.success(
         totalGeneradas > 1
           ? `${totalGeneradas} ordenes de compra generadas correctamente.`
-          : `Orden de compra ${result.ordenCompra?.codigo || "generada"} correctamente.`
+          : `Orden de compra ${result.ordenCompra?.codigo || "generada"} correctamente.`,
       );
     } finally {
       setSubmittingAction(false);
@@ -694,7 +710,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleInactivateSolicitud = async (solicitudId) => {
     if (
       !window.confirm(
-        "La solicitud de cotizacion se inactivara logicamente. Deseas continuar?"
+        "La solicitud de cotizacion se inactivara logicamente. Deseas continuar?",
       )
     ) {
       return;
@@ -706,7 +722,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleInactivateCotizacion = async (cotizacionId) => {
     const motivo = window.prompt(
       "Motivo para inactivar la cotizacion (opcional):",
-      ""
+      "",
     );
 
     if (motivo === null) {
@@ -722,7 +738,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleReactivateCotizacion = async (cotizacionId) => {
     const motivo = window.prompt(
       "Motivo para reactivar la cotizacion (opcional):",
-      ""
+      "",
     );
 
     if (motivo === null) {
@@ -738,7 +754,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleCerrarEmision = async () => {
     const motivo = window.prompt(
       "Motivo para cerrar la emision de solicitudes (opcional):",
-      ""
+      "",
     );
 
     if (motivo === null) {
@@ -759,7 +775,7 @@ const ProcesoLogisticoDetallePage = () => {
   const handleReabrirEmision = async () => {
     const motivo = window.prompt(
       "Motivo para reabrir la emision de solicitudes (opcional):",
-      ""
+      "",
     );
 
     if (motivo === null) {
@@ -788,7 +804,7 @@ const ProcesoLogisticoDetallePage = () => {
     window.open(
       obtenerSolicitudPdfUrl(solicitudId),
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -796,7 +812,7 @@ const ProcesoLogisticoDetallePage = () => {
     window.open(
       obtenerCotizacionPdfUrl(cotizacionId),
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -804,7 +820,7 @@ const ProcesoLogisticoDetallePage = () => {
     window.open(
       obtenerComparativoPdfUrl(comparativoId),
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -812,7 +828,7 @@ const ProcesoLogisticoDetallePage = () => {
     const defaultRecipient = solicitud?.proveedor?.correoElectronico || "";
     const recipient = window.prompt(
       "Correo destino para la solicitud de cotizacion:",
-      defaultRecipient
+      defaultRecipient,
     );
 
     if (recipient === null) {
@@ -838,10 +854,7 @@ const ProcesoLogisticoDetallePage = () => {
       return;
     }
 
-    if (
-      modalidad === "EXCEPCIONAL" &&
-      !flujoDraft.causalFlujoExcepcional
-    ) {
+    if (modalidad === "EXCEPCIONAL" && !flujoDraft.causalFlujoExcepcional) {
       toast.error("Debes seleccionar una causal para el flujo excepcional.");
       return;
     }
@@ -852,7 +865,7 @@ const ProcesoLogisticoDetallePage = () => {
       !flujoDraft.justificacionFlujoExcepcional.trim()
     ) {
       toast.error(
-        "La justificacion es obligatoria para URGENCIA o EMERGENCIA."
+        "La justificacion es obligatoria para URGENCIA o EMERGENCIA.",
       );
       return;
     }
@@ -876,7 +889,7 @@ const ProcesoLogisticoDetallePage = () => {
       toast.success(
         wasEmisionClosed && result?.emisionSolicitudesCerrada === false
           ? "Flujo logistico actualizado y emision reabierta automaticamente por cobertura insuficiente."
-          : "Flujo logistico definido correctamente."
+          : "Flujo logistico definido correctamente.",
       );
     } finally {
       setSubmittingAction(false);
@@ -886,14 +899,14 @@ const ProcesoLogisticoDetallePage = () => {
   const handleFormalizarDecisionExcepcional = async () => {
     if (!decisionExcepcionalDraft.cotizacionId) {
       toast.error(
-        "Debes seleccionar una cotizacion para formalizar la decision excepcional."
+        "Debes seleccionar una cotizacion para formalizar la decision excepcional.",
       );
       return;
     }
 
     if (
       !window.confirm(
-        "Se formalizara la decision excepcional del expediente con la cotizacion seleccionada. Deseas continuar?"
+        "Se formalizara la decision excepcional del expediente con la cotizacion seleccionada. Deseas continuar?",
       )
     ) {
       return;
@@ -915,13 +928,18 @@ const ProcesoLogisticoDetallePage = () => {
   const toggleCotizacionConsiderada = (cotizacionId) => {
     const normalizedId = String(cotizacionId);
     setComparativoDraft((prev) => {
-      const nextCotizaciones = prev.cotizacionIdsConsideradas.includes(normalizedId)
-        ? prev.cotizacionIdsConsideradas.filter((idValue) => idValue !== normalizedId)
+      const nextCotizaciones = prev.cotizacionIdsConsideradas.includes(
+        normalizedId,
+      )
+        ? prev.cotizacionIdsConsideradas.filter(
+            (idValue) => idValue !== normalizedId,
+          )
         : [...prev.cotizacionIdsConsideradas, normalizedId];
 
       const nextAdjudicaciones = prev.adjudicacionesItems.filter(
         (entry) =>
-          entry.cotizacionId !== normalizedId || nextCotizaciones.includes(normalizedId)
+          entry.cotizacionId !== normalizedId ||
+          nextCotizaciones.includes(normalizedId),
       );
       const singleWinnerIds = [
         ...new Set(nextAdjudicaciones.map((entry) => entry.cotizacionId)),
@@ -940,7 +958,8 @@ const ProcesoLogisticoDetallePage = () => {
   const handleAdjudicacionItemChange = (itemRequerimientoId, cotizacionId) => {
     setComparativoDraft((prev) => {
       const nextEntries = prev.adjudicacionesItems.filter(
-        (entry) => String(entry.itemRequerimientoId) !== String(itemRequerimientoId)
+        (entry) =>
+          String(entry.itemRequerimientoId) !== String(itemRequerimientoId),
       );
 
       if (cotizacionId) {
@@ -950,7 +969,9 @@ const ProcesoLogisticoDetallePage = () => {
         });
       }
 
-      const singleWinnerIds = [...new Set(nextEntries.map((entry) => entry.cotizacionId))];
+      const singleWinnerIds = [
+        ...new Set(nextEntries.map((entry) => entry.cotizacionId)),
+      ];
 
       return {
         ...prev,
@@ -965,14 +986,17 @@ const ProcesoLogisticoDetallePage = () => {
     event.preventDefault();
 
     const activeCotizacionIds = new Set(
-      resumenCotizacionesActivas.map((cotizacion) => String(cotizacion.id))
+      resumenCotizacionesActivas.map((cotizacion) => String(cotizacion.id)),
     );
-    const cotizacionIdsConsideradas = comparativoDraft.cotizacionIdsConsideradas.filter(
-      (value) => activeCotizacionIds.has(String(value))
-    );
+    const cotizacionIdsConsideradas =
+      comparativoDraft.cotizacionIdsConsideradas.filter((value) =>
+        activeCotizacionIds.has(String(value)),
+      );
 
     if (!cotizacionIdsConsideradas.length) {
-      toast.error("Debes considerar al menos una cotizacion en el comparativo.");
+      toast.error(
+        "Debes considerar al menos una cotizacion en el comparativo.",
+      );
       return;
     }
 
@@ -980,12 +1004,14 @@ const ProcesoLogisticoDetallePage = () => {
       (entry) =>
         entry?.cotizacionId &&
         entry?.itemRequerimientoId &&
-        cotizacionIdsConsideradas.includes(String(entry.cotizacionId))
+        cotizacionIdsConsideradas.includes(String(entry.cotizacionId)),
     );
 
     const payload = {
       observaciones: comparativoDraft.observaciones.trim() || null,
-      cotizacionIdsConsideradas: cotizacionIdsConsideradas.map((value) => Number(value)),
+      cotizacionIdsConsideradas: cotizacionIdsConsideradas.map((value) =>
+        Number(value),
+      ),
       cotizacionSeleccionadaId: comparativoDraft.cotizacionSeleccionadaId
         ? Number(comparativoDraft.cotizacionSeleccionadaId)
         : null,
@@ -993,7 +1019,8 @@ const ProcesoLogisticoDetallePage = () => {
         itemRequerimientoId: Number(entry.itemRequerimientoId),
         cotizacionId: Number(entry.cotizacionId),
       })),
-      criterioAdjudicacion: comparativoDraft.criterioAdjudicacion.trim() || null,
+      criterioAdjudicacion:
+        comparativoDraft.criterioAdjudicacion.trim() || null,
     };
 
     setSubmittingComparativo(true);
@@ -1007,7 +1034,7 @@ const ProcesoLogisticoDetallePage = () => {
       toast.success(
         comparativo?.id
           ? "Comparativo formal actualizado."
-          : "Comparativo formal creado."
+          : "Comparativo formal creado.",
       );
       await load();
     } finally {
@@ -1018,7 +1045,7 @@ const ProcesoLogisticoDetallePage = () => {
   const runComparativoDecision = async (actionLabel, executor) => {
     const comentario = window.prompt(
       `Comentario para ${actionLabel.toLowerCase()} el comparativo (opcional).`,
-      ""
+      "",
     );
 
     if (comentario === null) return;
@@ -1065,18 +1092,18 @@ const ProcesoLogisticoDetallePage = () => {
   const assignedToOtherResponsable =
     Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
   const expedienteBloqueado = ["ADJUDICADO", "OC_GENERADA"].includes(
-    detalle.estadoLogistica
+    detalle.estadoLogistica,
   );
   const bloqueadoPorAprobacionFinal = Boolean(detalle.pendienteGerenciaGeneral);
   const flujoDefinido = Boolean(detalle.modalidadFlujoLogistico);
   const isFlujoRegular = detalle.modalidadFlujoLogistico === "REGULAR";
   const isFlujoExcepcional = detalle.modalidadFlujoLogistico === "EXCEPCIONAL";
   const emisionCerrada = detalle.emisionSolicitudesCerrada === true;
-  const responsableNoOperativo = detalle.requiereReasignacionResponsable === true;
+  const responsableNoOperativo =
+    detalle.requiereReasignacionResponsable === true;
   const canDefineFlow = canAdjudicate && !expedienteBloqueado;
   const canEditFlowDefinition =
-    canDefineFlow &&
-    detalle.puedeCambiarFlujoLogistico === true;
+    canDefineFlow && detalle.puedeCambiarFlujoLogistico === true;
   const canManageDrafts = canOperate && !expedienteBloqueado && flujoDefinido;
   const canManageSolicitudes =
     canManageDrafts &&
@@ -1101,9 +1128,12 @@ const ProcesoLogisticoDetallePage = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Expediente logistico</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Expediente logistico
+          </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {detalle.codigo} · {detalle.area?.nombre || "Sin area"} · {detalle.solicitante?.nombre || "Sin solicitante"}
+            {detalle.codigo} · {detalle.area?.nombre || "Sin area"} ·{" "}
+            {detalle.solicitante?.nombre || "Sin solicitante"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1150,33 +1180,52 @@ const ProcesoLogisticoDetallePage = () => {
 
       {detalle.pendienteGerenciaGeneral ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Logistica ya puede trabajar este expediente, pero los actos finales del sistema siguen bloqueados hasta completar la aprobacion documental final de Gerencia General.
+          Logistica ya puede trabajar este expediente, pero los actos finales
+          del sistema siguen bloqueados hasta completar la aprobacion documental
+          final de Gerencia General.
         </div>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Estado logistico</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Estado logistico
+          </p>
           <div className="mt-3">
-            <CotizacionEstadoBadge estado={detalle.estadoLogistica} tipo="logistica" />
+            <CotizacionEstadoBadge
+              estado={detalle.estadoLogistica}
+              tipo="logistica"
+            />
           </div>
         </div>
-        <div id="control-logistico" className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Responsable actual</p>
-          <p className="mt-2 text-lg font-semibold text-gray-900">{detalle.responsableLogistica?.nombre || "Sin asignar"}</p>
+        <div
+          id="control-logistico"
+          className="rounded-xl bg-white p-5 shadow-sm"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Responsable actual
+          </p>
+          <p className="mt-2 text-lg font-semibold text-gray-900">
+            {detalle.responsableLogistica?.nombre || "Sin asignar"}
+          </p>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Solicitudes / cotizaciones</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Solicitudes / cotizaciones
+          </p>
           <p className="mt-2 text-lg font-semibold text-gray-900">
-            {detalle.resumenComparativo?.totalSolicitudes || 0} / {detalle.resumenComparativo?.totalCotizaciones || 0}
+            {detalle.resumenComparativo?.totalSolicitudes || 0} /{" "}
+            {detalle.resumenComparativo?.totalCotizaciones || 0}
           </p>
           <p className="mt-2 text-xs text-gray-500">
-            Emisión {emisionCerrada ? "cerrada" : "abierta"} · cobertura mínima por ítem{" "}
-            {detalle.resumenComparativo?.coberturaMinimaPorItem || 0}
+            Emisión {emisionCerrada ? "cerrada" : "abierta"} · cobertura mínima
+            por ítem {detalle.resumenComparativo?.coberturaMinimaPorItem || 0}
           </p>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ordenes de compra</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Ordenes de compra
+          </p>
           <p className="mt-2 text-lg font-semibold text-gray-900">
             {ordenesCompraRelacionadas.length || 0}
           </p>
@@ -1248,43 +1297,67 @@ const ProcesoLogisticoDetallePage = () => {
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Datos del requerimiento</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Datos del requerimiento
+          </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Uso / finalidad</p>
-              <p className="mt-1 text-sm text-gray-700">{detalle.usoFinalidad}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Uso / finalidad
+              </p>
+              <p className="mt-1 text-sm text-gray-700">
+                {detalle.usoFinalidad}
+              </p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ubicacion</p>
-              <p className="mt-1 text-sm text-gray-700">{detalle.ubicacionUso}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Ubicacion
+              </p>
+              <p className="mt-1 text-sm text-gray-700">
+                {detalle.ubicacionUso}
+              </p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total referencial</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{formatCurrency(detalle.totalReferencial)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Total referencial
+              </p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">
+                {formatCurrency(detalle.totalReferencial)}
+              </p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Asignado por</p>
-              <p className="mt-1 text-sm text-gray-700">{detalle.asignadoPorLogistica?.nombre || "-"}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Asignado por
+              </p>
+              <p className="mt-1 text-sm text-gray-700">
+                {detalle.asignadoPorLogistica?.nombre || "-"}
+              </p>
             </div>
           </div>
         </div>
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-gray-900">Control logistico</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Control logistico
+            </h2>
             {cargando && <Loader size="sm" />}
           </div>
 
           <div className="mt-4 space-y-4 text-sm">
             {responsableNoOperativo ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                El responsable logistico actual ya no se encuentra operativo para continuar este expediente. La jefatura debe reasignarlo para asegurar continuidad.
+                El responsable logistico actual ya no se encuentra operativo
+                para continuar este expediente. La jefatura debe reasignarlo
+                para asegurar continuidad.
               </div>
             ) : null}
 
             {canAssign && (
               <div className="space-y-2 rounded-lg border border-gray-200 p-4">
-                <p className="font-medium text-gray-900">Asignacion / reasignacion</p>
+                <p className="font-medium text-gray-900">
+                  Asignacion / reasignacion
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {(() => {
                     const responsableActualId =
@@ -1298,18 +1371,19 @@ const ProcesoLogisticoDetallePage = () => {
                         directResponsable: directResponsableOption,
                         extraResponsables: [jefaturaResponsableOption],
                       });
-                    const canSubmitAssignment =
-                      canSubmitLogisticaAssignment({
-                        selectedResponsableId: responsableId,
-                        responsableActualId,
-                      });
+                    const canSubmitAssignment = canSubmitLogisticaAssignment({
+                      selectedResponsableId: responsableId,
+                      responsableActualId,
+                    });
 
                     return (
                       <>
                         <select
                           value={responsableId}
                           name="proceso-logistico-detalle-page-select-359"
-                          onChange={(event) => setResponsableId(event.target.value)}
+                          onChange={(event) =>
+                            setResponsableId(event.target.value)
+                          }
                           className="min-w-[220px] rounded border border-gray-300 px-3 py-2"
                         >
                           <option value="">Selecciona operador</option>
@@ -1373,7 +1447,9 @@ const ProcesoLogisticoDetallePage = () => {
                         {entry.reasignadoPor?.nombre || "-"}
                       </p>
                       {entry.motivo ? (
-                        <p className="mt-1 text-slate-700">Motivo: {entry.motivo}</p>
+                        <p className="mt-1 text-slate-700">
+                          Motivo: {entry.motivo}
+                        </p>
                       ) : null}
                       {entry.comentario ? (
                         <p className="mt-1 text-slate-700">
@@ -1404,21 +1480,30 @@ const ProcesoLogisticoDetallePage = () => {
 
             <div className="space-y-3 rounded-lg border border-gray-200 p-4">
               <div>
-                <p className="font-medium text-gray-900">Definicion del flujo logistico</p>
+                <p className="font-medium text-gray-900">
+                  Definicion del flujo logistico
+                </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  La jefatura debe definir si el expediente sigue el camino regular o excepcional antes de continuar con el tramite.
+                  La jefatura debe definir si el expediente sigue el camino
+                  regular o excepcional antes de continuar con el tramite.
                 </p>
               </div>
 
               {flujoDefinido ? (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                   <p>
-                    Modalidad: <span className="font-semibold">{detalle.modalidadFlujoLogistico}</span>
+                    Modalidad:{" "}
+                    <span className="font-semibold">
+                      {detalle.modalidadFlujoLogistico}
+                    </span>
                   </p>
                   {isFlujoExcepcional ? (
                     <>
                       <p className="mt-1">
-                        Causal: <span className="font-semibold">{detalle.causalFlujoExcepcional || "-"}</span>
+                        Causal:{" "}
+                        <span className="font-semibold">
+                          {detalle.causalFlujoExcepcional || "-"}
+                        </span>
                       </p>
                       {detalle.justificacionFlujoExcepcional ? (
                         <p className="mt-1 text-xs text-slate-600">
@@ -1428,13 +1513,15 @@ const ProcesoLogisticoDetallePage = () => {
                     </>
                   ) : (
                     <p className="mt-1 text-xs text-slate-600">
-                      El expediente seguira el camino ordinario con comparativo formal.
+                      El expediente seguira el camino ordinario con comparativo
+                      formal.
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                  Todavia no se definio la modalidad del expediente. Hasta hacerlo, el sistema bloquea acciones operativas clave.
+                  Todavia no se definio la modalidad del expediente. Hasta
+                  hacerlo, el sistema bloquea acciones operativas clave.
                 </div>
               )}
 
@@ -1524,10 +1611,12 @@ const ProcesoLogisticoDetallePage = () => {
               <div className="space-y-3 rounded-lg border border-gray-200 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-gray-900">Emision de solicitudes</p>
+                    <p className="font-medium text-gray-900">
+                      Emision de solicitudes
+                    </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      Controla el pase entre la etapa de emisión y el registro de
-                      respuestas del proveedor.
+                      Controla el pase entre la etapa de emisión y el registro
+                      de respuestas del proveedor.
                     </p>
                   </div>
                   <span
@@ -1599,7 +1688,10 @@ const ProcesoLogisticoDetallePage = () => {
               <button
                 type="button"
                 onClick={handleMarcarListo}
-                disabled={submittingAction || !detalle.resumenComparativo?.totalCotizaciones}
+                disabled={
+                  submittingAction ||
+                  !detalle.resumenComparativo?.totalCotizaciones
+                }
                 className="rounded border border-fuchsia-300 px-4 py-2 font-medium text-fuchsia-700 hover:bg-fuchsia-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Dejar listo para adjudicacion
@@ -1609,13 +1701,17 @@ const ProcesoLogisticoDetallePage = () => {
             {canPrepareExceptionalDecision ? (
               <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                 <div>
-                  <p className="font-medium text-emerald-900">Decision excepcional</p>
+                  <p className="font-medium text-emerald-900">
+                    Decision excepcional
+                  </p>
                   <p className="mt-1 text-xs text-emerald-800">
-                    Selecciona la cotizacion que sustenta la decision excepcional del expediente.
+                    Selecciona la cotizacion que sustenta la decision
+                    excepcional del expediente.
                   </p>
                   {bloqueadoPorAprobacionFinal ? (
                     <p className="mt-2 text-xs text-amber-800">
-                      La formalizacion final de la decision excepcional queda bloqueada hasta completar la aprobacion documental final.
+                      La formalizacion final de la decision excepcional queda
+                      bloqueada hasta completar la aprobacion documental final.
                     </p>
                   ) : null}
                 </div>
@@ -1632,7 +1728,9 @@ const ProcesoLogisticoDetallePage = () => {
                   <option value="">Selecciona cotizacion</option>
                   {resumenCotizacionesActivas.map((cotizacion) => (
                     <option key={cotizacion.id} value={cotizacion.id}>
-                      {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"} · {formatCurrency(cotizacion.totalOferta)}
+                      {cotizacion.codigo} ·{" "}
+                      {cotizacion.proveedor?.razonSocial || "-"} ·{" "}
+                      {formatCurrency(cotizacion.totalOferta)}
                     </option>
                   ))}
                 </select>
@@ -1686,9 +1784,13 @@ const ProcesoLogisticoDetallePage = () => {
                 </p>
                 <div className="mt-2 space-y-2">
                   {ordenesCompraRelacionadas.map((ordenCompra) => (
-                    <div key={ordenCompra.id} className="rounded border border-emerald-300 bg-white/70 p-3">
+                    <div
+                      key={ordenCompra.id}
+                      className="rounded border border-emerald-300 bg-white/70 p-3"
+                    >
                       <p className="font-medium">
-                        {ordenCompra.codigo} · {formatCurrency(ordenCompra.montoTotal)}
+                        {ordenCompra.codigo} ·{" "}
+                        {formatCurrency(ordenCompra.montoTotal)}
                       </p>
                       <p className="text-sm">
                         {ordenCompra.proveedor?.razonSocial || "Sin proveedor"}
@@ -1716,12 +1818,16 @@ const ProcesoLogisticoDetallePage = () => {
             <div id="solicitudes">
               <SolicitudCotizacionForm
                 initialData={solicitudDraft || { requerimientoId: Number(id) }}
-                proveedores={proveedores.filter((proveedor) => proveedor.activo !== false)}
+                proveedores={proveedores.filter(
+                  (proveedor) => proveedor.activo !== false,
+                )}
                 requerimientos={requerimientoOption}
                 requerimientoDetalle={detalle}
                 onRequerimientoChange={() => {}}
                 onSubmit={handleSolicitudSubmit}
-                onCancel={() => setSolicitudDraft({ requerimientoId: Number(id) })}
+                onCancel={() =>
+                  setSolicitudDraft({ requerimientoId: Number(id) })
+                }
                 submitting={submittingSolicitud}
               />
             </div>
@@ -1751,12 +1857,15 @@ const ProcesoLogisticoDetallePage = () => {
           {!flujoDefinido
             ? "La jefatura de logistica debe definir primero si el expediente seguira el flujo REGULAR o EXCEPCIONAL."
             : expedienteBloqueado
-            ? "El expediente ya fue adjudicado o paso a orden de compra, por lo que ya no admite cambios operativos."
-            : "Este expediente se encuentra en modo de consulta para tu perfil. Solo el responsable asignado o la jefatura pueden modificar solicitudes y cotizaciones."}
+              ? "El expediente ya fue adjudicado o paso a orden de compra, por lo que ya no admite cambios operativos."
+              : "Este expediente se encuentra en modo de consulta para tu perfil. Solo el responsable asignado o la jefatura pueden modificar solicitudes y cotizaciones."}
         </div>
       )}
 
-      <div id="comparativo" className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div
+        id="comparativo"
+        className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -1775,7 +1884,9 @@ const ProcesoLogisticoDetallePage = () => {
                 : "Este bloque concentra el comparativo documental vigente del expediente."}
             </p>
             <p className="mt-2 text-xs text-gray-500">
-              Camino ordinario: comparativo aprobado. Camino excepcional: decision inicial excepcional y formalizacion posterior sobre una cotizacion de sustento.
+              Camino ordinario: comparativo aprobado. Camino excepcional:
+              decision inicial excepcional y formalizacion posterior sobre una
+              cotizacion de sustento.
             </p>
           </div>
 
@@ -1811,7 +1922,9 @@ const ProcesoLogisticoDetallePage = () => {
                 Elaborado por
               </p>
               <p className="mt-1 text-sm font-medium text-gray-900">
-                {comparativo.elaborador?.nombre || comparativo.responsableLogisticaNombreSnapshot || "-"}
+                {comparativo.elaborador?.nombre ||
+                  comparativo.responsableLogisticaNombreSnapshot ||
+                  "-"}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -1837,7 +1950,8 @@ const ProcesoLogisticoDetallePage = () => {
                 Cotizaciones consideradas
               </p>
               <p className="mt-1 text-sm font-medium text-gray-900">
-                {comparativo.cotizacionesConsideradasSnapshot?.totalCotizaciones || 0}
+                {comparativo.cotizacionesConsideradasSnapshot
+                  ?.totalCotizaciones || 0}
               </p>
             </div>
           </div>
@@ -1848,17 +1962,21 @@ const ProcesoLogisticoDetallePage = () => {
             <div className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr]">
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Cotizaciones consideradas</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    Cotizaciones consideradas
+                  </p>
                   <p className="text-xs text-gray-500">
-                    Selecciona las ofertas que entran formalmente al comparativo y quedaran disponibles para la buena pro por item.
+                    Selecciona las ofertas que entran formalmente al comparativo
+                    y quedaran disponibles para la buena pro por item.
                   </p>
                 </div>
                 <div className="space-y-2">
                   {resumenCotizacionesActivas.length > 0 ? (
                     resumenCotizacionesActivas.map((cotizacion) => {
-                      const checked = comparativoDraft.cotizacionIdsConsideradas.includes(
-                        String(cotizacion.id)
-                      );
+                      const checked =
+                        comparativoDraft.cotizacionIdsConsideradas.includes(
+                          String(cotizacion.id),
+                        );
                       const canSelectWinner = checked;
 
                       return (
@@ -1875,18 +1993,31 @@ const ProcesoLogisticoDetallePage = () => {
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() => toggleCotizacionConsiderada(cotizacion.id)}
+                                onChange={() =>
+                                  toggleCotizacionConsiderada(cotizacion.id)
+                                }
                                 className="mt-1"
                               />
                               <div>
                                 <p className="font-medium text-gray-900">
-                                  {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"}
+                                  {cotizacion.codigo} ·{" "}
+                                  {cotizacion.proveedor?.razonSocial || "-"}
                                 </p>
                                 <p className="mt-1 text-sm text-gray-600">
-                                  {formatCurrency(cotizacion.totalOferta)} · {cotizacion.formaPago || "Sin forma de pago"}
+                                  {formatCurrency(cotizacion.totalOferta)} ·{" "}
+                                  {cotizacion.formaPago || "Sin forma de pago"}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Garantia: {cotizacion.garantia || "Sin definir"} · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                                  Entrega:{" "}
+                                  {cotizacion.tiempoEntregaDias === 0
+                                    ? "Inmediata"
+                                    : cotizacion.tiempoEntregaDias != null
+                                      ? `${cotizacion.tiempoEntregaDias} días`
+                                      : "-"}{" "}
+                                  · Garantia:{" "}
+                                  {cotizacion.garantia || "Sin definir"} ·
+                                  Vigencia:{" "}
+                                  {cotizacion.vigenciaOfertaDias ?? "-"} dias
                                 </p>
                               </div>
                             </div>
@@ -1901,7 +2032,8 @@ const ProcesoLogisticoDetallePage = () => {
                     })
                   ) : (
                     <div className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500">
-                      Aun no hay cotizaciones disponibles para formalizar el comparativo.
+                      Aun no hay cotizaciones disponibles para formalizar el
+                      comparativo.
                     </div>
                   )}
                 </div>
@@ -1909,24 +2041,29 @@ const ProcesoLogisticoDetallePage = () => {
 
               <div className="space-y-4">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-medium text-gray-900">Buena pro por item</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    Buena pro por item
+                  </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    Define a que cotizacion se adjudica cada item. Si una cotizacion omitio plazo, garantia o forma de pago, igual podras adjudicar el item mientras tenga precio y cantidad.
+                    Define a que cotizacion se adjudica cada item. Si una
+                    cotizacion omitio plazo, garantia o forma de pago, igual
+                    podras adjudicar el item mientras tenga precio y cantidad.
                   </p>
                   <div className="mt-3 space-y-3">
                     {(detalle.items || []).map((item) => {
-                      const availableCotizaciones = resumenCotizacionesActivas.filter(
-                        (cotizacion) =>
-                          comparativoDraft.cotizacionIdsConsideradas.includes(
-                            String(cotizacion.id)
-                          ) &&
-                          cotizacionItemsMap[String(cotizacion.id)]?.has(
-                            String(item.id)
-                          )
-                      );
+                      const availableCotizaciones =
+                        resumenCotizacionesActivas.filter(
+                          (cotizacion) =>
+                            comparativoDraft.cotizacionIdsConsideradas.includes(
+                              String(cotizacion.id),
+                            ) &&
+                            cotizacionItemsMap[String(cotizacion.id)]?.has(
+                              String(item.id),
+                            ),
+                        );
                       const selectedCotizacionId = getAdjudicacionCotizacionId(
                         comparativoDraft,
-                        item.id
+                        item.id,
                       );
 
                       return (
@@ -1935,15 +2072,21 @@ const ProcesoLogisticoDetallePage = () => {
                           className="rounded-lg border border-gray-200 bg-white p-3"
                         >
                           <p className="text-sm font-medium text-gray-900">
-                            {item.descripcionVisible || item.producto?.nombre || "Item sin descripcion"}
+                            {item.descripcionVisible ||
+                              item.producto?.nombre ||
+                              "Item sin descripcion"}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            Requerido: {item.cantidadRequerida} {item.unidadMedida || ""}
+                            Requerido: {item.cantidadRequerida}{" "}
+                            {item.unidadMedida || ""}
                           </p>
                           <select
                             value={selectedCotizacionId}
                             onChange={(event) =>
-                              handleAdjudicacionItemChange(item.id, event.target.value)
+                              handleAdjudicacionItemChange(
+                                item.id,
+                                event.target.value,
+                              )
                             }
                             className="mt-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
                           >
@@ -1953,18 +2096,27 @@ const ProcesoLogisticoDetallePage = () => {
                                 : "No hay cotizaciones consideradas para este item"}
                             </option>
                             {availableCotizaciones.map((cotizacion) => {
-                              const itemCotizado = Array.isArray(cotizacion.items)
+                              const itemCotizado = Array.isArray(
+                                cotizacion.items,
+                              )
                                 ? cotizacion.items.find(
                                     (cotizacionItem) =>
-                                      Number(cotizacionItem.itemRequerimientoId) ===
-                                      Number(item.id)
+                                      Number(
+                                        cotizacionItem.itemRequerimientoId,
+                                      ) === Number(item.id),
                                   )
                                 : null;
 
                               return (
-                                <option key={cotizacion.id} value={cotizacion.id}>
-                                  {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"} ·{" "}
-                                  {formatCurrency(itemCotizado?.precioTotal || 0)}
+                                <option
+                                  key={cotizacion.id}
+                                  value={cotizacion.id}
+                                >
+                                  {cotizacion.codigo} ·{" "}
+                                  {cotizacion.proveedor?.razonSocial || "-"} ·{" "}
+                                  {formatCurrency(
+                                    itemCotizado?.precioTotal || 0,
+                                  )}
                                 </option>
                               );
                             })}
@@ -2008,14 +2160,17 @@ const ProcesoLogisticoDetallePage = () => {
                 </label>
 
                 <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-xs text-gray-600">
-                  Items adjudicados: {comparativoDraft.adjudicacionesItems.length} / {(detalle.items || []).length}
+                  Items adjudicados:{" "}
+                  {comparativoDraft.adjudicacionesItems.length} /{" "}
+                  {(detalle.items || []).length}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="submit"
                     disabled={
-                      submittingComparativo || !resumenCotizacionesActivas.length
+                      submittingComparativo ||
+                      !resumenCotizacionesActivas.length
                     }
                     className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -2028,7 +2183,9 @@ const ProcesoLogisticoDetallePage = () => {
                   {comparativo?.id ? (
                     <button
                       type="button"
-                      onClick={() => setComparativoDraft(buildComparativoDraft(comparativo))}
+                      onClick={() =>
+                        setComparativoDraft(buildComparativoDraft(comparativo))
+                      }
                       className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
                       Restablecer
@@ -2056,62 +2213,73 @@ const ProcesoLogisticoDetallePage = () => {
                       : "Aun no definida"}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  Items adjudicados: {(comparativo.adjudicacionesPorItemSnapshot || []).length}
+                  Items adjudicados:{" "}
+                  {(comparativo.adjudicacionesPorItemSnapshot || []).length}
                 </p>
-                  <p className="mt-1 text-xs font-medium text-slate-600">
-                    {comparativoDecisionMeta?.via === "EXCEPCIONAL"
-                      ? "Via excepcional: adjudicacion directa formal."
-                      : "Via ordinaria: comparativo aprobado."}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {comparativo.criterioAdjudicacionSnapshot?.resumen ||
-                      "Sin criterio de adjudicacion visible."}
+                <p className="mt-1 text-xs font-medium text-slate-600">
+                  {comparativoDecisionMeta?.via === "EXCEPCIONAL"
+                    ? "Via excepcional: adjudicacion directa formal."
+                    : "Via ordinaria: comparativo aprobado."}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {comparativo.criterioAdjudicacionSnapshot?.resumen ||
+                    "Sin criterio de adjudicacion visible."}
                 </p>
               </div>
               <div className="grid gap-3">
-                {(comparativo.proveedoresAdjudicadosSnapshot || []).length > 0 ? (
-                  comparativo.proveedoresAdjudicadosSnapshot.map((proveedor) => (
-                    <div
-                      key={`comparativo-proveedor-${proveedor.proveedorId}`}
-                      className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium text-emerald-950">
-                          {proveedor.proveedor?.razonSocial || "-"}
-                        </p>
-                        <span className="text-sm font-semibold text-emerald-900">
-                          {formatCurrency(proveedor.totalAdjudicado)}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-emerald-800">
-                        Items adjudicados: {proveedor.totalItems}
+                {(comparativo.proveedoresAdjudicadosSnapshot || []).length > 0
+                  ? comparativo.proveedoresAdjudicadosSnapshot.map(
+                      (proveedor) => (
+                        <div
+                          key={`comparativo-proveedor-${proveedor.proveedorId}`}
+                          className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-medium text-emerald-950">
+                              {proveedor.proveedor?.razonSocial || "-"}
+                            </p>
+                            <span className="text-sm font-semibold text-emerald-900">
+                              {formatCurrency(proveedor.totalAdjudicado)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-emerald-800">
+                            Items adjudicados: {proveedor.totalItems}
+                          </p>
+                        </div>
+                      ),
+                    )
+                  : null}
+                {(
+                  comparativo.cotizacionesConsideradasSnapshot?.cotizaciones ||
+                  []
+                ).map((cotizacion) => (
+                  <div
+                    key={`comparativo-snapshot-${cotizacion.cotizacionId}`}
+                    className="rounded-lg border border-gray-200 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-gray-900">
+                        {cotizacion.codigo} ·{" "}
+                        {cotizacion.proveedor?.razonSocial || "-"}
                       </p>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatCurrency(cotizacion.totalOferta)}
+                      </span>
                     </div>
-                  ))
-                ) : null}
-                {(comparativo.cotizacionesConsideradasSnapshot?.cotizaciones || []).map(
-                  (cotizacion) => (
-                    <div
-                      key={`comparativo-snapshot-${cotizacion.cotizacionId}`}
-                      className="rounded-lg border border-gray-200 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium text-gray-900">
-                          {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"}
-                        </p>
-                        <span className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(cotizacion.totalOferta)}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Estado snapshot: {cotizacion.estado || "-"}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
-                      </p>
-                    </div>
-                  )
-                )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Estado snapshot: {cotizacion.estado || "-"}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Entrega:{" "}
+                      {cotizacion.tiempoEntregaDias === 0
+                        ? "Inmediata"
+                        : cotizacion.tiempoEntregaDias != null
+                          ? `${cotizacion.tiempoEntregaDias} días`
+                          : "-"}{" "}
+                      · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -2127,8 +2295,12 @@ const ProcesoLogisticoDetallePage = () => {
                       className="rounded-lg border border-gray-200 p-4 text-sm"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-semibold text-gray-900">{entry.tipoEvento}</p>
-                        <p className="text-gray-500">{formatDateTime(entry.fechaAccion)}</p>
+                        <p className="font-semibold text-gray-900">
+                          {entry.tipoEvento}
+                        </p>
+                        <p className="text-gray-500">
+                          {formatDateTime(entry.fechaAccion)}
+                        </p>
                       </div>
                       <p className="mt-1 text-gray-700">
                         Actor: {entry.actor?.nombre || "-"}
@@ -2158,7 +2330,9 @@ const ProcesoLogisticoDetallePage = () => {
           <div className="mt-5 border-t border-gray-200 pt-4">
             {bloqueadoPorAprobacionFinal ? (
               <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                El comparativo puede revisarse y seguir ajustandose, pero su aprobacion final queda bloqueada hasta completar la aprobacion documental final del requerimiento.
+                El comparativo puede revisarse y seguir ajustandose, pero su
+                aprobacion final queda bloqueada hasta completar la aprobacion
+                documental final del requerimiento.
               </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
@@ -2166,7 +2340,7 @@ const ProcesoLogisticoDetallePage = () => {
                 type="button"
                 onClick={() =>
                   runComparativoDecision("Aprobar", (payload) =>
-                    aprobarComparativo(comparativo.id, payload)
+                    aprobarComparativo(comparativo.id, payload),
                   )
                 }
                 disabled={submittingComparativo || !canApproveComparativo}
@@ -2178,7 +2352,7 @@ const ProcesoLogisticoDetallePage = () => {
                 type="button"
                 onClick={() =>
                   runComparativoDecision("Observar", (payload) =>
-                    observarComparativo(comparativo.id, payload)
+                    observarComparativo(comparativo.id, payload),
                   )
                 }
                 disabled={submittingComparativo}
@@ -2190,7 +2364,7 @@ const ProcesoLogisticoDetallePage = () => {
                 type="button"
                 onClick={() =>
                   runComparativoDecision("Rechazar", (payload) =>
-                    rechazarComparativo(comparativo.id, payload)
+                    rechazarComparativo(comparativo.id, payload),
                   )
                 }
                 disabled={submittingComparativo}
@@ -2206,7 +2380,9 @@ const ProcesoLogisticoDetallePage = () => {
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">Solicitudes emitidas</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Solicitudes emitidas
+            </h2>
             <p className="mt-1 text-sm text-gray-500">
               Puedes imprimir cada solicitud o enviarla por correo al proveedor.
             </p>
@@ -2214,7 +2390,10 @@ const ProcesoLogisticoDetallePage = () => {
           <div className="space-y-3 p-4 md:hidden">
             {(detalle.solicitudes || []).length > 0 ? (
               detalle.solicitudes.map((solicitud) => (
-                <div key={solicitud.id} className="rounded-lg border border-gray-200 p-4">
+                <div
+                  key={solicitud.id}
+                  className="rounded-lg border border-gray-200 p-4"
+                >
                   <Link
                     to={`/solicitudes-cotizacion/${solicitud.id}`}
                     state={{ from: location }}
@@ -2226,7 +2405,10 @@ const ProcesoLogisticoDetallePage = () => {
                     {solicitud.proveedor?.razonSocial || "-"}
                   </p>
                   <div className="mt-2">
-                    <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
+                    <CotizacionEstadoBadge
+                      estado={solicitud.estado}
+                      tipo="solicitud"
+                    />
                     {solicitud.activo === false ? (
                       <p className="mt-2 text-xs font-medium text-rose-700">
                         Inactiva
@@ -2263,7 +2445,9 @@ const ProcesoLogisticoDetallePage = () => {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud))}
+                        onClick={() =>
+                          setSolicitudDraft(buildSolicitudDraft(solicitud))
+                        }
                         className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                       >
                         Editar
@@ -2281,7 +2465,8 @@ const ProcesoLogisticoDetallePage = () => {
               ))
             ) : (
               <div className="px-2 py-6 text-center text-sm text-gray-500">
-                Aun no se emitieron solicitudes de cotizacion para este requerimiento.
+                Aun no se emitieron solicitudes de cotizacion para este
+                requerimiento.
               </div>
             )}
           </div>
@@ -2289,10 +2474,18 @@ const ProcesoLogisticoDetallePage = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Codigo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Proveedor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Acciones</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Codigo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Proveedor
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Estado
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -2307,11 +2500,18 @@ const ProcesoLogisticoDetallePage = () => {
                         >
                           {solicitud.codigo}
                         </Link>
-                        <p className="text-xs text-gray-500">{formatDate(solicitud.fechaEmision)}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(solicitud.fechaEmision)}
+                        </p>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.proveedor?.razonSocial || "-"}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
+                        {solicitud.proveedor?.razonSocial || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <CotizacionEstadoBadge
+                          estado={solicitud.estado}
+                          tipo="solicitud"
+                        />
                         {solicitud.activo === false ? (
                           <p className="mt-1 text-xs font-medium text-rose-700">
                             Inactiva
@@ -2336,7 +2536,9 @@ const ProcesoLogisticoDetallePage = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleSendSolicitudByEmail(solicitud)}
+                            onClick={() =>
+                              handleSendSolicitudByEmail(solicitud)
+                            }
                             disabled={sendingSolicitudId === solicitud.id}
                             className="rounded border border-emerald-300 px-3 py-1 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                           >
@@ -2348,14 +2550,20 @@ const ProcesoLogisticoDetallePage = () => {
                             <>
                               <button
                                 type="button"
-                                onClick={() => setSolicitudDraft(buildSolicitudDraft(solicitud))}
+                                onClick={() =>
+                                  setSolicitudDraft(
+                                    buildSolicitudDraft(solicitud),
+                                  )
+                                }
                                 className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                               >
                                 Editar
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleInactivateSolicitud(solicitud.id)}
+                                onClick={() =>
+                                  handleInactivateSolicitud(solicitud.id)
+                                }
                                 className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
                               >
                                 Inactivar
@@ -2368,8 +2576,12 @@ const ProcesoLogisticoDetallePage = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="px-4 py-10 text-center text-sm text-gray-500">
-                      Aun no se emitieron solicitudes de cotizacion para este requerimiento.
+                    <td
+                      colSpan="4"
+                      className="px-4 py-10 text-center text-sm text-gray-500"
+                    >
+                      Aun no se emitieron solicitudes de cotizacion para este
+                      requerimiento.
                     </td>
                   </tr>
                 )}
@@ -2378,27 +2590,42 @@ const ProcesoLogisticoDetallePage = () => {
           </div>
         </div>
 
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 px-5 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Cotizaciones registradas</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                En flujo EXCEPCIONAL, una de estas cotizaciones puede sustentar la decision formal del expediente por MENOR_CUANTIA, URGENCIA o EMERGENCIA.
-              </p>
-            </div>
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 px-5 py-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Cotizaciones registradas
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              En flujo EXCEPCIONAL, una de estas cotizaciones puede sustentar la
+              decision formal del expediente por MENOR_CUANTIA, URGENCIA o
+              EMERGENCIA.
+            </p>
+          </div>
           <div className="space-y-3 p-4 md:hidden">
             {resumenCotizaciones.length > 0 ? (
               resumenCotizaciones.map((cotizacion) => (
-                <div key={cotizacion.id} className="rounded-lg border border-gray-200 p-4">
+                <div
+                  key={cotizacion.id}
+                  className="rounded-lg border border-gray-200 p-4"
+                >
                   <p className="font-medium text-gray-900">
-                    {cotizacion.codigo} · {cotizacion.proveedor?.razonSocial || "-"}
+                    {cotizacion.codigo} ·{" "}
+                    {cotizacion.proveedor?.razonSocial || "-"}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-gray-900">
                     {formatCurrency(cotizacion.totalOferta)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    Entrega: {cotizacion.tiempoEntregaDias ?? "-"} dias · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                    Entrega:{" "}
+                    {cotizacion.tiempoEntregaDias === 0
+                      ? "Inmediata"
+                      : cotizacion.tiempoEntregaDias != null
+                        ? `${cotizacion.tiempoEntregaDias} días`
+                        : "-"}{" "}
+                    · Vigencia: {cotizacion.vigenciaOfertaDias ?? "-"} dias
                   </p>
-                  {comparativoDecisionMeta?.cotizacionId === Number(cotizacion.id) ? (
+                  {comparativoDecisionMeta?.cotizacionId ===
+                  Number(cotizacion.id) ? (
                     <p className="mt-2 text-xs font-medium text-emerald-700">
                       {comparativoDecisionMeta.via === "EXCEPCIONAL"
                         ? "Seleccion formal por adjudicacion directa excepcional."
@@ -2410,7 +2637,8 @@ const ProcesoLogisticoDetallePage = () => {
                   </div>
                   {cotizacion.activo === false ? (
                     <p className="mt-2 text-xs font-medium text-rose-700">
-                      Inactiva{cotizacion.motivoInactivacion
+                      Inactiva
+                      {cotizacion.motivoInactivacion
                         ? ` · ${cotizacion.motivoInactivacion}`
                         : ""}
                     </p>
@@ -2426,7 +2654,9 @@ const ProcesoLogisticoDetallePage = () => {
                     {canManageDrafts ? (
                       <button
                         type="button"
-                        onClick={() => setCotizacionDraft(buildCotizacionDraft(cotizacion))}
+                        onClick={() =>
+                          setCotizacionDraft(buildCotizacionDraft(cotizacion))
+                        }
                         disabled={cotizacion.activo === false}
                         className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                       >
@@ -2447,7 +2677,9 @@ const ProcesoLogisticoDetallePage = () => {
                             : "border border-red-300 text-red-700 hover:bg-red-50"
                         }`}
                       >
-                        {cotizacion.activo === false ? "Reactivar" : "Inactivar"}
+                        {cotizacion.activo === false
+                          ? "Reactivar"
+                          : "Inactivar"}
                       </button>
                     ) : null}
                   </div>
@@ -2463,11 +2695,21 @@ const ProcesoLogisticoDetallePage = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Codigo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Proveedor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Acciones</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Codigo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Proveedor
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Total
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Estado
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -2475,9 +2717,14 @@ const ProcesoLogisticoDetallePage = () => {
                   resumenCotizaciones.map((cotizacion) => (
                     <tr key={cotizacion.id}>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        <p className="font-medium text-gray-900">{cotizacion.codigo}</p>
-                        <p className="text-xs text-gray-500">{cotizacion.solicitudCodigo || "-"}</p>
-                        {comparativoDecisionMeta?.cotizacionId === Number(cotizacion.id) ? (
+                        <p className="font-medium text-gray-900">
+                          {cotizacion.codigo}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {cotizacion.solicitudCodigo || "-"}
+                        </p>
+                        {comparativoDecisionMeta?.cotizacionId ===
+                        Number(cotizacion.id) ? (
                           <p className="mt-1 text-xs font-medium text-emerald-700">
                             {comparativoDecisionMeta.via === "EXCEPCIONAL"
                               ? "Adjudicacion directa excepcional formal."
@@ -2485,11 +2732,18 @@ const ProcesoLogisticoDetallePage = () => {
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{cotizacion.proveedor?.razonSocial || "-"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {cotizacion.proveedor?.razonSocial || "-"}
+                      </td>
                       <td className="px-4 py-3 text-sm font-semibold text-gray-900">
                         <p>{formatCurrency(cotizacion.totalOferta)}</p>
                         <p className="mt-1 text-xs font-normal text-gray-500">
-                          {cotizacion.tiempoEntregaDias ?? "-"} dias · vigencia {cotizacion.vigenciaOfertaDias ?? "-"} dias
+                          {cotizacion.tiempoEntregaDias === 0
+                            ? "Inmediata"
+                            : cotizacion.tiempoEntregaDias != null
+                              ? `${cotizacion.tiempoEntregaDias} días`
+                              : "-"}{" "}
+                          · vigencia {cotizacion.vigenciaOfertaDias ?? "-"} dias
                         </p>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
@@ -2512,7 +2766,11 @@ const ProcesoLogisticoDetallePage = () => {
                           {canManageDrafts && (
                             <button
                               type="button"
-                              onClick={() => setCotizacionDraft(buildCotizacionDraft(cotizacion))}
+                              onClick={() =>
+                                setCotizacionDraft(
+                                  buildCotizacionDraft(cotizacion),
+                                )
+                              }
                               disabled={cotizacion.activo === false}
                               className="rounded border border-indigo-300 px-3 py-1 text-indigo-700 hover:bg-indigo-50"
                             >
@@ -2544,7 +2802,10 @@ const ProcesoLogisticoDetallePage = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-4 py-10 text-center text-sm text-gray-500">
+                    <td
+                      colSpan="5"
+                      className="px-4 py-10 text-center text-sm text-gray-500"
+                    >
                       Aun no se registraron cotizaciones para este expediente.
                     </td>
                   </tr>
@@ -2554,7 +2815,6 @@ const ProcesoLogisticoDetallePage = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };

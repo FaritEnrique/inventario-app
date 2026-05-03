@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
 import Modal from "../components/Modal";
 import UsuarioForm from "../components/UsuarioForm";
@@ -51,13 +51,18 @@ const formatOperationalAssignments = (user, areas) =>
           const areaNombre = getAreaNombre(
             areas,
             assignment.areaId,
-            assignment.area
+            assignment.area,
           );
           const tipo = assignment.tipoAsignacion || "RESPONSABILIDAD_OPERATIVA";
           return `${assignment.rol} (${areaNombre}) [${tipo}]`;
         })
         .join(" | ")
     : "";
+
+const USER_CREATION_TOAST_CONTAINER_ID = "gestion-usuarios-creation";
+const userCreationToastOptions = {
+  containerId: USER_CREATION_TOAST_CONTAINER_ID,
+};
 
 const GestionUsuariosPage = () => {
   const {
@@ -100,7 +105,7 @@ const GestionUsuariosPage = () => {
         setAreas(normalizedAreas);
       } catch (error) {
         console.error("Error al cargar areas:", error);
-        toast.error("No se pudieron cargar las areas.");
+        toast.error("No se pudieron cargar las áreas.");
       }
     };
 
@@ -115,11 +120,14 @@ const GestionUsuariosPage = () => {
   const handleCrear = async (usuario) => {
     try {
       await crearUsuario(usuario);
-      toast.success("Usuario creado con exito.");
+      toast.success("Usuario creado con éxito.", userCreationToastOptions);
       cargarUsuarios();
     } catch (error) {
       console.error(error);
-      toast.error(getUserErrorMessage(error, "Error al crear usuario."));
+      toast.error(
+        getUserErrorMessage(error, "Error al crear usuario."),
+        userCreationToastOptions,
+      );
       throw error;
     }
   };
@@ -135,13 +143,13 @@ const GestionUsuariosPage = () => {
 
     try {
       await actualizarUsuario(usuarioAEditar.id, datos);
-      toast.success("Usuario actualizado con exito.");
+      toast.success("Usuario actualizado con éxito.");
       setIsModalOpen(false);
       setUsuarioAEditar(null);
       cargarUsuarios();
     } catch (error) {
       toast.error(
-        getUserErrorMessage(error, "No se pudieron guardar los cambios.")
+        getUserErrorMessage(error, "No se pudieron guardar los cambios."),
       );
       throw error;
     }
@@ -160,13 +168,13 @@ const GestionUsuariosPage = () => {
             cargarUsuarios();
           } catch (error) {
             toast.error(
-              getUserErrorMessage(error, "Error al desactivar el usuario.")
+              getUserErrorMessage(error, "Error al desactivar el usuario."),
             );
           }
         }}
         closeToast={() => toast.dismiss()}
       />,
-      { autoClose: false }
+      { autoClose: false },
     );
   };
 
@@ -178,15 +186,13 @@ const GestionUsuariosPage = () => {
       toast.success(`${userName} fue reactivado correctamente.`);
       cargarUsuarios();
     } catch (error) {
-      toast.error(
-        getUserErrorMessage(error, "Error al reactivar el usuario.")
-      );
+      toast.error(getUserErrorMessage(error, "Error al reactivar el usuario."));
     }
   };
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestion de Usuarios</h1>
+      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Solo <code>ADMINISTRADOR_SISTEMA</code> y{" "}
         <code>GERENTE_ADMINISTRACION</code> pueden crear, editar y cambiar el
@@ -195,8 +201,8 @@ const GestionUsuariosPage = () => {
       <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
         Esta vista distingue entre <strong>rol principal</strong>,{" "}
         <strong>rangos adicionales</strong> y{" "}
-        <strong>asignaciones operativas explicitas</strong>. Las asignaciones
-        operativas ya no deben inferirse desde la estructura de areas.
+        <strong>asignaciones operativas explícitas</strong>. Las asignaciones
+        operativas ya no deben inferirse desde la estructura de áreas.
       </div>
 
       <Link
@@ -227,14 +233,14 @@ const GestionUsuariosPage = () => {
               Configurar areas para usuarios
             </p>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Si el usuario que vas a crear o editar todavia no tiene un area
+              Si el usuario que vas a crear o editar todavía no tiene un área
               definida, crea o ajusta primero la unidad organizacional para
               poder asignarla correctamente.
             </p>
           </div>
         </div>
         <div className="inline-flex items-center gap-2 self-start rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 md:self-center">
-          Ir a Gestion de Areas
+          Ir a Gestión de Áreas
           <span aria-hidden="true">→</span>
         </div>
       </Link>
@@ -246,6 +252,7 @@ const GestionUsuariosPage = () => {
             onSave={handleCrear}
             onCancel={() => {}}
             disableAdminRole={!canAssignAdminRole}
+            toastOptions={userCreationToastOptions}
           />
         </div>
       ) : null}
@@ -260,7 +267,7 @@ const GestionUsuariosPage = () => {
         <input
           id="gestion-usuarios-search"
           type="text"
-          placeholder="Buscar por nombre, codigo o correo electronico..."
+          placeholder="Buscar por nombre, código o correo electrónico..."
           className="w-full rounded border px-3 py-2"
           value={searchTerm}
           name="search"
@@ -293,7 +300,7 @@ const GestionUsuariosPage = () => {
               const rangosAdicionales = formatUserRangos(user, areas);
               const asignacionesOperativas = formatOperationalAssignments(
                 user,
-                areas
+                areas,
               );
 
               return (
@@ -372,7 +379,7 @@ const GestionUsuariosPage = () => {
                             onClick={() =>
                               handleDeactivate(
                                 user.id,
-                                user.name || user.nombre
+                                user.name || user.nombre,
                               )
                             }
                             className="rounded bg-red-500 px-4 py-2 text-white"
@@ -384,7 +391,7 @@ const GestionUsuariosPage = () => {
                             onClick={() =>
                               handleReactivate(
                                 user.id,
-                                user.name || user.nombre
+                                user.name || user.nombre,
                               )
                             }
                             className="rounded bg-blue-600 px-4 py-2 text-white"
@@ -443,16 +450,22 @@ const GestionUsuariosPage = () => {
               activo: usuarioAEditar.activo,
               rol: usuarioAEditar.rol,
               rangos: (usuarioAEditar.userRangos || []).filter(
-                (rango) => rango.activo !== false
+                (rango) => rango.activo !== false,
               ),
             }}
             areas={areas}
             onSave={handleSaveEdit}
             onCancel={() => setIsModalOpen(false)}
             disableAdminRole={!canAssignAdminRole}
+            toastOptions={userCreationToastOptions}
           />
         </Modal>
       ) : null}
+      <ToastContainer
+        containerId={USER_CREATION_TOAST_CONTAINER_ID}
+        position="top-right"
+        autoClose={3000}
+      />
     </div>
   );
 };

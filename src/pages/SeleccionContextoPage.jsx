@@ -30,7 +30,8 @@ const SeleccionContextoPage = () => {
   const reason = location.state?.reason || null;
   const expectedContext = location.state?.expectedContext || null;
   const requiresLogistica =
-    expectedContext === "logistica-jefatura" || expectedContext === "logistica-operador";
+    expectedContext === "logistica-jefatura" ||
+    expectedContext === "logistica-operador";
 
   if (loading) {
     return (
@@ -53,11 +54,13 @@ const SeleccionContextoPage = () => {
       toast.success(
         response?.activeContext?.displayName
           ? `Contexto activo: ${response.activeContext.displayName}`
-          : "Contexto operativo activado."
+          : "Contexto operativo activado.",
       );
       navigate(targetPath, { replace: true });
     } catch (error) {
-      toast.error(error.message || "No se pudo activar el contexto seleccionado.");
+      toast.error(
+        error.message || "No se pudo activar el contexto seleccionado.",
+      );
     }
   };
 
@@ -132,7 +135,11 @@ const SeleccionContextoPage = () => {
               disabled={contextBusy || isCurrent}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              {isCurrent ? "Contexto activo" : activeContext ? "Cambiar a este contexto" : "Activar contexto"}
+              {isCurrent
+                ? "Contexto activo"
+                : activeContext
+                  ? "Cambiar a este contexto"
+                  : "Activar contexto"}
             </button>
           </div>
         </div>
@@ -147,7 +154,9 @@ const SeleccionContextoPage = () => {
           Sesion operativa
         </p>
         <h1 className="mt-2 text-3xl font-semibold">
-          {activeContext ? "Cambiar contexto operativo" : "Seleccionar contexto operativo"}
+          {activeContext
+            ? "Cambiar contexto operativo"
+            : "Seleccionar contexto operativo"}
         </h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-200">
           {activeContext
@@ -177,8 +186,9 @@ const SeleccionContextoPage = () => {
             El contexto activo actual no corresponde a Logistica.
           </p>
           <p className="mt-1 text-amber-800">
-            Para continuar en la bandeja logistica, selecciona un contexto de Logistica
-            disponible abajo. Luego volveras automaticamente a {targetPath}.
+            Para continuar en la bandeja logistica, selecciona un contexto de
+            Logistica disponible abajo. Luego volveras automaticamente a{" "}
+            {targetPath}.
           </p>
         </section>
       )}
@@ -189,7 +199,8 @@ const SeleccionContextoPage = () => {
             No hay contextos operativos disponibles
           </h2>
           <p className="mt-2 text-sm text-amber-800">
-            La sesion esta autenticada, pero no se encontro ninguna asignacion operativa vigente para continuar.
+            La sesión está autenticada, pero no se encontró ninguna asignación
+            operativa vigente para continuar.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
@@ -240,7 +251,9 @@ const SeleccionContextoPage = () => {
             </div>
           </div>
 
-          <div className="grid gap-4">{availableContexts.map(renderContextCard)}</div>
+          <div className="grid gap-4">
+            {availableContexts.map(renderContextCard)}
+          </div>
         </section>
       )}
     </div>

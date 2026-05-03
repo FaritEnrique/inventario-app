@@ -81,24 +81,24 @@ const trayDefinitions = {
   },
   "gerencia-area": {
     key: "gerencia-area",
-    label: "Bandeja Gerencia de Area",
+    label: "Bandeja Gerencia de Área",
     path: "/requerimientos/bandeja/gerencia-area",
     description:
       "Revisa requerimientos pendientes de gerencia de area. Solo veras expedientes donde seas el aprobador efectivo asignado.",
   },
   "gerencia-administracion": {
     key: "gerencia-administracion",
-    label: "Bandeja Gerencia Administracion",
+    label: "Bandeja Gerencia Administración",
     path: "/requerimientos/bandeja/gerencia-administracion",
     description:
-      "Revisa requerimientos pendientes de gerencia de administracion para este nivel.",
+      "Revisa requerimientos pendientes de gerencia de administración para este nivel.",
   },
   "gerencia-general": {
     key: "gerencia-general",
     label: "Bandeja Gerencia General",
     path: "/requerimientos/bandeja/gerencia-general",
     description:
-      "Revisa requerimientos pendientes de aprobacion final en gerencia general.",
+      "Revisa requerimientos pendientes de aprobación final en gerencia general.",
   },
 };
 
@@ -400,7 +400,7 @@ export const getAvailableApprovalTraysEffective = (user = {}) => {
 
 export const getTrayGuidanceEffective = (user = {}, nivel) => {
   if (isAdminOverride(user)) {
-    return "Como administrador, esta bandeja muestra el nivel seleccionado segun lo que devuelve el backend.";
+    return "Como administrador, esta bandeja muestra el nivel seleccionado según lo que devuelve el backend.";
   }
 
   if (nivel === "jefatura" || nivel === "gerencia-area") {
@@ -427,7 +427,7 @@ export const getTrayEmptyStateEffective = (
     return {
       title: "No hay requerimientos pendientes en este nivel.",
       description:
-        "El backend no devolvio expedientes pendientes para la etapa seleccionada.",
+        "El backend no devolvió expedientes pendientes para la etapa seleccionada.",
     };
   }
 
@@ -442,7 +442,7 @@ export const getTrayEmptyStateEffective = (
   return {
     title: "No hay requerimientos pendientes en esta bandeja.",
     description:
-      "En este momento no hay expedientes pendientes para este nivel de aprobacion.",
+      "En este momento no hay expedientes pendientes para este nivel de aprobación.",
   };
 };
 
@@ -562,7 +562,7 @@ export const getPrimaryNavigationLinksEffective = (user = {}) => {
   ) {
     links.push({
       to: getAdministrationHomePathEffective(user),
-      label: "Gestion",
+      label: "Gestión",
     });
   }
 

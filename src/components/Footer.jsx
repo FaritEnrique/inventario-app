@@ -3,30 +3,48 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="mt-8 border-t border-cyan-950/70 bg-[#123848]">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 text-sm text-cyan-50 sm:flex-row sm:items-center sm:justify-between">
+    <footer className="border-t border-cyan-950/70 bg-[#123848]">
+      <div className="flex flex-col gap-4 px-4 py-5 mx-auto text-sm max-w-7xl text-cyan-50 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-200/15 bg-white/10 shadow-sm">
+            <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 border shadow-sm rounded-xl border-cyan-200/15 bg-white/10">
               <svg
                 viewBox="0 0 64 64"
-                className="h-6 w-6 text-cyan-100"
+                className="w-6 h-6 text-cyan-100"
                 aria-hidden="true"
                 fill="none"
               >
-                <rect x="8" y="12" width="24" height="18" rx="3" className="fill-current opacity-90" />
-                <rect x="20" y="34" width="20" height="14" rx="3" className="fill-cyan-200" />
-                <path d="M34 24h11l7 8v10H34z" className="fill-current opacity-90" />
+                <rect
+                  x="8"
+                  y="12"
+                  width="24"
+                  height="18"
+                  rx="3"
+                  className="fill-current opacity-90"
+                />
+                <rect
+                  x="20"
+                  y="34"
+                  width="20"
+                  height="14"
+                  rx="3"
+                  className="fill-cyan-200"
+                />
+                <path
+                  d="M34 24h11l7 8v10H34z"
+                  className="fill-current opacity-90"
+                />
                 <circle cx="40" cy="46" r="4" className="fill-[#123848]" />
                 <circle cx="49" cy="46" r="4" className="fill-[#123848]" />
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="text-sm font-semibold text-white truncate">
                 LogisticaAPP
               </p>
-              <p className="truncate text-xs text-cyan-100/75">
-                Aplicacion operativa para requerimientos, compras, inventario y seguimiento logistico.
+              <p className="text-xs truncate text-cyan-100/75">
+                Aplicación operativa para requerimientos, compras, inventario y
+                seguimiento logístico.
               </p>
             </div>
           </div>
@@ -42,7 +60,8 @@ const Footer = () => {
             </span>
           </div>
           <p className="leading-relaxed sm:text-right">
-            © {new Date().getFullYear()} LogisticaAPP. Entorno interno para gestion operativa y control del flujo logistico.
+            © {new Date().getFullYear()} LogisticaAPP. Entorno interno para
+            gestión operativa y control del flujo logístico.
           </p>
         </div>
       </div>

@@ -7,7 +7,7 @@ const normalizeBaseUrl = (rawUrl) => {
   const trimmedUrl = (rawUrl || "").trim().replace(/\/+$/, "");
 
   if (!trimmedUrl) {
-    throw new Error("VITE_API_URL no esta configurada");
+    throw new Error("VITE_API_URL no está configurada");
   }
 
   return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
@@ -20,16 +20,16 @@ const rawBaseUrl =
 const baseURL = normalizeBaseUrl(rawBaseUrl);
 
 const FIELD_LABELS = {
-  email: "correo electronico",
-  password: "contrasena",
+  email: "correo electrónico",
+  password: "contraseña",
   procedencia: "procedencia",
-  razonSocial: "razon social",
-  direccion: "direccion",
-  telefono: "telefono",
-  correoElectronico: "correo electronico",
+  razonSocial: "razón social",
+  direccion: "dirección",
+  telefono: "teléfono",
+  correoElectronico: "correo electrónico",
   ruc: "RUC",
   tipoProductoIds: "tipos de producto",
-  areaId: "area",
+  areaId: "área",
   nombre: "nombre",
   prefijo: "prefijo",
   activo: "estado activo",
@@ -58,7 +58,7 @@ const translateValidationMessage = (message) => {
   const rawMessage = String(message || "").trim();
 
   if (!rawMessage) {
-    return "Ocurrio un error de validacion.";
+    return "Ocurrió un error de validación.";
   }
 
   const directTranslations = {
@@ -85,12 +85,12 @@ const translateValidationMessage = (message) => {
 
   match = rawMessage.match(/^"([^"]+)" is not allowed to be empty$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no puede estar vacio.`;
+    return `El campo ${formatFieldLabel(match[1])} no puede estar vacío.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" is not allowed$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no esta permitido.`;
+    return `El campo ${formatFieldLabel(match[1])} no está permitido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be a string$/i);
@@ -120,12 +120,12 @@ const translateValidationMessage = (message) => {
 
   match = rawMessage.match(/^"([^"]+)" must be a valid email$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser un correo electronico valido.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser un correo electrónico válido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must be a valid date$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} debe ser una fecha valida.`;
+    return `El campo ${formatFieldLabel(match[1])} debe ser una fecha válida.`;
   }
 
   match = rawMessage.match(
@@ -139,7 +139,7 @@ const translateValidationMessage = (message) => {
     /^"([^"]+)" length must be less than or equal to (\d+) characters long$/i,
   );
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} no puede tener mas de ${match[2]} caracteres.`;
+    return `El campo ${formatFieldLabel(match[1])} no puede tener más de ${match[2]} caracteres.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" must contain at least (\d+) items$/i);
@@ -175,12 +175,12 @@ const translateValidationMessage = (message) => {
     /^"([^"]+)" with value "([^"]*)" fails to match the required pattern: .*$/i,
   );
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} tiene un formato invalido.`;
+    return `El campo ${formatFieldLabel(match[1])} tiene un formato inválido.`;
   }
 
   match = rawMessage.match(/^"([^"]+)" contains an invalid value$/i);
   if (match) {
-    return `El campo ${formatFieldLabel(match[1])} contiene un valor invalido.`;
+    return `El campo ${formatFieldLabel(match[1])} contiene un valor inválido.`;
   }
 
   return rawMessage;

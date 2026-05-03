@@ -86,9 +86,9 @@ const Header = () => {
         .join(" | ")
     : null;
   const summaryText = !isAuthenticated
-    ? "Gestiona requerimientos, inventario y seguimiento logistico desde una sola plataforma."
+    ? "Gestiona requerimientos, inventario y seguimiento logístico desde una sola plataforma."
     : contextSelectionRequired
-      ? "Seleccion de contexto pendiente"
+      ? "Selección de contexto pendiente"
       : null;
 
   return (

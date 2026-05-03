@@ -14,6 +14,14 @@ import { useAuth } from "../context/authContext";
 import { canManageSunatEffective } from "../accessRules";
 
 const RUC_REGEX = /^(10|20)\d{9}$/;
+const SEARCH_TOAST_BASE_CLASS =
+  "fixed right-5 top-5 z-[9999] w-[min(24rem,calc(100vw-2.5rem))] rounded-lg border px-4 py-3 text-sm shadow-xl";
+const SEARCH_TOAST_CLASS_BY_TYPE = {
+  error: "border-red-200 bg-red-50 text-red-800",
+  info: "border-blue-200 bg-blue-50 text-blue-800",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  warn: "border-amber-200 bg-amber-50 text-amber-800",
+};
 
 const pickFirstTextValue = (...values) =>
   values.find((value) => typeof value === "string" && value.trim() !== "") ||
@@ -264,25 +272,30 @@ const buildSunatAddress = (data = {}) => {
   return primary;
 };
 
-const normalizeSunatProveedorDraft = (proveedor = {}, fallbackRuc = "") => ({
-  ...proveedor,
-  procedencia: proveedor.procedencia || "NACIONAL",
-  ruc: pickFirstTextValue(proveedor.ruc, fallbackRuc),
-  razonSocial: pickFirstTextValue(
-    proveedor.razonSocial,
-    proveedor.razonsocial,
-    proveedor.nombreORazonSocial,
-    proveedor.nombreOrazonSocial,
-    proveedor.nombreOrazonSocialDelContribuyente,
-    proveedor.nombre,
-  ),
-  direccion: pickFirstTextValue(
-    proveedor.direccion,
-    proveedor.domicilioFiscal,
-    proveedor.direccionCompleta,
-    buildSunatAddress(proveedor),
-  ),
-});
+const normalizeSunatProveedorDraft = (proveedor = {}, fallbackRuc = "") => {
+  const safeProveedor =
+    proveedor && typeof proveedor === "object" ? proveedor : {};
+
+  return {
+    ...safeProveedor,
+    procedencia: safeProveedor.procedencia || "NACIONAL",
+    ruc: pickFirstTextValue(safeProveedor.ruc, fallbackRuc),
+    razonSocial: pickFirstTextValue(
+      safeProveedor.razonSocial,
+      safeProveedor.razonsocial,
+      safeProveedor.nombreORazonSocial,
+      safeProveedor.nombreOrazonSocial,
+      safeProveedor.nombreOrazonSocialDelContribuyente,
+      safeProveedor.nombre,
+    ),
+    direccion: pickFirstTextValue(
+      safeProveedor.direccion,
+      safeProveedor.domicilioFiscal,
+      safeProveedor.direccionCompleta,
+      buildSunatAddress(safeProveedor),
+    ),
+  };
+};
 
 const hasSunatAutofillData = (proveedor = {}) =>
   Boolean(
@@ -328,6 +341,8 @@ const GestionProveedoresPage = () => {
   const [isRucDisabledForNewForm, setIsRucDisabledForNewForm] = useState(false);
   const [resultadoImportacionModal, setResultadoImportacionModal] =
     useState(null);
+  const [searchToast, setSearchToast] = useState(null);
+  const searchToastTimeoutRef = useRef(null);
   const handledImportResultRef = useRef({
     PADRON_COMPLETO: null,
     PADRON_REDUCIDO: null,
@@ -360,6 +375,32 @@ const GestionProveedoresPage = () => {
 
   const { user: currentUser } = useAuth();
   const canManageSunat = canManageSunatEffective(currentUser);
+
+  const showSearchToast = (type, message) => {
+    setSearchToast({
+      id: `${type}-${Date.now()}`,
+      type,
+      message,
+    });
+
+    if (searchToastTimeoutRef.current) {
+      clearTimeout(searchToastTimeoutRef.current);
+    }
+
+    searchToastTimeoutRef.current = setTimeout(() => {
+      setSearchToast(null);
+      searchToastTimeoutRef.current = null;
+    }, 5000);
+  };
+
+  useEffect(
+    () => () => {
+      if (searchToastTimeoutRef.current) {
+        clearTimeout(searchToastTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     fetchProveedores(lastAppliedSearchQuery);
@@ -418,14 +459,17 @@ const GestionProveedoresPage = () => {
 
     const isNumericQuery = /^\d+$/.test(query);
     if (isNumericQuery && query.length === 11 && !RUC_REGEX.test(query)) {
-      toast.error("El RUC debe tener 11 digitos y empezar con 10 o 20.");
+      showSearchToast(
+        "error",
+        "El RUC debe tener 11 digitos y empezar con 10 o 20.",
+      );
       return;
     }
 
     setIsRucDisabledForNewForm(false);
 
     if (!query) {
-      toast.info("Ingresa un RUC o nombre para buscar.");
+      showSearchToast("info", "Ingresa un RUC o nombre para buscar.");
       return;
     }
 
@@ -437,7 +481,8 @@ const GestionProveedoresPage = () => {
     const localResults = await consultarProveedores(query);
 
     if (localResults.length > 0) {
-      toast.info(
+      showSearchToast(
+        "info",
         `Se encontraron ${localResults.length} coincidencias locales.`,
       );
       return;
@@ -452,25 +497,29 @@ const GestionProveedoresPage = () => {
         setIsFormVisible(true);
 
         if (hasSunatAutofillData(proveedorDraft)) {
-          toast.success(
+          showSearchToast(
+            "success",
             "Proveedor encontrado en SUNAT. Completa los datos para registrarlo.",
           );
         } else {
-          toast.warn(
+          showSearchToast(
+            "warn",
             "Se encontro el RUC en ProveedoresSunat, pero sin razon social o direccion. Completa esos campos manualmente o actualiza el padron reducido.",
           );
         }
       } else {
         setSelectedProveedor(proveedorDraft);
         setIsFormVisible(true);
-        toast.info(
+        showSearchToast(
+          "info",
           "El RUC no fue encontrado. Puedes registrar un nuevo proveedor con este RUC.",
         );
       }
       return;
     }
 
-    toast.info(
+    showSearchToast(
+      "info",
       "Proveedor no encontrado. Para buscar en SUNAT, ingresa un RUC.",
     );
   };
@@ -480,7 +529,8 @@ const GestionProveedoresPage = () => {
     setIsFormVisible(true);
     setIsRucDisabledForNewForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    toast.info(
+    showSearchToast(
+      "info",
       "Formulario para nuevo proveedor. El RUC depende de la procedencia seleccionada.",
     );
   };
@@ -552,6 +602,28 @@ const GestionProveedoresPage = () => {
       <Helmet>
         <title>Gestion de Proveedores | Sistema de Inventario</title>
       </Helmet>
+      {searchToast ? (
+        <div
+          key={searchToast.id}
+          role={searchToast.type === "error" ? "alert" : "status"}
+          className={`${SEARCH_TOAST_BASE_CLASS} ${
+            SEARCH_TOAST_CLASS_BY_TYPE[searchToast.type] ||
+            SEARCH_TOAST_CLASS_BY_TYPE.info
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-medium leading-5">{searchToast.message}</p>
+            <button
+              type="button"
+              onClick={() => setSearchToast(null)}
+              className="shrink-0 rounded px-1 font-bold leading-none opacity-70 transition hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current"
+              aria-label="Cerrar notificacion"
+            >
+              x
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <h1 className="mb-6 text-3xl font-bold text-gray-800">
           Gestion de Proveedores

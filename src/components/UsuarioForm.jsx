@@ -38,6 +38,46 @@ const createEmptyForm = () => ({
   rangos: [],
 });
 
+const getSelectSize = (isExpanded, optionsCount) =>
+  isExpanded ? Math.min(Math.max(Number(optionsCount) + 1, 2), 8) : 1;
+
+const ScrollableSelect = ({
+  children,
+  className = "",
+  optionsCount = 0,
+  onBlur,
+  onChange,
+  onFocus,
+  ...props
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <select
+      {...props}
+      size={getSelectSize(isExpanded, optionsCount)}
+      onFocus={(event) => {
+        setIsExpanded(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setIsExpanded(false);
+        onBlur?.(event);
+      }}
+      onChange={(event) => {
+        onChange?.(event);
+        setIsExpanded(false);
+        event.currentTarget.blur();
+      }}
+      className={`${className} ${
+        isExpanded ? "max-h-64 overflow-y-auto" : ""
+      }`}
+    >
+      {children}
+    </select>
+  );
+};
+
 const normalizeRangos = (rangos = []) =>
   (Array.isArray(rangos) ? rangos : [])
     .filter((rango) => rango && rango.activo !== false)
@@ -76,6 +116,7 @@ const UsuarioForm = ({
   onCancel = () => {},
   onSave = async () => {},
   disableAdminRole = false,
+  toastOptions = {},
 }) => {
   const [form, setForm] = useState(createEmptyForm);
   const [formError, setFormError] = useState("");
@@ -180,7 +221,7 @@ const UsuarioForm = ({
     const validationMessage = validateForm();
     if (validationMessage) {
       setFormError(validationMessage);
-      toast.error(validationMessage);
+      toast.error(validationMessage, toastOptions);
       return;
     }
 
@@ -323,13 +364,14 @@ const UsuarioForm = ({
         >
           Area principal
         </label>
-        <select
+        <ScrollableSelect
           id="usuario-area"
           name="areaId"
           value={form.areaId}
           onChange={handleChange}
           autoComplete="organization"
           className="w-full rounded border p-2"
+          optionsCount={areas.length}
           required
         >
           <option value="">-- Area principal --</option>
@@ -338,7 +380,7 @@ const UsuarioForm = ({
               {area.nombre}
             </option>
           ))}
-        </select>
+        </ScrollableSelect>
       </div>
 
       <div className="md:col-span-1">
@@ -348,13 +390,14 @@ const UsuarioForm = ({
         >
           Rol principal
         </label>
-        <select
+        <ScrollableSelect
           id="usuario-rol"
           name="rol"
           value={form.rol}
           onChange={handleChange}
           autoComplete="off"
           className="w-full rounded border p-2"
+          optionsCount={rolesList.length}
           required
         >
           <option value="">-- Rol principal --</option>
@@ -367,7 +410,7 @@ const UsuarioForm = ({
               {rol}
             </option>
           ))}
-        </select>
+        </ScrollableSelect>
       </div>
 
       {!hasAreasAvailable ? (
@@ -429,7 +472,7 @@ const UsuarioForm = ({
                     >
                       Rol adicional
                     </label>
-                    <select
+                    <ScrollableSelect
                       id={`usuario-rango-rol-${index}`}
                       value={rango.rol}
                       onChange={(event) =>
@@ -437,6 +480,7 @@ const UsuarioForm = ({
                       }
                       autoComplete="off"
                       className="w-full rounded border p-2"
+                      optionsCount={additionalRolesList.length}
                       required
                     >
                       <option value="">-- Rol adicional --</option>
@@ -445,7 +489,7 @@ const UsuarioForm = ({
                           {rol}
                         </option>
                       ))}
-                    </select>
+                    </ScrollableSelect>
                   </div>
 
                   <div>
@@ -455,7 +499,7 @@ const UsuarioForm = ({
                     >
                       Area del rango
                     </label>
-                    <select
+                    <ScrollableSelect
                       id={`usuario-rango-area-${index}`}
                       value={rango.areaId}
                       onChange={(event) =>
@@ -463,6 +507,7 @@ const UsuarioForm = ({
                       }
                       autoComplete="off"
                       className="w-full rounded border p-2"
+                      optionsCount={areas.length}
                       required
                     >
                       <option value="">-- Area del rango --</option>
@@ -471,7 +516,7 @@ const UsuarioForm = ({
                           {area.nombre}
                         </option>
                       ))}
-                    </select>
+                    </ScrollableSelect>
                   </div>
 
                   <div className="flex items-end">

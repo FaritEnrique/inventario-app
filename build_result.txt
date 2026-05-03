@@ -1,0 +1,103 @@
+﻿[36mvite v6.4.2 [32mbuilding for production...[36m[39m
+transforming...
+node.exe : Browserslist: browsers data (caniuse-lite) is 10 months old. Please 
+run:
+En C:\Farit\Proyectos 
+Farit\inventario\inventario-app\node_modules\.bin\vite.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/../vite/bin/vite.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Browserslist: b...ld. Please run: 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  npx update-browserslist-db@latest
+  Why you should do it regularly: 
+https://github.com/browserslist/update-db#readme
+[32mÔ£ô[39m 2272 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                                             [39m[1m[2m  0.46 kB[22m[1m[22m[2m Ôöé gzip:   0.29 kB[22m
+[2mdist/[22m[35massets/index-3An8IRQ7.css                              [39m[1m[2m 70.01 kB[22m[1m[22m[2m Ôöé gzip:  11.94 kB[22m
+[2mdist/[22m[36massets/useDebounce-D15ud3kq.js                         [39m[1m[2m  0.19 kB[22m[1m[22m[2m Ôöé gzip:   0.16 kB[22m
+[2mdist/[22m[36massets/Skeleton-BuXt6y6R.js                            [39m[1m[2m  0.31 kB[22m[1m[22m[2m Ôöé gzip:   0.23 kB[22m
+[2mdist/[22m[36massets/index-BlkdrocJ.js                               [39m[1m[2m  0.37 kB[22m[1m[22m[2m Ôöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/productoImage--CidOk3T.js                       [39m[1m[2m  0.39 kB[22m[1m[22m[2m Ôöé gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/SkeletonCard-DX2jWmd_.js                        [39m[1m[2m  0.49 kB[22m[1m[22m[2m Ôöé gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/SkeletonPageHeader-B4RoRDkO.js                  [39m[1m[2m  0.51 kB[22m[1m[22m[2m Ôöé gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/CotizacionesPage-Ccd3ErmP.js                    [39m[1m[2m  0.51 kB[22m[1m[22m[2m Ôöé gzip:   0.37 kB[22m
+[2mdist/[22m[36massets/SkeletonSection-C3C3HYKg.js                     [39m[1m[2m  0.52 kB[22m[1m[22m[2m Ôöé gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/InventarioDocumentoDetalleSkeleton-Bur_LYDr.js  [39m[1m[2m  0.68 kB[22m[1m[22m[2m Ôöé gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/solicitudesCotizacionApi-DbjHZdPM.js            [39m[1m[2m  0.69 kB[22m[1m[22m[2m Ôöé gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/ReservaEstadoBadge-B-ygaIPa.js                  [39m[1m[2m  0.74 kB[22m[1m[22m[2m Ôöé gzip:   0.41 kB[22m
+[2mdist/[22m[36massets/areasApi-BncnbHBB.js                            [39m[1m[2m  0.75 kB[22m[1m[22m[2m Ôöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/ConfirmDeleteToast-C7LTFLtQ.js                  [39m[1m[2m  0.96 kB[22m[1m[22m[2m Ôöé gzip:   0.47 kB[22m
+[2mdist/[22m[36massets/ConfirmToast-R82upuYi.js                        [39m[1m[2m  1.00 kB[22m[1m[22m[2m Ôöé gzip:   0.49 kB[22m
+[2mdist/[22m[36massets/OrdenCompraEstadoBadge-Cp1pbXls.js              [39m[1m[2m  1.08 kB[22m[1m[22m[2m Ôöé gzip:   0.54 kB[22m
+[2mdist/[22m[36massets/CotizacionEstadoBadge-CZ271myI.js               [39m[1m[2m  1.32 kB[22m[1m[22m[2m Ôöé gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/PedidoInternoEstadoBadge-DiVcuPZs.js            [39m[1m[2m  1.37 kB[22m[1m[22m[2m Ôöé gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/DocumentoFormalEstadoBadge-Bl3S_8HE.js          [39m[1m[2m  1.39 kB[22m[1m[22m[2m Ôöé gzip:   0.54 kB[22m
+[2mdist/[22m[36massets/productosApi-3QXgyL6P.js                        [39m[1m[2m  1.48 kB[22m[1m[22m[2m Ôöé gzip:   0.60 kB[22m
+[2mdist/[22m[36massets/useAreas-CBvlhcWv.js                            [39m[1m[2m  1.61 kB[22m[1m[22m[2m Ôöé gzip:   0.63 kB[22m
+[2mdist/[22m[36massets/SolicitudCotizacionDocumentoPage-DHy3T6O0.js    [39m[1m[2m  1.61 kB[22m[1m[22m[2m Ôöé gzip:   0.75 kB[22m
+[2mdist/[22m[36massets/useOrdenesCompra-CJm3UTrP.js                    [39m[1m[2m  1.62 kB[22m[1m[22m[2m Ôöé gzip:   0.57 kB[22m
+[2mdist/[22m[36massets/printWindow-ByW6eX3B.js                         [39m[1m[2m  1.63 kB[22m[1m[22m[2m Ôöé gzip:   0.80 kB[22m
+[2mdist/[22m[36massets/SkeletonTable-ByOhpnJm.js                       [39m[1m[2m  1.63 kB[22m[1m[22m[2m Ôöé gzip:   0.60 kB[22m
+[2mdist/[22m[36massets/usePedidosInternos-zWYlewfC.js                  [39m[1m[2m  1.65 kB[22m[1m[22m[2m Ôöé gzip:   0.60 kB[22m
+[2mdist/[22m[36massets/ProductoSearchField-BPQl_Nrm.js                 [39m[1m[2m  1.75 kB[22m[1m[22m[2m Ôöé gzip:   0.85 kB[22m
+[2mdist/[22m[36massets/useSolicitudesTipoProducto-yd3VzI_0.js          [39m[1m[2m  2.11 kB[22m[1m[22m[2m Ôöé gzip:   0.78 kB[22m
+[2mdist/[22m[36massets/RequerimientoEstadoBadge-BgOMiPQk.js            [39m[1m[2m  2.21 kB[22m[1m[22m[2m Ôöé gzip:   0.76 kB[22m
+[2mdist/[22m[36massets/usersApi-DRR-LfMX.js                            [39m[1m[2m  2.23 kB[22m[1m[22m[2m Ôöé gzip:   0.93 kB[22m
+[2mdist/[22m[36massets/useSolicitudesCotizacion-9bw_Vk29.js            [39m[1m[2m  2.31 kB[22m[1m[22m[2m Ôöé gzip:   0.73 kB[22m
+[2mdist/[22m[36massets/EditarRequerimientoPage-CjzaauSz.js             [39m[1m[2m  2.48 kB[22m[1m[22m[2m Ôöé gzip:   1.12 kB[22m
+[2mdist/[22m[36massets/SolicitarRestablecimientoPage-DCkAx5XB.js       [39m[1m[2m  2.67 kB[22m[1m[22m[2m Ôöé gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/useTipoProductos-DT3E_qzK.js                    [39m[1m[2m  2.74 kB[22m[1m[22m[2m Ôöé gzip:   0.91 kB[22m
+[2mdist/[22m[36massets/useMarcas-COeZhChA.js                           [39m[1m[2m  2.76 kB[22m[1m[22m[2m Ôöé gzip:   0.89 kB[22m
+[2mdist/[22m[36massets/useRequerimientos-B7jV1Gi3.js                   [39m[1m[2m  2.99 kB[22m[1m[22m[2m Ôöé gzip:   1.10 kB[22m
+[2mdist/[22m[36massets/RestablecerContrasenaPage-f53vE0cr.js           [39m[1m[2m  3.18 kB[22m[1m[22m[2m Ôöé gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/CrearPrimerUsuarioPage-Bpvvct1I.js              [39m[1m[2m  3.23 kB[22m[1m[22m[2m Ôöé gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/CrearRequerimientoPage-_5dnr2d9.js              [39m[1m[2m  3.56 kB[22m[1m[22m[2m Ôöé gzip:   1.63 kB[22m
+[2mdist/[22m[36massets/useProveedores-DCimENga.js                      [39m[1m[2m  3.74 kB[22m[1m[22m[2m Ôöé gzip:   1.33 kB[22m
+[2mdist/[22m[36massets/CatalogoSelectorModal-CHkAipzv.js               [39m[1m[2m  3.82 kB[22m[1m[22m[2m Ôöé gzip:   1.57 kB[22m
+[2mdist/[22m[36massets/CambiarContrasenaPage-C-zZPDiH.js               [39m[1m[2m  4.27 kB[22m[1m[22m[2m Ôöé gzip:   1.39 kB[22m
+[2mdist/[22m[36massets/useInventario-CnVaIqpO.js                       [39m[1m[2m  4.59 kB[22m[1m[22m[2m Ôöé gzip:   0.96 kB[22m
+[2mdist/[22m[36massets/useLogisticaCotizaciones-LogIY9HM.js            [39m[1m[2m  5.05 kB[22m[1m[22m[2m Ôöé gzip:   1.25 kB[22m
+[2mdist/[22m[36massets/BandejaAprobacionNotasPedidoPage-BKAD6tUG.js    [39m[1m[2m  6.20 kB[22m[1m[22m[2m Ôöé gzip:   2.04 kB[22m
+[2mdist/[22m[36massets/NotasPedidoPage-59MKiuek.js                     [39m[1m[2m  6.49 kB[22m[1m[22m[2m Ôöé gzip:   2.08 kB[22m
+[2mdist/[22m[36massets/GestionMarcasPage-BFaCN-4K.js                   [39m[1m[2m  6.76 kB[22m[1m[22m[2m Ôöé gzip:   2.34 kB[22m
+[2mdist/[22m[36massets/SeleccionContextoPage-hO1DvsMj.js               [39m[1m[2m  6.84 kB[22m[1m[22m[2m Ôöé gzip:   2.20 kB[22m
+[2mdist/[22m[36massets/InventarioKardexPage-DXAORT20.js                [39m[1m[2m  7.16 kB[22m[1m[22m[2m Ôöé gzip:   2.13 kB[22m
+[2mdist/[22m[36massets/InventarioMovimientosPage-DAXWarmR.js           [39m[1m[2m  7.36 kB[22m[1m[22m[2m Ôöé gzip:   2.08 kB[22m
+[2mdist/[22m[36massets/RequerimientosPage-0NOivZ7c.js                  [39m[1m[2m  7.54 kB[22m[1m[22m[2m Ôöé gzip:   2.13 kB[22m
+[2mdist/[22m[36massets/InventarioNotasIngresoPage-Xb6eBxUN.js          [39m[1m[2m  7.87 kB[22m[1m[22m[2m Ôöé gzip:   2.42 kB[22m
+[2mdist/[22m[36massets/InventarioNotasSalidaPage-BcVt24lb.js           [39m[1m[2m  7.93 kB[22m[1m[22m[2m Ôöé gzip:   2.44 kB[22m
+[2mdist/[22m[36massets/RequerimientosBandejaPage-iyMKpHLQ.js           [39m[1m[2m  8.06 kB[22m[1m[22m[2m Ôöé gzip:   2.60 kB[22m
+[2mdist/[22m[36massets/InventarioStockPage-D5XOAnj3.js                 [39m[1m[2m  8.07 kB[22m[1m[22m[2m Ôöé gzip:   2.30 kB[22m
+[2mdist/[22m[36massets/InventarioReservasPage-D1xJ8klG.js              [39m[1m[2m  8.12 kB[22m[1m[22m[2m Ôöé gzip:   2.43 kB[22m
+[2mdist/[22m[36massets/GestionTipoProductosPage-CR48gjXC.js            [39m[1m[2m  8.51 kB[22m[1m[22m[2m Ôöé gzip:   2.71 kB[22m
+[2mdist/[22m[36massets/SolicitudesRequerimientoPage-lzhG7cLb.js        [39m[1m[2m  9.19 kB[22m[1m[22m[2m Ôöé gzip:   2.50 kB[22m
+[2mdist/[22m[36massets/BandejaSolicitudesTipoProductoPage-CJfahUaS.js  [39m[1m[2m  9.70 kB[22m[1m[22m[2m Ôöé gzip:   2.67 kB[22m
+[2mdist/[22m[36massets/CrearNotaPedidoPage-M0TDZAgH.js                 [39m[1m[2m 10.30 kB[22m[1m[22m[2m Ôöé gzip:   3.08 kB[22m
+[2mdist/[22m[36massets/InventarioOperacionesPage-zaEnI7g9.js           [39m[1m[2m 10.67 kB[22m[1m[22m[2m Ôöé gzip:   2.74 kB[22m
+[2mdist/[22m[36massets/InventarioNotaIngresoDetallePage-BPneZqby.js    [39m[1m[2m 11.03 kB[22m[1m[22m[2m Ôöé gzip:   2.74 kB[22m
+[2mdist/[22m[36massets/InventarioNotaSalidaDetallePage-BhBK9S1z.js     [39m[1m[2m 11.14 kB[22m[1m[22m[2m Ôöé gzip:   2.76 kB[22m
+[2mdist/[22m[36massets/NotaPedidoDetallePage-BGj1o_c-.js               [39m[1m[2m 12.05 kB[22m[1m[22m[2m Ôöé gzip:   2.95 kB[22m
+[2mdist/[22m[36massets/OrdenesCompraPage-CytWRed5.js                   [39m[1m[2m 13.43 kB[22m[1m[22m[2m Ôöé gzip:   3.39 kB[22m
+[2mdist/[22m[36massets/configuracionEmpresaLetterhead-B5kS42-d.js      [39m[1m[2m 13.90 kB[22m[1m[22m[2m Ôöé gzip:   4.16 kB[22m
+[2mdist/[22m[36massets/BandejaAlmacenNotasPedidoPage-D97vdRIt.js       [39m[1m[2m 14.40 kB[22m[1m[22m[2m Ôöé gzip:   3.78 kB[22m
+[2mdist/[22m[36massets/InventarioReservaDetallePage-BUraAfc2.js        [39m[1m[2m 14.74 kB[22m[1m[22m[2m Ôöé gzip:   3.37 kB[22m
+[2mdist/[22m[36massets/GestionAreasPage-De_h-udt.js                    [39m[1m[2m 18.09 kB[22m[1m[22m[2m Ôöé gzip:   4.78 kB[22m
+[2mdist/[22m[36massets/OrdenCompraDetallePage-CJAiyChw.js              [39m[1m[2m 18.62 kB[22m[1m[22m[2m Ôöé gzip:   4.25 kB[22m
+[2mdist/[22m[36massets/GestionUsuariosPage-DyOR0QjZ.js                 [39m[1m[2m 18.84 kB[22m[1m[22m[2m Ôöé gzip:   5.62 kB[22m
+[2mdist/[22m[36massets/InventarioRecepcionesPage-BAf23JEW.js           [39m[1m[2m 20.24 kB[22m[1m[22m[2m Ôöé gzip:   4.93 kB[22m
+[2mdist/[22m[36massets/ConfiguracionEmpresaPage-S5F6n_TK.js            [39m[1m[2m 20.30 kB[22m[1m[22m[2m Ôöé gzip:   5.16 kB[22m
+[2mdist/[22m[36massets/RequerimientoForm-CDcxaXxP.js                   [39m[1m[2m 21.88 kB[22m[1m[22m[2m Ôöé gzip:   4.85 kB[22m
+[2mdist/[22m[36massets/SolicitudCotizacionDetallePage-DCzYErYn.js      [39m[1m[2m 22.56 kB[22m[1m[22m[2m Ôöé gzip:   6.02 kB[22m
+[2mdist/[22m[36massets/RequerimientoDetallePage-CTKDDK67.js            [39m[1m[2m 23.14 kB[22m[1m[22m[2m Ôöé gzip:   5.97 kB[22m
+[2mdist/[22m[36massets/CotizacionesBandejaPage-Bm9JnGwS.js             [39m[1m[2m 26.71 kB[22m[1m[22m[2m Ôöé gzip:   7.23 kB[22m
+[2mdist/[22m[36massets/logisticaAssignment-C2iI7Kve.js                 [39m[1m[2m 31.88 kB[22m[1m[22m[2m Ôöé gzip:   7.76 kB[22m
+[2mdist/[22m[36massets/GestionProveedoresPage-Cg1DNFdC.js              [39m[1m[2m 53.44 kB[22m[1m[22m[2m Ôöé gzip:  13.31 kB[22m
+[2mdist/[22m[36massets/GestionProductosPage-UCVcRrms.js                [39m[1m[2m 80.19 kB[22m[1m[22m[2m Ôöé gzip:  28.09 kB[22m
+[2mdist/[22m[36massets/ProcesoLogisticoDetallePage-DyJWv8wm.js         [39m[1m[2m 80.82 kB[22m[1m[22m[2m Ôöé gzip:  16.21 kB[22m
+[2mdist/[22m[36massets/ConfirmDeleteToast2-C7fN1PFF.js                 [39m[1m[2m117.29 kB[22m[1m[22m[2m Ôöé gzip:  38.70 kB[22m
+[2mdist/[22m[36massets/index-DniHLcRK.js                               [39m[1m[2m355.05 kB[22m[1m[22m[2m Ôöé gzip: 112.95 kB[22m
+[32mÔ£ô built in 1m 47s[39m

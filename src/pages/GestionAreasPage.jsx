@@ -1,7 +1,8 @@
 // src/pages/GestionAreasPage.jsx
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import { FaMoon, FaSun } from "react-icons/fa";
+import { FaArrowCircleLeft, FaMoon, FaSun } from "react-icons/fa";
 import ConfirmDeleteToast2 from "../components/ConfirmDeleteToast2";
 import Modal from "../components/Modal";
 import useAreas from "../hooks/useAreas";
@@ -310,8 +311,15 @@ const GestionAreasPage = () => {
         isDarkModeLocal ? "dark" : ""
       }`}
     >
-      <div className="mb-8 flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-700">
+      <div className="flex items-center justify-between pb-3 mb-8 border-b border-gray-200 dark:border-gray-700">
         <div>
+          <Link
+            to="/gestion-usuarios"
+            className="inline-flex items-center gap-2 mb-3 text-sm font-semibold text-blue-700 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-blue-300 dark:hover:text-blue-100 dark:focus:ring-offset-gray-800"
+          >
+            <FaArrowCircleLeft className="w-5 h-5" aria-hidden="true" />
+            <span>Gesti&oacute;n de usuarios</span>
+          </Link>
           <h1 className="text-3xl font-extrabold text-blue-600 dark:text-blue-500">
             Gestion de Unidades Organizacionales
           </h1>
@@ -323,22 +331,22 @@ const GestionAreasPage = () => {
 
         <button
           onClick={() => setIsDarkModeLocal((prev) => !prev)}
-          className="rounded-full bg-gray-800 p-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="p-2 transition-colors duration-200 bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={
             isDarkModeLocal ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
           }
         >
           {isDarkModeLocal ? (
-            <FaSun className="h-6 w-6 text-yellow-300" />
+            <FaSun className="w-6 h-6 text-yellow-300" />
           ) : (
-            <FaMoon className="h-6 w-6 text-white" />
+            <FaMoon className="w-6 h-6 text-white" />
           )}
         </button>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-2 xl:grid-cols-3"
+        className="grid grid-cols-1 gap-4 p-4 mb-6 bg-white rounded-lg shadow md:grid-cols-2 xl:grid-cols-3"
       >
         <div className="space-y-2">
           <label
@@ -355,7 +363,7 @@ const GestionAreasPage = () => {
             name="nombre"
             onChange={handleChange}
             autoComplete="organization-title"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full p-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 focus:ring-blue-500"
             required
           />
         </div>
@@ -375,7 +383,7 @@ const GestionAreasPage = () => {
             name="branchDescription"
             onChange={handleChange}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full p-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
@@ -392,7 +400,7 @@ const GestionAreasPage = () => {
             value={formData.tipoUnidad}
             onChange={handleChange}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 focus:ring-blue-500"
             required
           >
             <option value="">Selecciona tipo de unidad</option>
@@ -417,7 +425,7 @@ const GestionAreasPage = () => {
             value={formData.parentAreaId}
             onChange={handleChange}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 focus:ring-blue-500"
             disabled={formData.tipoUnidad === "GERENCIA_GENERAL"}
             required={
               formData.tipoUnidad && formData.tipoUnidad !== "GERENCIA_GENERAL"
@@ -449,7 +457,7 @@ const GestionAreasPage = () => {
             value={formData.responsableId}
             onChange={handleChange}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 focus:ring-blue-500"
             disabled={!formData.tipoUnidad || loadingResponsables}
           >
             <option value="">
@@ -475,20 +483,20 @@ const GestionAreasPage = () => {
                 : `Al asignar un responsable principal, el sistema sincroniza la responsabilidad estructural esperada para ${expectedResponsibleRole}.`}
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 md:col-span-2 xl:col-span-3">
+        <div className="p-3 text-xs leading-5 border rounded-lg border-slate-200 bg-slate-50 text-slate-700 md:col-span-2 xl:col-span-3">
           El tipo de unidad define el responsable estructural esperado para la
           unidad. Esta relacion no aplica para
           <span className="font-semibold"> ADMINISTRADOR_SISTEMA</span>, porque
           ese rol no se usa como responsable principal de unidad.
         </div>
 
-        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 md:col-span-2 xl:col-span-3">
+        <label className="flex items-center gap-3 px-4 py-3 border border-blue-200 rounded-lg cursor-pointer bg-blue-50 md:col-span-2 xl:col-span-3">
           <input
             type="checkbox"
             name="esAreaLogistica"
             checked={formData.esAreaLogistica === true}
             onChange={handleChange}
-            className="h-4 w-4 rounded border-blue-400 accent-blue-600"
+            className="w-4 h-4 border-blue-400 rounded accent-blue-600"
           />
           <span className="text-sm font-medium text-blue-900">
             Es area de Logistica
@@ -500,13 +508,13 @@ const GestionAreasPage = () => {
           </span>
         </label>
 
-        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 md:col-span-2 xl:col-span-3">
+        <label className="flex items-center gap-3 px-4 py-3 border rounded-lg cursor-pointer border-amber-200 bg-amber-50 md:col-span-2 xl:col-span-3">
           <input
             type="checkbox"
             name="esAreaAlmacen"
             checked={formData.esAreaAlmacen === true}
             onChange={handleChange}
-            className="h-4 w-4 rounded border-amber-400 accent-amber-600"
+            className="w-4 h-4 rounded border-amber-400 accent-amber-600"
           />
           <span className="text-sm font-medium text-amber-900">
             Es area de Almacen
@@ -538,14 +546,14 @@ const GestionAreasPage = () => {
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700"
+              className="px-4 py-3 font-medium text-gray-700 border border-gray-300 rounded-lg"
             >
               Cancelar
             </button>
           ) : null}
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 xl:col-span-3">
+        <div className="p-3 text-sm border rounded-lg border-slate-200 bg-slate-50 text-slate-700 xl:col-span-3">
           <div className="font-semibold text-slate-900">
             Responsable esperado por tipo
           </div>
@@ -572,12 +580,12 @@ const GestionAreasPage = () => {
         <input
           id="areas-search"
           type="text"
-          placeholder="Buscar unidad por codigo, nombre o descripcion..."
+          placeholder="Buscar unidad por código, nombre o descripción..."
           value={search}
           name="search"
           onChange={(event) => setSearch(event.target.value)}
           autoComplete="off"
-          className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500"
+          className="w-full p-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
 
@@ -585,34 +593,34 @@ const GestionAreasPage = () => {
         Unidades activas ({areasActivas.length})
       </h2>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm dark:border-gray-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Codigo
               </th>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Unidad
               </th>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Responsable
               </th>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Estado
               </th>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Adscritos
               </th>
-              <th className="border-r border-gray-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:border-gray-700 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-left text-gray-600 uppercase border-r border-gray-200 dark:border-gray-700 dark:text-gray-400">
                 Estructura
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+              <th className="px-4 py-3 text-xs font-bold tracking-wider text-center text-gray-600 uppercase dark:text-gray-400">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+          <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-900">
             {areasActivas.length > 0 ? (
               areasActivas.map((area) => {
                 const estadoMeta =
@@ -624,10 +632,10 @@ const GestionAreasPage = () => {
                     key={area.id}
                     className="transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-gray-800"
                   >
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm font-medium text-gray-900 dark:border-gray-700 dark:text-gray-100">
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900 border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
                       {area.codigo}
                     </td>
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-800 dark:border-gray-700 dark:text-gray-200">
+                    <td className="px-4 py-4 text-sm text-gray-800 border-r border-gray-200 dark:border-gray-700 dark:text-gray-200">
                       <div className="font-semibold">{area.nombre}</div>
                       <div className="text-xs italic text-gray-500 dark:text-gray-400">
                         {area.branchDescription ||
@@ -638,7 +646,7 @@ const GestionAreasPage = () => {
                           "Sin tipo definido"}
                       </div>
                     </td>
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       {area.responsable ? (
                         <>
                           <div className="font-semibold">
@@ -654,7 +662,7 @@ const GestionAreasPage = () => {
                         </span>
                       )}
                     </td>
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${estadoMeta.className}`}
                       >
@@ -666,7 +674,7 @@ const GestionAreasPage = () => {
                         </div>
                       ) : null}
                     </td>
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       {Array.isArray(area.adscritos) &&
                       area.adscritos.length > 0 ? (
                         <div className="space-y-1">
@@ -684,7 +692,7 @@ const GestionAreasPage = () => {
                         "Sin adscritos"
                       )}
                     </td>
-                    <td className="border-r border-gray-200 px-4 py-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       <div>
                         <span className="font-medium">Padre:</span>{" "}
                         {area.parent
@@ -701,7 +709,7 @@ const GestionAreasPage = () => {
                           : "Sin hijos"}
                       </div>
                     </td>
-                    <td className="space-x-3 px-4 py-4 text-center text-sm font-medium">
+                    <td className="px-4 py-4 space-x-3 text-sm font-medium text-center">
                       <button
                         onClick={() => handleEditIntent(area)}
                         className="font-bold text-blue-600 transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -724,7 +732,7 @@ const GestionAreasPage = () => {
               <tr>
                 <td
                   colSpan="7"
-                  className="py-10 text-center text-lg text-gray-500 dark:text-gray-400"
+                  className="py-10 text-lg text-center text-gray-500 dark:text-gray-400"
                 >
                   {cargando
                     ? "Cargando unidades..."
@@ -758,7 +766,7 @@ const GestionAreasPage = () => {
             <button
               type="button"
               onClick={() => setIsBlockedEditModalOpen(false)}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
+              className="px-4 py-2 font-semibold text-white transition bg-blue-600 rounded-lg hover:bg-blue-700"
             >
               Aceptar
             </button>

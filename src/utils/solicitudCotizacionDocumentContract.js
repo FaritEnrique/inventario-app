@@ -1,35 +1,43 @@
-const DEFAULT_CUERPO_SOLICITUD =
-  "Por medio de la presente, solicitamos a usted presentar su mejor cotizacion por los bienes detallados a continuacion, de acuerdo con las especificaciones requeridas.";
+import {
+  BANK_CHARGE_PARTY_LABELS,
+  formatDaysLabel,
+  formatPercentageLabel,
+  INCOTERM_METADATA,
+  IMPORT_PAYMENT_INSTRUMENT_LABELS,
+  IMPORT_PAYMENT_STRUCTURE_LABELS,
+  IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+  IMPORT_PAYMENT_TRIGGER_LABELS,
+  LOCAL_DELIVERY_PLACE_TYPE_LABELS,
+  LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+  LOCAL_PAYMENT_CONDITION_LABELS,
+  LOCAL_PAYMENT_MILESTONE_LABELS,
+  LOCAL_PURCHASE_SCOPE_LABELS,
+  PURCHASE_TYPE_LABELS,
+  SOLICITUD_COTIZACION_CURRENCY_LABELS,
+  SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
+} from "../features/solicitud-cotizacion/solicitudCotizacionCatalog.js";
 
-const FORMA_PAGO_LABELS = {
-  ContraEntrega: "Contra entrega",
-  Adelanto: "Adelanto",
-  Credito: "Credito",
-};
+const DEFAULT_CUERPO_SOLICITUD =
+  "Por medio de la presente, solicitamos a usted presentar su mejor cotizaci\u00f3n por los bienes detallados a continuaci\u00f3n, de acuerdo con las especificaciones requeridas.";
 
 const MONEDA_LABELS = {
-  PEN: "PEN",
-  USD: "USD",
-  "S/": "PEN",
+  ...SOLICITUD_COTIZACION_CURRENCY_LABELS,
 };
 
 const MONEDA_SIGNS = {
   PEN: "S/",
   USD: "US$",
-  "S/": "S/",
 };
 
 const MEDIO_RECEPCION_LABELS = {
-  CORREO: "Correo",
-  SISTEMA: "Sistema",
-  CORREO_Y_SISTEMA: "Correo y sistema",
+  ...SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
 };
 
 export const solicitudCotizacionDocumentFieldLabels = {
   moneda: "Moneda",
   incluyeIgv: "Incluye IGV",
-  fechaLimiteRecepcion: "Fecha limite de recepcion",
-  medioRecepcion: "Medio de recepcion",
+  fechaLimiteRecepcion: "Fecha límite de recepción",
+  medioRecepcion: "Medio de recepción",
 };
 
 const readText = (value) => {
@@ -38,8 +46,15 @@ const readText = (value) => {
   return normalized || null;
 };
 
+const readNumber = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const normalizeBooleanLabel = (value) => {
-  if (typeof value === "boolean") return value ? "Si" : "No";
+  if (typeof value === "boolean") return value ? "Sí" : "No";
   return readText(value);
 };
 
@@ -63,7 +78,7 @@ const resolveSolicitudItemDescription = (item, index) =>
   item?.itemRequerimiento?.producto?.nombre ||
   item?.itemRequerimiento?.productoTemporal?.nombreTemporal ||
   item?.descripcion ||
-  `Item ${index + 1}`;
+  `Ítem ${index + 1}`;
 
 const resolveSolicitudItemUnit = (item) =>
   item?.itemRequerimiento?.unidadMedida || item?.unidadMedida || null;
@@ -78,21 +93,27 @@ const resolveSolicitudItemReferenceValue = (item) =>
   null;
 
 const deriveDocumentItems = (solicitud = {}) =>
-  (Array.isArray(solicitud?.items) ? solicitud.items : []).map((item, index) => ({
-    orden: index + 1,
-    descripcion: resolveSolicitudItemDescription(item, index),
-    unidad: resolveSolicitudItemUnit(item),
-    cantidad: resolveSolicitudItemQuantity(item),
-    valorReferencialUnitario: resolveSolicitudItemReferenceValue(item),
-  }));
+  (Array.isArray(solicitud?.items) ? solicitud.items : []).map(
+    (item, index) => ({
+      orden: index + 1,
+      descripcion: resolveSolicitudItemDescription(item, index),
+      unidad: resolveSolicitudItemUnit(item),
+      cantidad: resolveSolicitudItemQuantity(item),
+      valorReferencialUnitario: resolveSolicitudItemReferenceValue(item),
+    }),
+  );
 
 const inferPendingDocumentFields = (contract) =>
   Object.keys(solicitudCotizacionDocumentFieldLabels).filter((field) => {
     if (field === "moneda") return !contract.condiciones.moneda;
     if (field === "incluyeIgv") {
-      return contract.condiciones.incluyeIgv == null || contract.condiciones.incluyeIgv === "";
+      return (
+        contract.condiciones.incluyeIgv == null ||
+        contract.condiciones.incluyeIgv === ""
+      );
     }
-    if (field === "fechaLimiteRecepcion") return contract.recepcion.fechaLimiteRecepcion == null;
+    if (field === "fechaLimiteRecepcion")
+      return contract.recepcion.fechaLimiteRecepcion == null;
     if (field === "medioRecepcion") return !contract.recepcion.medioRecepcion;
     return false;
   });
@@ -102,6 +123,8 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
   const documento = source?.documento || {};
   const condiciones = documento?.condiciones || {};
   const recepcion = documento?.recepcion || {};
+  const resolvedTipoCompra =
+    readText(condiciones?.tipoCompra) || readText(source?.tipoCompra);
 
   const contract = {
     version: documento?.version || 1,
@@ -117,8 +140,12 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
       readText(source?.requerimiento?.area?.nombre) ||
       readText(source?.areaSolicitante),
     proveedor:
-      readText(documento?.proveedor) || readText(source?.proveedor?.razonSocial),
+      readText(documento?.proveedor) ||
+      readText(source?.proveedor?.razonSocial),
     ruc: readText(documento?.ruc) || readText(source?.proveedor?.ruc),
+    domicilioLegal:
+      readText(documento?.domicilioLegal) ||
+      readText(source?.proveedor?.direccion),
     elaborador:
       readText(documento?.elaborador) ||
       readText(source?.elaborador?.nombre) ||
@@ -140,6 +167,9 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
       monedaSign:
         readText(condiciones?.monedaSign) ||
         normalizeMonedaSign(condiciones?.moneda ?? source?.moneda),
+      codigoMonedaOtra:
+        readText(condiciones?.codigoMonedaOtra) ||
+        readText(source?.codigoMonedaOtra),
       incluyeIgv: condiciones?.incluyeIgv ?? source?.incluyeIgv ?? null,
       incluyeIgvLabel:
         readText(condiciones?.incluyeIgvLabel) ||
@@ -150,12 +180,202 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
         condiciones?.tiempoEntregaDias ?? source?.tiempoEntregaDias ?? null,
       lugarEntrega:
         readText(condiciones?.lugarEntrega) || readText(source?.lugarEntrega),
-      formaPago: condiciones?.formaPago ?? source?.formaPago ?? null,
-      formaPagoLabel:
-        readText(condiciones?.formaPagoLabel) ||
-        FORMA_PAGO_LABELS[condiciones?.formaPago ?? source?.formaPago] ||
-        readText(condiciones?.formaPago ?? source?.formaPago),
       garantia: readText(condiciones?.garantia) || readText(source?.garantia),
+      tipoCompra: resolvedTipoCompra,
+      tipoCompraLabel:
+        readText(condiciones?.tipoCompraLabel) ||
+        PURCHASE_TYPE_LABELS[resolvedTipoCompra] ||
+        null,
+      alcanceCompraLocal:
+        readText(condiciones?.alcanceCompraLocal) ||
+        readText(source?.alcanceCompraLocal),
+      alcanceCompraLocalLabel:
+        readText(condiciones?.alcanceCompraLocalLabel) ||
+        LOCAL_PURCHASE_SCOPE_LABELS[
+          condiciones?.alcanceCompraLocal ?? source?.alcanceCompraLocal
+        ] ||
+        null,
+      lugarEntregaLocalTipo:
+        readText(condiciones?.lugarEntregaLocalTipo) ||
+        readText(source?.lugarEntregaLocalTipo),
+      lugarEntregaLocalTipoLabel:
+        readText(condiciones?.lugarEntregaLocalTipoLabel) ||
+        LOCAL_DELIVERY_PLACE_TYPE_LABELS[
+          condiciones?.lugarEntregaLocalTipo ?? source?.lugarEntregaLocalTipo
+        ] ||
+        null,
+      lugarEntregaLocalDetalle:
+        readText(condiciones?.lugarEntregaLocalDetalle) ||
+        readText(source?.lugarEntregaLocalDetalle),
+      transporteAsumidoPor:
+        readText(condiciones?.transporteAsumidoPor) ||
+        readText(source?.transporteAsumidoPor),
+      transporteAsumidoPorLabel:
+        readText(condiciones?.transporteAsumidoPorLabel) ||
+        LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS[
+          condiciones?.transporteAsumidoPor ?? source?.transporteAsumidoPor
+        ] ||
+        null,
+      cargaDescargaAsumidaPor:
+        readText(condiciones?.cargaDescargaAsumidaPor) ||
+        readText(source?.cargaDescargaAsumidaPor),
+      cargaDescargaAsumidaPorLabel:
+        readText(condiciones?.cargaDescargaAsumidaPorLabel) ||
+        LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS[
+          condiciones?.cargaDescargaAsumidaPor ??
+            source?.cargaDescargaAsumidaPor
+        ] ||
+        null,
+      permiteEntregasParciales:
+        condiciones?.permiteEntregasParciales ??
+        source?.permiteEntregasParciales ??
+        null,
+      permiteEntregasParcialesLabel:
+        readText(condiciones?.permiteEntregasParcialesLabel) ||
+        normalizeBooleanLabel(
+          condiciones?.permiteEntregasParciales ??
+            source?.permiteEntregasParciales,
+        ),
+      condicionesLogisticasLocales:
+        readText(condiciones?.condicionesLogisticasLocales) ||
+        readText(source?.condicionesLogisticasLocales),
+      condicionPagoLocal:
+        readText(condiciones?.condicionPagoLocal) ||
+        readText(source?.condicionPagoLocal) ||
+        null,
+      condicionPagoLocalLabel:
+        readText(condiciones?.condicionPagoLocalLabel) ||
+        LOCAL_PAYMENT_CONDITION_LABELS[
+          condiciones?.condicionPagoLocal ?? source?.condicionPagoLocal
+        ] ||
+        null,
+      hitoPagoLocal:
+        readText(condiciones?.hitoPagoLocal) ||
+        readText(source?.hitoPagoLocal) ||
+        null,
+      hitoPagoLocalLabel:
+        readText(condiciones?.hitoPagoLocalLabel) ||
+        LOCAL_PAYMENT_MILESTONE_LABELS[
+          condiciones?.hitoPagoLocal ?? source?.hitoPagoLocal
+        ] ||
+        null,
+      porcentajeAnticipoLocal:
+        condiciones?.porcentajeAnticipoLocal ??
+        source?.porcentajeAnticipoLocal ??
+        null,
+      porcentajeAnticipoLocalLabel:
+        readText(condiciones?.porcentajeAnticipoLocalLabel) ||
+        formatPercentageLabel(
+          condiciones?.porcentajeAnticipoLocal ??
+            source?.porcentajeAnticipoLocal,
+        ),
+      porcentajeSaldoLocal:
+        condiciones?.porcentajeSaldoLocal ??
+        source?.porcentajeSaldoLocal ??
+        null,
+      porcentajeSaldoLocalLabel:
+        readText(condiciones?.porcentajeSaldoLocalLabel) ||
+        formatPercentageLabel(
+          condiciones?.porcentajeSaldoLocal ?? source?.porcentajeSaldoLocal,
+        ),
+      diasCreditoLocal:
+        readNumber(condiciones?.diasCreditoLocal ?? source?.diasCreditoLocal) ??
+        null,
+      diasCreditoLocalLabel:
+        readText(condiciones?.diasCreditoLocalLabel) ||
+        formatDaysLabel(
+          condiciones?.diasCreditoLocal ?? source?.diasCreditoLocal,
+        ),
+      estructuraPagoImportacion:
+        readText(condiciones?.estructuraPagoImportacion) ||
+        readText(source?.estructuraPagoImportacion) ||
+        null,
+      estructuraPagoImportacionLabel:
+        readText(condiciones?.estructuraPagoImportacionLabel) ||
+        IMPORT_PAYMENT_STRUCTURE_LABELS[
+          condiciones?.estructuraPagoImportacion ??
+            source?.estructuraPagoImportacion
+        ] ||
+        null,
+      instrumentoPagoImportacion:
+        readText(condiciones?.instrumentoPagoImportacion) ||
+        readText(source?.instrumentoPagoImportacion) ||
+        null,
+      instrumentoPagoImportacionLabel:
+        readText(condiciones?.instrumentoPagoImportacionLabel) ||
+        IMPORT_PAYMENT_INSTRUMENT_LABELS[
+          condiciones?.instrumentoPagoImportacion ??
+            source?.instrumentoPagoImportacion
+        ] ||
+        null,
+      gatilloPagoImportacion:
+        readText(condiciones?.gatilloPagoImportacion) ||
+        readText(source?.gatilloPagoImportacion),
+      gatilloPagoImportacionLabel:
+        readText(condiciones?.gatilloPagoImportacionLabel) ||
+        IMPORT_PAYMENT_TRIGGER_LABELS[
+          condiciones?.gatilloPagoImportacion ?? source?.gatilloPagoImportacion
+        ] ||
+        null,
+      porcentajeAnticipoImportacion:
+        condiciones?.porcentajeAnticipoImportacion ??
+        source?.porcentajeAnticipoImportacion ??
+        null,
+      porcentajeAnticipoImportacionLabel:
+        readText(condiciones?.porcentajeAnticipoImportacionLabel) ||
+        formatPercentageLabel(
+          condiciones?.porcentajeAnticipoImportacion ??
+            source?.porcentajeAnticipoImportacion,
+        ),
+      porcentajeSaldoImportacion:
+        condiciones?.porcentajeSaldoImportacion ??
+        source?.porcentajeSaldoImportacion ??
+        null,
+      porcentajeSaldoImportacionLabel:
+        readText(condiciones?.porcentajeSaldoImportacionLabel) ||
+        formatPercentageLabel(
+          condiciones?.porcentajeSaldoImportacion ??
+            source?.porcentajeSaldoImportacion,
+        ),
+      diasCreditoImportacion: readNumber(
+        condiciones?.diasCreditoImportacion ?? source?.diasCreditoImportacion,
+      ),
+      diasCreditoImportacionLabel:
+        readText(condiciones?.diasCreditoImportacionLabel) ||
+        formatDaysLabel(
+          condiciones?.diasCreditoImportacion ?? source?.diasCreditoImportacion,
+        ),
+      referenciaPlazoImportacion:
+        readText(condiciones?.referenciaPlazoImportacion) ||
+        readText(source?.referenciaPlazoImportacion),
+      referenciaPlazoImportacionLabel:
+        readText(condiciones?.referenciaPlazoImportacionLabel) ||
+        IMPORT_PAYMENT_TERM_REFERENCE_LABELS[
+          condiciones?.referenciaPlazoImportacion ??
+            source?.referenciaPlazoImportacion
+        ] ||
+        null,
+      gastosBancariosPor:
+        readText(condiciones?.gastosBancariosPor) ||
+        readText(source?.gastosBancariosPor),
+      gastosBancariosPorLabel:
+        readText(condiciones?.gastosBancariosPorLabel) ||
+        BANK_CHARGE_PARTY_LABELS[
+          condiciones?.gastosBancariosPor ?? source?.gastosBancariosPor
+        ] ||
+        null,
+      incoterm: readText(condiciones?.incoterm) || readText(source?.incoterm),
+      incotermTransportModeLabel:
+        readText(condiciones?.incotermTransportModeLabel) ||
+        INCOTERM_METADATA[condiciones?.incoterm ?? source?.incoterm]
+          ?.scopeLabel ||
+        null,
+      incotermVersion:
+        readText(condiciones?.incotermVersion) ||
+        readText(source?.incotermVersion),
+      incotermPuntoLogistico:
+        readText(condiciones?.incotermPuntoLogistico) ||
+        readText(source?.incotermPuntoLogistico),
     },
     recepcion: {
       fechaLimiteRecepcion:
@@ -165,14 +385,14 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
       medioRecepcionLabel:
         readText(recepcion?.medioRecepcionLabel) ||
         normalizeMedioRecepcionLabel(
-          recepcion?.medioRecepcion ?? source?.medioRecepcion
+          recepcion?.medioRecepcion ?? source?.medioRecepcion,
         ),
     },
     items:
       Array.isArray(documento?.items) && documento.items.length > 0
         ? documento.items.map((item, index) => ({
             orden: item?.orden || index + 1,
-            descripcion: readText(item?.descripcion) || `Item ${index + 1}`,
+            descripcion: readText(item?.descripcion) || `Ítem ${index + 1}`,
             unidad: readText(item?.unidad),
             cantidad: Number(item?.cantidad || 0),
             valorReferencialUnitario: item?.valorReferencialUnitario ?? null,
@@ -181,7 +401,8 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
   };
 
   contract.camposPendientes =
-    Array.isArray(documento?.camposPendientes) && documento.camposPendientes.length > 0
+    Array.isArray(documento?.camposPendientes) &&
+    documento.camposPendientes.length > 0
       ? documento.camposPendientes
       : inferPendingDocumentFields(contract);
 
@@ -201,17 +422,18 @@ const buildFallbackTraceContract = (solicitud = {}) => {
     });
   }
 
-  (Array.isArray(solicitud?.cotizaciones) ? solicitud.cotizaciones : []).forEach(
-    (cotizacion) => {
-      eventos.push({
-        tipo: "COTIZACION_REGISTRADA",
-        titulo: "Cotizacion registrada",
-        fecha: cotizacion?.fechaEmision || null,
-        actor: readText(cotizacion?.proveedor?.razonSocial),
-        descripcion: `${readText(cotizacion?.codigo) || "Sin codigo"} - Estado ${readText(cotizacion?.estado) || "-"}`,
-      });
-    },
-  );
+  (Array.isArray(solicitud?.cotizaciones)
+    ? solicitud.cotizaciones
+    : []
+  ).forEach((cotizacion) => {
+    eventos.push({
+      tipo: "COTIZACION_REGISTRADA",
+      titulo: "Cotización registrada",
+      fecha: cotizacion?.fechaEmision || null,
+      actor: readText(cotizacion?.proveedor?.razonSocial),
+      descripcion: `${readText(cotizacion?.codigo) || "Sin código"} - Estado ${readText(cotizacion?.estado) || "-"}`,
+    });
+  });
 
   eventos.sort((left, right) => {
     const leftTime = left.fecha ? new Date(left.fecha).getTime() : 0;

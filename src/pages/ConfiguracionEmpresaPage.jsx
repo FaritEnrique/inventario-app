@@ -367,15 +367,15 @@ const ConfiguracionEmpresaPage = () => {
           setFormData(normalizePersistedConfiguration(response.configuracion));
         } else {
           throw new Error(
-            "La configuracion se guardo, pero no se pudo recargar desde el servidor.",
+            "La configuración se guardó, pero no se pudo recargar desde el servidor.",
           );
         }
       }
 
-      toast.success("Configuracion institucional actualizada.");
+      toast.success("Configuración institucional actualizada.");
     } catch (error) {
       toast.error(
-        error.message || "No se pudo guardar la configuracion de empresa.",
+        error.message || "No se pudo guardar la configuración de empresa.",
       );
     } finally {
       setSaving(false);
@@ -458,7 +458,7 @@ const ConfiguracionEmpresaPage = () => {
     } catch (error) {
       toast.error(
         error.message ||
-          "No se pudo abrir la ventana de impresion del membrete.",
+          "No se pudo abrir la ventana de impresión del membrete.",
       );
     }
   };
@@ -477,15 +477,15 @@ const ConfiguracionEmpresaPage = () => {
                 Identidad institucional
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
-                Configuracion de empresa emisora
+                Configuración de empresa emisora
               </h1>
               <p className="max-w-3xl mt-2 text-sm text-slate-600">
-                Aqui definimos el membrete institucional que alimenta los
+                Aquí definimos el membrete institucional que alimenta los
                 documentos comerciales. El logo ahora se gestiona por separado y
-                la previsualizacion muestra una hoja A4 para revisar el
+                la previsualización muestra una hoja A4 para revisar el
                 resultado antes de emitir PDFs. Cuando ya exista una
-                configuracion guardada, este mismo formulario se precarga y
-                funciona como edicion.
+                configuración guardada, este mismo formulario se precarga y
+                funciona como edición.
               </p>
             </div>
             <Link
@@ -508,14 +508,14 @@ const ConfiguracionEmpresaPage = () => {
                   Datos del membrete
                 </p>
                 <h2 className="mt-2 text-xl font-semibold text-slate-900">
-                  Informacion institucional editable
+                  Información institucional editable
                 </h2>
               </div>
             </div>
 
             <div className="grid gap-4 mt-5 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-700 md:col-span-2">
-                <span className="font-medium">Razon social</span>
+                <span className="font-medium">Razón social</span>
                 <input
                   id="configuracion-empresa-razon-social"
                   name="razonSocial"
@@ -543,7 +543,7 @@ const ConfiguracionEmpresaPage = () => {
               </label>
 
               <label className="space-y-1 text-sm text-slate-700">
-                <span className="font-medium">Telefono</span>
+                <span className="font-medium">Teléfono</span>
                 <input
                   id="configuracion-empresa-telefono"
                   name="telefono"
@@ -573,7 +573,7 @@ const ConfiguracionEmpresaPage = () => {
               </label>
 
               <label className="space-y-1 text-sm text-slate-700 md:col-span-2">
-                <span className="font-medium">Direccion</span>
+                <span className="font-medium">Dirección</span>
                 <input
                   id="configuracion-empresa-direccion"
                   name="direccion"
@@ -582,7 +582,7 @@ const ConfiguracionEmpresaPage = () => {
                     updateField("direccion", event.target.value)
                   }
                   className="w-full px-3 py-2 border rounded-lg border-slate-300"
-                  placeholder="Direccion institucional"
+                  placeholder="Dirección institucional"
                   required
                 />
               </label>

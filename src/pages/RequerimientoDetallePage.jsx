@@ -23,7 +23,7 @@ const eventLabels = {
   AGREGAR_ITEM: "Alta de item",
   MODIFICAR_ITEM: "Modificacion de item",
   RETIRAR_ITEM: "Retiro de item",
-  APROBACION: "Aprobacion",
+  APROBACION: "Aprobación",
   RECHAZO: "Rechazo",
   PROPUESTA_PRODUCTO_TEMPORAL: "Producto temporal propuesto",
   TOMA_CONOCIMIENTO: "Toma de conocimiento",
@@ -233,7 +233,8 @@ const RequerimientoDetallePage = () => {
       );
     } catch (error) {
       toast.error(
-        error.message || "No se pudo abrir la ventana de impresion del requerimiento.",
+        error.message ||
+          "No se pudo abrir la ventana de impresion del requerimiento.",
       );
     }
   };

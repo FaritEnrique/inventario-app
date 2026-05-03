@@ -14,7 +14,6 @@ import {
   FaUserCog,
 } from "react-icons/fa";
 import {
-  canAccessCotizacionesEffective,
   canAccessAreasManagementEffective,
   canAccessProveedorManagementEffective,
   canManageCatalogMasterEffective,
@@ -22,6 +21,7 @@ import {
   canApprovePedidoInternoEffective,
   canCreatePedidoInternoEffective,
   canOperateInventoryEffective,
+  canViewAllCotizacionesLogisticaEffective,
   canViewOrdenCompraApprovalTrayEffective,
   canViewOrdenesCompraEffective,
   canViewPedidosInternosModuleEffective,
@@ -84,7 +84,7 @@ const baseCards = [
       "Entrar a la bandeja o vista logistica habilitada por el contexto activo.",
     icon: <FaFileInvoiceDollar />,
     path: ({ user }) => getCotizacionesHomePathEffective(user),
-    visible: ({ user }) => canAccessCotizacionesEffective(user),
+    visible: ({ user }) => canViewAllCotizacionesLogisticaEffective(user),
   },
   {
     title: "Ordenes de Compra",
@@ -172,6 +172,14 @@ const baseCards = [
       "Administrar catalogos maestros de productos desde la jefatura de almacen o los overrides autorizados.",
     icon: <MdInventory />,
     path: "/gestion-productos",
+    visible: ({ user }) => canManageCatalogMasterEffective(user),
+  },
+  {
+    title: "Validacion de Tipos",
+    description:
+      "Revisar solicitudes pendientes de tipos de producto propuestas desde proveedores.",
+    icon: <FaClipboardList />,
+    path: "/solicitudes-tipo-producto",
     visible: ({ user }) => canManageCatalogMasterEffective(user),
   },
   {

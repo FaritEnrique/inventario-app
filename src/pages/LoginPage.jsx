@@ -23,8 +23,10 @@ const LoginPage = () => {
     if (result.success) {
       toast.success("Inicio de sesion exitoso.");
       navigate(
-        result.contextSelectionRequired ? "/seleccionar-contexto" : "/dashboard",
-        { replace: true }
+        result.contextSelectionRequired
+          ? "/seleccionar-contexto"
+          : "/dashboard",
+        { replace: true },
       );
     } else {
       setEmail("");
@@ -45,16 +47,16 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md rounded bg-white p-8 shadow">
-        <h2 className="mb-6 text-center text-2xl font-semibold text-indigo-700">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-gray-100">
+      <div className="w-full max-w-md p-8 bg-white border-2 border-indigo-700 shadow rounded-xl">
+        <h2 className="mb-6 text-2xl font-semibold text-center text-indigo-700">
           Iniciar sesion
         </h2>
         <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="block mb-1 text-sm font-medium text-gray-700"
             >
               Correo electronico
             </label>
@@ -62,7 +64,7 @@ const LoginPage = () => {
               id="email"
               type="email"
               name="login-email"
-              className="w-full rounded border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
               placeholder="ejemplo@correo.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -73,7 +75,7 @@ const LoginPage = () => {
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="block mb-1 text-sm font-medium text-gray-700"
             >
               Contrasena
             </label>
@@ -82,7 +84,7 @@ const LoginPage = () => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 name="login-password"
-                className="w-full rounded border px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full px-4 py-2 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 placeholder="********"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -103,7 +105,7 @@ const LoginPage = () => {
           </div>
           <button
             type="submit"
-            className="w-full rounded bg-indigo-600 py-2 text-white transition duration-300 hover:bg-indigo-700 disabled:bg-indigo-400"
+            className="w-full py-2 text-white transition duration-300 bg-indigo-600 rounded hover:bg-indigo-700 disabled:bg-indigo-400"
             disabled={cargando}
           >
             {cargando ? "Iniciando sesion..." : "Iniciar sesion"}
@@ -127,12 +129,14 @@ const LoginPage = () => {
         maxWidth="max-w-md"
       >
         <p className="text-gray-700">
-          El usuario o la contrasena que estas ingresando no coincide con la que esta almacenada en la base de datos para ese usuario. Solo pueden acceder a la plataforma usuarios autorizados.
+          El usuario o la contrasena que estas ingresando no coincide con la que
+          esta almacenada en la base de datos para ese usuario. Solo pueden
+          acceder a la plataforma usuarios autorizados.
         </p>
-        <div className="mt-4 flex justify-end">
+        <div className="flex justify-end mt-4">
           <button
             onClick={() => setIsErrorModalOpen(false)}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
           >
             Aceptar
           </button>

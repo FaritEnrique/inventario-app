@@ -1,3 +1,4 @@
+// src/pages/SolicitudCotizacionDetallePage.jsx
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FaArrowLeft, FaEnvelope, FaFilePdf } from "react-icons/fa";
@@ -8,7 +9,6 @@ import useSolicitudCotizacionDetalleData from "../hooks/useSolicitudCotizacionDe
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import {
   buildSolicitudCotizacionDocumentContract,
-  buildSolicitudCotizacionTraceContract,
   solicitudCotizacionDocumentFieldLabels,
 } from "../utils/solicitudCotizacionDocumentContract";
 
@@ -32,12 +32,6 @@ const readValue = (value, fallback = "-") => {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const timelineGapLabels = {
-  envioCorreo: "envio por correo",
-  cambiosEstado: "cambios de estado",
-  auditoriaEdicion: "auditoria de ediciones",
-};
 
 const SummaryField = ({ label, value }) => (
   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -85,17 +79,12 @@ const SolicitudCotizacionDetallePage = () => {
     [solicitud],
   );
 
-  const traceContract = useMemo(
-    () => (solicitud ? buildSolicitudCotizacionTraceContract(solicitud) : null),
-    [solicitud],
-  );
-
   const summaryItems = useMemo(
     () => [
-      { label: "Codigo de solicitud", value: documentContract?.codigo || "-" },
+      { label: "Código de solicitud", value: documentContract?.codigo || "-" },
       { label: "Estado", value: documentContract?.estado || "-" },
       {
-        label: "Fecha de emision",
+        label: "Fecha de emisión",
         value: formatDate(documentContract?.fechaEmision),
       },
       {
@@ -103,7 +92,7 @@ const SolicitudCotizacionDetallePage = () => {
         value: documentContract?.requerimientoAsociado || "-",
       },
       {
-        label: "Area solicitante",
+        label: "Área solicitante",
         value: documentContract?.areaSolicitante || "-",
       },
       {
@@ -115,6 +104,10 @@ const SolicitudCotizacionDetallePage = () => {
         value: documentContract?.ruc || "-",
       },
       {
+        label: "Domicilio legal",
+        value: documentContract?.domicilioLegal || "-",
+      },
+      {
         label: "Elaborador",
         value: documentContract?.elaborador || "-",
       },
@@ -123,11 +116,11 @@ const SolicitudCotizacionDetallePage = () => {
         value: documentContract?.cargo || "-",
       },
       {
-        label: "Medio de recepcion",
+        label: "Medio de recepción",
         value: documentContract?.recepcion?.medioRecepcionLabel || "-",
       },
       {
-        label: "Fecha limite de recepcion",
+        label: "Fecha límite de recepción",
         value: formatDateTime(
           documentContract?.recepcion?.fechaLimiteRecepcion,
         ),
@@ -142,36 +135,249 @@ const SolicitudCotizacionDetallePage = () => {
         label: "Moneda",
         value: documentContract?.condiciones?.monedaLabel,
       },
+      ...(documentContract?.condiciones?.moneda === "OTRA"
+        ? [
+            {
+              label: "Codigo moneda libre",
+              value: documentContract.condiciones.codigoMonedaOtra,
+            },
+          ]
+        : []),
       {
         label: "Incluye IGV",
         value: documentContract?.condiciones?.incluyeIgvLabel,
       },
       {
-        label: "Validez de oferta",
+        label: "Vigencia de oferta",
         value:
           documentContract?.condiciones?.vigenciaOfertaDias != null
-            ? `${documentContract.condiciones.vigenciaOfertaDias} dias`
+            ? `${documentContract.condiciones.vigenciaOfertaDias} días`
             : null,
       },
       {
-        label: "Plazo de entrega",
+        label: "Tiempo de entrega",
         value:
           documentContract?.condiciones?.tiempoEntregaDias != null
-            ? `${documentContract.condiciones.tiempoEntregaDias} dias`
+            ? documentContract.condiciones.tiempoEntregaDias === 0
+              ? "Inmediata"
+              : `${documentContract.condiciones.tiempoEntregaDias} días`
             : null,
       },
+      ...(!documentContract?.condiciones?.tipoCompra &&
+      documentContract?.condiciones?.lugarEntrega
+        ? [
+            {
+              label: "Lugar de entrega",
+              value: documentContract.condiciones.lugarEntrega,
+            },
+          ]
+        : []),
       {
-        label: "Lugar de entrega",
-        value: documentContract?.condiciones?.lugarEntrega,
-      },
-      {
-        label: "Forma de pago",
-        value: documentContract?.condiciones?.formaPagoLabel,
-      },
-      {
-        label: "Garantia",
+        label: "Garantía",
         value: documentContract?.condiciones?.garantia,
       },
+      ...(documentContract?.condiciones?.tipoCompra
+        ? [
+            {
+              label: "Tipo de compra",
+              value:
+                documentContract.condiciones.tipoCompra === "LOCAL"
+                  ? "Compra local"
+                  : "Importación",
+            },
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.alcanceCompraLocalLabel
+              ? [
+                  {
+                    label: "Alcance local",
+                    value: documentContract.condiciones.alcanceCompraLocalLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.lugarEntregaLocalTipoLabel
+              ? [
+                  {
+                    label: "Tipo de lugar local",
+                    value:
+                      documentContract.condiciones.lugarEntregaLocalTipoLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.lugarEntregaLocalDetalle
+              ? [
+                  {
+                    label: "Detalle de lugar local",
+                    value:
+                      documentContract.condiciones.lugarEntregaLocalDetalle,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.transporteAsumidoPorLabel
+              ? [
+                  {
+                    label: "Transporte asumido por",
+                    value:
+                      documentContract.condiciones.transporteAsumidoPorLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.cargaDescargaAsumidaPorLabel
+              ? [
+                  {
+                    label: "Carga/descarga asumida por",
+                    value:
+                      documentContract.condiciones
+                        .cargaDescargaAsumidaPorLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.permiteEntregasParcialesLabel
+              ? [
+                  {
+                    label: "Permite entregas parciales",
+                    value:
+                      documentContract.condiciones
+                        .permiteEntregasParcialesLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.condicionesLogisticasLocales
+              ? [
+                  {
+                    label: "Condiciones logisticas locales",
+                    value:
+                      documentContract.condiciones
+                        .condicionesLogisticasLocales,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.condicionPagoLocalLabel
+              ? [
+                  {
+                    label: "Condición de pago local",
+                    value: documentContract.condiciones.condicionPagoLocalLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.hitoPagoLocalLabel
+              ? [
+                  {
+                    label: "Hito local",
+                    value: documentContract.condiciones.hitoPagoLocalLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.porcentajeAnticipoLocalLabel &&
+            documentContract.condiciones.porcentajeSaldoLocalLabel
+              ? [
+                  {
+                    label: "Distribución local",
+                    value: `${documentContract.condiciones.porcentajeAnticipoLocalLabel} anticipo / ${documentContract.condiciones.porcentajeSaldoLocalLabel} saldo`,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
+            documentContract.condiciones.diasCreditoLocalLabel
+              ? [
+                  {
+                    label: "Crédito local",
+                    value: documentContract.condiciones.diasCreditoLocalLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.estructuraPagoImportacionLabel
+              ? [
+                  {
+                    label: "Estructura de pago",
+                    value:
+                      documentContract.condiciones
+                        .estructuraPagoImportacionLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.instrumentoPagoImportacionLabel
+              ? [
+                  {
+                    label: "Instrumento de pago",
+                    value:
+                      documentContract.condiciones
+                        .instrumentoPagoImportacionLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.gatilloPagoImportacionLabel
+              ? [
+                  {
+                    label: "Gatillo documentario",
+                    value:
+                      documentContract.condiciones.gatilloPagoImportacionLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.porcentajeAnticipoImportacionLabel &&
+            documentContract.condiciones.porcentajeSaldoImportacionLabel
+              ? [
+                  {
+                    label: "Distribución importación",
+                    value: `${documentContract.condiciones.porcentajeAnticipoImportacionLabel} anticipo / ${documentContract.condiciones.porcentajeSaldoImportacionLabel} saldo`,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.diasCreditoImportacionLabel
+              ? [
+                  {
+                    label: "Crédito importación",
+                    value: documentContract.condiciones
+                      .referenciaPlazoImportacionLabel
+                      ? `${documentContract.condiciones.diasCreditoImportacionLabel} desde ${documentContract.condiciones.referenciaPlazoImportacionLabel}`
+                      : documentContract.condiciones
+                          .diasCreditoImportacionLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.gastosBancariosPorLabel
+              ? [
+                  {
+                    label: "Gastos bancarios",
+                    value: documentContract.condiciones.gastosBancariosPorLabel,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.incoterm
+              ? [
+                  {
+                    label: "Incoterm",
+                    value: `${documentContract.condiciones.incoterm}${documentContract.condiciones.incotermVersion ? ` (${documentContract.condiciones.incotermVersion})` : ""}${documentContract.condiciones.incotermTransportModeLabel ? ` - ${documentContract.condiciones.incotermTransportModeLabel}` : ""}`,
+                  },
+                ]
+              : []),
+            ...(documentContract.condiciones.tipoCompra === "IMPORTACION" &&
+            documentContract.condiciones.incotermPuntoLogistico
+              ? [
+                  {
+                    label: "Punto logístico",
+                    value: documentContract.condiciones.incotermPuntoLogistico,
+                  },
+                ]
+              : []),
+          ]
+        : []),
     ],
     [documentContract],
   );
@@ -182,14 +388,6 @@ const SolicitudCotizacionDetallePage = () => {
         (field) => solicitudCotizacionDocumentFieldLabels[field] || field,
       ),
     [documentContract],
-  );
-
-  const traceGapLabels = useMemo(
-    () =>
-      (traceContract?.faltantes || []).map(
-        (gap) => timelineGapLabels[gap] || gap,
-      ),
-    [traceContract],
   );
 
   const backTarget = location.state?.from
@@ -222,7 +420,7 @@ const SolicitudCotizacionDetallePage = () => {
     }
 
     if (!EMAIL_PATTERN.test(destination)) {
-      return "Ingresa un correo electronico valido.";
+      return "Ingresa un correo electrónico válido.";
     }
 
     return "";
@@ -259,13 +457,13 @@ const SolicitudCotizacionDetallePage = () => {
     return (
       <div className="mx-auto max-w-5xl p-6">
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
-          {error || "No se pudo cargar la solicitud de cotizacion."}
+          {error || "No se pudo cargar la solicitud de cotización."}
         </div>
       </div>
     );
   }
 
-  if (!documentContract || !traceContract) {
+  if (!documentContract) {
     return <SolicitudCotizacionDetalleSkeleton />;
   }
 
@@ -274,11 +472,11 @@ const SolicitudCotizacionDetallePage = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Detalle de solicitud de cotizacion
+            Detalle de solicitud de cotización
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Vista operativa para revisar datos documentarios, condiciones, items
-            solicitados y trazabilidad disponible.
+            Vista operativa para revisar datos documentarios, condiciones e
+            ítems solicitados.
           </p>
         </div>
 
@@ -320,8 +518,8 @@ const SolicitudCotizacionDetallePage = () => {
       >
         <form onSubmit={handleSendEmail} className="space-y-5" noValidate>
           <p className="text-sm leading-6 text-gray-600">
-            Se enviara la solicitud {documentContract.codigo} al correo que
-            indiques. Puedes editar el destino antes de confirmar el envio.
+            Se enviará la solicitud {documentContract.codigo} al correo que
+            indiques. Puedes editar el destino antes de confirmar el envío.
           </p>
 
           <div>
@@ -366,8 +564,8 @@ const SolicitudCotizacionDetallePage = () => {
                 id="solicitud-email-recipient-help"
                 className="mt-2 text-xs text-gray-500"
               >
-                Se precarga el correo registrado del proveedor cuando esta
-                disponible.
+                Se precarga el correo electrónico registrado del proveedor
+                cuando está disponible.
               </p>
             )}
           </div>
@@ -395,8 +593,8 @@ const SolicitudCotizacionDetallePage = () => {
 
       {configuracionEmpresaError ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-          La configuracion institucional no pudo cargarse. La vista documentaria
-          seguira disponible, pero el membrete puede salir incompleto.
+          La configuración institucional no pudo cargarse. La vista documentaria
+          seguirá disponible, pero el membrete puede salir incompleto.
         </div>
       ) : null}
 
@@ -409,7 +607,7 @@ const SolicitudCotizacionDetallePage = () => {
 
       {missingDocumentFields.length > 0 ? (
         <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-950">
-          Esta solicitud aun tiene campos documentarios pendientes:{" "}
+          Esta solicitud aún tiene campos documentarios pendientes:{" "}
           <span className="font-semibold">
             {missingDocumentFields.join(", ")}
           </span>
@@ -420,12 +618,9 @@ const SolicitudCotizacionDetallePage = () => {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Resumen principal
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-900">
+              RESUMEN PRINCIPAL
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-gray-900">
-              {documentContract.codigo}
-            </h2>
           </div>
           <CotizacionEstadoBadge
             estado={documentContract.estado}
@@ -444,83 +639,37 @@ const SolicitudCotizacionDetallePage = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        <div className="space-y-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Condiciones de cotizacion
-            </p>
-            <div className="mt-4">
-              <InlineFieldList items={conditionItems} />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Texto base de la solicitud
-            </p>
-            <p className="mt-4 text-sm leading-7 text-gray-700">
-              {readValue(documentContract.cuerpoSolicitud)}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Trazabilidad disponible
-          </p>
-          {!traceContract.completa && traceGapLabels.length > 0 ? (
-            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              El backend aun no soporta trazabilidad completa. Faltan:{" "}
-              <span className="font-semibold">{traceGapLabels.join(", ")}</span>
-              .
-            </div>
-          ) : null}
-          <div className="mt-4 space-y-4">
-            {traceContract.eventos.length > 0 ? (
-              traceContract.eventos.map((entry, index) => (
-                <div
-                  key={`${entry.tipo}-${entry.fecha || index}`}
-                  className="rounded-lg border border-gray-200 p-4 text-sm"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold text-gray-900">
-                      {entry.titulo}
-                    </p>
-                    <p className="text-gray-500">
-                      {formatDateTime(entry.fecha)}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-gray-700">
-                    Actor: {readValue(entry.actor)}
-                  </p>
-                  <p className="mt-1 text-gray-600">
-                    {readValue(entry.descripcion)}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500">
-                No hay eventos de trazabilidad disponibles para esta solicitud.
-              </div>
-            )}
-          </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Condiciones de cotización
+        </p>
+        <div className="mt-4">
+          <InlineFieldList items={conditionItems} />
         </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Items solicitados
+          Texto base de la solicitud
+        </p>
+        <p className="mt-4 text-sm leading-7 text-gray-700">
+          {readValue(documentContract.cuerpoSolicitud)}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Ítems solicitados
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Item
+                  Ítem
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Descripcion
+                  Descripción
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Unidad
@@ -563,7 +712,7 @@ const SolicitudCotizacionDetallePage = () => {
                     colSpan="5"
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
-                    La solicitud no tiene items disponibles.
+                    La solicitud no tiene ítems disponibles.
                   </td>
                 </tr>
               )}
@@ -581,7 +730,7 @@ const SolicitudCotizacionDetallePage = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Codigo
+                  Código
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Proveedor
@@ -618,7 +767,7 @@ const SolicitudCotizacionDetallePage = () => {
                     colSpan="4"
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
-                    Aun no hay cotizaciones vinculadas a esta solicitud.
+                    Aún no hay cotizaciones vinculadas a esta solicitud.
                   </td>
                 </tr>
               )}

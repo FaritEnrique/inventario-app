@@ -25,15 +25,15 @@ import {
 } from "../utils/logisticaAssignment";
 
 const titles = {
-  jefatura: "Bandeja Operativa de Logistica",
-  operador: "Bandeja de Operador de Logistica",
+  jefatura: "Bandeja Operativa de Logística",
+  operador: "Bandeja de Operador de Logística",
 };
 
 const subtitles = {
   jefatura:
-    "Supervisa requerimientos habilitados para atencion logistica, asigna responsables, define el flujo logistico y activa la atencion operativa.",
+    "Supervisa requerimientos habilitados para atención logística, asigna responsables, define el flujo logístico y activa la atención operativa.",
   operador:
-    "Trabaja solo los expedientes logisticos que tienes asignados y dejalos listos para decision de jefatura.",
+    "Trabaja solo los expedientes logísticos que tienes asignados y déjalos listos para decisión de jefatura.",
 };
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
@@ -100,7 +100,7 @@ const getVisibleRequerimientoItems = (requerimiento = {}) => {
   ];
 
   const source = candidateCollections.find((collection) =>
-    Array.isArray(collection)
+    Array.isArray(collection),
   );
 
   return Array.isArray(source)
@@ -113,7 +113,7 @@ const getItemDescription = (item = {}) =>
   item.descripcion ||
   item.producto?.nombre ||
   item.nombre ||
-  "Item sin descripcion";
+  "Ítem sin descripción";
 
 const getAprobacionChipClass = (item) => {
   if (item?.pendienteGerenciaGeneral) {
@@ -130,7 +130,7 @@ const getAprobacionChipLabel = (item) => {
     return "Pendiente GG";
   }
   if (item?.aprobacionDocumentalFinal) {
-    return "Aprobacion final";
+    return "Aprobación final";
   }
   return "Habilitado para logistica";
 };
@@ -160,6 +160,9 @@ const createSolicitudDraft = (requerimientoId) => ({
   items: [],
 });
 
+const getInitialEstadoBandeja = (tipo) =>
+  tipo === "jefatura" ? "PENDIENTE" : "";
+
 const promptLogisticaReassignmentPayload = ({
   currentResponsableId,
   nextResponsableId,
@@ -172,8 +175,8 @@ const promptLogisticaReassignmentPayload = ({
   }
 
   const tipoInput = window.prompt(
-    "Tipo de reasignacion: TEMPORAL o DEFINITIVA.",
-    "DEFINITIVA"
+    "Tipo de reasignación: TEMPORAL o DEFINITIVA.",
+    "DEFINITIVA",
   );
   if (tipoInput === null) return null;
 
@@ -182,33 +185,33 @@ const promptLogisticaReassignmentPayload = ({
     .toUpperCase();
 
   if (!["TEMPORAL", "DEFINITIVA"].includes(tipoReasignacion)) {
-    toast.error("La reasignacion debe ser TEMPORAL o DEFINITIVA.");
+    toast.error("La reasignación debe ser TEMPORAL o DEFINITIVA.");
     return null;
   }
 
   const motivoInput = window.prompt(
-    "Motivo obligatorio de la reasignacion.",
-    ""
+    "Motivo obligatorio de la reasignación.",
+    "",
   );
   if (motivoInput === null) return null;
 
   const motivo = String(motivoInput || "").trim();
   if (!motivo) {
-    toast.error("Debes registrar un motivo para la reasignacion.");
+    toast.error("Debes registrar un motivo para la reasignación.");
     return null;
   }
 
   const comentarioInput = window.prompt(
-    "Comentario adicional de la reasignacion (opcional).",
-    ""
+    "Comentario adicional de la reasignación (opcional).",
+    "",
   );
   if (comentarioInput === null) return null;
 
   let vigenteHasta = null;
   if (tipoReasignacion === "TEMPORAL") {
     const vigenteHastaInput = window.prompt(
-      "Vigente hasta (AAAA-MM-DD) opcional para la reasignacion temporal.",
-      ""
+      "Vigente hasta (AAAA-MM-DD) opcional para la reasignación temporal.",
+      "",
     );
     if (vigenteHastaInput === null) return null;
     vigenteHasta = String(vigenteHastaInput || "").trim() || null;
@@ -244,7 +247,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [operadores, setOperadores] = useState([]);
   const [contextError, setContextError] = useState(null);
   const [search, setSearch] = useState("");
-  const [estadoBandeja, setEstadoBandeja] = useState("");
+  const [estadoBandeja, setEstadoBandeja] = useState(() =>
+    getInitialEstadoBandeja(tipo),
+  );
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
   const [flowDrafts, setFlowDrafts] = useState({});
   const [expandedFlowId, setExpandedFlowId] = useState(null);
@@ -258,6 +263,10 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   const canAssign =
     canAssignCotizacionesLogisticaEffective(user) && tipo === "jefatura";
+
+  useEffect(() => {
+    setEstadoBandeja(getInitialEstadoBandeja(tipo));
+  }, [tipo]);
   const hasJefaturaContext = hasLogisticaJefaturaContext(availableContexts);
   const hasOperadorContext = hasLogisticaOperadorContext(availableContexts);
   const hasCompatibleLogisticaContext =
@@ -268,13 +277,13 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     ? user.identityRoles.includes("ADMINISTRADOR_SISTEMA")
     : false;
   const activeContextIsLogisticaJefatura = isLogisticaJefaturaContext(
-    activeContext || {}
+    activeContext || {},
   );
   const canProcessDirectly =
     canAssign && (activeContextIsLogisticaJefatura || isAdminUser);
   const directResponsableOption = createDirectResponsableOption(
     user,
-    canProcessDirectly
+    canProcessDirectly,
   );
   const directResponsableId = directResponsableOption?.id || null;
 
@@ -284,7 +293,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       state: {
         from: location,
         reason: "CONTEXT_INCOMPATIBLE",
-        expectedContext: tipo === "jefatura" ? "logistica-jefatura" : "logistica-operador",
+        expectedContext:
+          tipo === "jefatura" ? "logistica-jefatura" : "logistica-operador",
       },
     });
   };
@@ -310,14 +320,21 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           } catch {
             return item;
           }
-        })
+        }),
       );
+      const filteredData = estadoBandeja
+        ? enrichedData.filter(
+            (item) =>
+              String(item?.estadoBandeja || "").toUpperCase() ===
+              String(estadoBandeja).toUpperCase(),
+          )
+        : enrichedData;
 
-      setItems(enrichedData);
+      setItems(filteredData);
       setContextError(null);
       setSeleccionOperadores(() => {
         const next = {};
-        enrichedData.forEach((item) => {
+        filteredData.forEach((item) => {
           next[item.id] = getDefaultLogisticaResponsableSelection({
             responsableActualId:
               item.responsableLogisticaId || item.responsableLogistica?.id,
@@ -328,7 +345,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       });
       setFlowDrafts((prev) => {
         const next = { ...prev };
-        enrichedData.forEach((item) => {
+        filteredData.forEach((item) => {
           next[item.id] = next[item.id] || createFlowDraft(item);
         });
         return next;
@@ -350,7 +367,14 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   useEffect(() => {
     load().catch(() => {});
-  }, [tipo, search, estadoBandeja, directResponsableId, obtenerBandeja, obtenerDetalle]);
+  }, [
+    tipo,
+    search,
+    estadoBandeja,
+    directResponsableId,
+    obtenerBandeja,
+    obtenerDetalle,
+  ]);
 
   useEffect(() => {
     if (!canAssign) return;
@@ -376,8 +400,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         setJefaturaResponsableOption(
           findLogisticaJefaturaResponsable(
             usuarios,
-            activeContext?.areaId || activeContext?.area?.id || null
-          )
+            activeContext?.areaId || activeContext?.area?.id || null,
+          ),
         );
       })
       .catch(() => {
@@ -403,7 +427,11 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   useEffect(() => {
     if (!highlightedRequerimientoId) return;
-    if (!items.some((item) => Number(item.id) === Number(highlightedRequerimientoId))) {
+    if (
+      !items.some(
+        (item) => Number(item.id) === Number(highlightedRequerimientoId),
+      )
+    ) {
       return;
     }
 
@@ -419,31 +447,30 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     return () => window.clearTimeout(timer);
   }, [highlightedRequerimientoId, items]);
 
-  const resumen = useMemo(
-    () => {
-      const counts = trayStatusOrder.reduce((acc, status) => {
-        acc[status] = 0;
-        return acc;
-      }, {});
+  const resumen = useMemo(() => {
+    const counts = trayStatusOrder.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {});
 
-      items.forEach((item) => {
-        const status = String(item?.estadoBandeja || "").toUpperCase();
-        if (Object.prototype.hasOwnProperty.call(counts, status)) {
-          counts[status] += 1;
-        }
-      });
+    items.forEach((item) => {
+      const status = String(item?.estadoBandeja || "").toUpperCase();
+      if (Object.prototype.hasOwnProperty.call(counts, status)) {
+        counts[status] += 1;
+      }
+    });
 
-      return {
-        total: items.length,
-        counts,
-      };
-    },
-    [items]
-  );
+    return {
+      total: items.length,
+      counts,
+    };
+  }, [items]);
   const isInitialLoading = cargando && items.length === 0 && !contextError;
 
   const handleAssign = async (requerimientoId) => {
-    const item = items.find((currentItem) => currentItem.id === requerimientoId);
+    const item = items.find(
+      (currentItem) => currentItem.id === requerimientoId,
+    );
     const responsableActualId =
       item?.responsableLogisticaId || item?.responsableLogistica?.id || null;
     const selectedResponsableId = seleccionOperadores[requerimientoId] || "";
@@ -470,12 +497,14 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const handleDirect = async (requerimientoId) => {
     if (!directResponsableId) {
       toast.error(
-        "Procesar directamente solo esta disponible con la jefatura logistica activa."
+        "Procesar directamente solo está disponible con la jefatura logística activa.",
       );
       return;
     }
 
-    const item = items.find((currentItem) => currentItem.id === requerimientoId);
+    const item = items.find(
+      (currentItem) => currentItem.id === requerimientoId,
+    );
     const payload = promptLogisticaReassignmentPayload({
       currentResponsableId:
         item?.responsableLogisticaId || item?.responsableLogistica?.id || null,
@@ -507,7 +536,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     const modalidad = draft.modalidadFlujoLogistico;
 
     if (!modalidad) {
-      toast.error("Debes seleccionar una modalidad de flujo logistico.");
+      toast.error("Debes seleccionar una modalidad de flujo logístico.");
       return;
     }
 
@@ -522,7 +551,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       !String(draft.justificacionFlujoExcepcional || "").trim()
     ) {
       toast.error(
-        "La justificacion es obligatoria para URGENCIA o EMERGENCIA."
+        "La justificación es obligatoria para URGENCIA o EMERGENCIA.",
       );
       return;
     }
@@ -543,8 +572,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       setExpandedFlowId(null);
       toast.success(
         wasEmisionClosed
-          ? "Flujo logistico actualizado. Si la cobertura invitada quedo insuficiente, la emision se reabrio automaticamente."
-          : "Flujo logistico actualizado."
+          ? "Flujo logístico actualizado. Si la cobertura invitada quedó insuficiente, la emisión se reabrió automáticamente."
+          : "Flujo logístico actualizado.",
       );
     } finally {
       setSubmittingFlowId(null);
@@ -634,28 +663,28 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Total expedientes
-          </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {resumen.total}
-          </p>
+          <div className="rounded-xl bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Total expedientes
+            </p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {resumen.total}
+            </p>
+          </div>
+          {trayStatusOrder.map((status) => {
+            const meta = getTrayStatusMeta(status);
+            return (
+              <div key={status} className="rounded-xl bg-white p-5 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {meta.summaryLabel}
+                </p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  {resumen.counts[status] || 0}
+                </p>
+              </div>
+            );
+          })}
         </div>
-        {trayStatusOrder.map((status) => {
-          const meta = getTrayStatusMeta(status);
-          return (
-            <div key={status} className="rounded-xl bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {meta.summaryLabel}
-              </p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {resumen.counts[status] || 0}
-              </p>
-            </div>
-          );
-        })}
-      </div>
       )}
 
       <div className="grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-3">
@@ -663,7 +692,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           value={search}
           name="cotizaciones-bandeja-page-input-134"
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por codigo, solicitante o finalidad"
+          placeholder="Buscar por código, solicitante o finalidad"
           className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
         />
         <select
@@ -700,7 +729,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
               </p>
             ) : (
               <p className="mt-2 text-amber-800">
-                No tienes un contexto operativo autorizado para el modulo logistico.
+                No tienes un contexto operativo autorizado para el modulo
+                logistico.
               </p>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
@@ -734,27 +764,25 @@ const CotizacionesBandejaPage = ({ tipo }) => {
             const assignedToOtherResponsable =
               Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
             const blocked = ["ADJUDICADO", "OC_GENERADA"].includes(
-              item.estadoLogistica
+              item.estadoLogistica,
             );
             const canQuickDefineFlow =
               canAssign && !blocked && item.puedeCambiarFlujoLogistico === true;
             const totalSolicitudes = Number(
-              item.resumenComparativo?.totalSolicitudes || 0
+              item.resumenComparativo?.totalSolicitudes || 0,
             );
             const canQuickCreateSolicitud =
               canAssign &&
               !blocked &&
               ["REGULAR", "EXCEPCIONAL"].includes(
-                item.modalidadFlujoLogistico
+                item.modalidadFlujoLogistico,
               ) &&
               !assignedToOtherResponsable;
             const canOperatorContinueExpediente =
               tipo === "operador" && assignedToCurrentUser && !blocked;
             const canOperatorManageSolicitud =
               canOperatorContinueExpediente &&
-              ["REGULAR", "EXCEPCIONAL"].includes(
-                item.modalidadFlujoLogistico
-              );
+              ["REGULAR", "EXCEPCIONAL"].includes(item.modalidadFlujoLogistico);
             const expedientePrimaryPath = canOperatorManageSolicitud
               ? `/cotizaciones/proceso/${item.id}#solicitudes`
               : `/cotizaciones/proceso/${item.id}`;
@@ -807,7 +835,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                       ) : null}
                       <span
                         className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getAprobacionChipClass(
-                          item
+                          item,
                         )}`}
                       >
                         {getAprobacionChipLabel(item)}
@@ -900,7 +928,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                               </td>
                               <td className="px-4 py-3 text-sm text-slate-700">
                                 {formatCurrency(
-                                  requerimientoItem.subtotalReferencial
+                                  requerimientoItem.subtotalReferencial,
                                 )}
                               </td>
                             </tr>
@@ -955,13 +983,13 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     <p className="mt-1 text-xs text-slate-600">
                       {item.modalidadFlujoLogistico === "REGULAR"
                         ? assignedToOtherResponsable
-                          ? "La emision de solicitudes queda deshabilitada mientras el expediente este asignado a otro responsable logistico."
-                          : "Puedes emitir solicitudes de cotizacion desde esta bandeja."
+                          ? "La emisión de solicitudes queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
+                          : "Puedes emitir solicitudes de cotización desde esta bandeja."
                         : item.modalidadFlujoLogistico === "EXCEPCIONAL"
                           ? assignedToOtherResponsable
-                            ? "La emision de solicitudes queda deshabilitada mientras el expediente este asignado a otro responsable logistico."
-                            : "Puedes emitir solicitudes de cotizacion desde esta bandeja incluso en flujo excepcional."
-                          : "Primero debes definir el flujo logistico."}
+                            ? "La emisión de solicitudes queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
+                            : "Puedes emitir solicitudes de cotización desde esta bandeja incluso en flujo excepcional."
+                          : "Primero debes definir el flujo logístico."}
                     </p>
                     {totalSolicitudes > 0 ? (
                       <Link
@@ -977,7 +1005,10 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
                 {item.pendienteGerenciaGeneral ? (
                   <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                    El expediente ya puede trabajarse en logistica, pero la aprobacion documental final aun depende de Gerencia General. La decision final y la orden de compra permanecen bloqueadas.
+                    El expediente ya puede trabajarse en logistica, pero la
+                    aprobacion documental final aun depende de Gerencia General.
+                    La decision final y la orden de compra permanecen
+                    bloqueadas.
                   </div>
                 ) : null}
 
@@ -997,7 +1028,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                         Ir a comparativo
                       </Link>
                     ) : null}
-                    {tipo === "operador" && item.estadoLogistica === "ASIGNADO" ? (
+                    {tipo === "operador" &&
+                    item.estadoLogistica === "ASIGNADO" ? (
                       <button
                         type="button"
                         onClick={() => handleStart(item.id)}
@@ -1020,7 +1052,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                         type="button"
                         onClick={() =>
                           setExpandedFlowId((prev) =>
-                            prev === item.id ? null : item.id
+                            prev === item.id ? null : item.id,
                           )
                         }
                         className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -1037,7 +1069,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                         type="button"
                         onClick={() =>
                           setExpandedSolicitudId((prev) =>
-                            prev === item.id ? null : item.id
+                            prev === item.id ? null : item.id,
                           )
                         }
                         className="rounded border border-fuchsia-300 px-4 py-2 text-sm font-medium text-fuchsia-700 hover:bg-fuchsia-50"
@@ -1170,7 +1202,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                             justificacionFlujoExcepcional: event.target.value,
                           })
                         }
-                        placeholder="Justificacion obligatoria para urgencia o emergencia."
+                        placeholder="Justificación obligatoria para urgencia o emergencia."
                         className="w-full rounded border border-gray-300 px-3 py-2"
                       />
                     ) : null}
@@ -1202,7 +1234,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     <SolicitudCotizacionForm
                       initialData={createSolicitudDraft(item.id)}
                       proveedores={proveedores.filter(
-                        (proveedor) => proveedor.activo !== false
+                        (proveedor) => proveedor.activo !== false,
                       )}
                       requerimientos={[
                         {

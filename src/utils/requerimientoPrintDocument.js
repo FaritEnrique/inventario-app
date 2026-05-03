@@ -4,10 +4,10 @@ import {
 } from "./configuracionEmpresaLetterhead";
 
 export const approvalLabels = {
-  JEFATURA: "Aprobacion Jefatura",
-  GERENCIA_AREA: "Aprobacion Gerencia",
-  GERENCIA_ADMINISTRACION: "Aprobacion Gerencia Adm.",
-  GERENCIA_GENERAL: "Aprobacion Gerencia General",
+  JEFATURA: "Aprobación Jefatura",
+  GERENCIA_AREA: "Aprobación Gerencia",
+  GERENCIA_ADMINISTRACION: "Aprobación Gerencia Adm.",
+  GERENCIA_GENERAL: "Aprobación Gerencia General",
 };
 
 export const defaultApprovalLevels = [
@@ -53,7 +53,9 @@ export const buildPrintedItemDescription = (item) => {
   if (!item) return "-";
 
   if (!item.esTemporal && item.producto) {
-    const base = normalizeText(item.producto.nombre) || normalizeText(item.descripcionVisible);
+    const base =
+      normalizeText(item.producto.nombre) ||
+      normalizeText(item.descripcionVisible);
     const description = normalizeText(item.producto.descripcion);
     const brand = normalizeText(item.producto.marca?.nombre)
       ? `Marca: ${normalizeText(item.producto.marca?.nombre)}`
@@ -88,7 +90,9 @@ export const buildRequerimientoPrintModel = ({
       ? applicableApprovalLevels
       : defaultApprovalLevels;
   const signatureGridColumns =
-    approvalLevels.length >= 4 ? 2 : Math.max(1, Math.min(approvalLevels.length, 3));
+    approvalLevels.length >= 4
+      ? 2
+      : Math.max(1, Math.min(approvalLevels.length, 3));
   const approvalMap = new Map(
     (Array.isArray(signatures) ? signatures : []).map((signature) => [
       signature.level,
@@ -136,7 +140,7 @@ const buildItemRowsMarkup = (items) => {
             ${escapeHtml(formatMoney(item.subtotalReferencial))}
           </td>
         </tr>
-      `
+      `,
     )
     .join("");
 };
@@ -146,7 +150,7 @@ const buildSignatureMarkup = (levels, signatures) => {
     (Array.isArray(signatures) ? signatures : []).map((signature) => [
       signature.level,
       signature.approval || null,
-    ])
+    ]),
   );
 
   return levels
@@ -162,7 +166,7 @@ const buildSignatureMarkup = (levels, signatures) => {
       return `
         <div class="signature-box">
           <p class="signature-box__title">${escapeHtml(
-            approvalLabels[level] || level
+            approvalLabels[level] || level,
           )}</p>
           <div class="signature-box__content">
             <p><span>Nombre:</span> ${escapeHtml(approverName)}</p>
@@ -180,16 +184,12 @@ export const buildRequerimientoPrintHtml = ({
   signatures = [],
   applicableApprovalLevels = [],
 }) => {
-  const {
-    activeItems,
-    approvalLevels,
-    signatureGridColumns,
-    observaciones,
-  } = buildRequerimientoPrintModel({
-    requerimiento,
-    signatures,
-    applicableApprovalLevels,
-  });
+  const { activeItems, approvalLevels, signatureGridColumns, observaciones } =
+    buildRequerimientoPrintModel({
+      requerimiento,
+      signatures,
+      applicableApprovalLevels,
+    });
 
   const bodyMarkup = `
     <div class="document-body print-document">
@@ -199,12 +199,12 @@ export const buildRequerimientoPrintHtml = ({
 
       <section class="document-summary print-avoid-break">
         <div class="summary-grid">
-          <div><span>Codigo:</span> ${escapeHtml(renderText(requerimiento?.codigo))}</div>
+          <div><span>Código:</span> ${escapeHtml(renderText(requerimiento?.codigo))}</div>
           <div><span>Fecha:</span> ${escapeHtml(formatPrintDate(requerimiento?.fechaCreacion))}</div>
-          <div><span>Area:</span> ${escapeHtml(renderText(requerimiento?.areaNombreSnapshot))}</div>
+          <div><span>Área:</span> ${escapeHtml(renderText(requerimiento?.areaNombreSnapshot))}</div>
           <div><span>Solicitante:</span> ${escapeHtml(renderText(requerimiento?.solicitante?.nombre))}</div>
           <div class="summary-grid__full"><span>Uso:</span> ${escapeHtml(renderText(requerimiento?.usoFinalidad))}</div>
-          <div class="summary-grid__full"><span>Ubicacion:</span> ${escapeHtml(renderText(requerimiento?.ubicacionUso))}</div>
+          <div class="summary-grid__full"><span>Ubicación:</span> ${escapeHtml(renderText(requerimiento?.ubicacionUso))}</div>
           <div class="summary-grid__full"><span>Observaciones:</span> ${escapeHtml(observaciones)}</div>
         </div>
       </section>
@@ -214,7 +214,7 @@ export const buildRequerimientoPrintHtml = ({
           <thead>
             <tr>
               <th class="items-table__head items-table__head--center">Item</th>
-              <th class="items-table__head">Descripcion</th>
+              <th class="items-table__head">Descripción</th>
               <th class="items-table__head items-table__head--center">Cant.</th>
               <th class="items-table__head items-table__head--right">Valor ref. unitario</th>
               <th class="items-table__head items-table__head--right">Total referencial</th>
@@ -227,7 +227,7 @@ export const buildRequerimientoPrintHtml = ({
             <tr>
               <td colspan="4" class="items-table__total-label">Total general</td>
               <td class="items-table__total-value">${escapeHtml(
-                formatMoney(requerimiento?.totalReferencial)
+                formatMoney(requerimiento?.totalReferencial),
               )}</td>
             </tr>
           </tfoot>

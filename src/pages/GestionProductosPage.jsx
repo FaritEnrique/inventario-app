@@ -9,7 +9,7 @@ import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import Modal from "../components/Modal";
 import CatalogoSelectorModal from "../components/CatalogoSelectorModal";
 import productosApi from "../api/productosApi";
-import { FaSearch, FaRegistered } from "react-icons/fa";
+import { FaClipboardList, FaSearch, FaRegistered } from "react-icons/fa";
 import { TbArrowBackUpDouble } from "react-icons/tb";
 import { MdCategory } from "react-icons/md";
 import useDebounce from "../hooks/useDebounce";
@@ -31,6 +31,13 @@ const cards = [
       "Organiza, crea y administra las categorías y clasificaciones de tus productos.",
     icon: <MdCategory />,
     path: "/gestion-tipo-producto",
+  },
+  {
+    title: "Solicitudes de Tipos",
+    description:
+      "Valida, homologa, crea o rechaza tipos propuestos desde proveedores.",
+    icon: <FaClipboardList />,
+    path: "/solicitudes-tipo-producto",
   },
   {
     title: "Marcas",

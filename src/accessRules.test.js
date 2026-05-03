@@ -116,6 +116,14 @@ describe("effective functions con usuario que tiene esAreaLogistica === true", (
     ).toBe(false);
   });
 
+  it("canViewAllCotizacionesLogisticaEffective rechaza OPERADOR aunque este en area logistica", () => {
+    expect(
+      canViewAllCotizacionesLogisticaEffective(
+        buildUser("OPERADOR", { esAreaLogistica: true }),
+      ),
+    ).toBe(false);
+  });
+
   it("mantiene el override de ADMINISTRADOR_SISTEMA aunque el contexto activo sea operativo", () => {
     expect(
       canViewAllCotizacionesLogisticaEffective({
@@ -449,7 +457,7 @@ describe("ordenes de compra - aprobacion snapshot por etapa real", () => {
 });
 
 describe("dashboard logistico - entrada operativa", () => {
-  it("mantiene entrada visible para OPERADOR logistico mediante la regla de acceso al modulo", () => {
+  it("mantiene acceso operativo para OPERADOR logistico sin concederle la entrada de jefatura", () => {
     expect(
       canAccessCotizacionesEffective(
         buildUser("OPERADOR", {
@@ -458,6 +466,14 @@ describe("dashboard logistico - entrada operativa", () => {
         }),
       ),
     ).toBe(true);
+    expect(
+      canViewAllCotizacionesLogisticaEffective(
+        buildUser("OPERADOR", {
+          esAreaLogistica: true,
+          nombre: "Compras",
+        }),
+      ),
+    ).toBe(false);
   });
 });
 

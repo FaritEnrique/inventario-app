@@ -85,7 +85,7 @@ const HomePage = () => {
       });
 
       toast.success(
-        "Usuario administrador creado con exito. Por favor, inicia sesion.",
+        "Usuario administrador creado con éxito. Por favor, inicia sesión.",
       );
       navigate("/login");
     } catch (error) {
@@ -135,7 +135,7 @@ const HomePage = () => {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Correo electronico
+                Correo electrónico
               </label>
               <input
                 id="email"
@@ -180,7 +180,9 @@ const HomePage = () => {
                   className="block w-full rounded-lg border border-gray-300 p-2 pr-9 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500">{PASSWORD_POLICY_MESSAGE}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {PASSWORD_POLICY_MESSAGE}
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
