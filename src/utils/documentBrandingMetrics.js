@@ -15,6 +15,11 @@ const deepFreeze = (value) => {
 export const institutionalLetterheadMetrics = deepFreeze({
   print: {
     sheetPadding: "13mm 14mm 14mm",
+    pageTopPadding: "13mm",
+    pageBottomPadding: "14mm",
+    pageHorizontalPadding: "14mm",
+    multipageHeaderSpacerHeight: "39mm",
+    multipageFooterSpacerHeight: "36mm",
     headerColumns: "minmax(0, 0.52fr) minmax(0, 0.48fr)",
     headerGap: "8mm",
     headerPaddingBottom: "4.2mm",

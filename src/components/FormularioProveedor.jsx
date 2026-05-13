@@ -633,6 +633,7 @@ const FormularioProveedor = ({
         createdAt: _createdAt,
         updatedAt: _updatedAt,
         especialidades: _especialidades,
+        solicitudesTipoProducto: _solicitudesTipoProducto,
         fechaActualizacionReducido: _fechaActualizacionReducido,
         ...payload
       } = formData;

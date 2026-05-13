@@ -28,7 +28,7 @@ const RequerimientosPage = () => {
   const canSelectArea = canSelectAreaRequerimientoEffective(user);
   const canAccessLogisticaOperativeTray =
     canAccessLogisticaOperativeTrayFromRequerimientosEffective(user);
-  const logisticaOperativeTrayPath = getLogisticaOperativeTrayPathEffective();
+  const logisticaOperativeTrayPath = getLogisticaOperativeTrayPathEffective(user);
   const { areas } = useAreas({ enabled: canSelectArea });
   const {
     requerimientos,

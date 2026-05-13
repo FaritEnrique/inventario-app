@@ -7,6 +7,7 @@ import {
   buildTipoCompraFormState,
   calculateSolicitudTotals,
   formatSolicitudMoney,
+  resolveLocalPaymentFormValue,
 } from "./solicitudCotizacionFormModel.js";
 import { INCOTERM_GROUPS } from "../features/solicitud-cotizacion/solicitudCotizacionCatalog.js";
 
@@ -129,7 +130,7 @@ describe("solicitudCotizacionFormModel", () => {
         cuerpoSolicitud: "  Solicitud local  ",
         estado: "Creada",
         moneda: "PEN",
-        incluyeIgv: "true",
+        incluyeIgv: "false",
         vigenciaOfertaDias: "15",
         tiempoEntregaDias: "7",
         lugarEntrega: "  Almacén central  ",
@@ -204,7 +205,7 @@ describe("solicitudCotizacionFormModel", () => {
 
     expect(payload.tipoCompra).toBe("IMPORTACION");
     expect(payload.moneda).toBe("USD");
-    expect(payload.incluyeIgv).toBe(false);
+    expect(payload).not.toHaveProperty("incluyeIgv");
     expect(payload.estructuraPagoImportacion).toBe("CONTRA_DOCUMENTOS");
     expect(payload.instrumentoPagoImportacion).toBe("CARTA_CREDITO");
     expect(payload.gatilloPagoImportacion).toBe("CONTRA_DOCUMENTOS_EMBARQUE");
@@ -227,14 +228,51 @@ describe("solicitudCotizacionFormModel", () => {
         porcentajeSaldoLocal: "65",
         diasCreditoLocal: "30",
       },
-      "CONTADO",
+      "CONTADO_CONTRA_ENTREGA",
     );
 
     expect(nextState.condicionPagoLocal).toBe("CONTADO");
     expect(nextState.hitoPagoLocal).toBe("CONTRA_ENTREGA");
+    expect(resolveLocalPaymentFormValue(nextState)).toBe(
+      "CONTADO_CONTRA_ENTREGA",
+    );
     expect(nextState.porcentajeAnticipoLocal).toBe("");
     expect(nextState.porcentajeSaldoLocal).toBe("");
     expect(nextState.diasCreditoLocal).toBe("");
+  });
+
+  it("permite payload LOCAL sin forma de pago visible", () => {
+    const payload = buildSolicitudCotizacionPayload(
+      {
+        proveedorId: "3",
+        requerimientoId: "2",
+        cuerpoSolicitud: "Solicitud local",
+        estado: "Creada",
+        moneda: "PEN",
+        vigenciaOfertaDias: "",
+        tiempoEntregaDias: "",
+        lugarEntrega: "",
+        garantia: "",
+        alcanceCompraLocal: "NACIONAL",
+        lugarEntregaLocalTipo: "ALMACEN_COMPRADOR",
+        lugarEntregaLocalDetalle: "Almacen central",
+        transporteAsumidoPor: "PROVEEDOR",
+        cargaDescargaAsumidaPor: "COMPRADOR",
+        permiteEntregasParciales: "false",
+        condicionPagoLocal: "",
+        hitoPagoLocal: "",
+        fechaLimiteRecepcion: "2026-05-05T10:30",
+        medioRecepcion: "CORREO",
+        tipoCompra: "LOCAL",
+        itemIds: ["2"],
+      },
+      "",
+    );
+
+    expect(payload.tipoCompra).toBe("LOCAL");
+    expect(payload.condicionPagoLocal).toBeNull();
+    expect(payload.hitoPagoLocal).toBeNull();
+    expect(payload.tiempoEntregaDias).toBeNull();
   });
   it("construye payload con moneda OTRA y codigo libre", () => {
     const payload = buildSolicitudCotizacionPayload(
@@ -267,6 +305,7 @@ describe("solicitudCotizacionFormModel", () => {
     expect(payload.codigoMonedaOtra).toBe("JPY");
     expect(payload.tiempoEntregaDias).toBe(0);
     expect(payload.medioRecepcion).toBe("FISICO");
+    expect(payload).not.toHaveProperty("incluyeIgv");
   });
 
   it("calcula totales con exoneracion Amazonia y formatea moneda libre", () => {

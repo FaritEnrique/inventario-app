@@ -1,12 +1,21 @@
 // src/pages/SolicitudCotizacionDetallePage.jsx
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { FaArrowLeft, FaEnvelope, FaFilePdf } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaEnvelope,
+  FaFilePdf,
+  FaHistory,
+  FaPrint,
+} from "react-icons/fa";
 import Modal from "../components/Modal";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudCotizacionDetalleSkeleton from "../components/ui/skeletons/SolicitudCotizacionDetalleSkeleton";
+import { useAuth } from "../context/authContext";
 import useSolicitudCotizacionDetalleData from "../hooks/useSolicitudCotizacionDetalleData";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
+import { printHtmlInNewWindow } from "../utils/printWindow";
+import { buildSolicitudCotizacionEnvioTracePrintHtml } from "../utils/solicitudCotizacionEnvioPrintDocument";
 import {
   buildSolicitudCotizacionDocumentContract,
   solicitudCotizacionDocumentFieldLabels,
@@ -17,14 +26,6 @@ const formatDate = (value) =>
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString("es-PE") : "-";
-
-const formatMoney = (value, currency = "S/") =>
-  value == null
-    ? "-"
-    : `${currency} ${new Intl.NumberFormat("es-PE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(Number(value || 0))}`;
 
 const readValue = (value, fallback = "-") => {
   if (value === null || value === undefined || value === "") return fallback;
@@ -62,16 +63,31 @@ const buildDefaultEmailRecipient = (solicitud) =>
 const SolicitudCotizacionDetallePage = () => {
   const { id } = useParams();
   const location = useLocation();
-  const { solicitud, loading, error, configuracionEmpresaError, reload } =
+  const { user } = useAuth();
+  const {
+    solicitud,
+    loading,
+    error,
+    configuracionEmpresaError,
+    documentData,
+    reload,
+  } =
     useSolicitudCotizacionDetalleData(id);
-  const { obtenerSolicitudPdfUrl, enviarSolicitudCorreo } =
-    useSolicitudesCotizacion({
-      autoLoad: false,
-    });
+  const {
+    obtenerSolicitudPdfUrl,
+    obtenerHistorialEnvios,
+    enviarSolicitudCorreo,
+  } = useSolicitudesCotizacion({
+    autoLoad: false,
+  });
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyData, setHistoryData] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   const documentContract = useMemo(
     () =>
@@ -143,10 +159,15 @@ const SolicitudCotizacionDetallePage = () => {
             },
           ]
         : []),
-      {
-        label: "Incluye IGV",
-        value: documentContract?.condiciones?.incluyeIgvLabel,
-      },
+      ...(documentContract?.condiciones?.tipoCompra === "LOCAL" &&
+      documentContract?.condiciones?.tratamientoTributarioLocal
+        ? [
+            {
+              label: "Tratamiento tributario local",
+              value: documentContract.condiciones.tratamientoTributarioLocal,
+            },
+          ]
+        : []),
       {
         label: "Vigencia de oferta",
         value:
@@ -258,20 +279,11 @@ const SolicitudCotizacionDetallePage = () => {
                 ]
               : []),
             ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
-            documentContract.condiciones.condicionPagoLocalLabel
+            documentContract.condiciones.formaPagoLocalLabel
               ? [
                   {
-                    label: "Condición de pago local",
-                    value: documentContract.condiciones.condicionPagoLocalLabel,
-                  },
-                ]
-              : []),
-            ...(documentContract.condiciones.tipoCompra === "LOCAL" &&
-            documentContract.condiciones.hitoPagoLocalLabel
-              ? [
-                  {
-                    label: "Hito local",
-                    value: documentContract.condiciones.hitoPagoLocalLabel,
+                    label: "Forma de pago",
+                    value: documentContract.condiciones.formaPagoLocalLabel,
                   },
                 ]
               : []),
@@ -390,13 +402,70 @@ const SolicitudCotizacionDetallePage = () => {
     [documentContract],
   );
 
+  const emailHistory = historyData?.historial || [];
+  const latestEmailEvent = emailHistory[0] || null;
+
   const backTarget = location.state?.from
     ? `${location.state.from.pathname || ""}${location.state.from.search || ""}${location.state.from.hash || ""}`
     : "/cotizaciones";
 
+  const loadEmailHistory = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!solicitud?.id) return null;
+
+      if (!silent) {
+        setHistoryLoading(true);
+      }
+      setHistoryError("");
+
+      try {
+        const data = await obtenerHistorialEnvios(solicitud.id);
+        setHistoryData(data);
+        return data;
+      } catch (err) {
+        const message =
+          err?.message || "No se pudo cargar la trazabilidad de correo.";
+        setHistoryError(message);
+        if (!silent) {
+          console.error("Error cargando trazabilidad de correo:", err);
+        }
+        return null;
+      } finally {
+        if (!silent) {
+          setHistoryLoading(false);
+        }
+      }
+    },
+    [obtenerHistorialEnvios, solicitud?.id],
+  );
+
+  useEffect(() => {
+    loadEmailHistory({ silent: true });
+  }, [loadEmailHistory]);
+
   const handleOpenOfficialPdf = () => {
     if (!id) return;
     window.open(obtenerSolicitudPdfUrl(id), "_blank", "noopener,noreferrer");
+  };
+
+  const handleOpenHistoryModal = async () => {
+    if (!solicitud?.id) return;
+    setHistoryModalOpen(true);
+    await loadEmailHistory();
+  };
+
+  const handlePrintHistory = async () => {
+    const data = historyData || (await loadEmailHistory());
+    if (!data) return;
+
+    const html = buildSolicitudCotizacionEnvioTracePrintHtml({
+      documentData,
+      solicitud: data.solicitud || solicitud,
+      historial: data.historial || [],
+      printedBy: user,
+    });
+
+    await printHtmlInNewWindow(html);
   };
 
   const handleOpenEmailModal = () => {
@@ -444,6 +513,7 @@ const SolicitudCotizacionDetallePage = () => {
       setEmailModalOpen(false);
       setEmailError("");
       await reload();
+      await loadEmailHistory({ silent: true });
     } catch {
       // El hook de solicitudes ya muestra el toast de error correspondiente.
     } finally {
@@ -495,6 +565,14 @@ const SolicitudCotizacionDetallePage = () => {
           >
             <FaFilePdf className="text-xs" />
             Abrir PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenHistoryModal}
+            className="inline-flex items-center gap-2 rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+          >
+            <FaHistory className="text-xs" />
+            Historial de envios
           </button>
           <button
             type="button"
@@ -591,6 +669,131 @@ const SolicitudCotizacionDetallePage = () => {
         </form>
       </Modal>
 
+      <Modal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        title="Historial de envios"
+        maxWidth="max-w-5xl"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="text-sm leading-6 text-gray-600">
+              Trazabilidad de correos enviados para la solicitud{" "}
+              <span className="font-semibold text-gray-900">
+                {documentContract.codigo}
+              </span>
+              .
+            </p>
+            <button
+              type="button"
+              onClick={handlePrintHistory}
+              className="inline-flex items-center gap-2 rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <FaPrint className="text-xs" />
+              Imprimir trazabilidad
+            </button>
+          </div>
+
+          {historyError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {historyError}
+            </div>
+          ) : null}
+
+          {historyLoading ? (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-600">
+              Cargando historial de envios...
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Fecha y hora
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Destinatario
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Asunto
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Enviado por
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Tipo
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      Resultado
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      PDF adjunto
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      ID proveedor / error
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {emailHistory.length > 0 ? (
+                    emailHistory.map((event) => (
+                      <tr key={event.id}>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {formatDateTime(event.fechaHoraEnvio)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {readValue(event.correoDestino)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {readValue(event.asunto)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {readValue(event.enviadoPor?.nombre)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {readValue(event.tipoEnvio)}
+                        </td>
+                        <td className="px-3 py-3 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                              event.resultadoEnvio === "EXITOSO"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {readValue(event.resultadoEnvio)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-700">
+                          {readValue(event.nombreArchivoAdjunto)}
+                        </td>
+                        <td className="max-w-xs px-3 py-3 text-sm text-gray-700">
+                          <span className="break-words">
+                            {readValue(
+                              event.providerMessageId || event.detalleError,
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="8"
+                        className="px-4 py-10 text-center text-sm text-gray-500"
+                      >
+                        Aun no hay envios registrados para esta solicitud.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Modal>
+
       {configuracionEmpresaError ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
           La configuración institucional no pudo cargarse. La vista documentaria
@@ -639,6 +842,52 @@ const SolicitudCotizacionDetallePage = () => {
         </div>
       </div>
 
+      {latestEmailEvent ? (
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Ultimo envio por correo
+              </p>
+              <div className="mt-3 grid gap-3 text-sm text-indigo-950 md:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <span className="block text-xs font-semibold uppercase text-indigo-600">
+                    Fecha
+                  </span>
+                  {formatDateTime(latestEmailEvent.fechaHoraEnvio)}
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold uppercase text-indigo-600">
+                    Destinatario
+                  </span>
+                  {readValue(latestEmailEvent.correoDestino)}
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold uppercase text-indigo-600">
+                    Enviado por
+                  </span>
+                  {readValue(latestEmailEvent.enviadoPor?.nombre)}
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold uppercase text-indigo-600">
+                    Resultado
+                  </span>
+                  {readValue(latestEmailEvent.resultadoEnvio)}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenHistoryModal}
+              className="inline-flex items-center gap-2 rounded border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            >
+              <FaHistory className="text-xs" />
+              Ver historial
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           Condiciones de cotización
@@ -677,9 +926,6 @@ const SolicitudCotizacionDetallePage = () => {
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Cant.
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  P. Unit. Ref.
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
@@ -690,7 +936,20 @@ const SolicitudCotizacionDetallePage = () => {
                       {item.orden}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.descripcion}
+                      {String(item.descripcion || "")
+                        .split("\n")
+                        .map((line, index) => (
+                          <span
+                            key={`${item.orden}-${index}-${line}`}
+                            className={
+                              index === 0
+                                ? "block font-medium"
+                                : "block text-xs text-gray-500"
+                            }
+                          >
+                            {line}
+                          </span>
+                        ))}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {readValue(item.unidad)}
@@ -698,18 +957,12 @@ const SolicitudCotizacionDetallePage = () => {
                     <td className="px-4 py-3 text-right text-sm text-gray-700">
                       {Number(item.cantidad || 0)}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                      {formatMoney(
-                        item.valorReferencialUnitario,
-                        documentContract.condiciones.monedaSign || "S/",
-                      )}
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="4"
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
                     La solicitud no tiene ítems disponibles.

@@ -122,17 +122,63 @@ export const clearTipoCompraRelatedErrors = (prevErrors = {}) => ({
 export const buildLocalPaymentConditionFormState = (
   prevFormData,
   nextCondition,
-) => ({
-  ...prevFormData,
-  condicionPagoLocal: nextCondition,
-  hitoPagoLocal: nextCondition === "CONTADO" ? prevFormData.hitoPagoLocal : "",
-  porcentajeAnticipoLocal:
-    nextCondition === "MIXTO" ? prevFormData.porcentajeAnticipoLocal : "",
-  porcentajeSaldoLocal:
-    nextCondition === "MIXTO" ? prevFormData.porcentajeSaldoLocal : "",
-  diasCreditoLocal:
-    nextCondition === "CREDITO" ? prevFormData.diasCreditoLocal : "",
-});
+) => {
+  const localPaymentMap = {
+    CONTADO_CONTRA_ENTREGA: {
+      condicionPagoLocal: "CONTADO",
+      hitoPagoLocal: "CONTRA_ENTREGA",
+    },
+    PAGO_ANTICIPADO: {
+      condicionPagoLocal: "CONTADO",
+      hitoPagoLocal: "ANTICIPADO_TOTAL",
+    },
+    MIXTO: {
+      condicionPagoLocal: "MIXTO",
+      hitoPagoLocal: "",
+    },
+    CREDITO: {
+      condicionPagoLocal: "CREDITO",
+      hitoPagoLocal: "",
+    },
+  };
+  const nextPayment = localPaymentMap[nextCondition] || {
+    condicionPagoLocal: "",
+    hitoPagoLocal: "",
+  };
+
+  return {
+    ...prevFormData,
+    ...nextPayment,
+    porcentajeAnticipoLocal:
+      nextPayment.condicionPagoLocal === "MIXTO"
+        ? prevFormData.porcentajeAnticipoLocal
+        : "",
+    porcentajeSaldoLocal:
+      nextPayment.condicionPagoLocal === "MIXTO"
+        ? prevFormData.porcentajeSaldoLocal
+        : "",
+    diasCreditoLocal:
+      nextPayment.condicionPagoLocal === "CREDITO"
+        ? prevFormData.diasCreditoLocal
+        : "",
+  };
+};
+
+export const resolveLocalPaymentFormValue = (formData = {}) => {
+  if (formData.condicionPagoLocal === "CONTADO") {
+    if (formData.hitoPagoLocal === "CONTRA_ENTREGA") {
+      return "CONTADO_CONTRA_ENTREGA";
+    }
+    if (formData.hitoPagoLocal === "ANTICIPADO_TOTAL") {
+      return "PAGO_ANTICIPADO";
+    }
+    return "";
+  }
+
+  if (formData.condicionPagoLocal === "MIXTO") return "MIXTO";
+  if (formData.condicionPagoLocal === "CREDITO") return "CREDITO";
+  return "";
+};
 
 export const buildImportPaymentStructureFormState = (
   prevFormData,
@@ -208,7 +254,6 @@ export const buildSolicitudCotizacionPayload = (
             .trim()
             .toUpperCase() || null
         : null,
-    incluyeIgv: formData.incluyeIgv === "true",
     vigenciaOfertaDias:
       formData.vigenciaOfertaDias !== ""
         ? parseInt(formData.vigenciaOfertaDias, 10)
@@ -234,6 +279,7 @@ export const buildSolicitudCotizacionPayload = (
   if (isLocal) {
     return {
       ...basePayload,
+      incluyeIgv: true,
       alcanceCompraLocal: formData.alcanceCompraLocal || null,
       lugarEntregaLocalTipo: formData.lugarEntregaLocalTipo || null,
       lugarEntregaLocalDetalle:

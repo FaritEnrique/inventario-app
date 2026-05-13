@@ -4,7 +4,6 @@ import {
   hasRole,
 } from "./utils/userRoles.js";
 
-const inventoryOverrideRoles = Object.freeze(["ADMINISTRADOR_SISTEMA"]);
 const pedidoInternoApprovalRoles = Object.freeze([
   "ADMINISTRADOR_SISTEMA",
   "GERENTE_GENERAL",
@@ -132,12 +131,16 @@ export const canViewAllCotizacionesLogisticaEffective = (user) =>
       assignment.rol === "JEFE_AREA" && isLogisticaAssignment(assignment),
   );
 
+export const canViewAssignedCotizacionesLogisticaEffective = (user) =>
+  isLogisticaOperadorEffective(user) &&
+  !canViewAllCotizacionesLogisticaEffective(user);
+
 export const canAccessLogisticaOperativeTrayFromRequerimientosEffective = (
   user,
-) => canViewAllCotizacionesLogisticaEffective(user);
+) => canAccessCotizacionesEffective(user);
 
-export const getLogisticaOperativeTrayPathEffective = () =>
-  "/cotizaciones/bandeja/jefatura";
+export const getLogisticaOperativeTrayPathEffective = (user) =>
+  getCotizacionesHomePathEffective(user);
 
 export const canAssignCotizacionesLogisticaEffective = (user) =>
   canViewAllCotizacionesLogisticaEffective(user);
@@ -165,7 +168,7 @@ export const getCotizacionesHomePathEffective = (user) => {
 };
 
 export const canOperateInventoryEffective = (user = {}) => {
-  if (hasAnyRole(user, inventoryOverrideRoles)) return true;
+  if (isAdminOverride(user)) return true;
 
   return getActiveRoleAssignments(user).some(
     (assignment) =>
@@ -175,7 +178,7 @@ export const canOperateInventoryEffective = (user = {}) => {
 };
 
 export const canAdjustInventoryEffective = (user = {}) => {
-  if (hasAnyRole(user, inventoryOverrideRoles)) return true;
+  if (isAdminOverride(user)) return true;
 
   return getActiveRoleAssignments(user).some(
     (assignment) =>
@@ -545,7 +548,7 @@ export const getPrimaryNavigationLinksEffective = (user = {}) => {
     links.push({ to: "/inventario-stock", label: "Inventario" });
   }
 
-  if (canViewAllCotizacionesLogisticaEffective(user)) {
+  if (canAccessCotizacionesEffective(user)) {
     links.push({
       to: getCotizacionesHomePathEffective(user),
       label: "Atención Logística",

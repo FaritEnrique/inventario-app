@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Modal from "../components/Modal";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
@@ -154,78 +155,29 @@ const createSolicitudDraft = (requerimientoId) => ({
   cuerpoSolicitud: "",
   estado: "Creada",
   moneda: "PEN",
-  incluyeIgv: true,
   fechaLimiteRecepcion: "",
   medioRecepcion: "CORREO",
   items: [],
 });
 
+const REASSIGNMENT_TYPE_OPTIONS = [
+  { value: "DEFINITIVA", label: "Definitiva" },
+  { value: "TEMPORAL", label: "Temporal" },
+];
+
+const createReassignmentDraft = () => ({
+  tipoReasignacion: "DEFINITIVA",
+  motivo: "",
+  comentario: "",
+  vigenteHasta: "",
+});
+
 const getInitialEstadoBandeja = (tipo) =>
   tipo === "jefatura" ? "PENDIENTE" : "";
 
-const promptLogisticaReassignmentPayload = ({
-  currentResponsableId,
-  nextResponsableId,
-}) => {
-  if (
-    !currentResponsableId ||
-    Number(currentResponsableId) === Number(nextResponsableId)
-  ) {
-    return { responsableId: Number(nextResponsableId) };
-  }
-
-  const tipoInput = window.prompt(
-    "Tipo de reasignación: TEMPORAL o DEFINITIVA.",
-    "DEFINITIVA",
-  );
-  if (tipoInput === null) return null;
-
-  const tipoReasignacion = String(tipoInput || "")
-    .trim()
-    .toUpperCase();
-
-  if (!["TEMPORAL", "DEFINITIVA"].includes(tipoReasignacion)) {
-    toast.error("La reasignación debe ser TEMPORAL o DEFINITIVA.");
-    return null;
-  }
-
-  const motivoInput = window.prompt(
-    "Motivo obligatorio de la reasignación.",
-    "",
-  );
-  if (motivoInput === null) return null;
-
-  const motivo = String(motivoInput || "").trim();
-  if (!motivo) {
-    toast.error("Debes registrar un motivo para la reasignación.");
-    return null;
-  }
-
-  const comentarioInput = window.prompt(
-    "Comentario adicional de la reasignación (opcional).",
-    "",
-  );
-  if (comentarioInput === null) return null;
-
-  let vigenteHasta = null;
-  if (tipoReasignacion === "TEMPORAL") {
-    const vigenteHastaInput = window.prompt(
-      "Vigente hasta (AAAA-MM-DD) opcional para la reasignación temporal.",
-      "",
-    );
-    if (vigenteHastaInput === null) return null;
-    vigenteHasta = String(vigenteHastaInput || "").trim() || null;
-  }
-
-  return {
-    responsableId: Number(nextResponsableId),
-    tipoReasignacion,
-    motivo,
-    comentario: String(comentarioInput || "").trim() || null,
-    vigenteHasta,
-  };
-};
-
+const buildLogisticaAssignmentPayload = ({ nextResponsableId }) => ({
+  responsableId: Number(nextResponsableId),
+});
 const CotizacionesBandejaPage = ({ tipo }) => {
   const { user, activeContext, availableContexts } = useAuth();
   const navigate = useNavigate();
@@ -244,6 +196,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const { crearSolicitud } = useSolicitudesCotizacion({ autoLoad: false });
 
   const [items, setItems] = useState([]);
+  const [summaryItems, setSummaryItems] = useState([]);
   const [operadores, setOperadores] = useState([]);
   const [contextError, setContextError] = useState(null);
   const [search, setSearch] = useState("");
@@ -258,6 +211,11 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [submittingSolicitudId, setSubmittingSolicitudId] = useState(null);
   const [highlightedRequerimientoId, setHighlightedRequerimientoId] =
     useState(null);
+  const [reassignmentModal, setReassignmentModal] = useState(null);
+  const [reassignmentDraft, setReassignmentDraft] = useState(() =>
+    createReassignmentDraft(),
+  );
+  const [submittingReassignment, setSubmittingReassignment] = useState(false);
   const [jefaturaResponsableOption, setJefaturaResponsableOption] =
     useState(null);
 
@@ -303,7 +261,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     try {
       const response = await obtenerBandeja(tipo, {
         search,
-        estadoBandeja,
       });
       const data = Array.isArray(response?.data) ? response.data : [];
       const enrichedData = await Promise.all(
@@ -330,6 +287,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           )
         : enrichedData;
 
+      setSummaryItems(enrichedData);
       setItems(filteredData);
       setContextError(null);
       setSeleccionOperadores(() => {
@@ -453,7 +411,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       return acc;
     }, {});
 
-    items.forEach((item) => {
+    summaryItems.forEach((item) => {
       const status = String(item?.estadoBandeja || "").toUpperCase();
       if (Object.prototype.hasOwnProperty.call(counts, status)) {
         counts[status] += 1;
@@ -461,11 +419,11 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     });
 
     return {
-      total: items.length,
+      total: summaryItems.length,
       counts,
     };
-  }, [items]);
-  const isInitialLoading = cargando && items.length === 0 && !contextError;
+  }, [summaryItems]);
+  const isInitialLoading = cargando && summaryItems.length === 0 && !contextError;
 
   const handleAssign = async (requerimientoId) => {
     const item = items.find(
@@ -484,14 +442,22 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       return;
     }
 
-    const payload = promptLogisticaReassignmentPayload({
-      currentResponsableId: responsableActualId,
-      nextResponsableId: selectedResponsableId,
-    });
-    if (!payload) return;
+    if (!responsableActualId) {
+      await asignar(
+        requerimientoId,
+        buildLogisticaAssignmentPayload({
+          nextResponsableId: selectedResponsableId,
+        }),
+      );
+      await load();
+      return;
+    }
 
-    await asignar(requerimientoId, payload);
-    await load();
+    setReassignmentDraft(createReassignmentDraft());
+    setReassignmentModal({
+      requerimientoId,
+      responsableId: Number(selectedResponsableId),
+    });
   };
 
   const handleDirect = async (requerimientoId) => {
@@ -505,15 +471,69 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     const item = items.find(
       (currentItem) => currentItem.id === requerimientoId,
     );
-    const payload = promptLogisticaReassignmentPayload({
-      currentResponsableId:
-        item?.responsableLogisticaId || item?.responsableLogistica?.id || null,
-      nextResponsableId: directResponsableId,
-    });
-    if (!payload) return;
+    const responsableActualId =
+      item?.responsableLogisticaId || item?.responsableLogistica?.id || null;
 
-    await asignar(requerimientoId, payload);
-    await load();
+    if (!responsableActualId) {
+      await asignar(
+        requerimientoId,
+        buildLogisticaAssignmentPayload({
+          nextResponsableId: directResponsableId,
+        }),
+      );
+      await load();
+      return;
+    }
+
+    setReassignmentDraft(createReassignmentDraft());
+    setReassignmentModal({
+      requerimientoId,
+      responsableId: Number(directResponsableId),
+    });
+  };
+
+  const closeReassignmentModal = () => {
+    if (submittingReassignment) return;
+    setReassignmentModal(null);
+    setReassignmentDraft(createReassignmentDraft());
+  };
+
+  const handleConfirmReassignment = async (event) => {
+    event.preventDefault();
+
+    if (!reassignmentModal) return;
+
+    const tipoReasignacion = reassignmentDraft.tipoReasignacion;
+    const motivo = reassignmentDraft.motivo.trim();
+
+    if (!["TEMPORAL", "DEFINITIVA"].includes(tipoReasignacion)) {
+      toast.error("La reasignacion debe ser TEMPORAL o DEFINITIVA.");
+      return;
+    }
+
+    if (!motivo) {
+      toast.error("Debes registrar un motivo para la reasignacion.");
+      return;
+    }
+
+    setSubmittingReassignment(true);
+    try {
+      await asignar(reassignmentModal.requerimientoId, {
+        responsableId: reassignmentModal.responsableId,
+        tipoReasignacion,
+        motivo,
+        comentario: reassignmentDraft.comentario.trim() || null,
+        vigenteHasta:
+          tipoReasignacion === "TEMPORAL" && reassignmentDraft.vigenteHasta
+            ? reassignmentDraft.vigenteHasta
+            : null,
+      });
+      setReassignmentModal(null);
+      setReassignmentDraft(createReassignmentDraft());
+      await load();
+    } finally {
+      setSubmittingReassignment(false);
+    }
   };
 
   const handleStart = async (requerimientoId) => {
@@ -593,6 +613,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   };
 
   return (
+    <>
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -1264,6 +1285,144 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         )}
       </div>
     </div>
+
+    <Modal
+      isOpen={Boolean(reassignmentModal)}
+      onClose={closeReassignmentModal}
+      title="Reasignar expediente logistico"
+      maxWidth="max-w-lg"
+      closeOnBackdrop={!submittingReassignment}
+    >
+      <form onSubmit={handleConfirmReassignment} className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Selecciona el tipo de reasignacion y registra el motivo para
+          continuar con el cambio de responsable.
+        </p>
+
+        <div>
+          <label
+            htmlFor="tipoReasignacionLogistica"
+            className="mb-1 block text-sm font-semibold text-gray-700"
+          >
+            Tipo de reasignacion
+          </label>
+          <select
+            id="tipoReasignacionLogistica"
+            name="tipoReasignacion"
+            value={reassignmentDraft.tipoReasignacion}
+            onChange={(event) =>
+              setReassignmentDraft((prev) => ({
+                ...prev,
+                tipoReasignacion: event.target.value,
+                vigenteHasta:
+                  event.target.value === "TEMPORAL" ? prev.vigenteHasta : "",
+              }))
+            }
+            disabled={submittingReassignment}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+          >
+            {REASSIGNMENT_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="motivoReasignacionLogistica"
+            className="mb-1 block text-sm font-semibold text-gray-700"
+          >
+            Motivo
+          </label>
+          <textarea
+            id="motivoReasignacionLogistica"
+            name="motivo"
+            rows="3"
+            value={reassignmentDraft.motivo}
+            onChange={(event) =>
+              setReassignmentDraft((prev) => ({
+                ...prev,
+                motivo: event.target.value,
+              }))
+            }
+            disabled={submittingReassignment}
+            required
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+            placeholder="Explica por que se reasigna el expediente."
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="comentarioReasignacionLogistica"
+            className="mb-1 block text-sm font-semibold text-gray-700"
+          >
+            Comentario adicional
+          </label>
+          <textarea
+            id="comentarioReasignacionLogistica"
+            name="comentario"
+            rows="2"
+            value={reassignmentDraft.comentario}
+            onChange={(event) =>
+              setReassignmentDraft((prev) => ({
+                ...prev,
+                comentario: event.target.value,
+              }))
+            }
+            disabled={submittingReassignment}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+            placeholder="Opcional"
+          />
+        </div>
+
+        {reassignmentDraft.tipoReasignacion === "TEMPORAL" ? (
+          <div>
+            <label
+              htmlFor="vigenteHastaReasignacionLogistica"
+              className="mb-1 block text-sm font-semibold text-gray-700"
+            >
+              Vigente hasta
+            </label>
+            <input
+              id="vigenteHastaReasignacionLogistica"
+              name="vigenteHasta"
+              type="date"
+              value={reassignmentDraft.vigenteHasta}
+              onChange={(event) =>
+                setReassignmentDraft((prev) => ({
+                  ...prev,
+                  vigenteHasta: event.target.value,
+                }))
+              }
+              disabled={submittingReassignment}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100"
+            />
+          </div>
+        ) : null}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={closeReassignmentModal}
+            disabled={submittingReassignment}
+            className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submittingReassignment || !reassignmentDraft.motivo.trim()}
+            className="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submittingReassignment ? "Reasignando..." : "Confirmar"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+    </>
   );
 };
 

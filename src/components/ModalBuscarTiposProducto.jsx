@@ -122,6 +122,7 @@ const ModalBuscarTiposProducto = ({
           </label>
           <input
             id="buscar-tipos-producto"
+            name="buscarTiposProducto"
             type="text"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -148,8 +149,10 @@ const ModalBuscarTiposProducto = ({
             <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2">
               {tiposFiltrados.map((tipoProducto) => {
                 const checked = selectedIds.includes(tipoProducto.id);
+                const inputId = `tipo-producto-oficial-${tipoProducto.id}`;
                 return (
                   <label
+                    htmlFor={inputId}
                     key={tipoProducto.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm ${
                       checked
@@ -158,6 +161,8 @@ const ModalBuscarTiposProducto = ({
                     }`}
                   >
                     <input
+                      id={inputId}
+                      name="tipoProductoIds"
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleTipoProducto(tipoProducto.id)}
@@ -195,9 +200,11 @@ const ModalBuscarTiposProducto = ({
             <div className="mt-4 space-y-2">
               {solicitudesTemporalesDisponibles.map((solicitud) => {
                 const checked = selectedSolicitudIds.includes(solicitud.id);
+                const inputId = `solicitud-tipo-producto-${solicitud.id}`;
 
                 return (
                   <label
+                    htmlFor={inputId}
                     key={solicitud.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm ${
                       checked
@@ -206,6 +213,8 @@ const ModalBuscarTiposProducto = ({
                     }`}
                   >
                     <input
+                      id={inputId}
+                      name="solicitudTipoProductoIds"
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleSolicitudTemporal(solicitud.id)}
@@ -248,6 +257,7 @@ const ModalBuscarTiposProducto = ({
                 </label>
                 <input
                   id="nombre-solicitud-tipo"
+                  name="nombreSolicitudTipo"
                   type="text"
                   value={nombreSolicitud}
                   onChange={(event) => setNombreSolicitud(event.target.value)}
@@ -265,6 +275,7 @@ const ModalBuscarTiposProducto = ({
                 </label>
                 <textarea
                   id="descripcion-solicitud-tipo"
+                  name="descripcionSolicitudTipo"
                   rows="3"
                   value={descripcionSolicitud}
                   onChange={(event) => setDescripcionSolicitud(event.target.value)}

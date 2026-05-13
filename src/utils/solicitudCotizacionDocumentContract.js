@@ -1,5 +1,6 @@
 import {
   BANK_CHARGE_PARTY_LABELS,
+  buildSolicitudPaymentSummaryLabel,
   formatDaysLabel,
   formatPercentageLabel,
   INCOTERM_METADATA,
@@ -12,6 +13,7 @@ import {
   LOCAL_PAYMENT_CONDITION_LABELS,
   LOCAL_PAYMENT_MILESTONE_LABELS,
   LOCAL_PURCHASE_SCOPE_LABELS,
+  LOCAL_TAX_NOTICE,
   PURCHASE_TYPE_LABELS,
   SOLICITUD_COTIZACION_CURRENCY_LABELS,
   SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
@@ -35,7 +37,6 @@ const MEDIO_RECEPCION_LABELS = {
 
 export const solicitudCotizacionDocumentFieldLabels = {
   moneda: "Moneda",
-  incluyeIgv: "Incluye IGV",
   fechaLimiteRecepcion: "Fecha límite de recepción",
   medioRecepcion: "Medio de recepción",
 };
@@ -73,24 +74,42 @@ const normalizeMedioRecepcionLabel = (value) => {
   return normalized ? MEDIO_RECEPCION_LABELS[normalized] || normalized : null;
 };
 
-const resolveSolicitudItemDescription = (item, index) =>
-  item?.itemRequerimiento?.descripcionVisible ||
-  item?.itemRequerimiento?.producto?.nombre ||
-  item?.itemRequerimiento?.productoTemporal?.nombreTemporal ||
-  item?.descripcion ||
-  `Ítem ${index + 1}`;
+const normalizeComparableText = (value) =>
+  readText(value)?.toLocaleLowerCase("es-PE").replace(/\s+/g, " ").trim() ||
+  null;
+
+const resolveSolicitudItemDescription = (item, index) => {
+  const itemRequerimiento = item?.itemRequerimiento;
+  const nombre =
+    readText(itemRequerimiento?.producto?.nombre) ||
+    readText(itemRequerimiento?.productoTemporal?.nombreTemporal) ||
+    readText(itemRequerimiento?.productoTemporal?.nombre) ||
+    readText(item?.producto?.nombre) ||
+    readText(item?.productoTemporal?.nombreTemporal) ||
+    readText(item?.productoTemporal?.nombre) ||
+    readText(itemRequerimiento?.descripcionVisible) ||
+    readText(item?.descripcion) ||
+    `Ítem ${index + 1}`;
+  const descripcionAdicional =
+    readText(itemRequerimiento?.productoTemporal?.descripcion) ||
+    readText(itemRequerimiento?.producto?.descripcion) ||
+    readText(item?.productoTemporal?.descripcion) ||
+    readText(item?.producto?.descripcion) ||
+    readText(itemRequerimiento?.descripcionVisible) ||
+    readText(item?.descripcion);
+
+  return descripcionAdicional &&
+    normalizeComparableText(descripcionAdicional) !==
+      normalizeComparableText(nombre)
+    ? `${nombre}\n${descripcionAdicional}`
+    : nombre;
+};
 
 const resolveSolicitudItemUnit = (item) =>
   item?.itemRequerimiento?.unidadMedida || item?.unidadMedida || null;
 
 const resolveSolicitudItemQuantity = (item) =>
   Number(item?.itemRequerimiento?.cantidadRequerida || item?.cantidad || 0);
-
-const resolveSolicitudItemReferenceValue = (item) =>
-  item?.itemRequerimiento?.valorReferencialUnitario ??
-  item?.valorReferencialUnitario ??
-  item?.precioUnitarioReferencial ??
-  null;
 
 const deriveDocumentItems = (solicitud = {}) =>
   (Array.isArray(solicitud?.items) ? solicitud.items : []).map(
@@ -99,19 +118,12 @@ const deriveDocumentItems = (solicitud = {}) =>
       descripcion: resolveSolicitudItemDescription(item, index),
       unidad: resolveSolicitudItemUnit(item),
       cantidad: resolveSolicitudItemQuantity(item),
-      valorReferencialUnitario: resolveSolicitudItemReferenceValue(item),
     }),
   );
 
 const inferPendingDocumentFields = (contract) =>
   Object.keys(solicitudCotizacionDocumentFieldLabels).filter((field) => {
     if (field === "moneda") return !contract.condiciones.moneda;
-    if (field === "incluyeIgv") {
-      return (
-        contract.condiciones.incluyeIgv == null ||
-        contract.condiciones.incluyeIgv === ""
-      );
-    }
     if (field === "fechaLimiteRecepcion")
       return contract.recepcion.fechaLimiteRecepcion == null;
     if (field === "medioRecepcion") return !contract.recepcion.medioRecepcion;
@@ -170,10 +182,8 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
       codigoMonedaOtra:
         readText(condiciones?.codigoMonedaOtra) ||
         readText(source?.codigoMonedaOtra),
-      incluyeIgv: condiciones?.incluyeIgv ?? source?.incluyeIgv ?? null,
-      incluyeIgvLabel:
-        readText(condiciones?.incluyeIgvLabel) ||
-        normalizeBooleanLabel(condiciones?.incluyeIgv ?? source?.incluyeIgv),
+      tratamientoTributarioLocal:
+        resolvedTipoCompra === "LOCAL" ? LOCAL_TAX_NOTICE : null,
       vigenciaOfertaDias:
         condiciones?.vigenciaOfertaDias ?? source?.vigenciaOfertaDias ?? null,
       tiempoEntregaDias:
@@ -249,6 +259,21 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
           condiciones?.condicionPagoLocal ?? source?.condicionPagoLocal
         ] ||
         null,
+      formaPagoLocalLabel:
+        readText(condiciones?.formaPagoLocalLabel) ||
+        buildSolicitudPaymentSummaryLabel({
+          tipoCompra: resolvedTipoCompra,
+          condicionPagoLocal:
+            condiciones?.condicionPagoLocal ?? source?.condicionPagoLocal,
+          hitoPagoLocal: condiciones?.hitoPagoLocal ?? source?.hitoPagoLocal,
+          porcentajeAnticipoLocal:
+            condiciones?.porcentajeAnticipoLocal ??
+            source?.porcentajeAnticipoLocal,
+          porcentajeSaldoLocal:
+            condiciones?.porcentajeSaldoLocal ?? source?.porcentajeSaldoLocal,
+          diasCreditoLocal:
+            condiciones?.diasCreditoLocal ?? source?.diasCreditoLocal,
+        }),
       hitoPagoLocal:
         readText(condiciones?.hitoPagoLocal) ||
         readText(source?.hitoPagoLocal) ||
@@ -395,7 +420,6 @@ export const buildSolicitudCotizacionDocumentContract = (solicitud = {}) => {
             descripcion: readText(item?.descripcion) || `Ítem ${index + 1}`,
             unidad: readText(item?.unidad),
             cantidad: Number(item?.cantidad || 0),
-            valorReferencialUnitario: item?.valorReferencialUnitario ?? null,
           }))
         : deriveDocumentItems(source),
   };

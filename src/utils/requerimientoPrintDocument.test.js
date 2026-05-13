@@ -77,7 +77,7 @@ describe("requerimiento print document", () => {
     expect(html).toContain(".items-table tbody tr");
   });
 
-  it("mantiene el pie institucional dentro del flujo del requerimiento impreso", () => {
+  it("ancla header/footer institucionales y reserva area util en el requerimiento impreso", () => {
     const html = buildRequerimientoPrintHtml({
       documentData: buildLetterheadDocumentData(
         {
@@ -98,8 +98,15 @@ describe("requerimiento print document", () => {
 
     expect(html).toContain('<div class="footer">');
     expect(html).toContain("Pie institucional de prueba");
+    expect(html).toContain("letterhead-fixed-header");
+    expect(html).toContain("letterhead-fixed-footer");
+    expect(html).toContain("letterhead-page-header-spacer");
+    expect(html).toContain("letterhead-page-footer-spacer");
+    expect(html).toContain(".letterhead-page-table td.letterhead-page-body");
+    expect(html).toContain("padding: 0 14mm;");
+    expect(html).toContain("position: fixed;");
+    expect(html).toContain("bottom:");
     expect(html).not.toContain('class="document-body body-space');
-    expect(html).toContain("margin-top: auto;");
   });
 
   it("usa una sola fuente de verdad para niveles de aprobacion del documento", () => {

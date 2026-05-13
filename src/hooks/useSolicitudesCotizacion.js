@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import solicitudesCotizacionApi from "../api/solicitudesCotizacionApi";
 
@@ -112,6 +112,11 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
   const obtenerSolicitudPdfUrl = (id) =>
     solicitudesCotizacionApi.obtenerPdfUrl(id);
 
+  const obtenerHistorialEnvios = useCallback(
+    (id) => solicitudesCotizacionApi.obtenerHistorialEnvios(id),
+    [],
+  );
+
   const enviarSolicitudCorreo = async (id, payload) => {
     try {
       const response = await solicitudesCotizacionApi.enviarCorreo(id, payload);
@@ -136,6 +141,7 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     actualizarSolicitud,
     inactivarSolicitud,
     obtenerSolicitudPdfUrl,
+    obtenerHistorialEnvios,
     enviarSolicitudCorreo,
   };
 };

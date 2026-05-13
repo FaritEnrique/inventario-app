@@ -145,6 +145,7 @@ const CatalogoSelectorModal = ({
           </label>
           <input
             id={searchInputId}
+            name={searchInputId}
             ref={searchInputRef}
             type="text"
             value={searchValue}

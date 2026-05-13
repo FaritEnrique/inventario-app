@@ -16,11 +16,11 @@ import {
 import {
   canAccessAreasManagementEffective,
   canAccessProveedorManagementEffective,
-  canManageCatalogMasterEffective,
   canAccessUserManagementEffective,
   canApprovePedidoInternoEffective,
   canCreatePedidoInternoEffective,
   canOperateInventoryEffective,
+  canViewAssignedCotizacionesLogisticaEffective,
   canViewAllCotizacionesLogisticaEffective,
   canViewOrdenCompraApprovalTrayEffective,
   canViewOrdenesCompraEffective,
@@ -85,6 +85,14 @@ const baseCards = [
     icon: <FaFileInvoiceDollar />,
     path: ({ user }) => getCotizacionesHomePathEffective(user),
     visible: ({ user }) => canViewAllCotizacionesLogisticaEffective(user),
+  },
+  {
+    title: "Mis Expedientes Logisticos",
+    description:
+      "Atender solicitudes de cotizacion solo en los expedientes asignados a tu usuario.",
+    icon: <FaFileInvoiceDollar />,
+    path: "/cotizaciones/bandeja/operador",
+    visible: ({ user }) => canViewAssignedCotizacionesLogisticaEffective(user),
   },
   {
     title: "Ordenes de Compra",
@@ -169,18 +177,10 @@ const baseCards = [
   {
     title: "Gestion de Productos",
     description:
-      "Administrar catalogos maestros de productos desde la jefatura de almacen o los overrides autorizados.",
+      "Administrar catalogos maestros de productos desde contextos de almacen o los overrides autorizados.",
     icon: <MdInventory />,
     path: "/gestion-productos",
-    visible: ({ user }) => canManageCatalogMasterEffective(user),
-  },
-  {
-    title: "Validacion de Tipos",
-    description:
-      "Revisar solicitudes pendientes de tipos de producto propuestas desde proveedores.",
-    icon: <FaClipboardList />,
-    path: "/solicitudes-tipo-producto",
-    visible: ({ user }) => canManageCatalogMasterEffective(user),
+    visible: ({ user }) => canOperateInventoryEffective(user),
   },
   {
     title: "Gestion de Areas",

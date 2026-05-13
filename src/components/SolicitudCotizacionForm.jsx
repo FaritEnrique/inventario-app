@@ -7,9 +7,8 @@ import {
   buildImportPaymentStructureFormState,
   buildLocalPaymentConditionFormState,
   buildTipoCompraFormState,
-  calculateSolicitudTotals,
   clearTipoCompraRelatedErrors,
-  formatSolicitudMoney,
+  resolveLocalPaymentFormValue,
 } from "./solicitudCotizacionFormModel";
 import {
   BANK_CHARGE_PARTY_OPTIONS,
@@ -22,9 +21,9 @@ import {
   INCOTERM_VERSION_2020,
   LOCAL_DELIVERY_PLACE_TYPE_OPTIONS,
   LOCAL_LOGISTICS_RESPONSIBLE_PARTY_OPTIONS,
-  LOCAL_PAYMENT_CONDITION_OPTIONS,
-  LOCAL_PAYMENT_MILESTONE_OPTIONS,
+  LOCAL_PAYMENT_FORM_OPTIONS,
   LOCAL_PURCHASE_SCOPE_OPTIONS,
+  LOCAL_TAX_NOTICE,
   SOLICITUD_COTIZACION_CURRENCY_OPTIONS,
   SOLICITUD_COTIZACION_RECEPTION_CHANNEL_OPTIONS,
 } from "../features/solicitud-cotizacion/solicitudCotizacionCatalog";
@@ -163,7 +162,7 @@ const normalizeInitialData = (initialData = {}) => {
     tiempoEntregaDias:
       initialData?.tiempoEntregaDias != null
         ? String(initialData.tiempoEntregaDias)
-        : "0",
+        : "",
     lugarEntrega: initialData?.lugarEntrega || "",
     alcanceCompraLocal: initialData?.alcanceCompraLocal || "",
     lugarEntregaLocalTipo: initialData?.lugarEntregaLocalTipo || "",
@@ -371,6 +370,7 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
               <span className="text-xs text-gray-600">Fecha</span>
               <input
                 id={`${formIdPrefix}-fecha-limite-date`}
+                name="fechaLimiteRecepcionFecha"
                 type="date"
                 value={draftDate}
                 onChange={(e) => {
@@ -384,6 +384,7 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
               <span className="text-xs text-gray-600">Hora</span>
               <input
                 id={`${formIdPrefix}-fecha-limite-time`}
+                name="fechaLimiteRecepcionHora"
                 type="time"
                 value={draftTime}
                 onChange={(e) => {
@@ -442,11 +443,12 @@ const SolicitudCotizacionForm = ({
     normalizeInitialData(initialData),
   );
   const [tiempoEntregaModo, setTiempoEntregaModo] = useState(() =>
-    resolveTiempoEntregaModo(initialData?.tiempoEntregaDias ?? 0),
+    resolveTiempoEntregaModo(initialData?.tiempoEntregaDias),
   );
   const [proveedorSearch, setProveedorSearch] = useState("");
   const [tipoProductoFiltroId, setTipoProductoFiltroId] = useState("");
   const [proveedorModalOpen, setProveedorModalOpen] = useState(false);
+  const [incotermPickerOpen, setIncotermPickerOpen] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
@@ -458,6 +460,7 @@ const SolicitudCotizacionForm = ({
     setProveedorSearch("");
     setTipoProductoFiltroId("");
     setProveedorModalOpen(false);
+    setIncotermPickerOpen(false);
   }, [initialData]);
 
   useEffect(() => {
@@ -472,38 +475,6 @@ const SolicitudCotizacionForm = ({
         ? requerimientoDetalle.items.filter((item) => item.activo !== false)
         : [],
     [requerimientoDetalle?.items],
-  );
-
-  const selectedItemsForTotals = useMemo(
-    () =>
-      availableItems
-        .filter((item) => formData.itemIds.includes(String(item.id)))
-        .map((item) => ({
-          cantidad: item.cantidad ?? item.cantidadRequerida,
-          precioUnitario:
-            item.precioUnitario ??
-            item.precioUnitarioReferencial ??
-            item.valorReferencialUnitario,
-        })),
-    [availableItems, formData.itemIds],
-  );
-
-  const solicitudTotals = useMemo(
-    () =>
-      calculateSolicitudTotals({
-        ...formData,
-        items: selectedItemsForTotals,
-      }),
-    [formData, selectedItemsForTotals],
-  );
-
-  const solicitudTotalsDisplay = useMemo(
-    () => ({
-      subtotal: formatSolicitudMoney(solicitudTotals.subtotal, formData),
-      igv: formatSolicitudMoney(solicitudTotals.igv, formData),
-      total: formatSolicitudMoney(solicitudTotals.total, formData),
-    }),
-    [formData, solicitudTotals],
   );
 
   const filteredProveedores = useMemo(() => {
@@ -542,6 +513,10 @@ const SolicitudCotizacionForm = ({
     () => getProveedorEspecialidades(proveedorSeleccionado),
     [proveedorSeleccionado],
   );
+
+  const selectedIncoterm = formData.incoterm
+    ? INCOTERM_METADATA[formData.incoterm]
+    : null;
 
   const tiposProductoActivos = tiposProducto.filter(
     (tipoProducto) => tipoProducto.activo !== false,
@@ -582,9 +557,6 @@ const SolicitudCotizacionForm = ({
     if (!formData.medioRecepcion) {
       errors.medioRecepcion = "Selecciona el medio de recepcion.";
     }
-    if (!tiempoEntregaModo) {
-      errors.tiempoEntregaDias = "Selecciona el tiempo de entrega.";
-    }
     if (tiempoEntregaModo === "dias") {
       const tv = parseFloat(formData.tiempoEntregaDias);
       if (Number.isNaN(tv) || !Number.isInteger(tv) || tv < 1) {
@@ -618,18 +590,6 @@ const SolicitudCotizacionForm = ({
         errors.permiteEntregasParciales =
           "Indica si permite entregas parciales.";
       }
-      if (!formData.condicionPagoLocal) {
-        errors.condicionPagoLocal =
-          "Selecciona la condición comercial de pago local.";
-      }
-
-      if (
-        formData.condicionPagoLocal === "CONTADO" &&
-        !formData.hitoPagoLocal
-      ) {
-        errors.hitoPagoLocal = "Selecciona el hito local.";
-      }
-
       if (formData.condicionPagoLocal === "MIXTO") {
         const anticipo = parseFloat(formData.porcentajeAnticipoLocal);
         const saldo = parseFloat(formData.porcentajeSaldoLocal);
@@ -828,7 +788,7 @@ const SolicitudCotizacionForm = ({
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <label className="space-y-1 text-sm text-gray-700">
+            <div className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Filtrar por tipo de producto</span>
               <select
                 id={`${formIdPrefix}-tipo-producto-filtro`}
@@ -847,7 +807,7 @@ const SolicitudCotizacionForm = ({
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
 
             <div className="rounded border border-dashed border-gray-300 bg-white px-3 py-2 text-xs text-gray-500">
               {filteredProveedores.length} proveedor(es) disponibles con el
@@ -925,6 +885,7 @@ const SolicitudCotizacionForm = ({
         <label className="space-y-1 text-sm text-gray-700 md:col-span-2 xl:col-span-2">
           <span className="font-medium">Requerimiento aprobado</span>
           <select
+            id={`${formIdPrefix}-requerimiento-id`}
             value={formData.requerimientoId}
             name="solicitud-cotizacion-form-select-requerimiento"
             onChange={(event) =>
@@ -953,6 +914,7 @@ const SolicitudCotizacionForm = ({
           <label className="space-y-1 text-sm text-gray-700">
             <span className="font-medium">Estado</span>
             <select
+              id={`${formIdPrefix}-estado`}
               value={formData.estado}
               name="solicitud-cotizacion-form-select-estado"
               onChange={(event) =>
@@ -975,6 +937,7 @@ const SolicitudCotizacionForm = ({
           Cuerpo / observaciones de la solicitud
         </span>
         <textarea
+          id={`${formIdPrefix}-cuerpo-solicitud`}
           rows="3"
           value={formData.cuerpoSolicitud}
           name="solicitud-cotizacion-form-textarea"
@@ -1007,6 +970,7 @@ const SolicitudCotizacionForm = ({
           <div className="flex flex-wrap items-center gap-6">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
               <input
+                id={`${formIdPrefix}-tipo-compra-local`}
                 type="radio"
                 name="tipoCompra"
                 value="LOCAL"
@@ -1022,6 +986,7 @@ const SolicitudCotizacionForm = ({
             </label>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
               <input
+                id={`${formIdPrefix}-tipo-compra-importacion`}
                 type="radio"
                 name="tipoCompra"
                 value="IMPORTACION"
@@ -1046,6 +1011,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Alcance de compra local</span>
               <select
+                id={`${formIdPrefix}-alcance-compra-local`}
+                name="alcanceCompraLocal"
                 value={formData.alcanceCompraLocal}
                 onChange={(event) => {
                   setFormData((prev) => ({
@@ -1080,6 +1047,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Tipo de lugar de entrega</span>
               <select
+                id={`${formIdPrefix}-lugar-entrega-local-tipo`}
+                name="lugarEntregaLocalTipo"
                 value={formData.lugarEntregaLocalTipo}
                 onChange={(event) => {
                   setFormData((prev) => ({
@@ -1114,6 +1083,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Permite entregas parciales</span>
               <select
+                id={`${formIdPrefix}-permite-entregas-parciales`}
+                name="permiteEntregasParciales"
                 value={formData.permiteEntregasParciales}
                 onChange={(event) => {
                   setFormData((prev) => ({
@@ -1145,6 +1116,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700 md:col-span-2 xl:col-span-3">
               <span className="font-medium">Detalle del lugar de entrega</span>
               <input
+                id={`${formIdPrefix}-lugar-entrega-local-detalle`}
+                name="lugarEntregaLocalDetalle"
                 type="text"
                 value={formData.lugarEntregaLocalDetalle}
                 onChange={(event) => {
@@ -1174,6 +1147,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Transporte asumido por</span>
               <select
+                id={`${formIdPrefix}-transporte-asumido-por`}
+                name="transporteAsumidoPor"
                 value={formData.transporteAsumidoPor}
                 onChange={(event) => {
                   setFormData((prev) => ({
@@ -1208,6 +1183,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Carga/descarga asumida por</span>
               <select
+                id={`${formIdPrefix}-carga-descarga-asumida-por`}
+                name="cargaDescargaAsumidaPor"
                 value={formData.cargaDescargaAsumidaPor}
                 onChange={(event) => {
                   setFormData((prev) => ({
@@ -1242,6 +1219,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700 md:col-span-2 xl:col-span-3">
               <span className="font-medium">Condiciones logisticas locales</span>
               <textarea
+                id={`${formIdPrefix}-condiciones-logisticas-locales`}
+                name="condicionesLogisticasLocales"
                 rows="2"
                 value={formData.condicionesLogisticasLocales}
                 onChange={(event) =>
@@ -1259,43 +1238,120 @@ const SolicitudCotizacionForm = ({
 
         {formData.tipoCompra === "IMPORTACION" ? (
           <div className="mt-4 grid gap-4 border-t border-gray-200 pt-4 md:grid-cols-2">
-            <label className="space-y-1 text-sm text-gray-700">
+            <div className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Incoterm</span>
-              <select
-                value={formData.incoterm}
-                onChange={(event) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    incoterm: event.target.value,
-                  }));
-                  setFormErrors((prev) =>
-                    clearFormErrorKeys(prev, ["incoterm"]),
-                  );
+              <div
+                className="relative"
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) {
+                    setIncotermPickerOpen(false);
+                  }
                 }}
-                className={`w-full rounded border px-3 py-2 ${
-                  formErrors.incoterm ? "border-red-400" : "border-gray-300"
-                }`}
-                required
               >
-                <option value="">Selecciona Incoterm</option>
-                {INCOTERM_GROUPS.map((group) => (
-                  <optgroup key={group.key} label={group.label}>
-                    {group.options.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                <button
+                  id={`${formIdPrefix}-incoterm`}
+                  name="incoterm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={incotermPickerOpen}
+                  onClick={() => setIncotermPickerOpen((prev) => !prev)}
+                  className={`flex min-h-[42px] w-full items-center justify-between gap-3 rounded border bg-white px-3 py-2 text-left ${
+                    formErrors.incoterm ? "border-red-400" : "border-gray-300"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    {selectedIncoterm ? (
+                      <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-2">
+                        <span className="font-semibold text-gray-900">
+                          {formData.incoterm}
+                        </span>
+                        <span className="whitespace-normal text-gray-700">
+                          {selectedIncoterm.label.replace(
+                            `${formData.incoterm} - `,
+                            "",
+                          )}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">
+                        Selecciona Incoterm
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-gray-400" aria-hidden="true">
+                    v
+                  </span>
+                </button>
+
+                {incotermPickerOpen ? (
+                  <div
+                    className="absolute z-30 mt-1 max-h-[min(70vh,28rem)] w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl"
+                    role="listbox"
+                    aria-labelledby={`${formIdPrefix}-incoterm`}
+                  >
+                    {INCOTERM_GROUPS.map((group) => (
+                      <div key={group.key}>
+                        <div className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                          {group.label}
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                          {group.options.map((option) => {
+                            const optionTitle = option.label.replace(
+                              `${option.value} - `,
+                              "",
+                            );
+                            const selected = formData.incoterm === option.value;
+
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                role="option"
+                                aria-selected={selected}
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    incoterm: option.value,
+                                  }));
+                                  setFormErrors((prev) =>
+                                    clearFormErrorKeys(prev, ["incoterm"]),
+                                  );
+                                  setIncotermPickerOpen(false);
+                                }}
+                                className={`grid w-full gap-2 px-3 py-3 text-left transition hover:bg-blue-50 focus:bg-blue-50 focus:outline-none sm:grid-cols-[4rem,1fr] ${
+                                  selected ? "bg-blue-50" : "bg-white"
+                                }`}
+                              >
+                                <span className="font-bold text-blue-900">
+                                  {option.value}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block font-semibold text-gray-900">
+                                    {optionTitle}
+                                  </span>
+                                  <span className="mt-1 block whitespace-normal text-xs leading-5 text-gray-600">
+                                    {option.descripcion}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     ))}
-                  </optgroup>
-                ))}
-              </select>
+                  </div>
+                ) : null}
+              </div>
               {formErrors.incoterm ? (
                 <p className="text-xs text-red-600">{formErrors.incoterm}</p>
               ) : null}
-            </label>
+            </div>
 
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Versión Incoterm</span>
               <input
+                id={`${formIdPrefix}-incoterm-version`}
+                name="incotermVersion"
                 type="text"
                 value={formData.incotermVersion}
                 readOnly
@@ -1323,6 +1379,8 @@ const SolicitudCotizacionForm = ({
                 Punto logístico / lugar de referencia del Incoterm
               </span>
               <input
+                id={`${formIdPrefix}-incoterm-punto-logistico`}
+                name="incotermPuntoLogistico"
                 type="text"
                 value={formData.incotermPuntoLogistico}
                 onChange={(event) => {
@@ -1402,6 +1460,8 @@ const SolicitudCotizacionForm = ({
             <label className="space-y-1 text-sm text-gray-700">
               <span className="font-medium">Codigo de moneda</span>
               <input
+                id={`${formIdPrefix}-codigo-moneda-otra`}
+                name="codigoMonedaOtra"
                 type="text"
                 value={formData.codigoMonedaOtra}
                 onChange={(event) => {
@@ -1429,25 +1489,12 @@ const SolicitudCotizacionForm = ({
               ) : null}
             </label>
           ) : null}
-          <label className="space-y-1 text-sm text-gray-700">
-            <span className="font-medium">Incluye IGV</span>
-            <select
-              id={`${formIdPrefix}-incluye-igv`}
-              name="incluyeIgv"
-              value={formData.incluyeIgv}
-              onChange={(event) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  incluyeIgv: event.target.value,
-                }))
-              }
-              className="w-full rounded border border-gray-300 px-3 py-2"
-              required
-            >
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </label>
+          {formData.tipoCompra === "LOCAL" ? (
+            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 md:col-span-2">
+              <p className="font-semibold">Tratamiento tributario local</p>
+              <p className="mt-1 leading-6">{LOCAL_TAX_NOTICE}</p>
+            </div>
+          ) : null}
           <div className="space-y-1 text-sm text-gray-700">
             <span className="font-medium">Vigencia de oferta (días)</span>
             <input
@@ -1486,6 +1533,7 @@ const SolicitudCotizacionForm = ({
             <span className="font-medium">Tiempo de entrega (días)</span>
             <select
               id={`${formIdPrefix}-tiempo-entrega-modo`}
+              name="tiempoEntregaModo"
               value={tiempoEntregaModo}
               onChange={(event) => {
                 const modo = event.target.value;
@@ -1605,18 +1653,22 @@ const SolicitudCotizacionForm = ({
                 {formErrors.medioRecepcion}
               </p>
             ) : null}
-          </label>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 md:col-span-2 xl:col-span-3">
-            <div className="mb-3">
-              <p className="text-sm font-medium text-gray-900">
-                Condiciones de pago
-              </p>
-              <p className="text-xs text-gray-500">
-                El Incoterm define la logística. El pago se modela por condición
-                comercial, instrumento y gatillo documentario según el tipo de
-                compra.
-              </p>
-            </div>
+            </label>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 md:col-span-2 xl:col-span-3">
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-900">
+                  {formData.tipoCompra === "LOCAL"
+                    ? "Forma de pago"
+                    : "Condiciones de pago"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formData.tipoCompra === "LOCAL"
+                    ? "Puedes consignar una forma de pago referencial para la solicitud. Si no se define, el proveedor la responderá en su cotización."
+                    : formData.tipoCompra === "IMPORTACION"
+                      ? "El Incoterm define la logística. El pago se modela por condición comercial, instrumento y gatillo documentario según el tipo de compra."
+                      : "Selecciona primero el tipo de compra para capturar el flujo de pago correcto."}
+                </p>
+              </div>
 
             {!formData.tipoCompra ? (
               <div className="rounded border border-dashed border-gray-300 bg-white px-4 py-5 text-sm text-gray-500">
@@ -1628,9 +1680,11 @@ const SolicitudCotizacionForm = ({
             {formData.tipoCompra === "LOCAL" ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <label className="space-y-1 text-sm text-gray-700">
-                  <span className="font-medium">Condición comercial local</span>
+                  <span className="font-medium">Forma de pago</span>
                   <select
-                    value={formData.condicionPagoLocal}
+                    id={`${formIdPrefix}-condicion-pago-local`}
+                    name="condicionPagoLocal"
+                    value={resolveLocalPaymentFormValue(formData)}
                     onChange={(event) => {
                       setFormData((prev) =>
                         buildLocalPaymentConditionFormState(
@@ -1653,10 +1707,9 @@ const SolicitudCotizacionForm = ({
                         ? "border-red-400"
                         : "border-gray-300"
                     }`}
-                    required
                   >
-                    <option value="">Selecciona una condición</option>
-                    {LOCAL_PAYMENT_CONDITION_OPTIONS.map((option) => (
+                    <option value="">Seleccionar</option>
+                    {LOCAL_PAYMENT_FORM_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
@@ -1669,47 +1722,13 @@ const SolicitudCotizacionForm = ({
                   ) : null}
                 </label>
 
-                {formData.condicionPagoLocal === "CONTADO" ? (
-                  <label className="space-y-1 text-sm text-gray-700">
-                    <span className="font-medium">Hito local</span>
-                    <select
-                      value={formData.hitoPagoLocal}
-                      onChange={(event) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          hitoPagoLocal: event.target.value,
-                        }));
-                        setFormErrors((prev) =>
-                          clearFormErrorKeys(prev, ["hitoPagoLocal"]),
-                        );
-                      }}
-                      className={`w-full rounded border px-3 py-2 ${
-                        formErrors.hitoPagoLocal
-                          ? "border-red-400"
-                          : "border-gray-300"
-                      }`}
-                      required
-                    >
-                      <option value="">Selecciona un hito</option>
-                      {LOCAL_PAYMENT_MILESTONE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {formErrors.hitoPagoLocal ? (
-                      <p className="text-xs text-red-600">
-                        {formErrors.hitoPagoLocal}
-                      </p>
-                    ) : null}
-                  </label>
-                ) : null}
-
                 {formData.condicionPagoLocal === "MIXTO" ? (
                   <>
                     <label className="space-y-1 text-sm text-gray-700">
                       <span className="font-medium">% anticipo local</span>
                       <input
+                        id={`${formIdPrefix}-porcentaje-anticipo-local`}
+                        name="porcentajeAnticipoLocal"
                         type="number"
                         min="0.01"
                         max="100"
@@ -1744,6 +1763,8 @@ const SolicitudCotizacionForm = ({
                     <label className="space-y-1 text-sm text-gray-700">
                       <span className="font-medium">% saldo local</span>
                       <input
+                        id={`${formIdPrefix}-porcentaje-saldo-local`}
+                        name="porcentajeSaldoLocal"
                         type="number"
                         min="0.01"
                         max="100"
@@ -1782,6 +1803,8 @@ const SolicitudCotizacionForm = ({
                   <label className="space-y-1 text-sm text-gray-700">
                     <span className="font-medium">Días de crédito local</span>
                     <input
+                      id={`${formIdPrefix}-dias-credito-local`}
+                      name="diasCreditoLocal"
                       type="number"
                       min="1"
                       step="1"
@@ -1818,6 +1841,8 @@ const SolicitudCotizacionForm = ({
                 <label className="space-y-1 text-sm text-gray-700">
                   <span className="font-medium">Estructura de pago</span>
                   <select
+                    id={`${formIdPrefix}-estructura-pago-importacion`}
+                    name="estructuraPagoImportacion"
                     value={formData.estructuraPagoImportacion}
                     onChange={(event) => {
                       setFormData((prev) =>
@@ -1861,6 +1886,8 @@ const SolicitudCotizacionForm = ({
                 <label className="space-y-1 text-sm text-gray-700">
                   <span className="font-medium">Instrumento de pago</span>
                   <select
+                    id={`${formIdPrefix}-instrumento-pago-importacion`}
+                    name="instrumentoPagoImportacion"
                     value={formData.instrumentoPagoImportacion}
                     onChange={(event) => {
                       setFormData((prev) =>
@@ -1904,6 +1931,8 @@ const SolicitudCotizacionForm = ({
                         % anticipo importación
                       </span>
                       <input
+                        id={`${formIdPrefix}-porcentaje-anticipo-importacion`}
+                        name="porcentajeAnticipoImportacion"
                         type="number"
                         min="0.01"
                         max="100"
@@ -1938,6 +1967,8 @@ const SolicitudCotizacionForm = ({
                     <label className="space-y-1 text-sm text-gray-700">
                       <span className="font-medium">% saldo importación</span>
                       <input
+                        id={`${formIdPrefix}-porcentaje-saldo-importacion`}
+                        name="porcentajeSaldoImportacion"
                         type="number"
                         min="0.01"
                         max="100"
@@ -1977,6 +2008,8 @@ const SolicitudCotizacionForm = ({
                     <label className="space-y-1 text-sm text-gray-700">
                       <span className="font-medium">Días de crédito</span>
                       <input
+                        id={`${formIdPrefix}-dias-credito-importacion`}
+                        name="diasCreditoImportacion"
                         type="number"
                         min="1"
                         step="1"
@@ -2009,6 +2042,8 @@ const SolicitudCotizacionForm = ({
                     <label className="space-y-1 text-sm text-gray-700">
                       <span className="font-medium">Referencia del plazo</span>
                       <select
+                        id={`${formIdPrefix}-referencia-plazo-importacion`}
+                        name="referenciaPlazoImportacion"
                         value={formData.referenciaPlazoImportacion}
                         onChange={(event) => {
                           setFormData((prev) => ({
@@ -2048,6 +2083,8 @@ const SolicitudCotizacionForm = ({
                   <label className="space-y-1 text-sm text-gray-700 md:col-span-2 xl:col-span-2">
                     <span className="font-medium">Gatillo documentario</span>
                     <select
+                      id={`${formIdPrefix}-gatillo-pago-importacion`}
+                      name="gatilloPagoImportacion"
                       value={formData.gatilloPagoImportacion}
                       onChange={(event) => {
                         setFormData((prev) => ({
@@ -2084,6 +2121,8 @@ const SolicitudCotizacionForm = ({
                   <label className="space-y-1 text-sm text-gray-700">
                     <span className="font-medium">Gastos bancarios por</span>
                     <select
+                      id={`${formIdPrefix}-gastos-bancarios-por`}
+                      name="gastosBancariosPor"
                       value={formData.gastosBancariosPor}
                       onChange={(event) => {
                         setFormData((prev) => ({
@@ -2148,30 +2187,85 @@ const SolicitudCotizacionForm = ({
         </div>
         {availableItems.length > 0 ? (
           <div className="grid gap-2">
-            {availableItems.map((item) => {
+            <div className="hidden rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 sm:grid sm:grid-cols-[3rem,4rem,minmax(0,1fr),8rem,8rem] sm:items-center">
+              <span aria-hidden="true" />
+              <span>&Iacute;tem</span>
+              <span>Descripci&oacute;n</span>
+              <span>Unid. Medida</span>
+              <span>Cantidad</span>
+            </div>
+            {availableItems.map((item, index) => {
               const checked = formData.itemIds.includes(String(item.id));
+              const itemName =
+                item.producto?.nombre ||
+                item.productoTemporal?.nombre ||
+                item.descripcionVisible ||
+                "Item sin nombre";
+              const rawDescription =
+                item.productoTemporal?.descripcion ||
+                item.descripcionVisible ||
+                "";
+              const normalizedName = String(itemName).trim().toLowerCase();
+              const normalizedDescription = String(rawDescription)
+                .trim()
+                .toLowerCase();
+              const itemDescription =
+                rawDescription && normalizedDescription !== normalizedName
+                  ? rawDescription
+                  : "";
+              const itemQuantity = Number(item.cantidadRequerida ?? 0);
+              const quantityLabel = Number.isFinite(itemQuantity)
+                ? itemQuantity.toLocaleString("es-PE", {
+                    maximumFractionDigits: 2,
+                  })
+                : "-";
+
               return (
                 <label
                   key={item.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded border px-3 py-3 text-sm ${
+                  className={`grid cursor-pointer grid-cols-[auto,2.5rem,minmax(0,1fr)] gap-3 rounded border px-3 py-3 text-sm transition sm:grid-cols-[3rem,4rem,minmax(0,1fr),8rem,8rem] sm:items-center ${
                     checked
                       ? "border-indigo-300 bg-indigo-50"
                       : "border-gray-200 bg-white"
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleItem(item.id)}
-                    className="mt-1"
-                  />
-                  <span>
+                  <span className="flex items-start sm:justify-center">
+                    <input
+                      id={`${formIdPrefix}-item-${item.id}`}
+                      name="itemIds"
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleItem(item.id)}
+                      className="mt-1 sm:mt-0"
+                    />
+                  </span>
+                  <span className="font-semibold text-gray-900 sm:text-center">
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0">
                     <span className="block font-medium text-gray-900">
-                      {item.descripcionVisible}
+                      {itemName}
                     </span>
-                    <span className="block text-xs text-gray-500">
-                      {item.cantidadRequerida} {item.unidadMedida} - S/{" "}
-                      {Number(item.subtotalReferencial || 0).toFixed(2)}
+                    {itemDescription ? (
+                      <span className="mt-1 block text-xs leading-5 text-gray-500">
+                        {itemDescription}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="col-start-3 rounded border border-gray-200 bg-white/70 px-3 py-2 sm:col-start-auto sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+                      Unid. Medida
+                    </span>
+                    <span className="mt-1 block font-medium text-gray-900">
+                      {item.unidadMedida || "-"}
+                    </span>
+                  </span>
+                  <span className="col-start-3 rounded border border-gray-200 bg-white/70 px-3 py-2 sm:col-start-auto sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+                      Cantidad
+                    </span>
+                    <span className="mt-1 block font-medium text-gray-900">
+                      {quantityLabel}
                     </span>
                   </span>
                 </label>
@@ -2183,32 +2277,6 @@ const SolicitudCotizacionForm = ({
             Selecciona un requerimiento para ver sus ítems.
           </div>
         )}
-        <div className="grid gap-2 rounded border border-gray-200 bg-gray-50 px-4 py-3 text-sm sm:grid-cols-3">
-          <div>
-            <span className="block text-xs font-medium uppercase tracking-wide text-gray-500">
-              Subtotal
-            </span>
-            <span className="font-semibold text-gray-900">
-              {solicitudTotalsDisplay.subtotal}
-            </span>
-          </div>
-          <div>
-            <span className="block text-xs font-medium uppercase tracking-wide text-gray-500">
-              IGV
-            </span>
-            <span className="font-semibold text-gray-900">
-              {solicitudTotalsDisplay.igv}
-            </span>
-          </div>
-          <div>
-            <span className="block text-xs font-medium uppercase tracking-wide text-gray-500">
-              Total
-            </span>
-            <span className="font-semibold text-gray-900">
-              {solicitudTotalsDisplay.total}
-            </span>
-          </div>
-        </div>
       </div>
 
       <div className="flex items-center justify-end gap-3">

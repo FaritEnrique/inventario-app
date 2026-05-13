@@ -1,5 +1,5 @@
 // src/pages/GestionMarcasPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { TbArrowBackUpDouble } from "react-icons/tb";
 import useMarcas from "../hooks/useMarcas";
@@ -10,6 +10,8 @@ import "react-toastify/dist/ReactToastify.css";
 import ConfirmDeleteToast from "../components/ConfirmDeleteToast";
 import ConfirmToast from "../components/ConfirmToast";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
+
+const PAGE_SIZE = 10;
 
 const GestionMarcasPage = () => {
   const {
@@ -28,10 +30,12 @@ const GestionMarcasPage = () => {
   const [nombreMarca, setNombreMarca] = useState("");
   const [marcaSeleccionadaId, setMarcaSeleccionadaId] = useState(null);
   const [searchTermInput, setSearchTermInput] = useState("");
+  const [page, setPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTermInput, 700);
 
   useEffect(() => {
     fetchMarcas(debouncedSearchTerm);
+    setPage(1);
   }, [fetchMarcas, debouncedSearchTerm]);
 
   useEffect(() => {
@@ -157,6 +161,23 @@ const GestionMarcasPage = () => {
     setMarcaSeleccionadaId(null);
   };
 
+  const totalMarcas = marcas.length;
+  const totalPages = Math.max(1, Math.ceil(totalMarcas / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const marcasPaginadas = useMemo(
+    () => marcas.slice(startIndex, startIndex + PAGE_SIZE),
+    [marcas, startIndex]
+  );
+  const desde = totalMarcas === 0 ? 0 : startIndex + 1;
+  const hasta = Math.min(startIndex + PAGE_SIZE, totalMarcas);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   return (
     <div className="max-w-4xl p-5 mx-auto my-5 border border-gray-200 shadow-2xl bg-gray-50 rounded-xl">
       <h1 className="mb-8 text-4xl font-extrabold tracking-wide text-center text-gray-800">
@@ -254,7 +275,7 @@ const GestionMarcasPage = () => {
         )}
 
         <ul className="p-0 space-y-3 list-none">
-          {marcas.map((m) => (
+          {marcasPaginadas.map((m) => (
             <li
               key={m.id}
               className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-lg shadow-sm border border-gray-200 transition duration-200 ease-in-out ${
@@ -285,6 +306,35 @@ const GestionMarcasPage = () => {
             </li>
           ))}
         </ul>
+
+        {totalMarcas > 0 && (
+          <div className="flex flex-col gap-3 mt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-gray-600">
+              Mostrando {hasta} de {totalMarcas} marcas
+              {totalMarcas > PAGE_SIZE ? ` (${desde}-${hasta})` : ""}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage <= 1 || cargando}
+                className="px-4 py-2 font-semibold text-white transition-colors bg-blue-600 rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage >= totalPages || cargando}
+                className="px-4 py-2 font-semibold text-white transition-colors bg-blue-600 rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ToastContainer />

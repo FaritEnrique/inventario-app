@@ -8,7 +8,11 @@ import {
   canOperateInventoryEffective,
   canApproveOrdenCompraStageEffective,
   canViewWarehouseTrayEffective,
+  canViewAssignedCotizacionesLogisticaEffective,
   canViewAllCotizacionesLogisticaEffective,
+  getCotizacionesHomePathEffective,
+  getLogisticaOperativeTrayPathEffective,
+  getPrimaryNavigationLinksEffective,
   canViewOrdenCompraApprovalTrayEffective,
   canViewOrdenCompraListEffective,
   canViewOrdenesCompraEffective,
@@ -458,22 +462,51 @@ describe("ordenes de compra - aprobacion snapshot por etapa real", () => {
 
 describe("dashboard logistico - entrada operativa", () => {
   it("mantiene acceso operativo para OPERADOR logistico sin concederle la entrada de jefatura", () => {
+    const operadorLogistico = buildUser("OPERADOR", {
+      esAreaLogistica: true,
+      nombre: "Compras",
+    });
+
     expect(
-      canAccessCotizacionesEffective(
-        buildUser("OPERADOR", {
-          esAreaLogistica: true,
-          nombre: "Compras",
-        }),
+      canAccessCotizacionesEffective(operadorLogistico),
+    ).toBe(true);
+    expect(canViewAllCotizacionesLogisticaEffective(operadorLogistico)).toBe(
+      false,
+    );
+    expect(canViewAssignedCotizacionesLogisticaEffective(operadorLogistico)).toBe(
+      true,
+    );
+    expect(getCotizacionesHomePathEffective(operadorLogistico)).toBe(
+      "/cotizaciones/bandeja/operador",
+    );
+    expect(getLogisticaOperativeTrayPathEffective(operadorLogistico)).toBe(
+      "/cotizaciones/bandeja/operador",
+    );
+    expect(
+      getPrimaryNavigationLinksEffective(operadorLogistico).some(
+        (link) => link.to === "/cotizaciones/bandeja/operador",
       ),
     ).toBe(true);
+  });
+
+  it("mantiene la entrada de jefatura separada para JEFE_AREA logistico", () => {
+    const jefaturaLogistica = buildUser("JEFE_AREA", {
+      esAreaLogistica: true,
+      nombre: "Compras",
+    });
+
+    expect(canViewAllCotizacionesLogisticaEffective(jefaturaLogistica)).toBe(
+      true,
+    );
     expect(
-      canViewAllCotizacionesLogisticaEffective(
-        buildUser("OPERADOR", {
-          esAreaLogistica: true,
-          nombre: "Compras",
-        }),
-      ),
+      canViewAssignedCotizacionesLogisticaEffective(jefaturaLogistica),
     ).toBe(false);
+    expect(getCotizacionesHomePathEffective(jefaturaLogistica)).toBe(
+      "/cotizaciones/bandeja/jefatura",
+    );
+    expect(getLogisticaOperativeTrayPathEffective(jefaturaLogistica)).toBe(
+      "/cotizaciones/bandeja/jefatura",
+    );
   });
 });
 

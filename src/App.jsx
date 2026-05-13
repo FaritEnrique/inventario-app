@@ -21,6 +21,7 @@ import {
   canAccessAreasManagementEffective,
   canAccessCompanySettingsEffective,
   canAccessCotizacionesEffective,
+  canAdjustInventoryEffective,
   canManageCatalogMasterEffective,
   canAccessProveedorManagementEffective,
   canApprovePedidoInternoEffective,
@@ -169,7 +170,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-productos"
               element={
-                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
                   <GestionProductosPage />
                 </RoutePermissionGuard>
               }
@@ -227,7 +228,7 @@ const AppRoutes = () => {
             <Route
               path="solicitudes-tipo-producto"
               element={
-                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                <RoutePermissionGuard allow={canAdjustInventoryEffective}>
                   <BandejaSolicitudesTipoProductoPage />
                 </RoutePermissionGuard>
               }

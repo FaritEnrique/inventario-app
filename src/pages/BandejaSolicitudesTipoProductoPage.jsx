@@ -50,7 +50,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
     useTipoProductos();
 
   const [filters, setFilters] = useState({
-    estado: "",
+    estado: "PENDIENTE",
     search: "",
   });
   const [acciones, setAcciones] = useState({});
@@ -118,10 +118,10 @@ const BandejaSolicitudesTipoProductoPage = () => {
             </p>
           </div>
           <Link
-            to="/gestion-proveedores"
+            to="/gestion-productos"
             className="inline-flex rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
           >
-            Volver a proveedores
+            Volver Gestión Productos
           </Link>
         </div>
 

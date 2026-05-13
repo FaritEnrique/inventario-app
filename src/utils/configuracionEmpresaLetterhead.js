@@ -163,6 +163,7 @@ export const buildInstitutionalLetterheadPrintHtml = ({
   title = "Documento institucional",
   bodyMarkup = '<div class="body-space"></div>',
   extraStyles = "",
+  repeatHeaderFooterPerPage = false,
 }) => {
   const metrics = institutionalLetterheadMetrics.print;
   const {
@@ -200,6 +201,37 @@ export const buildInstitutionalLetterheadPrintHtml = ({
     .filter(Boolean)
     .join("");
 
+  const headerMarkup = shouldRenderInstitutionalBranding
+    ? `<div class="header ${hasPhrase ? "" : "header--no-phrase"}">
+        <div class="brand-column">
+          <div class="brand-row">
+            ${logoMarkup}
+            <div class="brand-copy">
+              <div class="brand-company">${escapeHtml(razonSocial)}</div>
+              <div class="brand-tax-id">
+                <strong>RUC</strong>
+                <span>${escapeHtml(ruc)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${
+          hasPhrase
+            ? `<div class="phrase-column">
+                <div class="phrase-box">${escapeHtml(frase)}</div>
+              </div>`
+            : ""
+        }
+      </div>`
+    : "";
+
+  const footerMarkup = shouldRenderInstitutionalBranding
+    ? `<div class="footer">
+        ${footerContactsMarkup ? `<div class="footer-contacts">${footerContactsMarkup}</div>` : ""}
+        ${hasComentario ? `<div class="footer-copy">${escapeHtml(comentario)}</div>` : ""}
+      </div>`
+    : "";
+
   return `
     <html>
       <head>
@@ -217,6 +249,54 @@ export const buildInstitutionalLetterheadPrintHtml = ({
           }
           .sheet--plain {
             padding: 14mm;
+          }
+          .letterhead-multipage {
+            width: 210mm;
+            min-height: 297mm;
+            background: #ffffff;
+          }
+          .letterhead-fixed-header {
+            position: fixed;
+            top: ${metrics.pageTopPadding};
+            left: ${metrics.pageHorizontalPadding};
+            right: ${metrics.pageHorizontalPadding};
+            z-index: 2;
+          }
+          .letterhead-fixed-footer {
+            position: fixed;
+            bottom: ${metrics.pageBottomPadding};
+            left: ${metrics.pageHorizontalPadding};
+            right: ${metrics.pageHorizontalPadding};
+            z-index: 2;
+          }
+          .letterhead-page-table {
+            width: 210mm;
+            min-height: 297mm;
+            border-collapse: collapse;
+            table-layout: fixed;
+            background: #ffffff;
+          }
+          .letterhead-page-table > thead {
+            display: table-header-group;
+          }
+          .letterhead-page-table > tfoot {
+            display: table-footer-group;
+          }
+          .letterhead-page-table > tbody {
+            display: table-row-group;
+          }
+          .letterhead-page-table td {
+            padding: 0;
+            vertical-align: top;
+          }
+          .letterhead-page-table td.letterhead-page-body {
+            padding: 0 ${metrics.pageHorizontalPadding};
+          }
+          .letterhead-page-header-spacer {
+            height: ${metrics.multipageHeaderSpacerHeight};
+          }
+          .letterhead-page-footer-spacer {
+            height: ${metrics.multipageFooterSpacerHeight};
           }
           .header {
             display: grid;
@@ -373,44 +453,35 @@ export const buildInstitutionalLetterheadPrintHtml = ({
         </style>
       </head>
       <body>
-        <div class="sheet print-sheet print-document ${shouldRenderInstitutionalBranding ? "" : "sheet--plain"}">
-          ${
-            shouldRenderInstitutionalBranding
-              ? `<div class="header ${hasPhrase ? "" : "header--no-phrase"}">
-                  <div class="brand-column">
-                    <div class="brand-row">
-                      ${logoMarkup}
-                      <div class="brand-copy">
-                        <div class="brand-company">${escapeHtml(razonSocial)}</div>
-                        <div class="brand-tax-id">
-                          <strong>RUC</strong>
-                          <span>${escapeHtml(ruc)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  ${
-                    hasPhrase
-                      ? `<div class="phrase-column">
-                          <div class="phrase-box">${escapeHtml(frase)}</div>
-                        </div>`
-                      : ""
-                  }
-                </div>`
-              : ""
-          }
-
-          ${bodyMarkup}
-
-          ${
-            shouldRenderInstitutionalBranding
-              ? `<div class="footer">
-                  ${footerContactsMarkup ? `<div class="footer-contacts">${footerContactsMarkup}</div>` : ""}
-                  ${hasComentario ? `<div class="footer-copy">${escapeHtml(comentario)}</div>` : ""}
-                </div>`
-              : ""
-          }
-        </div>
+        ${
+          shouldRenderInstitutionalBranding && repeatHeaderFooterPerPage
+            ? `<div class="letterhead-multipage print-document">
+                <div class="letterhead-fixed-header">${headerMarkup}</div>
+                <div class="letterhead-fixed-footer">${footerMarkup}</div>
+                <table class="letterhead-page-table">
+                  <thead>
+                    <tr>
+                      <td><div class="letterhead-page-header-spacer"></div></td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="letterhead-page-body">${bodyMarkup}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td><div class="letterhead-page-footer-spacer"></div></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>`
+            : `<div class="sheet print-sheet print-document ${shouldRenderInstitutionalBranding ? "" : "sheet--plain"}">
+                ${headerMarkup}
+                ${bodyMarkup}
+                ${footerMarkup}
+              </div>`
+        }
       </body>
     </html>
   `;

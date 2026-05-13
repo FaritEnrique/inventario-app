@@ -10,6 +10,9 @@ const solicitudesCotizacionApi = {
   obtenerPorRequerimiento: async (requerimientoId) => {
     return await apiFetch(`solicitudes-cotizacion/requerimiento/${requerimientoId}`);
   },
+  obtenerHistorialEnvios: async (id) => {
+    return await apiFetch(`solicitudes-cotizacion/${id}/historial-envios`);
+  },
   obtenerPdfUrl: (id) => {
     return buildApiUrl(`solicitudes-cotizacion/${id}/pdf`);
   },

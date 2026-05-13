@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSolicitudCotizacionDocumentContract } from "./solicitudCotizacionDocumentContract.js";
+import { LOCAL_TAX_NOTICE } from "../features/solicitud-cotizacion/solicitudCotizacionCatalog.js";
 
 describe("solicitudCotizacionDocumentContract", () => {
   it("muestra el flujo local sin mezclarlo con importacion", () => {
@@ -32,8 +33,12 @@ describe("solicitudCotizacionDocumentContract", () => {
     expect(contract.condiciones.cargaDescargaAsumidaPorLabel).toBe("Comprador");
     expect(contract.condiciones.permiteEntregasParcialesLabel).toBe("Sí");
     expect(contract.condiciones.condicionPagoLocalLabel).toBe("Crédito");
+    expect(contract.condiciones.formaPagoLocalLabel).toBe("Crédito: 45 días");
     expect(contract.condiciones.diasCreditoLocal).toBe(45);
     expect(contract.condiciones.diasCreditoLocalLabel).toBe("45 días");
+    expect(contract.condiciones.tratamientoTributarioLocal).toBe(
+      LOCAL_TAX_NOTICE,
+    );
     expect(contract.condiciones.estructuraPagoImportacion).toBeNull();
   });
 
@@ -68,6 +73,7 @@ describe("solicitudCotizacionDocumentContract", () => {
       "Exclusivo marítimo / fluvial",
     );
     expect(contract.condiciones.condicionPagoLocal).toBeNull();
+    expect(contract.condiciones.tratamientoTributarioLocal).toBeNull();
   });
 
   it("muestra moneda OTRA con codigo libre y medio fisico", () => {

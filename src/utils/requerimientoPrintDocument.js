@@ -384,5 +384,6 @@ export const buildRequerimientoPrintHtml = ({
     title: `Requerimiento ${renderText(requerimiento?.codigo, "sin-codigo")}`,
     bodyMarkup,
     extraStyles,
+    repeatHeaderFooterPerPage: true,
   });
 };

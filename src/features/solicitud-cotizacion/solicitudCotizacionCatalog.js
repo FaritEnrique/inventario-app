@@ -1,5 +1,8 @@
 export const INCOTERM_VERSION_2020 = "2020";
 
+export const LOCAL_TAX_NOTICE =
+  "El valor de la cotizacion debe incluir el IGV u otros tributos, tasas, contribuciones y gravamenes, ya sean directos o indirectos, que afecten la adquisicion del bien, de conformidad con los beneficios tributarios vigentes para la Region Loreto.";
+
 export const INCOTERM_GROUPS = [
   {
     key: "ANY_MODE",
@@ -190,6 +193,17 @@ export const LOCAL_PAYMENT_CONDITION_OPTIONS = [
   { value: "CREDITO", label: "Crédito" },
 ];
 
+export const LOCAL_PAYMENT_FORM_OPTIONS = [
+  { value: "CONTADO_CONTRA_ENTREGA", label: "Contado contra entrega" },
+  { value: "PAGO_ANTICIPADO", label: "Pago anticipado" },
+  { value: "MIXTO", label: "Mixto" },
+  { value: "CREDITO", label: "Crédito" },
+];
+
+export const LOCAL_PAYMENT_FORM_LABELS = Object.fromEntries(
+  LOCAL_PAYMENT_FORM_OPTIONS.map((option) => [option.value, option.label]),
+);
+
 export const LOCAL_PAYMENT_MILESTONE_OPTIONS = [
   { value: "CONTRA_ENTREGA", label: "Contra entrega" },
   { value: "ANTICIPADO_TOTAL", label: "Anticipado total" },
@@ -301,7 +315,13 @@ export const formatDaysLabel = (value) => {
 export const buildSolicitudPaymentSummaryLabel = (solicitud = {}) => {
   if (solicitud?.tipoCompra === "LOCAL") {
     if (solicitud?.condicionPagoLocal === "CONTADO") {
-      return LOCAL_PAYMENT_MILESTONE_LABELS[solicitud?.hitoPagoLocal] || null;
+      if (solicitud?.hitoPagoLocal === "CONTRA_ENTREGA") {
+        return LOCAL_PAYMENT_FORM_LABELS.CONTADO_CONTRA_ENTREGA;
+      }
+      if (solicitud?.hitoPagoLocal === "ANTICIPADO_TOTAL") {
+        return LOCAL_PAYMENT_FORM_LABELS.PAGO_ANTICIPADO;
+      }
+      return LOCAL_PAYMENT_CONDITION_LABELS.CONTADO;
     }
 
     if (solicitud?.condicionPagoLocal === "MIXTO") {

@@ -14,6 +14,8 @@ import { TbArrowBackUpDouble } from "react-icons/tb";
 import { MdCategory } from "react-icons/md";
 import useDebounce from "../hooks/useDebounce";
 import { Link } from "react-router-dom";
+import { canAdjustInventoryEffective } from "../accessRules";
+import { useAuth } from "../context/authContext";
 import imageCompression from "browser-image-compression";
 import {
   resolveProductoImageUrl,
@@ -38,6 +40,7 @@ const cards = [
       "Valida, homologa, crea o rechaza tipos propuestos desde proveedores.",
     icon: <FaClipboardList />,
     path: "/solicitudes-tipo-producto",
+    visible: ({ user }) => canAdjustInventoryEffective(user),
   },
   {
     title: "Marcas",
@@ -63,6 +66,7 @@ const initialProducto = {
 };
 
 const GestionProductosPage = () => {
+  const { user } = useAuth();
   const fileInputRef = useRef(null);
   const formCardRef = useRef(null);
   const [productoActual, setProductoActual] = useState(initialProducto);
@@ -490,6 +494,10 @@ const GestionProductosPage = () => {
     null;
 
   const cargandoGeneral = cargandoProductos;
+  const visibleCards = cards.filter((card) =>
+    typeof card.visible === "function" ? card.visible({ user }) : true,
+  );
+
   return (
     <div className="max-w-5xl p-6 mx-auto">
       <h1 className="text-2xl font-bold text-center text-indigo-700">
@@ -511,7 +519,7 @@ const GestionProductosPage = () => {
           </Link>
         </div>
         <div className="grid grid-cols-1 gap-6 mb-4 md:grid-cols-2 lg:grid-cols-3">
-          {cards.map((card) => (
+          {visibleCards.map((card) => (
             <Link key={card.title} to={card.path} className={cardClasses}>
               <div className="flex items-center justify-center mx-auto mb-3 text-3xl text-indigo-600 bg-indigo-100 border-2 border-blue-600 rounded-full w-14 h-14">
                 {card.icon}

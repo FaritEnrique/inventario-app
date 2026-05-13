@@ -640,6 +640,7 @@ const GestionProveedoresPage = () => {
             <div className="flex">
               <input
                 id="search-proveedor"
+                name="searchProveedor"
                 type="text"
                 className="max-w-96 flex-grow rounded-l-md border border-gray-500 p-3 transition-shadow focus:ring-2 focus:ring-blue-500"
                 placeholder="Ingresa un RUC o nombre..."
@@ -692,12 +693,6 @@ const GestionProveedoresPage = () => {
                   </button>
                 </>
               )}
-              <Link
-                to="/solicitudes-tipo-producto"
-                className="rounded-md bg-slate-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800"
-              >
-                Bandeja de solicitudes
-              </Link>
             </div>
             {canManageSunat && (
               <div className="max-w-md text-sm text-gray-600">
@@ -788,6 +783,8 @@ const GestionProveedoresPage = () => {
                 className="flex w-full flex-col gap-2 md:max-w-2xl md:flex-row"
               >
                 <input
+                  id="registered-provider-filter"
+                  name="registeredProviderFilter"
                   type="text"
                   className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm transition-shadow focus:ring-2 focus:ring-blue-500"
                   placeholder="Buscar por razon social, RUC o tipo de producto..."
