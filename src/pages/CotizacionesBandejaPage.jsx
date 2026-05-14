@@ -175,6 +175,14 @@ const createReassignmentDraft = () => ({
 const getInitialEstadoBandeja = (tipo) =>
   tipo === "jefatura" ? "PENDIENTE" : "";
 
+const SERVER_PAGE_SIZE = 6;
+
+const buildEmptyTrayCounts = () =>
+  trayStatusOrder.reduce((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {});
+
 const buildLogisticaAssignmentPayload = ({ nextResponsableId }) => ({
   responsableId: Number(nextResponsableId),
 });
@@ -203,6 +211,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [estadoBandeja, setEstadoBandeja] = useState(() =>
     getInitialEstadoBandeja(tipo),
   );
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const [serverCounters, setServerCounters] = useState(null);
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
   const [flowDrafts, setFlowDrafts] = useState({});
   const [expandedFlowId, setExpandedFlowId] = useState(null);
@@ -224,6 +235,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   useEffect(() => {
     setEstadoBandeja(getInitialEstadoBandeja(tipo));
+    setPage(1);
+    setPagination(null);
+    setServerCounters(null);
   }, [tipo]);
   const hasJefaturaContext = hasLogisticaJefaturaContext(availableContexts);
   const hasOperadorContext = hasLogisticaOperadorContext(availableContexts);
@@ -259,9 +273,18 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   const load = async () => {
     try {
-      const response = await obtenerBandeja(tipo, {
-        search,
-      });
+      const params =
+        tipo === "jefatura"
+          ? {
+              search,
+              estadoBandeja,
+              page,
+              limit: SERVER_PAGE_SIZE,
+            }
+          : {
+              search,
+            };
+      const response = await obtenerBandeja(tipo, params);
       const data = Array.isArray(response?.data) ? response.data : [];
       const enrichedData = await Promise.all(
         data.map(async (item) => {
@@ -279,15 +302,22 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           }
         }),
       );
-      const filteredData = estadoBandeja
-        ? enrichedData.filter(
-            (item) =>
-              String(item?.estadoBandeja || "").toUpperCase() ===
-              String(estadoBandeja).toUpperCase(),
-          )
-        : enrichedData;
+      const filteredData =
+        tipo === "jefatura"
+          ? enrichedData
+          : estadoBandeja
+            ? enrichedData.filter(
+                (item) =>
+                  String(item?.estadoBandeja || "").toUpperCase() ===
+                  String(estadoBandeja).toUpperCase(),
+              )
+            : enrichedData;
 
-      setSummaryItems(enrichedData);
+      setSummaryItems(tipo === "jefatura" ? [] : enrichedData);
+      setPagination(tipo === "jefatura" ? response?.pagination || null : null);
+      setServerCounters(
+        tipo === "jefatura" ? response?.counters || null : null,
+      );
       setItems(filteredData);
       setContextError(null);
       setSeleccionOperadores(() => {
@@ -329,6 +359,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     tipo,
     search,
     estadoBandeja,
+    page,
     directResponsableId,
     obtenerBandeja,
     obtenerDetalle,
@@ -406,10 +437,17 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   }, [highlightedRequerimientoId, items]);
 
   const resumen = useMemo(() => {
-    const counts = trayStatusOrder.reduce((acc, status) => {
-      acc[status] = 0;
-      return acc;
-    }, {});
+    if (tipo === "jefatura" && serverCounters) {
+      return {
+        total: Number(serverCounters.total || 0),
+        counts: {
+          ...buildEmptyTrayCounts(),
+          ...(serverCounters.byEstadoBandeja || {}),
+        },
+      };
+    }
+
+    const counts = buildEmptyTrayCounts();
 
     summaryItems.forEach((item) => {
       const status = String(item?.estadoBandeja || "").toUpperCase();
@@ -422,8 +460,30 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       total: summaryItems.length,
       counts,
     };
-  }, [summaryItems]);
-  const isInitialLoading = cargando && summaryItems.length === 0 && !contextError;
+  }, [serverCounters, summaryItems, tipo]);
+  const hasLoadedSummary =
+    tipo === "jefatura" ? Boolean(serverCounters || pagination) : summaryItems.length > 0;
+  const isInitialLoading = cargando && !hasLoadedSummary && !contextError;
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(1);
+  };
+
+  const handleEstadoBandejaChange = (event) => {
+    setEstadoBandeja(event.target.value);
+    setPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    if (!pagination?.hasPreviousPage) return;
+    setPage((currentPage) => Math.max(1, currentPage - 1));
+  };
+
+  const handleNextPage = () => {
+    if (!pagination?.hasNextPage) return;
+    setPage((currentPage) => currentPage + 1);
+  };
 
   const handleAssign = async (requerimientoId) => {
     const item = items.find(
@@ -712,14 +772,14 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         <input
           value={search}
           name="cotizaciones-bandeja-page-input-134"
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={handleSearchChange}
           placeholder="Buscar por código, solicitante o finalidad"
           className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
         />
         <select
           value={estadoBandeja}
           name="cotizaciones-bandeja-page-select-140"
-          onChange={(event) => setEstadoBandeja(event.target.value)}
+          onChange={handleEstadoBandejaChange}
           className="rounded border border-gray-300 px-3 py-2"
         >
           <option value="">Todos los estados de bandeja</option>
@@ -1284,6 +1344,34 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           </div>
         )}
       </div>
+
+      {tipo === "jefatura" && pagination ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 text-sm text-slate-700 shadow-sm">
+          <p>
+            {pagination.total > 0
+              ? `${pagination.from}-${pagination.to} de ${pagination.total}`
+              : "0 de 0"}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handlePreviousPage}
+              disabled={!pagination.hasPreviousPage}
+              className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              onClick={handleNextPage}
+              disabled={!pagination.hasNextPage}
+              className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
 
     <Modal

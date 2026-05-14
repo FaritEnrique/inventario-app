@@ -132,6 +132,9 @@ const SolicitudCotizacionDocumentoPage = lazy(() =>
 const SolicitudesRequerimientoPage = lazy(() =>
   import("./pages/SolicitudesRequerimientoPage")
 );
+const ProveedorCotizacionPublicPage = lazy(() =>
+  import("./pages/public/ProveedorCotizacionPublicPage")
+);
 
 const SeleccionContextoPage = lazy(() => import("./pages/SeleccionContextoPage"));
 
@@ -157,6 +160,10 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<Loader />}>
       <Routes>
+        <Route
+          path="/proveedor/cotizaciones/:token"
+          element={<ProveedorCotizacionPublicPage />}
+        />
         <Route path="/" element={<LayoutInventario />}>
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
