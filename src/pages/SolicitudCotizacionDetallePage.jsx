@@ -12,6 +12,7 @@ import {
   FaWhatsapp,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { canOperateCotizacionesLogisticaEffective } from "../accessRules";
 import Modal from "../components/Modal";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudCotizacionDetalleSkeleton from "../components/ui/skeletons/SolicitudCotizacionDetalleSkeleton";
@@ -478,6 +479,21 @@ const SolicitudCotizacionDetallePage = () => {
   const emailHistory = historyData?.historial || [];
   const latestEmailEvent = emailHistory[0] || null;
   const isSistemaReception = solicitud?.medioRecepcion === "SISTEMA";
+  const activeCotizacion = Array.isArray(solicitud?.cotizaciones)
+    ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
+    : null;
+  const canRegisterCotizacion =
+    solicitud?.activo !== false &&
+    Boolean(solicitud?.requerimientoId || solicitud?.requerimiento?.id) &&
+    Boolean(solicitud?.requerimiento?.modalidadFlujoLogistico) &&
+    !["ADJUDICADO", "OC_GENERADA"].includes(
+      solicitud?.requerimiento?.estadoLogistica,
+    ) &&
+    canOperateCotizacionesLogisticaEffective(user, solicitud?.requerimiento) &&
+    !activeCotizacion;
+  const cotizacionesPhasePath = `/cotizaciones/proceso/${
+    solicitud?.requerimientoId || solicitud?.requerimiento?.id || ""
+  }/cotizaciones`;
   const whatsappNormalizedNumber = useMemo(
     () => buildWhatsappNormalizedNumber(systemAccessPhone),
     [systemAccessPhone],
@@ -748,6 +764,15 @@ const SolicitudCotizacionDetallePage = () => {
               <FaKey className="text-xs" />
               Acceso sistema
             </button>
+          ) : null}
+          {canRegisterCotizacion ? (
+            <Link
+              to={cotizacionesPhasePath}
+              state={{ solicitudId: solicitud.id, from: location }}
+              className="inline-flex items-center gap-2 rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
+            >
+              Registrar cotizacion recibida
+            </Link>
           ) : null}
           <button
             type="button"

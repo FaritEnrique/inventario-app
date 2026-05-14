@@ -97,6 +97,7 @@ const normalizeInitialData = (initialData) => ({
 const CotizacionForm = ({
   initialData,
   solicitudes,
+  lockedSolicitudId = null,
   onSubmit,
   onCancel,
   submitting,
@@ -104,8 +105,16 @@ const CotizacionForm = ({
   const [formData, setFormData] = useState(() => normalizeInitialData(initialData));
 
   useEffect(() => {
-    setFormData(normalizeInitialData(initialData));
-  }, [initialData]);
+    const nextData = normalizeInitialData(initialData);
+    setFormData({
+      ...nextData,
+      solicitudId: lockedSolicitudId
+        ? String(lockedSolicitudId)
+        : nextData.solicitudId,
+    });
+  }, [initialData, lockedSolicitudId]);
+
+  const solicitudSelectionLocked = Boolean(lockedSolicitudId || formData.id);
 
   const selectedSolicitud = useMemo(
     () =>
@@ -262,6 +271,7 @@ const CotizacionForm = ({
           <select
             value={formData.solicitudId}
             name="cotizacion-form-select-solicitud"
+            disabled={solicitudSelectionLocked}
             onChange={(event) =>
               setFormData((prev) => ({
                 ...prev,
@@ -269,7 +279,7 @@ const CotizacionForm = ({
                 items: [],
               }))
             }
-            className="w-full rounded border border-gray-300 px-3 py-2"
+            className="w-full rounded border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600"
             required
           >
             <option value="">Selecciona solicitud</option>
@@ -279,6 +289,11 @@ const CotizacionForm = ({
               </option>
             ))}
           </select>
+          {solicitudSelectionLocked ? (
+            <span className="text-xs text-gray-500">
+              La cotizacion queda vinculada a esta solicitud y a su proveedor.
+            </span>
+          ) : null}
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">

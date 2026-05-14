@@ -222,6 +222,52 @@ const getCotizacionItemsMap = (cotizaciones = []) =>
     return acc;
   }, {});
 
+const getActiveCotizacionForSolicitud = (solicitud) =>
+  Array.isArray(solicitud?.cotizaciones)
+    ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
+    : null;
+
+const getInactiveCotizacionesForSolicitud = (solicitud) =>
+  Array.isArray(solicitud?.cotizaciones)
+    ? solicitud.cotizaciones.filter((cotizacion) => cotizacion.activo === false)
+    : [];
+
+const getSolicitudCotizacionResponseLabel = (solicitud) => {
+  const activeCotizacion = getActiveCotizacionForSolicitud(solicitud);
+  const inactiveCotizaciones = getInactiveCotizacionesForSolicitud(solicitud);
+
+  if (activeCotizacion) {
+    const allItemsNoCotiza =
+      Array.isArray(activeCotizacion.items) &&
+      activeCotizacion.items.length > 0 &&
+      activeCotizacion.items.every(
+        (item) =>
+          String(item.estadoRespuesta || "").toUpperCase() === "NO_COTIZA",
+      );
+
+    return allItemsNoCotiza ? "No cotiza" : "Cotizacion registrada";
+  }
+
+  if (inactiveCotizaciones.length > 0) {
+    return "Cotizacion desactivada";
+  }
+
+  return "Pendiente de cotizacion";
+};
+
+const getMedioRecepcionLabel = (medioRecepcion) => {
+  switch (medioRecepcion) {
+    case "FISICO":
+      return "Fisico";
+    case "CORREO":
+      return "Correo";
+    case "SISTEMA":
+      return "Sistema";
+    default:
+      return medioRecepcion || "-";
+  }
+};
+
 const getAdjudicacionCotizacionId = (draft, itemRequerimientoId) =>
   draft.adjudicacionesItems.find(
     (entry) =>
@@ -443,8 +489,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   );
   const directResponsableId = directResponsableOption?.id || null;
   const isEmisionPhase = fase === "emision";
+  const isCotizacionesPhase = fase === "cotizaciones";
   const expedientePath = `/cotizaciones/proceso/${id}`;
   const emisionPath = `/cotizaciones/proceso/${id}/emision`;
+  const cotizacionesPath = `/cotizaciones/proceso/${id}/cotizaciones`;
 
   const load = async () => {
     const [data, comparativoData] = await Promise.all([
@@ -492,6 +540,21 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
       });
     }
   }, [emisionPath, isEmisionPhase, location.hash, location.state, navigate]);
+
+  useEffect(() => {
+    if (!isCotizacionesPhase && location.hash === "#cotizaciones") {
+      navigate(cotizacionesPath, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [
+    cotizacionesPath,
+    isCotizacionesPhase,
+    location.hash,
+    location.state,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!canAssign) return;
@@ -573,6 +636,43 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
         : [],
     [detalle?.resumenComparativo?.coberturaItems],
   );
+
+  useEffect(() => {
+    if (!isCotizacionesPhase || !detalle?.id || cotizacionDraft) return;
+
+    const preselectedCotizacionId = location.state?.cotizacionId;
+    if (preselectedCotizacionId) {
+      const cotizacion = resumenCotizaciones.find(
+        (entry) => Number(entry.id) === Number(preselectedCotizacionId),
+      );
+
+      if (cotizacion?.activo !== false) {
+        setCotizacionDraft(buildCotizacionDraft(cotizacion));
+      }
+      return;
+    }
+
+    const preselectedSolicitudId =
+      location.state?.solicitudId || location.state?.preselectSolicitudId;
+    if (!preselectedSolicitudId) return;
+
+    const solicitud = (detalle.solicitudes || []).find(
+      (entry) => Number(entry.id) === Number(preselectedSolicitudId),
+    );
+
+    if (!solicitud || getActiveCotizacionForSolicitud(solicitud)) return;
+
+    setCotizacionDraft(createCotizacionDraftFromSolicitud(solicitud));
+  }, [
+    cotizacionDraft,
+    detalle?.id,
+    detalle?.solicitudes,
+    isCotizacionesPhase,
+    location.state?.cotizacionId,
+    location.state?.preselectSolicitudId,
+    location.state?.solicitudId,
+    resumenCotizaciones,
+  ]);
 
   const handleAsignar = async () => {
     const responsableActualId =
@@ -691,14 +791,11 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const handleSolicitudSubmit = async (payload) => {
     setSubmittingSolicitud(true);
     try {
-      const saved = solicitudDraft?.id
-        ? await actualizarSolicitud(solicitudDraft.id, payload)
-        : await crearSolicitud(payload);
-      setCotizacionDraft(createCotizacionDraftFromSolicitud(saved));
-      document.getElementById("cotizaciones")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      if (solicitudDraft?.id) {
+        await actualizarSolicitud(solicitudDraft.id, payload);
+      } else {
+        await crearSolicitud(payload);
+      }
       await load();
       setSolicitudDraft({ requerimientoId: Number(id) });
     } finally {
@@ -719,6 +816,44 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     } finally {
       setSubmittingCotizacion(false);
     }
+  };
+
+  const handleRegisterCotizacionFromSolicitud = (solicitud) => {
+    if (!solicitud || getActiveCotizacionForSolicitud(solicitud)) return;
+
+    const nextDraft = createCotizacionDraftFromSolicitud(solicitud);
+    if (!isCotizacionesPhase) {
+      navigate(cotizacionesPath, {
+        state: { solicitudId: solicitud.id },
+      });
+      return;
+    }
+
+    setCotizacionDraft(nextDraft);
+    window.setTimeout(() => {
+      document.getElementById("cotizacion-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
+
+  const handleEditCotizacion = (cotizacion) => {
+    const nextDraft = buildCotizacionDraft(cotizacion);
+    if (!isCotizacionesPhase) {
+      navigate(cotizacionesPath, {
+        state: { cotizacionId: cotizacion.id },
+      });
+      return;
+    }
+
+    setCotizacionDraft(nextDraft);
+    window.setTimeout(() => {
+      document.getElementById("cotizacion-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
   };
 
   const handleDeactivateSolicitud = async (solicitudId) => {
@@ -749,7 +884,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   const handleInactivateCotizacion = async (cotizacionId) => {
     const motivo = window.prompt(
-      "Motivo para inactivar la cotizacion (opcional):",
+      "Motivo para desactivar la cotizacion (opcional):",
       "",
     );
 
@@ -1186,7 +1321,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
         <Link
           to={expedientePath}
           className={`rounded px-4 py-2 text-sm font-medium transition ${
-            !isEmisionPhase
+            !isEmisionPhase && !isCotizacionesPhase
               ? "bg-slate-900 text-white"
               : "text-slate-700 hover:bg-slate-100"
           }`}
@@ -1203,9 +1338,16 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
         >
           Emision de solicitudes
         </Link>
-        <span className="px-4 py-2 text-sm font-medium rounded text-slate-400">
+        <Link
+          to={cotizacionesPath}
+          className={`rounded px-4 py-2 text-sm font-medium transition ${
+            isCotizacionesPhase
+              ? "bg-slate-900 text-white"
+              : "text-slate-700 hover:bg-slate-100"
+          }`}
+        >
           Cotizaciones
-        </span>
+        </Link>
         <span className="px-4 py-2 text-sm font-medium rounded text-slate-400">
           Comparativo
         </span>
@@ -1316,7 +1458,9 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               onClick={() =>
                 regularWorkflowStep.sectionId === "solicitudes"
                   ? navigate(emisionPath)
-                  : scrollToSection(regularWorkflowStep.sectionId)
+                  : regularWorkflowStep.sectionId === "cotizaciones"
+                    ? navigate(cotizacionesPath)
+                    : scrollToSection(regularWorkflowStep.sectionId)
               }
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
             >
@@ -1332,7 +1476,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
             </Link>
             <button
               type="button"
-              onClick={() => scrollToSection("cotizaciones")}
+              onClick={() => navigate(cotizacionesPath)}
               className="rounded border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 hover:bg-white"
             >
               Cotizaciones
@@ -1967,27 +2111,342 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                 : "Este expediente se encuentra en modo de consulta para tu perfil. Solo el responsable asignado o la jefatura pueden modificar solicitudes."}
           </div>
         )
-      ) : canManageDrafts ? (
-        <div id="cotizaciones">
-          <CotizacionForm
-            initialData={cotizacionDraft}
-            solicitudes={detalle.solicitudes || []}
-            onSubmit={handleCotizacionSubmit}
-            onCancel={() => setCotizacionDraft(null)}
-            submitting={submittingCotizacion}
-          />
-        </div>
-      ) : (
-        <div className="p-5 text-sm text-gray-600 bg-white border border-gray-200 shadow-sm rounded-xl">
-          {!flujoDefinido
-            ? "La jefatura de logistica debe definir primero si el expediente seguira el flujo REGULAR o EXCEPCIONAL."
-            : expedienteBloqueado
-              ? "El expediente ya fue adjudicado o paso a orden de compra, por lo que ya no admite cambios operativos."
-              : "Este expediente se encuentra en modo de consulta para tu perfil. Solo el responsable asignado o la jefatura pueden modificar cotizaciones."}
-        </div>
-      )}
+      ) : null}
 
-      {!isEmisionPhase ? (
+      {isCotizacionesPhase ? (
+        <div id="cotizaciones" className="space-y-6">
+          <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Solicitudes emitidas para registrar respuesta
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Registra la cotizacion recibida por proveedor desde la
+                    solicitud enviada. El proveedor y los items quedan
+                    determinados por esa solicitud.
+                  </p>
+                </div>
+                <Link
+                  to={emisionPath}
+                  className="inline-flex px-4 py-2 text-sm font-medium text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
+                >
+                  Volver a emision
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3 md:hidden">
+              {(detalle.solicitudes || []).length > 0 ? (
+                detalle.solicitudes.map((solicitud) => {
+                  const activeCotizacion =
+                    getActiveCotizacionForSolicitud(solicitud);
+                  const inactiveCotizaciones =
+                    getInactiveCotizacionesForSolicitud(solicitud);
+                  const responseLabel =
+                    getSolicitudCotizacionResponseLabel(solicitud);
+
+                  return (
+                    <div
+                      key={`cotizacion-solicitud-card-${solicitud.id}`}
+                      className="p-4 border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <Link
+                            to={`/solicitudes-cotizacion/${solicitud.id}`}
+                            state={{ from: location }}
+                            className="font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
+                          >
+                            {solicitud.codigo}
+                          </Link>
+                          <p className="mt-1 text-sm text-gray-700">
+                            {solicitud.proveedor?.razonSocial || "-"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Medio:{" "}
+                            {getMedioRecepcionLabel(solicitud.medioRecepcion)}
+                          </p>
+                        </div>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            activeCotizacion
+                              ? "bg-emerald-100 text-emerald-800"
+                              : inactiveCotizaciones.length
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {responseLabel}
+                        </span>
+                      </div>
+
+                      {activeCotizacion ? (
+                        <p className="mt-3 text-sm text-gray-700">
+                          {activeCotizacion.codigo} ·{" "}
+                          {formatCurrency(activeCotizacion.totalOferta)}
+                        </p>
+                      ) : null}
+
+                      {solicitud.medioRecepcion === "SISTEMA" &&
+                      !activeCotizacion ? (
+                        <p className="mt-3 text-xs text-slate-500">
+                          Medio SISTEMA: el portal externo del proveedor queda
+                          para una etapa futura; aqui se permite registro
+                          interno como contingencia.
+                        </p>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <Link
+                          to={`/solicitudes-cotizacion/${solicitud.id}`}
+                          state={{ from: location }}
+                          className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                        >
+                          Ver solicitud
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handlePrintSolicitud(solicitud.id)}
+                          className="px-3 py-1 border rounded border-slate-300 text-slate-700 hover:bg-slate-50"
+                        >
+                          PDF solicitud
+                        </button>
+                        {canManageDrafts &&
+                        solicitud.activo !== false &&
+                        !activeCotizacion ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRegisterCotizacionFromSolicitud(solicitud)
+                            }
+                            className="px-3 py-1 border rounded border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          >
+                            Registrar cotizacion recibida
+                          </button>
+                        ) : null}
+                        {canManageDrafts && activeCotizacion ? (
+                          <button
+                            type="button"
+                            onClick={() => handleEditCotizacion(activeCotizacion)}
+                            className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                          >
+                            Editar cotizacion
+                          </button>
+                        ) : null}
+                        {canManageDrafts && inactiveCotizaciones.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleReactivateCotizacion(
+                                inactiveCotizaciones[0].id,
+                              )
+                            }
+                            disabled={Boolean(activeCotizacion)}
+                            className="px-3 py-1 border rounded border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Reactivar
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-6 text-sm text-center text-gray-500">
+                  Aun no se emitieron solicitudes de cotizacion para este
+                  expediente.
+                </div>
+              )}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                      Solicitud
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                      Proveedor
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                      Medio
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                      Respuesta
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-right text-gray-600 uppercase">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {(detalle.solicitudes || []).length > 0 ? (
+                    detalle.solicitudes.map((solicitud) => {
+                      const activeCotizacion =
+                        getActiveCotizacionForSolicitud(solicitud);
+                      const inactiveCotizaciones =
+                        getInactiveCotizacionesForSolicitud(solicitud);
+                      const responseLabel =
+                        getSolicitudCotizacionResponseLabel(solicitud);
+
+                      return (
+                        <tr key={`cotizacion-solicitud-row-${solicitud.id}`}>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <Link
+                              to={`/solicitudes-cotizacion/${solicitud.id}`}
+                              state={{ from: location }}
+                              className="font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
+                            >
+                              {solicitud.codigo}
+                            </Link>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(solicitud.fechaEmision)}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {solicitud.proveedor?.razonSocial || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {getMedioRecepcionLabel(solicitud.medioRecepcion)}
+                            {solicitud.medioRecepcion === "SISTEMA" ? (
+                              <p className="mt-1 text-xs text-slate-500">
+                                Registro interno como contingencia.
+                              </p>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                activeCotizacion
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : inactiveCotizaciones.length
+                                    ? "bg-rose-100 text-rose-800"
+                                    : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {responseLabel}
+                            </span>
+                            {activeCotizacion ? (
+                              <p className="mt-2 text-xs text-gray-500">
+                                {activeCotizacion.codigo} ·{" "}
+                                {formatCurrency(activeCotizacion.totalOferta)}
+                              </p>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <Link
+                                to={`/solicitudes-cotizacion/${solicitud.id}`}
+                                state={{ from: location }}
+                                className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                              >
+                                Ver solicitud
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handlePrintSolicitud(solicitud.id)
+                                }
+                                className="px-3 py-1 border rounded border-slate-300 text-slate-700 hover:bg-slate-50"
+                              >
+                                PDF
+                              </button>
+                              {canManageDrafts &&
+                              solicitud.activo !== false &&
+                              !activeCotizacion ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRegisterCotizacionFromSolicitud(
+                                      solicitud,
+                                    )
+                                  }
+                                  className="px-3 py-1 border rounded border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                >
+                                  Registrar cotizacion recibida
+                                </button>
+                              ) : null}
+                              {canManageDrafts && activeCotizacion ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleEditCotizacion(activeCotizacion)
+                                  }
+                                  className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                                >
+                                  Editar
+                                </button>
+                              ) : null}
+                              {canManageDrafts &&
+                              inactiveCotizaciones.length > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleReactivateCotizacion(
+                                      inactiveCotizaciones[0].id,
+                                    )
+                                  }
+                                  disabled={Boolean(activeCotizacion)}
+                                  className="px-3 py-1 border rounded border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Reactivar
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="px-4 py-10 text-sm text-center text-gray-500"
+                      >
+                        Aun no se emitieron solicitudes de cotizacion para este
+                        expediente.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {canManageDrafts ? (
+            cotizacionDraft ? (
+              <div id="cotizacion-form">
+                <CotizacionForm
+                  initialData={cotizacionDraft}
+                  solicitudes={detalle.solicitudes || []}
+                  lockedSolicitudId={cotizacionDraft.solicitudId}
+                  onSubmit={handleCotizacionSubmit}
+                  onCancel={() => setCotizacionDraft(null)}
+                  submitting={submittingCotizacion}
+                />
+              </div>
+            ) : (
+              <div className="p-5 text-sm border border-gray-200 shadow-sm rounded-xl bg-slate-50 text-slate-700">
+                Selecciona una solicitud emitida para registrar la cotizacion
+                recibida del proveedor.
+              </div>
+            )
+          ) : (
+            <div className="p-5 text-sm text-gray-600 bg-white border border-gray-200 shadow-sm rounded-xl">
+              {!flujoDefinido
+                ? "La jefatura de logistica debe definir primero si el expediente seguira el flujo REGULAR o EXCEPCIONAL."
+                : expedienteBloqueado
+                  ? "El expediente ya fue adjudicado o paso a orden de compra, por lo que ya no admite cambios operativos."
+                  : "Este expediente se encuentra en modo de consulta para tu perfil. Solo el responsable asignado o la jefatura pueden modificar cotizaciones."}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {!isEmisionPhase && !isCotizacionesPhase ? (
         <div
           id="comparativo"
           className="p-5 bg-white border border-gray-200 shadow-sm rounded-xl"
@@ -2579,6 +3038,19 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                           ? "Enviando..."
                           : "Enviar correo"}
                       </button>
+                      {canManageDrafts &&
+                      solicitud.activo !== false &&
+                      !getActiveCotizacionForSolicitud(solicitud) ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRegisterCotizacionFromSolicitud(solicitud)
+                          }
+                          className="px-3 py-1 border rounded border-sky-300 text-sky-700 hover:bg-sky-50"
+                        >
+                          Registrar cotizacion
+                        </button>
+                      ) : null}
                     </div>
                     {canManageDrafts && solicitud.activo !== false ? (
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -2687,6 +3159,21 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                                 ? "Enviando..."
                                 : "Enviar correo"}
                             </button>
+                            {canManageDrafts &&
+                            solicitud.activo !== false &&
+                            !getActiveCotizacionForSolicitud(solicitud) ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleRegisterCotizacionFromSolicitud(
+                                    solicitud,
+                                  )
+                                }
+                                className="px-3 py-1 border rounded border-sky-300 text-sky-700 hover:bg-sky-50"
+                              >
+                                Registrar cotizacion
+                              </button>
+                            ) : null}
                             {canManageDrafts && solicitud.activo !== false && (
                               <>
                                 <button
@@ -2732,16 +3219,15 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
           </div>
         ) : null}
 
-        {!isEmisionPhase ? (
+        {isCotizacionesPhase ? (
           <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-xl">
             <div className="px-5 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">
                 Cotizaciones registradas
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                En flujo EXCEPCIONAL, una de estas cotizaciones puede sustentar
-                la decision formal del expediente por MENOR_CUANTIA, URGENCIA o
-                EMERGENCIA.
+                Respuestas economicas y tecnicas recibidas de los proveedores
+                invitados por solicitud de cotizacion.
               </p>
             </div>
             <div className="p-4 space-y-3 md:hidden">
@@ -2780,7 +3266,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                     </div>
                     {cotizacion.activo === false ? (
                       <p className="mt-2 text-xs font-medium text-rose-700">
-                        Inactiva
+                        Desactivada
                         {cotizacion.motivoInactivacion
                           ? ` · ${cotizacion.motivoInactivacion}`
                           : ""}
@@ -2797,9 +3283,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                       {canManageDrafts ? (
                         <button
                           type="button"
-                          onClick={() =>
-                            setCotizacionDraft(buildCotizacionDraft(cotizacion))
-                          }
+                          onClick={() => handleEditCotizacion(cotizacion)}
                           disabled={cotizacion.activo === false}
                           className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                         >
@@ -2822,7 +3306,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                         >
                           {cotizacion.activo === false
                             ? "Reactivar"
-                            : "Inactivar"}
+                            : "Desactivar"}
                         </button>
                       ) : null}
                     </div>
@@ -2894,7 +3378,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                           <CotizacionEstadoBadge estado={cotizacion.estado} />
                           {cotizacion.activo === false ? (
                             <p className="mt-1 text-xs font-medium text-rose-700">
-                              Inactiva
+                              Desactivada
                             </p>
                           ) : null}
                         </td>
@@ -2912,11 +3396,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                             {canManageDrafts && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setCotizacionDraft(
-                                    buildCotizacionDraft(cotizacion),
-                                  )
-                                }
+                                onClick={() => handleEditCotizacion(cotizacion)}
                                 disabled={cotizacion.activo === false}
                                 className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                               >
@@ -2939,7 +3419,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                               >
                                 {cotizacion.activo === false
                                   ? "Reactivar"
-                                  : "Inactivar"}
+                                  : "Desactivar"}
                               </button>
                             )}
                           </div>
