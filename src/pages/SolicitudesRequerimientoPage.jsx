@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FaArrowLeft, FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
+import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
 } from "../accessRules";
+import ConfirmToast from "../components/ConfirmToast";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudesRequerimientoSkeleton from "../components/ui/skeletons/SolicitudesRequerimientoSkeleton";
 import { useAuth } from "../context/authContext";
@@ -30,7 +32,7 @@ const SolicitudesRequerimientoPage = () => {
     error,
     cargarSolicitudesPorRequerimiento,
     obtenerSolicitudPdfUrl,
-    inactivarSolicitud,
+    desactivarSolicitud,
   } = useSolicitudesCotizacion({ autoLoad: false });
 
   const [detalle, setDetalle] = useState(null);
@@ -82,17 +84,30 @@ const SolicitudesRequerimientoPage = () => {
     );
   };
 
-  const handleInactivateSolicitud = async (solicitudId) => {
-    if (
-      !window.confirm(
-        "La solicitud de cotización se inactivará lógicamente. ¿Deseas continuar?"
-      )
-    ) {
-      return;
-    }
-
-    await inactivarSolicitud(solicitudId);
-    await load();
+  const handleDeactivateSolicitud = async (solicitudId) => {
+    toast(
+      ({ closeToast }) => (
+        <ConfirmToast
+          closeToast={closeToast}
+          title="Desactivar solicitud"
+          message="La solicitud de cotizacion se desactivara logicamente. Esta accion no elimina el registro ni su trazabilidad."
+          confirmButtonText="Desactivar"
+          cancelButtonText="Cancelar"
+          variant="warning"
+          onConfirm={async () => {
+            await desactivarSolicitud(solicitudId);
+            await load();
+          }}
+        />
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        className: "!w-auto !max-w-[460px]",
+      }
+    );
   };
 
   if (cargando && !detalle) return <SolicitudesRequerimientoSkeleton />;
@@ -106,7 +121,7 @@ const SolicitudesRequerimientoPage = () => {
           </h1>
           <p className="mt-1 text-sm text-gray-600">
             Vista dedicada para revisar las solicitudes emitidas, abrir su
-            detalle, imprimirlas o inactivarlas sin salir a la vista general del
+            detalle, imprimirlas o desactivarlas sin salir a la vista general del
             expediente.
           </p>
         </div>
@@ -168,7 +183,7 @@ const SolicitudesRequerimientoPage = () => {
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             Cada solicitud reutiliza su detalle y su documento reales. La
-            inactivación es lógica y solo está disponible cuando el expediente
+            desactivación es lógica y solo está disponible cuando el expediente
             permite gestión operativa.
           </p>
         </div>
@@ -191,7 +206,7 @@ const SolicitudesRequerimientoPage = () => {
                     <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
                     {solicitud.activo === false ? (
                       <p className="mt-1 text-xs font-medium text-rose-700">
-                        Inactiva
+                        Desactivada
                       </p>
                     ) : null}
                   </div>
@@ -219,12 +234,12 @@ const SolicitudesRequerimientoPage = () => {
                   {canManageSolicitudes && solicitud.activo !== false ? (
                     <button
                       type="button"
-                      onClick={() => handleInactivateSolicitud(solicitud.id)}
+                      onClick={() => handleDeactivateSolicitud(solicitud.id)}
                       className="inline-flex items-center gap-2 rounded border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
-                      title="Inactivar solicitud"
+                      title="Desactivar solicitud"
                     >
                       <FaTrashAlt className="text-xs" />
-                      Inactivar
+                      Desactivar
                     </button>
                   ) : null}
                 </div>
@@ -275,7 +290,7 @@ const SolicitudesRequerimientoPage = () => {
                       <CotizacionEstadoBadge estado={solicitud.estado} tipo="solicitud" />
                       {solicitud.activo === false ? (
                         <p className="mt-1 text-xs font-medium text-rose-700">
-                          Inactiva
+                          Desactivada
                         </p>
                       ) : null}
                     </td>
@@ -300,9 +315,9 @@ const SolicitudesRequerimientoPage = () => {
                         {canManageSolicitudes && solicitud.activo !== false ? (
                           <button
                             type="button"
-                            onClick={() => handleInactivateSolicitud(solicitud.id)}
+                            onClick={() => handleDeactivateSolicitud(solicitud.id)}
                             className="inline-flex items-center gap-2 rounded border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
-                            title="Inactivar solicitud"
+                            title="Desactivar solicitud"
                           >
                             <FaTrashAlt className="text-xs" />
                           </button>

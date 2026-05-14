@@ -337,7 +337,7 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
   const displayValue = formatFechaLimiteDisplay(value);
 
   return (
-    <div className="space-y-1 text-sm text-gray-700">
+    <div className="space-y-1 text-sm text-gray-700 md:col-span-2">
       <span className="font-medium">Fecha límite de recepción</span>
 
       {/* Valor confirmado (o estado vacío) */}
@@ -364,9 +364,9 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
 
       {/* Panel de edición inline */}
       {open && (
-        <div className="rounded border border-gray-300 bg-gray-50 p-3 space-y-3">
-          <div className="flex gap-3">
-            <label className="flex-1 space-y-1">
+        <div className="space-y-3 rounded border border-gray-300 bg-gray-50 p-3">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+            <label className="min-w-0 space-y-1">
               <span className="text-xs text-gray-600">Fecha</span>
               <input
                 id={`${formIdPrefix}-fecha-limite-date`}
@@ -377,10 +377,10 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
                   setDraftDate(e.target.value);
                   setError("");
                 }}
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full min-w-0 rounded border border-gray-300 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="w-36 space-y-1">
+            <label className="min-w-0 space-y-1">
               <span className="text-xs text-gray-600">Hora</span>
               <input
                 id={`${formIdPrefix}-fecha-limite-time`}
@@ -391,7 +391,7 @@ const FechaLimiteRecepcionPicker = ({ formIdPrefix, value, onChange }) => {
                   setDraftTime(e.target.value);
                   setError("");
                 }}
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full min-w-0 rounded border border-gray-300 px-2 py-1.5 text-sm"
               />
             </label>
           </div>

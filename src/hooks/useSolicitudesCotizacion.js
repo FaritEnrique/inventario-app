@@ -90,20 +90,20 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const inactivarSolicitud = async (id) => {
+  const desactivarSolicitud = async (id) => {
     try {
-      const solicitudInactivada = await solicitudesCotizacionApi.inactivar(id);
+      const solicitudDesactivada = await solicitudesCotizacionApi.desactivar(id);
       setSolicitudes((prev) =>
         prev.map((solicitud) =>
-          solicitud.id === id ? solicitudInactivada : solicitud
+          solicitud.id === id ? solicitudDesactivada : solicitud
         )
       );
-      toast.success("Solicitud de cotización inactivada con éxito.");
-      return solicitudInactivada;
+      toast.success("Solicitud de cotización desactivada con éxito.");
+      return solicitudDesactivada;
     } catch (err) {
-      console.error("Error inactivando solicitud de cotización:", err);
+      console.error("Error desactivando solicitud de cotización:", err);
       const errorMessage =
-        err.message || "Error al inactivar solicitud de cotización.";
+        err.message || "Error al desactivar solicitud de cotización.";
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -175,7 +175,7 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     cargarSolicitudesPorRequerimiento,
     crearSolicitud,
     actualizarSolicitud,
-    inactivarSolicitud,
+    desactivarSolicitud,
     obtenerSolicitudPdfUrl,
     obtenerHistorialEnvios,
     enviarSolicitudCorreo,

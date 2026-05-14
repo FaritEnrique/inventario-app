@@ -278,6 +278,14 @@ const AppRoutes = () => {
               }
             />
             <Route
+              path="cotizaciones/proceso/:id/emision"
+              element={
+                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
+                  <ProcesoLogisticoDetallePage fase="emision" />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
               path="cotizaciones/requerimientos/:id/solicitudes"
               element={
                 <RoutePermissionGuard

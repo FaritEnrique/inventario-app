@@ -33,6 +33,9 @@ const solicitudesCotizacionApi = {
       method: 'DELETE',
     });
   },
+  desactivar: async (id) => {
+    return solicitudesCotizacionApi.inactivar(id);
+  },
   enviarCorreo: async (id, payload) => {
     return apiFetch(`solicitudes-cotizacion/${id}/enviar-correo`, {
       method: 'POST',

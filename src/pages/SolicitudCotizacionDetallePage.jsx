@@ -1124,7 +1124,7 @@ const SolicitudCotizacionDetallePage = () => {
 
       {solicitud.activo === false ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-900">
-          Esta solicitud se encuentra inactiva y se conserva solo para
+          Esta solicitud se encuentra desactivada y se conserva solo para
           trazabilidad.
         </div>
       ) : null}
