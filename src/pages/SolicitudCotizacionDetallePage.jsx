@@ -3,11 +3,15 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
   FaArrowLeft,
+  FaCopy,
   FaEnvelope,
   FaFilePdf,
   FaHistory,
+  FaKey,
   FaPrint,
+  FaWhatsapp,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 import Modal from "../components/Modal";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudCotizacionDetalleSkeleton from "../components/ui/skeletons/SolicitudCotizacionDetalleSkeleton";
@@ -33,6 +37,66 @@ const readValue = (value, fallback = "-") => {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const PHONE_COUNTRY_OPTIONS = [
+  { pais: "Peru", codigo: "+51" },
+  { pais: "Estados Unidos", codigo: "+1" },
+  { pais: "Chile", codigo: "+56" },
+  { pais: "Colombia", codigo: "+57" },
+  { pais: "Ecuador", codigo: "+593" },
+  { pais: "Bolivia", codigo: "+591" },
+  { pais: "Argentina", codigo: "+54" },
+  { pais: "Brasil", codigo: "+55" },
+  { pais: "Mexico", codigo: "+52" },
+  { pais: "Espana", codigo: "+34" },
+];
+
+const DEFAULT_PHONE_COUNTRY = PHONE_COUNTRY_OPTIONS[0];
+
+const cleanPhoneDigits = (value) => String(value || "").replace(/[^\d]/g, "");
+
+const cleanCountryCode = (value) => cleanPhoneDigits(value);
+
+const findCountryByDigits = (digits) =>
+  [...PHONE_COUNTRY_OPTIONS]
+    .sort((left, right) => right.codigo.length - left.codigo.length)
+    .find((option) => digits.startsWith(cleanCountryCode(option.codigo)));
+
+const buildInitialSystemAccessPhone = (solicitud) => {
+  const rawPhone = solicitud?.proveedor?.telefono || "";
+  const rawPhoneText = String(rawPhone).trim();
+  const digits = cleanPhoneDigits(rawPhoneText);
+  const detectedCountry =
+    rawPhoneText.startsWith("+") || digits.length > 10
+      ? findCountryByDigits(digits)
+      : null;
+  const selectedCountry = detectedCountry || DEFAULT_PHONE_COUNTRY;
+  const selectedCodeDigits = cleanCountryCode(selectedCountry.codigo);
+  const localNumber =
+    detectedCountry && digits.startsWith(selectedCodeDigits)
+      ? digits.slice(selectedCodeDigits.length)
+      : digits;
+
+  return {
+    paisTelefono: selectedCountry.pais,
+    codigoPaisTelefono: selectedCountry.codigo,
+    numeroLocalTelefono: localNumber,
+  };
+};
+
+const buildWhatsappNormalizedNumber = ({
+  codigoPaisTelefono,
+  numeroLocalTelefono,
+}) => {
+  const countryCode = cleanCountryCode(codigoPaisTelefono);
+  let localNumber = cleanPhoneDigits(numeroLocalTelefono);
+
+  if (countryCode && localNumber.startsWith(countryCode)) {
+    localNumber = localNumber.slice(countryCode.length);
+  }
+
+  return countryCode && localNumber ? `${countryCode}${localNumber}` : "";
+};
 
 const SummaryField = ({ label, value }) => (
   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -77,6 +141,8 @@ const SolicitudCotizacionDetallePage = () => {
     obtenerSolicitudPdfUrl,
     obtenerHistorialEnvios,
     enviarSolicitudCorreo,
+    generarAccesoSistemaSolicitud,
+    registrarEventoAccesoSistema,
   } = useSolicitudesCotizacion({
     autoLoad: false,
   });
@@ -88,6 +154,13 @@ const SolicitudCotizacionDetallePage = () => {
   const [historyData, setHistoryData] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
+  const [systemAccessModalOpen, setSystemAccessModalOpen] = useState(false);
+  const [systemAccessLoading, setSystemAccessLoading] = useState(false);
+  const [systemAccessData, setSystemAccessData] = useState(null);
+  const [systemAccessError, setSystemAccessError] = useState("");
+  const [systemAccessPhone, setSystemAccessPhone] = useState(() =>
+    buildInitialSystemAccessPhone(null),
+  );
 
   const documentContract = useMemo(
     () =>
@@ -404,6 +477,18 @@ const SolicitudCotizacionDetallePage = () => {
 
   const emailHistory = historyData?.historial || [];
   const latestEmailEvent = emailHistory[0] || null;
+  const isSistemaReception = solicitud?.medioRecepcion === "SISTEMA";
+  const whatsappNormalizedNumber = useMemo(
+    () => buildWhatsappNormalizedNumber(systemAccessPhone),
+    [systemAccessPhone],
+  );
+  const preparedWhatsappMessage = systemAccessData?.mensajeWhatsapp || "";
+  const whatsappUrl =
+    whatsappNormalizedNumber && preparedWhatsappMessage
+      ? `https://wa.me/${whatsappNormalizedNumber}?text=${encodeURIComponent(
+          preparedWhatsappMessage,
+        )}`
+      : "";
 
   const backTarget = location.state?.from
     ? `${location.state.from.pathname || ""}${location.state.from.search || ""}${location.state.from.hash || ""}`
@@ -521,6 +606,86 @@ const SolicitudCotizacionDetallePage = () => {
     }
   };
 
+  const handleOpenSystemAccessModal = () => {
+    if (!solicitud?.id) return;
+    setSystemAccessPhone(buildInitialSystemAccessPhone(solicitud));
+    setSystemAccessData(null);
+    setSystemAccessError("");
+    setSystemAccessModalOpen(true);
+  };
+
+  const handleSystemAccessCountryChange = (codigoPaisTelefono) => {
+    const selectedCountry =
+      PHONE_COUNTRY_OPTIONS.find(
+        (option) => option.codigo === codigoPaisTelefono,
+      ) || DEFAULT_PHONE_COUNTRY;
+
+    setSystemAccessPhone((prev) => ({
+      ...prev,
+      paisTelefono: selectedCountry.pais,
+      codigoPaisTelefono: selectedCountry.codigo,
+    }));
+  };
+
+  const handleGenerateSystemAccess = async ({ regenerar = false } = {}) => {
+    if (!solicitud?.id || systemAccessLoading) return;
+
+    setSystemAccessLoading(true);
+    setSystemAccessError("");
+
+    try {
+      const response = await generarAccesoSistemaSolicitud(solicitud.id, {
+        regenerar,
+        telefonoOriginal: solicitud.proveedor?.telefono || "",
+        paisTelefono: systemAccessPhone.paisTelefono,
+        codigoPaisTelefono: systemAccessPhone.codigoPaisTelefono,
+        numeroLocalTelefono: systemAccessPhone.numeroLocalTelefono,
+      });
+      setSystemAccessData(response);
+    } catch (err) {
+      setSystemAccessError(
+        err?.message || "No se pudo generar el acceso por sistema.",
+      );
+    } finally {
+      setSystemAccessLoading(false);
+    }
+  };
+
+  const handleRegisterSystemAccessEvent = async (tipoEvento) => {
+    const accessId = systemAccessData?.access?.id;
+
+    if (!solicitud?.id || !accessId) return;
+
+    try {
+      await registrarEventoAccesoSistema(solicitud.id, accessId, {
+        tipoEvento,
+        detalle: {
+          numeroWhatsappNormalizado: whatsappNormalizedNumber || null,
+        },
+      });
+    } catch {
+      // El evento no debe bloquear la accion manual del usuario.
+    }
+  };
+
+  const handleCopySystemAccessMessage = async () => {
+    if (!preparedWhatsappMessage) return;
+
+    try {
+      await navigator.clipboard.writeText(preparedWhatsappMessage);
+      toast.success("Mensaje copiado.");
+      await handleRegisterSystemAccessEvent("WHATSAPP_MENSAJE_COPIADO");
+    } catch {
+      toast.error("No se pudo copiar el mensaje.");
+    }
+  };
+
+  const handleOpenWhatsapp = async () => {
+    if (!whatsappUrl) return;
+    await handleRegisterSystemAccessEvent("WHATSAPP_ABIERTO");
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  };
+
   if (loading) return <SolicitudCotizacionDetalleSkeleton />;
 
   if (!solicitud) {
@@ -574,6 +739,16 @@ const SolicitudCotizacionDetallePage = () => {
             <FaHistory className="text-xs" />
             Historial de envios
           </button>
+          {isSistemaReception ? (
+            <button
+              type="button"
+              onClick={handleOpenSystemAccessModal}
+              className="inline-flex items-center gap-2 rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+            >
+              <FaKey className="text-xs" />
+              Acceso sistema
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={handleOpenEmailModal}
@@ -791,6 +966,152 @@ const SolicitudCotizacionDetallePage = () => {
               </table>
             </div>
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={systemAccessModalOpen}
+        onClose={() => setSystemAccessModalOpen(false)}
+        title="Acceso por sistema"
+        maxWidth="max-w-4xl"
+      >
+        <div className="space-y-5">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+            Con WhatsApp manual el sistema no puede confirmar la entrega del
+            mensaje; solo registra que se preparÃ³, copiÃ³ o abriÃ³ WhatsApp.
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <SummaryField
+              label="Proveedor"
+              value={solicitud.proveedor?.razonSocial || "-"}
+            />
+            <SummaryField
+              label="Telefono registrado"
+              value={solicitud.proveedor?.telefono || "-"}
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-[220px,1fr,1fr]">
+            <label className="space-y-1 text-sm text-gray-700">
+              <span className="font-medium">Pais / codigo</span>
+              <select
+                value={systemAccessPhone.codigoPaisTelefono}
+                onChange={(event) =>
+                  handleSystemAccessCountryChange(event.target.value)
+                }
+                disabled={Boolean(systemAccessData?.accessUrl)}
+                className="w-full rounded border border-gray-300 px-3 py-2"
+              >
+                {PHONE_COUNTRY_OPTIONS.map((option) => (
+                  <option key={`${option.codigo}-${option.pais}`} value={option.codigo}>
+                    {option.codigo} {option.pais}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 text-sm text-gray-700">
+              <span className="font-medium">Numero local</span>
+              <input
+                type="text"
+                value={systemAccessPhone.numeroLocalTelefono}
+                onChange={(event) =>
+                  setSystemAccessPhone((prev) => ({
+                    ...prev,
+                    numeroLocalTelefono: event.target.value,
+                  }))
+                }
+                disabled={Boolean(systemAccessData?.accessUrl)}
+                className="w-full rounded border border-gray-300 px-3 py-2"
+                placeholder="987654321"
+              />
+            </label>
+
+            <SummaryField
+              label="Numero WhatsApp"
+              value={
+                whatsappNormalizedNumber
+                  ? `+${whatsappNormalizedNumber}`
+                  : "Pendiente de validar"
+              }
+            />
+          </div>
+
+          {systemAccessError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {systemAccessError}
+            </div>
+          ) : null}
+
+          {!systemAccessData?.accessUrl ? (
+            <div className="flex flex-wrap justify-end gap-3">
+              {systemAccessData?.status === "EXISTENTE" ? (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateSystemAccess({ regenerar: true })}
+                  disabled={systemAccessLoading}
+                  className="inline-flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaKey className="text-xs" />
+                  {systemAccessLoading ? "Regenerando..." : "Regenerar acceso"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateSystemAccess()}
+                  disabled={systemAccessLoading}
+                  className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaKey className="text-xs" />
+                  {systemAccessLoading ? "Generando..." : "Generar acceso"}
+                </button>
+              )}
+            </div>
+          ) : null}
+
+          {systemAccessData?.accessUrl ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <SummaryField label="Enlace externo" value={systemAccessData.accessUrl} />
+                <SummaryField
+                  label="Clave temporal"
+                  value={systemAccessData.claveTemporal || "-"}
+                />
+              </div>
+
+              <label className="block space-y-1 text-sm text-gray-700">
+                <span className="font-medium">Mensaje preparado</span>
+                <textarea
+                  value={preparedWhatsappMessage}
+                  readOnly
+                  rows={7}
+                  className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm"
+                />
+              </label>
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopySystemAccessMessage}
+                  disabled={!preparedWhatsappMessage}
+                  className="inline-flex items-center gap-2 rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaCopy className="text-xs" />
+                  Copiar mensaje
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenWhatsapp}
+                  disabled={!whatsappUrl}
+                  className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaWhatsapp className="text-xs" />
+                  Abrir WhatsApp
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
       </Modal>
 

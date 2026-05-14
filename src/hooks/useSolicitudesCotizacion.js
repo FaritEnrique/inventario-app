@@ -131,6 +131,42 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
+  const generarAccesoSistemaSolicitud = async (id, payload = {}) => {
+    try {
+      const response = await solicitudesCotizacionApi.generarAccesoSistema(
+        id,
+        payload,
+      );
+
+      if (response?.status === "EXISTENTE") {
+        toast.info("Ya existe un acceso por sistema activo para esta solicitud.");
+      } else {
+        toast.success("Acceso por sistema generado correctamente.");
+      }
+
+      return response;
+    } catch (err) {
+      console.error("Error generando acceso por sistema:", err);
+      const errorMessage =
+        err.message || "Error al generar acceso por sistema.";
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const registrarEventoAccesoSistema = async (id, accesoId, payload = {}) => {
+    try {
+      return await solicitudesCotizacionApi.registrarEventoAccesoSistema(
+        id,
+        accesoId,
+        payload,
+      );
+    } catch (err) {
+      console.error("Error registrando evento de acceso por sistema:", err);
+      throw err;
+    }
+  };
+
   return {
     solicitudes,
     cargando,
@@ -143,6 +179,8 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     obtenerSolicitudPdfUrl,
     obtenerHistorialEnvios,
     enviarSolicitudCorreo,
+    generarAccesoSistemaSolicitud,
+    registrarEventoAccesoSistema,
   };
 };
 

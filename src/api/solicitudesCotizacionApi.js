@@ -39,6 +39,20 @@ const solicitudesCotizacionApi = {
       body: JSON.stringify(payload || {}),
     });
   },
+  generarAccesoSistema: async (id, payload = {}) => {
+    return apiFetch(`solicitudes-cotizacion/${id}/acceso-sistema`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+      sessionActivity: 'interactive',
+    });
+  },
+  registrarEventoAccesoSistema: async (id, accesoId, payload = {}) => {
+    return apiFetch(`solicitudes-cotizacion/${id}/acceso-sistema/${accesoId}/eventos`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+      sessionActivity: 'interactive',
+    });
+  },
 };
 
 export default solicitudesCotizacionApi;
