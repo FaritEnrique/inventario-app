@@ -20,6 +20,7 @@ import { useAuth } from "../context/authContext";
 import useSolicitudCotizacionDetalleData from "../hooks/useSolicitudCotizacionDetalleData";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import { printHtmlInNewWindow } from "../utils/printWindow";
+import { escapeHtml } from "../utils/configuracionEmpresaLetterhead";
 import { buildSolicitudCotizacionEnvioTracePrintHtml } from "../utils/solicitudCotizacionEnvioPrintDocument";
 import {
   buildSolicitudCotizacionDocumentContract,
@@ -99,6 +100,131 @@ const buildWhatsappNormalizedNumber = ({
   return countryCode && localNumber ? `${countryCode}${localNumber}` : "";
 };
 
+const ACCESS_EVENT_LABELS = {
+  ACCESO_GENERADO: "Acceso generado",
+  WHATSAPP_MENSAJE_PREPARADO: "Mensaje preparado",
+  WHATSAPP_MENSAJE_COPIADO: "Mensaje copiado",
+  WHATSAPP_ABIERTO: "WhatsApp abierto",
+  PROVEEDOR_PRIMER_INGRESO: "Primer ingreso del proveedor",
+  CLAVE_FALLIDA: "Clave fallida",
+  CLAVE_VALIDADA: "Clave validada",
+  COTIZACION_BORRADOR_GUARDADO: "Borrador guardado",
+  COTIZACION_FINALIZADA: "Cotizacion finalizada",
+  ACCESO_VENCIDO: "Acceso vencido",
+  ACCESO_BLOQUEADO: "Acceso bloqueado",
+  ACCESO_REVOCADO: "Acceso revocado",
+};
+
+const formatAccessEventLabel = (tipoEvento) =>
+  ACCESS_EVENT_LABELS[tipoEvento] || tipoEvento || "-";
+
+const formatActorLabel = (event) => {
+  if (event?.actorInterno?.nombre) return event.actorInterno.nombre;
+  if (event?.actorTipo === "PROVEEDOR_ACCESO_PUBLICO") {
+    return "Proveedor / acceso publico";
+  }
+  return "-";
+};
+
+const formatTraceDetail = (detalle = {}) => {
+  if (!detalle || typeof detalle !== "object") return "-";
+
+  const entries = Object.entries(detalle).filter(([, value]) => {
+    if (value === null || value === undefined || value === "") return false;
+    return typeof value !== "object";
+  });
+
+  if (!entries.length) return "-";
+
+  return entries
+    .map(([key, value]) => `${key}: ${String(value)}`)
+    .join(" | ");
+};
+
+const getEventPhone = (event, access) =>
+  event?.detalleSeguro?.numeroWhatsappNormalizado ||
+  event?.detalleSeguro?.numeroWhatsappNormalizadoSnapshot ||
+  access?.numeroWhatsappNormalizadoSnapshot ||
+  null;
+
+const buildAccessTracePrintHtml = ({ traceData, solicitud, printedBy }) => {
+  const acceso = traceData?.acceso || {};
+  const resumen = traceData?.resumen || {};
+  const eventos = traceData?.eventos || [];
+  const solicitudData = traceData?.solicitud || solicitud || {};
+  const rows = eventos.length
+    ? eventos
+        .map(
+          (event) => `
+            <tr>
+              <td>${escapeHtml(formatDateTime(event.fechaEvento))}</td>
+              <td>${escapeHtml(formatAccessEventLabel(event.tipoEvento))}</td>
+              <td>${escapeHtml(formatActorLabel(event))}</td>
+              <td>${escapeHtml(readValue(getEventPhone(event, acceso)))}</td>
+              <td>${escapeHtml(formatTraceDetail(event.detalleSeguro))}</td>
+            </tr>
+          `,
+        )
+        .join("")
+    : `<tr><td colspan="5" class="empty">Sin eventos registrados.</td></tr>`;
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Trazabilidad de acceso ${escapeHtml(readValue(solicitudData.codigo))}</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #0f172a; margin: 24px; }
+          h1 { font-size: 18px; margin: 0 0 14px; text-transform: uppercase; }
+          h2 { font-size: 13px; margin: 20px 0 8px; text-transform: uppercase; }
+          .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; font-size: 12px; }
+          .grid span { font-weight: 700; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+          th { background: #f1f5f9; text-transform: uppercase; font-size: 10px; }
+          .empty { text-align: center; color: #64748b; }
+        </style>
+      </head>
+      <body>
+        <h1>Trazabilidad de acceso por sistema</h1>
+        <section class="grid">
+          <div><span>Solicitud:</span> ${escapeHtml(readValue(solicitudData.codigo))}</div>
+          <div><span>Proveedor:</span> ${escapeHtml(readValue(solicitudData.proveedor?.razonSocial || solicitud?.proveedor?.razonSocial))}</div>
+          <div><span>Estado acceso:</span> ${escapeHtml(readValue(acceso.estado))}</div>
+          <div><span>Generado:</span> ${escapeHtml(formatDateTime(acceso.createdAt))}</div>
+          <div><span>Vence:</span> ${escapeHtml(formatDateTime(acceso.expiresAt))}</div>
+          <div><span>Finalizado:</span> ${escapeHtml(formatDateTime(acceso.respuestaFinalizadaAt))}</div>
+          <div><span>Telefono:</span> ${escapeHtml(readValue(acceso.numeroWhatsappNormalizadoSnapshot))}</div>
+          <div><span>Usuario que imprime:</span> ${escapeHtml(readValue(printedBy?.nombre))}</div>
+        </section>
+        <h2>Resumen</h2>
+        <section class="grid">
+          <div><span>Mensajes preparados:</span> ${escapeHtml(readValue(resumen.totalMensajesPreparados, "0"))}</div>
+          <div><span>Mensajes copiados:</span> ${escapeHtml(readValue(resumen.totalMensajesCopiados, "0"))}</div>
+          <div><span>WhatsApp abierto:</span> ${escapeHtml(readValue(resumen.totalWhatsappAbierto, "0"))}</div>
+          <div><span>Regeneraciones:</span> ${escapeHtml(readValue(resumen.totalRegeneraciones, "0"))}</div>
+          <div><span>Claves fallidas:</span> ${escapeHtml(readValue(resumen.totalIntentosFallidos, "0"))}</div>
+          <div><span>Validaciones correctas:</span> ${escapeHtml(readValue(resumen.totalValidacionesCorrectas, "0"))}</div>
+        </section>
+        <h2>Linea cronologica</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha y hora</th>
+              <th>Evento</th>
+              <th>Actor</th>
+              <th>Telefono</th>
+              <th>Detalle seguro</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+};
+
 const SummaryField = ({ label, value }) => (
   <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -144,6 +270,7 @@ const SolicitudCotizacionDetallePage = () => {
     enviarSolicitudCorreo,
     generarAccesoSistemaSolicitud,
     registrarEventoAccesoSistema,
+    obtenerTrazabilidadAccesoSistema,
   } = useSolicitudesCotizacion({
     autoLoad: false,
   });
@@ -162,6 +289,10 @@ const SolicitudCotizacionDetallePage = () => {
   const [systemAccessPhone, setSystemAccessPhone] = useState(() =>
     buildInitialSystemAccessPhone(null),
   );
+  const [accessTraceModalOpen, setAccessTraceModalOpen] = useState(false);
+  const [accessTraceData, setAccessTraceData] = useState(null);
+  const [accessTraceLoading, setAccessTraceLoading] = useState(false);
+  const [accessTraceError, setAccessTraceError] = useState("");
 
   const documentContract = useMemo(
     () =>
@@ -505,6 +636,35 @@ const SolicitudCotizacionDetallePage = () => {
           preparedWhatsappMessage,
         )}`
       : "";
+  const accessTraceAccess = accessTraceData?.acceso || null;
+  const accessTraceSummary = accessTraceData?.resumen || {};
+  const accessTraceEvents = accessTraceData?.eventos || [];
+  const accessTraceCounts = [
+    {
+      label: "Mensajes preparados",
+      value: accessTraceSummary.totalMensajesPreparados ?? 0,
+    },
+    {
+      label: "Mensajes copiados",
+      value: accessTraceSummary.totalMensajesCopiados ?? 0,
+    },
+    {
+      label: "WhatsApp abierto",
+      value: accessTraceSummary.totalWhatsappAbierto ?? 0,
+    },
+    {
+      label: "Regeneraciones",
+      value: accessTraceSummary.totalRegeneraciones ?? 0,
+    },
+    {
+      label: "Claves fallidas",
+      value: accessTraceSummary.totalIntentosFallidos ?? 0,
+    },
+    {
+      label: "Validaciones correctas",
+      value: accessTraceSummary.totalValidacionesCorrectas ?? 0,
+    },
+  ];
 
   const backTarget = location.state?.from
     ? `${location.state.from.pathname || ""}${location.state.from.search || ""}${location.state.from.hash || ""}`
@@ -567,6 +727,45 @@ const SolicitudCotizacionDetallePage = () => {
     });
 
     await printHtmlInNewWindow(html);
+  };
+
+  const loadAccessTrace = useCallback(async () => {
+    if (!solicitud?.id) return null;
+
+    setAccessTraceLoading(true);
+    setAccessTraceError("");
+
+    try {
+      const data = await obtenerTrazabilidadAccesoSistema(solicitud.id);
+      setAccessTraceData(data);
+      return data;
+    } catch (err) {
+      const message =
+        err?.message || "No se pudo cargar la trazabilidad del acceso.";
+      setAccessTraceError(message);
+      return null;
+    } finally {
+      setAccessTraceLoading(false);
+    }
+  }, [obtenerTrazabilidadAccesoSistema, solicitud?.id]);
+
+  const handleOpenAccessTraceModal = async () => {
+    if (!solicitud?.id) return;
+    setAccessTraceModalOpen(true);
+    await loadAccessTrace();
+  };
+
+  const handlePrintAccessTrace = async () => {
+    const data = accessTraceData || (await loadAccessTrace());
+    if (!data) return;
+
+    await printHtmlInNewWindow(
+      buildAccessTracePrintHtml({
+        traceData: data,
+        solicitud,
+        printedBy: user,
+      }),
+    );
   };
 
   const handleOpenEmailModal = () => {
@@ -756,14 +955,24 @@ const SolicitudCotizacionDetallePage = () => {
             Historial de envios
           </button>
           {isSistemaReception ? (
-            <button
-              type="button"
-              onClick={handleOpenSystemAccessModal}
-              className="inline-flex items-center gap-2 rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
-            >
-              <FaKey className="text-xs" />
-              Acceso sistema
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleOpenSystemAccessModal}
+                className="inline-flex items-center gap-2 rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+              >
+                <FaKey className="text-xs" />
+                Acceso sistema
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenAccessTraceModal}
+                className="inline-flex items-center gap-2 rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <FaHistory className="text-xs" />
+                Trazabilidad acceso sistema
+              </button>
+            </>
           ) : null}
           {canRegisterCotizacion ? (
             <Link
@@ -1137,6 +1346,181 @@ const SolicitudCotizacionDetallePage = () => {
               </div>
             </>
           ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={accessTraceModalOpen}
+        onClose={() => setAccessTraceModalOpen(false)}
+        title="Trazabilidad de acceso por sistema"
+        maxWidth="max-w-6xl"
+      >
+        <div className="space-y-5">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            Con WhatsApp manual, el sistema registra la copia o apertura del
+            enlace, pero no puede confirmar que el mensaje haya sido enviado
+            dentro de WhatsApp.
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-3">
+            <button
+              type="button"
+              onClick={loadAccessTrace}
+              disabled={accessTraceLoading}
+              className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {accessTraceLoading ? "Actualizando..." : "Actualizar"}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintAccessTrace}
+              disabled={accessTraceLoading || !accessTraceData}
+              className="inline-flex items-center gap-2 rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FaPrint className="text-xs" />
+              Imprimir trazabilidad
+            </button>
+          </div>
+
+          {accessTraceError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {accessTraceError}
+            </div>
+          ) : null}
+
+          {accessTraceLoading && !accessTraceData ? (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-600">
+              Cargando trazabilidad de acceso...
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <SummaryField
+                  label="Estado actual"
+                  value={accessTraceAccess?.estado || "Sin acceso"}
+                />
+                <SummaryField
+                  label="Generado el"
+                  value={formatDateTime(accessTraceAccess?.createdAt)}
+                />
+                <SummaryField
+                  label="Vence el"
+                  value={formatDateTime(accessTraceAccess?.expiresAt)}
+                />
+                <SummaryField
+                  label="Finalizado el"
+                  value={formatDateTime(
+                    accessTraceAccess?.respuestaFinalizadaAt,
+                  )}
+                />
+                <SummaryField
+                  label="Intentos fallidos"
+                  value={`${accessTraceAccess?.intentosFallidos ?? 0} de ${
+                    accessTraceAccess?.maxIntentos ?? "-"
+                  }`}
+                />
+                <SummaryField
+                  label="Telefono usado"
+                  value={
+                    accessTraceAccess?.numeroWhatsappNormalizadoSnapshot
+                      ? `+${accessTraceAccess.numeroWhatsappNormalizadoSnapshot}`
+                      : "-"
+                  }
+                />
+                <SummaryField
+                  label="Ultimo intento de compartir"
+                  value={formatDateTime(accessTraceSummary.ultimoCompartidoAt)}
+                />
+                <SummaryField
+                  label="Ultimo actor interno"
+                  value={readValue(accessTraceSummary.ultimoCompartidoPor?.nombre)}
+                />
+                <SummaryField
+                  label="Requiere regeneracion"
+                  value={accessTraceSummary.requiereRegeneracion ? "Si" : "No"}
+                />
+                <SummaryField
+                  label="Generado por"
+                  value={readValue(accessTraceAccess?.generadoPor?.nombre)}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+                {accessTraceCounts.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-3"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Fecha y hora
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Evento
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Actor
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Telefono
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Detalle seguro
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {accessTraceEvents.length ? (
+                      accessTraceEvents.map((event) => (
+                        <tr key={event.id}>
+                          <td className="px-3 py-3 text-sm text-gray-700">
+                            {formatDateTime(event.fechaEvento)}
+                          </td>
+                          <td className="px-3 py-3 text-sm font-medium text-gray-800">
+                            {formatAccessEventLabel(event.tipoEvento)}
+                          </td>
+                          <td className="px-3 py-3 text-sm text-gray-700">
+                            {formatActorLabel(event)}
+                          </td>
+                          <td className="px-3 py-3 text-sm text-gray-700">
+                            {readValue(getEventPhone(event, accessTraceAccess))}
+                          </td>
+                          <td className="max-w-sm px-3 py-3 text-sm text-gray-700">
+                            <span className="break-words">
+                              {formatTraceDetail(event.detalleSeguro)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="px-4 py-10 text-center text-sm text-gray-500"
+                        >
+                          Aun no hay eventos registrados para el acceso por
+                          sistema.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
 

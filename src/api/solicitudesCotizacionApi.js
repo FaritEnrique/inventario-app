@@ -13,6 +13,11 @@ const solicitudesCotizacionApi = {
   obtenerHistorialEnvios: async (id) => {
     return await apiFetch(`solicitudes-cotizacion/${id}/historial-envios`);
   },
+  obtenerTrazabilidadAccesoSistema: async (id) => {
+    return await apiFetch(
+      `solicitudes-cotizacion/${id}/acceso-sistema/trazabilidad`
+    );
+  },
   obtenerPdfUrl: (id) => {
     return buildApiUrl(`solicitudes-cotizacion/${id}/pdf`);
   },

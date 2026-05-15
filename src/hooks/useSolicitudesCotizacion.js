@@ -167,6 +167,15 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
+  const obtenerTrazabilidadAccesoSistema = async (id) => {
+    try {
+      return await solicitudesCotizacionApi.obtenerTrazabilidadAccesoSistema(id);
+    } catch (err) {
+      console.error("Error obteniendo trazabilidad de acceso por sistema:", err);
+      throw err;
+    }
+  };
+
   return {
     solicitudes,
     cargando,
@@ -181,6 +190,7 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     enviarSolicitudCorreo,
     generarAccesoSistemaSolicitud,
     registrarEventoAccesoSistema,
+    obtenerTrazabilidadAccesoSistema,
   };
 };
 
