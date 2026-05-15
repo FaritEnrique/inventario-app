@@ -38,6 +38,7 @@ const buildDraftItem = (solicitudItem, existing = null) => {
       estadoRespuesta === "NO_COTIZA"
         ? null
         : Number(existing?.precioTotal ?? 0),
+    descripcionTecnicaOfertada: existing?.descripcionTecnicaOfertada || "",
   };
 };
 
@@ -90,6 +91,7 @@ const normalizeInitialData = (initialData) => ({
           item.precioTotal === null || item.precioTotal === undefined
             ? null
             : Number(item.precioTotal),
+        descripcionTecnicaOfertada: item.descripcionTecnicaOfertada || "",
       }))
     : [],
 });
@@ -220,6 +222,8 @@ const CotizacionForm = ({
           item.estadoRespuesta === "NO_COTIZA"
             ? null
             : Number(item.precioTotal || 0),
+        descripcionTecnicaOfertada:
+          item.descripcionTecnicaOfertada?.trim() || null,
       })),
     });
   };
@@ -484,6 +488,11 @@ const CotizacionForm = ({
                   Number(entry.itemRequerimientoId || entry.itemRequerimiento?.id) ===
                   Number(item.itemRequerimientoId)
               );
+              const itemSolicitado = solicitudItem?.itemRequerimiento || {};
+              const descripcionSolicitada =
+                itemSolicitado.producto?.descripcion ||
+                itemSolicitado.productoTemporal?.descripcion ||
+                "";
 
               return (
                 <div
@@ -493,15 +502,21 @@ const CotizacionForm = ({
                   <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
                     <div>
                       <p className="text-sm font-semibold text-gray-900">
-                        {solicitudItem?.itemRequerimiento?.descripcionVisible ||
+                        {itemSolicitado.descripcionVisible ||
                           `Item ${item.itemRequerimientoId}`}
                       </p>
+                      {descripcionSolicitada &&
+                      descripcionSolicitada !== itemSolicitado.descripcionVisible ? (
+                        <p className="mt-1 whitespace-pre-line text-xs text-gray-500">
+                          {descripcionSolicitada}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-gray-500">
                         Cantidad requerida:{" "}
                         {Number(
-                          solicitudItem?.itemRequerimiento?.cantidadRequerida || 0
+                          itemSolicitado.cantidadRequerida || 0
                         )}{" "}
-                        {solicitudItem?.itemRequerimiento?.unidadMedida || ""}
+                        {itemSolicitado.unidadMedida || ""}
                       </p>
                     </div>
 
@@ -569,6 +584,30 @@ const CotizacionForm = ({
                       />
                     </label>
                   </div>
+
+                  <label className="mt-3 block space-y-1 text-sm text-gray-700">
+                    <span className="font-medium">
+                      Descripcion tecnica ofertada
+                    </span>
+                    <textarea
+                      rows="3"
+                      maxLength={1000}
+                      value={item.descripcionTecnicaOfertada}
+                      name={`cotizacion-form-textarea-descripcion-ofertada-${item.itemRequerimientoId}`}
+                      onChange={(event) =>
+                        updateItemField(
+                          item.itemRequerimientoId,
+                          "descripcionTecnicaOfertada",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded border border-gray-300 px-3 py-2"
+                      placeholder="Opcional. Registra marca, modelo, caracteristicas o mejoras si la oferta precisa algo distinto a lo solicitado."
+                    />
+                    <span className="block text-right text-xs text-gray-500">
+                      {String(item.descripcionTecnicaOfertada || "").length}/1000
+                    </span>
+                  </label>
 
                   <div className="mt-3 flex items-center justify-between text-sm">
                     <span

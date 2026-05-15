@@ -20,6 +20,7 @@ const buildItemsDraft = (items = []) =>
     estadoRespuesta: "COTIZADO",
     cantidadOfrecida: String(item.cantidad || ""),
     precioUnidad: "",
+    descripcionTecnicaOfertada: "",
   }));
 
 const ProveedorCotizacionPublicPage = () => {
@@ -152,6 +153,12 @@ const ProveedorCotizacionPublicPage = () => {
           errors.push(`${label}: el precio unitario debe ser mayor a 0.`);
         }
       }
+
+      if (String(item.descripcionTecnicaOfertada || "").length > 1000) {
+        errors.push(
+          `${label}: la descripcion tecnica ofertada no debe superar los 1000 caracteres.`,
+        );
+      }
     });
 
     if (
@@ -216,6 +223,8 @@ const ProveedorCotizacionPublicPage = () => {
                 item.estadoRespuesta === "NO_COTIZA"
                   ? null
                   : Number(item.precioUnidad),
+              descripcionTecnicaOfertada:
+                item.descripcionTecnicaOfertada.trim() || null,
             })),
           },
         },
@@ -530,9 +539,20 @@ const ProveedorCotizacionPublicPage = () => {
                       <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
                         <div>
                           <p className="text-sm font-semibold text-slate-950">
-                            {source?.descripcion || `Item ${index + 1}`}
+                            Item solicitado
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
+                            {source?.descripcionSolicitada ||
+                              source?.descripcion ||
+                              `Item ${index + 1}`}
+                          </p>
+                          {source?.observacionSolicitada ? (
+                            <p className="mt-2 text-xs text-slate-500">
+                              Observacion solicitada:{" "}
+                              {source.observacionSolicitada}
+                            </p>
+                          ) : null}
+                          <p className="mt-2 text-xs text-slate-500">
                             Cantidad solicitada: {source?.cantidad || 0}{" "}
                             {source?.unidadMedida || ""}
                           </p>
@@ -593,6 +613,29 @@ const ProveedorCotizacionPublicPage = () => {
                           />
                         </label>
                       </div>
+                      <label className="mt-3 block space-y-1 text-sm">
+                        <span className="font-semibold">
+                          Descripcion tecnica ofertada
+                        </span>
+                        <textarea
+                          rows="3"
+                          maxLength={1000}
+                          value={item.descripcionTecnicaOfertada}
+                          onChange={(event) =>
+                            updateItem(
+                              item.itemRequerimientoId,
+                              "descripcionTecnicaOfertada",
+                              event.target.value,
+                            )
+                          }
+                          className="w-full rounded border border-slate-300 px-3 py-2"
+                          placeholder="Opcional. Complete solo si desea precisar marca, modelo, caracteristicas o mejoras respecto de lo solicitado."
+                        />
+                        <span className="block text-right text-xs text-slate-500">
+                          {String(item.descripcionTecnicaOfertada || "").length}
+                          /1000
+                        </span>
+                      </label>
                       <p className="mt-3 text-right text-sm font-semibold text-slate-900">
                         {item.estadoRespuesta === "NO_COTIZA"
                           ? "Sin oferta"

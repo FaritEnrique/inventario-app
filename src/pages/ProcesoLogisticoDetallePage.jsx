@@ -179,6 +179,7 @@ const buildCotizacionDraft = (cotizacion) => ({
         cantidadOfrecida: item.cantidadOfrecida,
         precioUnidad: item.precioUnidad,
         precioTotal: item.precioTotal,
+        descripcionTecnicaOfertada: item.descripcionTecnicaOfertada || "",
       }))
     : [],
 });
@@ -202,6 +203,7 @@ const createCotizacionDraftFromSolicitud = (solicitud) => ({
         ),
         precioUnidad: "",
         precioTotal: 0,
+        descripcionTecnicaOfertada: "",
       }))
     : [],
 });
@@ -231,6 +233,13 @@ const getInactiveCotizacionesForSolicitud = (solicitud) =>
   Array.isArray(solicitud?.cotizaciones)
     ? solicitud.cotizaciones.filter((cotizacion) => cotizacion.activo === false)
     : [];
+
+const getDescripcionOfertadaPreview = (cotizacion) =>
+  Array.isArray(cotizacion?.items)
+    ? cotizacion.items
+        .map((item) => String(item.descripcionTecnicaOfertada || "").trim())
+        .find(Boolean) || ""
+    : "";
 
 const getSolicitudCotizacionResponseLabel = (solicitud) => {
   const activeCotizacion = getActiveCotizacionForSolicitud(solicitud);
@@ -2183,10 +2192,18 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                       </div>
 
                       {activeCotizacion ? (
-                        <p className="mt-3 text-sm text-gray-700">
-                          {activeCotizacion.codigo} ·{" "}
-                          {formatCurrency(activeCotizacion.totalOferta)}
-                        </p>
+                        <div className="mt-3 text-sm text-gray-700">
+                          <p>
+                            {activeCotizacion.codigo} ·{" "}
+                            {formatCurrency(activeCotizacion.totalOferta)}
+                          </p>
+                          {getDescripcionOfertadaPreview(activeCotizacion) ? (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Especificacion ofertada:{" "}
+                              {getDescripcionOfertadaPreview(activeCotizacion)}
+                            </p>
+                          ) : null}
+                        </div>
                       ) : null}
 
                       {solicitud.medioRecepcion === "SISTEMA" &&
@@ -2330,10 +2347,22 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                               {responseLabel}
                             </span>
                             {activeCotizacion ? (
-                              <p className="mt-2 text-xs text-gray-500">
-                                {activeCotizacion.codigo} ·{" "}
-                                {formatCurrency(activeCotizacion.totalOferta)}
-                              </p>
+                              <div className="mt-2 text-xs text-gray-500">
+                                <p>
+                                  {activeCotizacion.codigo} ·{" "}
+                                  {formatCurrency(activeCotizacion.totalOferta)}
+                                </p>
+                                {getDescripcionOfertadaPreview(
+                                  activeCotizacion,
+                                ) ? (
+                                  <p className="mt-1">
+                                    Especificacion ofertada:{" "}
+                                    {getDescripcionOfertadaPreview(
+                                      activeCotizacion,
+                                    )}
+                                  </p>
+                                ) : null}
+                              </div>
                             ) : null}
                           </td>
                           <td className="px-4 py-3 text-sm text-right">
