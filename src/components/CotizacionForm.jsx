@@ -364,7 +364,7 @@ const CotizacionForm = ({
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Garantia</span>
+          <span className="font-medium">Garantia ofertada</span>
           <input
             type="text"
             value={formData.garantia}
@@ -378,7 +378,7 @@ const CotizacionForm = ({
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Tiempo de entrega (dias)</span>
+          <span className="font-medium">Tiempo de entrega ofertado (dias)</span>
           <input
             type="number"
             min="0"
@@ -395,7 +395,7 @@ const CotizacionForm = ({
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Vigencia de oferta (dias)</span>
+          <span className="font-medium">Vigencia ofrecida (dias)</span>
           <input
             type="number"
             min="0"
@@ -414,7 +414,7 @@ const CotizacionForm = ({
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Lugar de entrega</span>
+          <span className="font-medium">Lugar de entrega propuesto</span>
           <input
             type="text"
             value={formData.lugarEntrega}
@@ -427,7 +427,7 @@ const CotizacionForm = ({
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Forma de pago</span>
+          <span className="font-medium">Forma de pago propuesta</span>
           <select
             value={formData.formaPago}
             name="cotizacion-form-select-forma-pago"
@@ -442,11 +442,15 @@ const CotizacionForm = ({
               </option>
             ))}
           </select>
+          <span className="block text-xs text-gray-500">
+            Registra la propuesta del proveedor; no reemplaza las condiciones
+            oficiales de pago de la solicitud.
+          </span>
         </label>
       </div>
 
       <label className="block space-y-1 text-sm text-gray-700">
-        <span className="font-medium">Observaciones</span>
+        <span className="font-medium">Observaciones del proveedor</span>
         <textarea
           value={formData.observaciones}
           name="cotizacion-form-textarea-observaciones"

@@ -1,6 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import publicProveedorCotizacionesApi from "../../api/publicProveedorCotizacionesApi";
+import {
+  BANK_CHARGE_PARTY_LABELS,
+  IMPORT_PAYMENT_INSTRUMENT_LABELS,
+  IMPORT_PAYMENT_STRUCTURE_LABELS,
+  IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+  IMPORT_PAYMENT_TRIGGER_LABELS,
+  LOCAL_DELIVERY_PLACE_TYPE_LABELS,
+  LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+  LOCAL_PAYMENT_CONDITION_LABELS,
+  LOCAL_PAYMENT_MILESTONE_LABELS,
+  LOCAL_PURCHASE_SCOPE_LABELS,
+  PURCHASE_TYPE_LABELS,
+  SOLICITUD_COTIZACION_CURRENCY_LABELS,
+  SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
+} from "../../features/solicitud-cotizacion/solicitudCotizacionCatalog";
 
 const formasPago = [
   { value: "", label: "Seleccionar" },
@@ -12,7 +27,199 @@ const formasPago = [
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString("es-PE") : "-";
 
-const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
+const hasValue = (value) =>
+  value !== null && value !== undefined && String(value).trim() !== "";
+
+const getCurrencyLabel = (solicitud = {}) => {
+  const base =
+    SOLICITUD_COTIZACION_CURRENCY_LABELS[solicitud.moneda] ||
+    solicitud.moneda ||
+    "-";
+
+  if (solicitud.moneda === "OTRA" && solicitud.codigoMonedaOtra) {
+    return `${base} (${solicitud.codigoMonedaOtra})`;
+  }
+
+  return base;
+};
+
+const getCurrencyPrefix = (solicitud = {}) => {
+  if (solicitud.moneda === "USD") return "USD";
+  if (solicitud.moneda === "OTRA") return solicitud.codigoMonedaOtra || "";
+  return "S/";
+};
+
+const formatCurrency = (value, solicitud = {}) => {
+  const prefix = getCurrencyPrefix(solicitud);
+  return `${prefix ? `${prefix} ` : ""}${Number(value || 0).toFixed(2)}`;
+};
+
+const labelFrom = (labels, value) => labels?.[value] || value || null;
+
+const formatDays = (value, zeroLabel = "Inmediata") => {
+  if (!hasValue(value)) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric === 0) return zeroLabel;
+  return `${numeric} dia${numeric === 1 ? "" : "s"}`;
+};
+
+const formatPercentage = (value) => {
+  if (!hasValue(value)) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return `${numeric}%`;
+};
+
+const formatBoolean = (value) => {
+  if (value === true) return "Si";
+  if (value === false) return "No";
+  return null;
+};
+
+const buildOfficialConditions = (solicitud = {}) =>
+  [
+    {
+      label: "Tipo de compra",
+      value: labelFrom(PURCHASE_TYPE_LABELS, solicitud.tipoCompra),
+    },
+    {
+      label: "Validez de oferta solicitada",
+      value: formatDays(solicitud.vigenciaOfertaDias, "Sin plazo indicado"),
+    },
+    {
+      label: "Plazo de entrega solicitado",
+      value: formatDays(solicitud.tiempoEntregaDias),
+    },
+    { label: "Garantia solicitada", value: solicitud.garantia },
+    { label: "Lugar de entrega", value: solicitud.lugarEntrega },
+    {
+      label: "Alcance de compra local",
+      value: labelFrom(LOCAL_PURCHASE_SCOPE_LABELS, solicitud.alcanceCompraLocal),
+    },
+    {
+      label: "Tipo de lugar de entrega local",
+      value: labelFrom(
+        LOCAL_DELIVERY_PLACE_TYPE_LABELS,
+        solicitud.lugarEntregaLocalTipo,
+      ),
+    },
+    {
+      label: "Detalle de lugar local",
+      value: solicitud.lugarEntregaLocalDetalle,
+    },
+    {
+      label: "Transporte asumido por",
+      value: labelFrom(
+        LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+        solicitud.transporteAsumidoPor,
+      ),
+    },
+    {
+      label: "Carga/descarga asumida por",
+      value: labelFrom(
+        LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+        solicitud.cargaDescargaAsumidaPor,
+      ),
+    },
+    {
+      label: "Permite entregas parciales",
+      value: formatBoolean(solicitud.permiteEntregasParciales),
+    },
+    {
+      label: "Condiciones logisticas locales",
+      value: solicitud.condicionesLogisticasLocales,
+    },
+    {
+      label: "Condicion de pago local",
+      value: labelFrom(
+        LOCAL_PAYMENT_CONDITION_LABELS,
+        solicitud.condicionPagoLocal,
+      ),
+    },
+    {
+      label: "Hito de pago local",
+      value: labelFrom(LOCAL_PAYMENT_MILESTONE_LABELS, solicitud.hitoPagoLocal),
+    },
+    {
+      label: "Anticipo local",
+      value: formatPercentage(solicitud.porcentajeAnticipoLocal),
+    },
+    {
+      label: "Saldo local",
+      value: formatPercentage(solicitud.porcentajeSaldoLocal),
+    },
+    {
+      label: "Dias de credito local",
+      value: formatDays(solicitud.diasCreditoLocal, "0 dias"),
+    },
+    {
+      label: "Incoterm",
+      value: [solicitud.incoterm, solicitud.incotermVersion]
+        .filter(Boolean)
+        .join(" "),
+    },
+    {
+      label: "Punto logistico Incoterm",
+      value: solicitud.incotermPuntoLogistico,
+    },
+    {
+      label: "Estructura de pago",
+      value: labelFrom(
+        IMPORT_PAYMENT_STRUCTURE_LABELS,
+        solicitud.estructuraPagoImportacion,
+      ),
+    },
+    {
+      label: "Instrumento de pago",
+      value: labelFrom(
+        IMPORT_PAYMENT_INSTRUMENT_LABELS,
+        solicitud.instrumentoPagoImportacion,
+      ),
+    },
+    {
+      label: "Gatillo de pago",
+      value: labelFrom(
+        IMPORT_PAYMENT_TRIGGER_LABELS,
+        solicitud.gatilloPagoImportacion,
+      ),
+    },
+    {
+      label: "Anticipo importacion",
+      value: formatPercentage(solicitud.porcentajeAnticipoImportacion),
+    },
+    {
+      label: "Saldo importacion",
+      value: formatPercentage(solicitud.porcentajeSaldoImportacion),
+    },
+    {
+      label: "Referencia de plazo",
+      value: labelFrom(
+        IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+        solicitud.referenciaPlazoImportacion,
+      ),
+    },
+    {
+      label: "Dias de credito importacion",
+      value: formatDays(solicitud.diasCreditoImportacion, "0 dias"),
+    },
+    {
+      label: "Gastos bancarios por",
+      value: labelFrom(BANK_CHARGE_PARTY_LABELS, solicitud.gastosBancariosPor),
+    },
+    {
+      label: "Observaciones de la solicitud",
+      value: solicitud.cuerpoSolicitud,
+      wide: true,
+    },
+  ].filter((item) => hasValue(item.value));
+
+const hasOfficialPaymentCondition = (solicitud = {}) =>
+  [
+    solicitud.condicionPagoLocal,
+    solicitud.estructuraPagoImportacion,
+    solicitud.instrumentoPagoImportacion,
+  ].some(hasValue);
 
 const buildItemsDraft = (items = []) =>
   items.map((item) => ({
@@ -84,6 +291,13 @@ const ProveedorCotizacionPublicPage = () => {
       }, 0),
     [formData.items],
   );
+
+  const officialConditions = useMemo(
+    () => buildOfficialConditions(detail?.solicitud),
+    [detail?.solicitud],
+  );
+
+  const hasOfficialPayment = hasOfficialPaymentCondition(detail?.solicitud);
 
   const handleValidateKey = async (event) => {
     event.preventDefault();
@@ -269,7 +483,10 @@ const ProveedorCotizacionPublicPage = () => {
           </p>
           <p className="mt-1 text-sm text-slate-600">
             Total registrado:{" "}
-            {formatCurrency(confirmation.cotizacion?.totalOferta || 0)}
+              {formatCurrency(
+                confirmation.cotizacion?.totalOferta || 0,
+                detail?.solicitud,
+              )}
           </p>
         </section>
       </main>
@@ -352,7 +569,7 @@ const ProveedorCotizacionPublicPage = () => {
 
         {detail && !detail.cotizacionExistente ? (
           <form onSubmit={handleSubmitCotizacion} className="space-y-5">
-            <section className="grid gap-4 rounded bg-white p-6 shadow-sm md:grid-cols-3">
+            <section className="grid gap-4 rounded bg-white p-6 shadow-sm md:grid-cols-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Solicitud
@@ -377,130 +594,61 @@ const ProveedorCotizacionPublicPage = () => {
                   {formatDate(detail.solicitud?.fechaLimiteRecepcion)}
                 </p>
               </div>
-              {detail.solicitud?.cuerpoSolicitud ? (
-                <div className="md:col-span-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Mensaje de solicitud
-                  </p>
-                  <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
-                    {detail.solicitud.cuerpoSolicitud}
-                  </p>
-                </div>
-              ) : null}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Medio de recepcion
+                </p>
+                <p className="mt-1 font-semibold text-slate-950">
+                  {SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS[
+                    detail.solicitud?.medioRecepcion
+                  ] ||
+                    detail.solicitud?.medioRecepcion ||
+                    "Sistema"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Moneda
+                </p>
+                <p className="mt-1 font-semibold text-slate-950">
+                  {getCurrencyLabel(detail.solicitud)}
+                </p>
+              </div>
             </section>
 
             <section className="rounded bg-white p-6 shadow-sm">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">Codigo del proveedor</span>
-                  <input
-                    value={formData.codigoProveedorOpcional}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        codigoProveedorOpcional: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                    placeholder="Opcional"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">Garantia</span>
-                  <input
-                    value={formData.garantia}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        garantia: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">
-                    Tiempo de entrega (dias)
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={formData.tiempoEntregaDias}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        tiempoEntregaDias: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">
-                    Vigencia de oferta (dias)
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={formData.vigenciaOfertaDias}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        vigenciaOfertaDias: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  />
-                </label>
-                <label className="space-y-1 text-sm md:col-span-1 lg:col-span-2">
-                  <span className="font-semibold">Lugar de entrega</span>
-                  <input
-                    value={formData.lugarEntrega}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lugarEntrega: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">Forma de pago</span>
-                  <select
-                    value={formData.formaPago}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        formaPago: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  >
-                    {formasPago.map((option) => (
-                      <option key={option.value || "empty"} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="space-y-1 text-sm md:col-span-2 lg:col-span-4">
-                  <span className="font-semibold">Observaciones</span>
-                  <textarea
-                    rows="3"
-                    value={formData.observaciones}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        observaciones: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  />
-                </label>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Condiciones oficiales de la Solicitud de Cotizacion
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Estos datos vienen de la solicitud oficial y son solo de
+                  referencia. No reemplazan los datos que registre como oferta.
+                </p>
               </div>
+              {officialConditions.length ? (
+                <dl className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {officialConditions.map((condition) => (
+                    <div
+                      key={condition.label}
+                      className={`rounded border border-slate-200 bg-slate-50 p-3 ${
+                        condition.wide ? "md:col-span-2 lg:col-span-3" : ""
+                      }`}
+                    >
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {condition.label}
+                      </dt>
+                      <dd className="mt-1 whitespace-pre-line text-sm font-medium text-slate-900">
+                        {condition.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="mt-4 rounded border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                  La solicitud no registra condiciones oficiales adicionales.
+                </p>
+              )}
             </section>
 
             <section className="rounded bg-white p-6 shadow-sm">
@@ -513,7 +661,7 @@ const ProveedorCotizacionPublicPage = () => {
                     Total oferta
                   </p>
                   <p className="text-lg font-bold text-emerald-950">
-                    {formatCurrency(totalOferta)}
+                    {formatCurrency(totalOferta, detail.solicitud)}
                   </p>
                 </div>
               </div>
@@ -639,11 +787,154 @@ const ProveedorCotizacionPublicPage = () => {
                       <p className="mt-3 text-right text-sm font-semibold text-slate-900">
                         {item.estadoRespuesta === "NO_COTIZA"
                           ? "Sin oferta"
-                          : `Subtotal: ${formatCurrency(subtotal)}`}
+                          : `Subtotal: ${formatCurrency(
+                              subtotal,
+                              detail.solicitud,
+                            )}`}
                       </p>
                     </div>
                   );
                 })}
+              </div>
+            </section>
+
+            <section className="rounded bg-white p-6 shadow-sm">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Datos de la oferta del proveedor
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Complete aqui los datos propios de su propuesta. Las
+                  condiciones oficiales de la solicitud se muestran arriba y no
+                  se modifican desde este formulario.
+                </p>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold">Codigo del proveedor</span>
+                  <input
+                    value={formData.codigoProveedorOpcional}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        codigoProveedorOpcional: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    placeholder="Opcional"
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold">Garantia ofertada</span>
+                  <input
+                    value={formData.garantia}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        garantia: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    placeholder="Opcional"
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold">
+                    Tiempo de entrega ofertado (dias)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.tiempoEntregaDias}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        tiempoEntregaDias: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold">
+                    Vigencia ofrecida (dias)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.vigenciaOfertaDias}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        vigenciaOfertaDias: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="space-y-1 text-sm md:col-span-1 lg:col-span-2">
+                  <span className="font-semibold">
+                    Lugar de entrega propuesto
+                  </span>
+                  <input
+                    value={formData.lugarEntrega}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lugarEntrega: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    placeholder="Opcional"
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold">
+                    Forma de pago propuesta por el proveedor
+                  </span>
+                  <select
+                    value={formData.formaPago}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        formaPago: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                  >
+                    {formasPago.map((option) => (
+                      <option key={option.value || "empty"} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {hasOfficialPayment ? (
+                    <span className="block text-xs text-slate-500">
+                      Las condiciones oficiales de pago se muestran arriba. Use
+                      este campo solo para proponer una alternativa o precisar
+                      su forma de pago.
+                    </span>
+                  ) : null}
+                </label>
+                <label className="space-y-1 text-sm md:col-span-2 lg:col-span-4">
+                  <span className="font-semibold">
+                    Observaciones del proveedor
+                  </span>
+                  <textarea
+                    rows="3"
+                    value={formData.observaciones}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        observaciones: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    placeholder="Opcional. Indique precisiones de su oferta."
+                  />
+                </label>
               </div>
             </section>
 
@@ -657,7 +948,19 @@ const ProveedorCotizacionPublicPage = () => {
               </div>
             ) : null}
 
-            <div className="flex justify-end">
+            <section className="flex flex-col gap-4 rounded bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Total de oferta
+                </p>
+                <p className="text-2xl font-bold text-slate-950">
+                  {formatCurrency(totalOferta, detail.solicitud)}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Al enviar, la cotizacion quedara registrada y no podra
+                  modificarse desde este portal publico.
+                </p>
+              </div>
               <button
                 type="submit"
                 disabled={submitting}
@@ -665,7 +968,7 @@ const ProveedorCotizacionPublicPage = () => {
               >
                 {submitting ? "Enviando..." : "Enviar cotizacion"}
               </button>
-            </div>
+            </section>
           </form>
         ) : null}
       </section>
