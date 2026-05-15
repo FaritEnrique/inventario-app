@@ -607,13 +607,19 @@ const SolicitudCotizacionDetallePage = () => {
     [documentContract],
   );
 
+  const medioRecepcion = String(solicitud?.medioRecepcion || "")
+    .trim()
+    .toUpperCase();
+  const isMedioCorreo = medioRecepcion === "CORREO";
+  const isMedioSistema = medioRecepcion === "SISTEMA";
+  const isMedioFisico = medioRecepcion === "FISICO";
   const emailHistory = historyData?.historial || [];
-  const latestEmailEvent = emailHistory[0] || null;
-  const isSistemaReception = solicitud?.medioRecepcion === "SISTEMA";
+  const latestEmailEvent = isMedioCorreo ? emailHistory[0] || null : null;
   const activeCotizacion = Array.isArray(solicitud?.cotizaciones)
     ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
     : null;
   const canRegisterCotizacion =
+    (isMedioCorreo || isMedioFisico) &&
     solicitud?.activo !== false &&
     Boolean(solicitud?.requerimientoId || solicitud?.requerimiento?.id) &&
     Boolean(solicitud?.requerimiento?.modalidadFlujoLogistico) &&
@@ -946,15 +952,17 @@ const SolicitudCotizacionDetallePage = () => {
             <FaFilePdf className="text-xs" />
             Abrir PDF
           </button>
-          <button
-            type="button"
-            onClick={handleOpenHistoryModal}
-            className="inline-flex items-center gap-2 rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-          >
-            <FaHistory className="text-xs" />
-            Historial de envios
-          </button>
-          {isSistemaReception ? (
+          {isMedioCorreo && !isMedioFisico ? (
+            <button
+              type="button"
+              onClick={handleOpenHistoryModal}
+              className="inline-flex items-center gap-2 rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            >
+              <FaHistory className="text-xs" />
+              Historial correos
+            </button>
+          ) : null}
+          {isMedioSistema && !isMedioFisico ? (
             <>
               <button
                 type="button"
@@ -970,7 +978,7 @@ const SolicitudCotizacionDetallePage = () => {
                 className="inline-flex items-center gap-2 rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 <FaHistory className="text-xs" />
-                Trazabilidad acceso sistema
+                Historial sistema
               </button>
             </>
           ) : null}
@@ -983,15 +991,17 @@ const SolicitudCotizacionDetallePage = () => {
               Registrar cotizacion recibida
             </Link>
           ) : null}
-          <button
-            type="button"
-            onClick={handleOpenEmailModal}
-            disabled={sendingEmail}
-            className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <FaEnvelope className="text-xs" />
-            {sendingEmail ? "Enviando..." : "Enviar por correo"}
-          </button>
+          {isMedioCorreo ? (
+            <button
+              type="button"
+              onClick={handleOpenEmailModal}
+              disabled={sendingEmail}
+              className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FaEnvelope className="text-xs" />
+              {sendingEmail ? "Enviando..." : "Enviar por correo"}
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -1081,7 +1091,7 @@ const SolicitudCotizacionDetallePage = () => {
       <Modal
         isOpen={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
-        title="Historial de envios"
+        title="Historial correos"
         maxWidth="max-w-5xl"
       >
         <div className="space-y-4">
