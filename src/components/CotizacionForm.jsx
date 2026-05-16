@@ -1,4 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  BANK_CHARGE_PARTY_LABELS,
+  buildSolicitudPaymentSummaryLabel,
+  IMPORT_PAYMENT_INSTRUMENT_LABELS,
+  IMPORT_PAYMENT_STRUCTURE_LABELS,
+  IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+  IMPORT_PAYMENT_TRIGGER_LABELS,
+  LOCAL_DELIVERY_PLACE_TYPE_LABELS,
+  LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+  LOCAL_PAYMENT_CONDITION_LABELS,
+  LOCAL_PAYMENT_MILESTONE_LABELS,
+  LOCAL_PURCHASE_SCOPE_LABELS,
+  PURCHASE_TYPE_LABELS,
+  SOLICITUD_COTIZACION_CURRENCY_LABELS,
+  SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
+} from "../features/solicitud-cotizacion/solicitudCotizacionCatalog";
 
 const cotizacionStates = ["Pendiente", "Rechazada"];
 const formasPago = ["", "ContraEntrega", "Adelanto", "Credito"];
@@ -11,6 +27,265 @@ const formatNumberInput = (value) =>
   value === null || value === undefined || Number.isNaN(Number(value))
     ? ""
     : String(value);
+
+const hasValue = (value) =>
+  value !== null && value !== undefined && String(value).trim() !== "";
+
+const labelFrom = (labels, value) => labels?.[value] || value || null;
+
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString("es-PE") : null;
+
+const formatDays = (value, zeroLabel = "Inmediata") => {
+  if (!hasValue(value)) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric === 0) return zeroLabel;
+  return `${numeric} dia${numeric === 1 ? "" : "s"}`;
+};
+
+const formatPercentage = (value) => {
+  if (!hasValue(value)) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return `${numeric}%`;
+};
+
+const formatBoolean = (value) => {
+  if (value === true) return "Si";
+  if (value === false) return "No";
+  return null;
+};
+
+const getCurrencyLabel = (solicitud = {}) => {
+  const base =
+    SOLICITUD_COTIZACION_CURRENCY_LABELS[solicitud.moneda] ||
+    solicitud.moneda ||
+    "PEN";
+
+  if (solicitud.moneda === "OTRA" && solicitud.codigoMonedaOtra) {
+    return `${base} (${solicitud.codigoMonedaOtra})`;
+  }
+
+  return base;
+};
+
+const getCurrencyPrefix = (solicitud = {}) => {
+  if (solicitud.moneda === "USD") return "USD";
+  if (solicitud.moneda === "OTRA") {
+    return solicitud.codigoMonedaOtra || solicitud.moneda || "";
+  }
+  return "S/";
+};
+
+const formatCurrency = (value, solicitud = {}) => {
+  const prefix = getCurrencyPrefix(solicitud);
+  return `${prefix ? `${prefix} ` : ""}${Number(value || 0).toFixed(2)}`;
+};
+
+const buildContextGroup = (title, items = []) => {
+  const visibleItems = items.filter((item) => hasValue(item.value));
+  return visibleItems.length ? { title, items: visibleItems } : null;
+};
+
+const buildOfficialContextGroups = (solicitud = {}) => {
+  if (!solicitud) return [];
+
+  const paymentSummary = buildSolicitudPaymentSummaryLabel(solicitud);
+  const groups = [
+    buildContextGroup("Datos de solicitud y proveedor", [
+      { label: "Solicitud", value: solicitud.codigo },
+      {
+        label: "Proveedor",
+        value: solicitud.proveedor?.razonSocial || solicitud.proveedor?.nombre,
+      },
+      { label: "RUC", value: solicitud.proveedor?.ruc },
+      {
+        label: "Direccion",
+        value:
+          solicitud.proveedor?.direccion ||
+          solicitud.proveedor?.domicilioLegal,
+        wide: true,
+      },
+      {
+        label: "Requerimiento",
+        value: solicitud.requerimiento?.codigo || solicitud.requerimientoId,
+      },
+      {
+        label: "Area solicitante",
+        value: solicitud.requerimiento?.areaSolicitante,
+      },
+      { label: "Moneda", value: getCurrencyLabel(solicitud) },
+      {
+        label: "Medio de recepcion",
+        value: labelFrom(
+          SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
+          solicitud.medioRecepcion,
+        ),
+      },
+      {
+        label: "Tipo de compra",
+        value: labelFrom(PURCHASE_TYPE_LABELS, solicitud.tipoCompra),
+      },
+      {
+        label: "Fecha limite",
+        value: formatDate(solicitud.fechaLimiteRecepcion),
+      },
+    ]),
+    buildContextGroup("Condiciones generales oficiales", [
+      {
+        label: "Vigencia solicitada",
+        value: formatDays(solicitud.vigenciaOfertaDias, "Sin plazo indicado"),
+      },
+      {
+        label: "Plazo de entrega solicitado",
+        value: formatDays(solicitud.tiempoEntregaDias),
+      },
+      { label: "Garantia solicitada", value: solicitud.garantia },
+      { label: "Lugar de entrega oficial", value: solicitud.lugarEntrega },
+    ]),
+    buildContextGroup("Condiciones oficiales de pago", [
+      { label: "Resumen de pago oficial", value: paymentSummary, wide: true },
+      {
+        label: "Condicion de pago local",
+        value: labelFrom(
+          LOCAL_PAYMENT_CONDITION_LABELS,
+          solicitud.condicionPagoLocal,
+        ),
+      },
+      {
+        label: "Hito de pago local",
+        value: labelFrom(LOCAL_PAYMENT_MILESTONE_LABELS, solicitud.hitoPagoLocal),
+      },
+      {
+        label: "Anticipo local",
+        value: formatPercentage(solicitud.porcentajeAnticipoLocal),
+      },
+      {
+        label: "Saldo local",
+        value: formatPercentage(solicitud.porcentajeSaldoLocal),
+      },
+      {
+        label: "Dias de credito local",
+        value: formatDays(solicitud.diasCreditoLocal, "0 dias"),
+      },
+      {
+        label: "Estructura de pago importacion",
+        value: labelFrom(
+          IMPORT_PAYMENT_STRUCTURE_LABELS,
+          solicitud.estructuraPagoImportacion,
+        ),
+      },
+      {
+        label: "Instrumento de pago importacion",
+        value: labelFrom(
+          IMPORT_PAYMENT_INSTRUMENT_LABELS,
+          solicitud.instrumentoPagoImportacion,
+        ),
+      },
+      {
+        label: "Gatillo documentario",
+        value: labelFrom(
+          IMPORT_PAYMENT_TRIGGER_LABELS,
+          solicitud.gatilloPagoImportacion,
+        ),
+      },
+      {
+        label: "Anticipo importacion",
+        value: formatPercentage(solicitud.porcentajeAnticipoImportacion),
+      },
+      {
+        label: "Saldo importacion",
+        value: formatPercentage(solicitud.porcentajeSaldoImportacion),
+      },
+      {
+        label: "Dias de credito importacion",
+        value: formatDays(solicitud.diasCreditoImportacion, "0 dias"),
+      },
+      {
+        label: "Referencia del plazo",
+        value: labelFrom(
+          IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+          solicitud.referenciaPlazoImportacion,
+        ),
+      },
+      {
+        label: "Gastos bancarios por",
+        value: labelFrom(BANK_CHARGE_PARTY_LABELS, solicitud.gastosBancariosPor),
+      },
+    ]),
+    buildContextGroup("Condiciones oficiales de entrega y logistica", [
+      {
+        label: "Alcance compra local",
+        value: labelFrom(LOCAL_PURCHASE_SCOPE_LABELS, solicitud.alcanceCompraLocal),
+      },
+      {
+        label: "Tipo de lugar local",
+        value: labelFrom(
+          LOCAL_DELIVERY_PLACE_TYPE_LABELS,
+          solicitud.lugarEntregaLocalTipo,
+        ),
+      },
+      {
+        label: "Detalle lugar local",
+        value: solicitud.lugarEntregaLocalDetalle,
+        wide: true,
+      },
+      {
+        label: "Transporte asumido por",
+        value: labelFrom(
+          LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+          solicitud.transporteAsumidoPor,
+        ),
+      },
+      {
+        label: "Carga/descarga asumida por",
+        value: labelFrom(
+          LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
+          solicitud.cargaDescargaAsumidaPor,
+        ),
+      },
+      {
+        label: "Permite entregas parciales",
+        value: formatBoolean(solicitud.permiteEntregasParciales),
+      },
+      {
+        label: "Condiciones logisticas locales",
+        value: solicitud.condicionesLogisticasLocales,
+        wide: true,
+      },
+      { label: "Incoterm", value: solicitud.incoterm },
+      { label: "Version Incoterm", value: solicitud.incotermVersion },
+      {
+        label: "Punto logistico Incoterm",
+        value: solicitud.incotermPuntoLogistico,
+        wide: true,
+      },
+    ]),
+  ];
+
+  return groups.filter(Boolean);
+};
+
+const ContextFieldGrid = ({ items = [] }) => (
+  <dl className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    {items.map((item) => (
+      <div
+        key={item.label}
+        className={`rounded border border-slate-200 bg-white p-3 ${
+          item.wide ? "md:col-span-2 xl:col-span-3" : ""
+        }`}
+      >
+        <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {item.label}
+        </dt>
+        <dd className="mt-1 whitespace-pre-line text-sm font-medium text-slate-900">
+          {item.value}
+        </dd>
+      </div>
+    ))}
+  </dl>
+);
 
 const buildDraftItem = (solicitudItem, existing = null) => {
   const itemId =
@@ -190,6 +465,12 @@ const CotizacionForm = ({
     [formData.items]
   );
 
+  const officialContextGroups = useMemo(
+    () => buildOfficialContextGroups(selectedSolicitud),
+    [selectedSolicitud],
+  );
+  const currencyPrefix = getCurrencyPrefix(selectedSolicitud || {});
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -316,32 +597,26 @@ const CotizacionForm = ({
       </div>
 
       {selectedSolicitud && (
-        <div className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 md:grid-cols-3">
+        <section className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Proveedor
-            </p>
-            <p className="font-medium text-gray-900">
-              {selectedSolicitud.proveedor?.razonSocial || "-"}
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+              Contexto oficial de la Solicitud de Cotizacion
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Estos datos vienen de la solicitud emitida y son solo lectura. La
+              cotizacion registra la oferta del proveedor sin modificar estas
+              condiciones oficiales.
             </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Requerimiento
-            </p>
-            <p className="font-medium text-gray-900">
-              {selectedSolicitud.requerimiento?.codigo || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Estado solicitud
-            </p>
-            <p className="font-medium text-gray-900">
-              {selectedSolicitud.estado || "-"}
-            </p>
-          </div>
-        </div>
+          {officialContextGroups.map((group) => (
+            <div key={group.title} className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {group.title}
+              </h4>
+              <ContextFieldGrid items={group.items} />
+            </div>
+          ))}
+        </section>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -479,7 +754,7 @@ const CotizacionForm = ({
               Total oferta
             </p>
             <p className="text-lg font-semibold text-emerald-900">
-              S/ {totalOferta.toFixed(2)}
+              {formatCurrency(totalOferta, selectedSolicitud)}
             </p>
           </div>
         </div>
@@ -568,7 +843,9 @@ const CotizacionForm = ({
                     </label>
 
                     <label className="space-y-1 text-sm text-gray-700">
-                      <span className="font-medium">Precio unitario</span>
+                      <span className="font-medium">
+                        Precio unitario ({currencyPrefix})
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -628,7 +905,10 @@ const CotizacionForm = ({
                     <span className="font-semibold text-gray-900">
                       {item.estadoRespuesta === "NO_COTIZA"
                         ? "Sin oferta"
-                        : `Subtotal: S/ ${Number(item.precioTotal || 0).toFixed(2)}`}
+                        : `Subtotal: ${formatCurrency(
+                            item.precioTotal,
+                            selectedSolicitud,
+                          )}`}
                     </span>
                   </div>
                 </div>
