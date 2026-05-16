@@ -221,6 +221,102 @@ const hasOfficialPaymentCondition = (solicitud = {}) =>
     solicitud.instrumentoPagoImportacion,
   ].some(hasValue);
 
+const normalizeConditionGroups = (solicitud = {}) => {
+  const condiciones = solicitud.condicionesOficiales;
+
+  if (condiciones) {
+    return [
+      {
+        title: "Condiciones generales",
+        items: condiciones.comunes || [],
+      },
+      {
+        title: "Condiciones logisticas",
+        items: condiciones.logistica || [],
+      },
+      {
+        title: "Condiciones de pago",
+        items: condiciones.pago || [],
+      },
+    ].filter((group) => Array.isArray(group.items) && group.items.length > 0);
+  }
+
+  const fallbackItems = buildOfficialConditions(solicitud);
+  return fallbackItems.length
+    ? [{ title: "Condiciones oficiales", items: fallbackItems }]
+    : [];
+};
+
+const buildSolicitudFields = (solicitud = {}) =>
+  [
+    { label: "Codigo", value: solicitud.codigo },
+    { label: "Fecha de emision", value: formatDate(solicitud.fechaEmision) },
+    {
+      label: "Fecha limite",
+      value: formatDate(solicitud.fechaLimiteRecepcion),
+    },
+    {
+      label: "Medio de recepcion",
+      value:
+        SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS[
+          solicitud.medioRecepcion
+        ] ||
+        solicitud.medioRecepcion ||
+        "Sistema",
+    },
+    { label: "Moneda", value: getCurrencyLabel(solicitud) },
+    {
+      label: "Requerimiento asociado",
+      value: solicitud.requerimiento?.codigo,
+    },
+    {
+      label: "Area solicitante",
+      value: solicitud.requerimiento?.areaSolicitante,
+    },
+    {
+      label: "Tipo de compra",
+      value: labelFrom(PURCHASE_TYPE_LABELS, solicitud.tipoCompra),
+    },
+  ].filter((item) => hasValue(item.value));
+
+const buildProveedorFields = (proveedor = {}) =>
+  [
+    { label: "Razon social", value: proveedor.nombre || proveedor.razonSocial },
+    { label: "RUC", value: proveedor.ruc },
+    {
+      label: "Domicilio legal",
+      value: proveedor.domicilioLegal || proveedor.direccion,
+      wide: true,
+    },
+    { label: "Telefono", value: proveedor.telefono },
+    { label: "Correo", value: proveedor.correo || proveedor.correoElectronico },
+    {
+      label: "Contacto / representante",
+      value: proveedor.contacto || proveedor.representante,
+    },
+  ].filter((item) => hasValue(item.value));
+
+const ReadOnlyFieldGrid = ({ items = [] }) =>
+  items.length ? (
+    <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className={`rounded border border-slate-200 bg-slate-50 p-3 ${
+            item.wide ? "md:col-span-2 lg:col-span-3" : ""
+          }`}
+        >
+          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {item.label}
+          </dt>
+          <dd className="mt-1 whitespace-pre-line text-sm font-medium text-slate-900">
+            {item.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  ) : null;
+
 const buildItemsDraft = (items = []) =>
   items.map((item) => ({
     itemRequerimientoId: item.itemRequerimientoId,
@@ -293,10 +389,20 @@ const ProveedorCotizacionPublicPage = () => {
   );
 
   const officialConditions = useMemo(
-    () => buildOfficialConditions(detail?.solicitud),
+    () => normalizeConditionGroups(detail?.solicitud),
     [detail?.solicitud],
   );
+  const solicitudFields = useMemo(
+    () => buildSolicitudFields(detail?.solicitud),
+    [detail?.solicitud],
+  );
+  const proveedorFields = useMemo(
+    () => buildProveedorFields(detail?.proveedor),
+    [detail?.proveedor],
+  );
 
+  const unitPriceCurrencyLabel =
+    getCurrencyPrefix(detail?.solicitud) || getCurrencyLabel(detail?.solicitud);
   const hasOfficialPayment = hasOfficialPaymentCondition(detail?.solicitud);
 
   const handleValidateKey = async (event) => {
@@ -569,51 +675,38 @@ const ProveedorCotizacionPublicPage = () => {
 
         {detail && !detail.cotizacionExistente ? (
           <form onSubmit={handleSubmitCotizacion} className="space-y-5">
-            <section className="grid gap-4 rounded bg-white p-6 shadow-sm md:grid-cols-5">
+            <section className="rounded bg-white p-6 shadow-sm">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Solicitud
-                </p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {detail.solicitud?.codigo || "-"}
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Datos de la Solicitud de Cotizacion
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Informacion oficial de la solicitud asociada a este acceso.
                 </p>
               </div>
+              <div className="mt-4">
+                <ReadOnlyFieldGrid items={solicitudFields} />
+              </div>
+            </section>
+
+            <section className="rounded bg-white p-6 shadow-sm">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Proveedor
-                </p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {detail.proveedor?.nombre || "-"}
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Datos del proveedor invitado
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Verifique que la solicitud corresponde a su razon social antes
+                  de registrar la oferta.
                 </p>
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Fecha limite
-                </p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {formatDate(detail.solicitud?.fechaLimiteRecepcion)}
-                </p>
+              <div className="mt-4">
+                <ReadOnlyFieldGrid items={proveedorFields} />
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Medio de recepcion
+              {!proveedorFields.length ? (
+                <p className="mt-4 rounded border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                  No hay datos adicionales del proveedor para mostrar.
                 </p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS[
-                    detail.solicitud?.medioRecepcion
-                  ] ||
-                    detail.solicitud?.medioRecepcion ||
-                    "Sistema"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Moneda
-                </p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {getCurrencyLabel(detail.solicitud)}
-                </p>
-              </div>
+              ) : null}
             </section>
 
             <section className="rounded bg-white p-6 shadow-sm">
@@ -627,23 +720,16 @@ const ProveedorCotizacionPublicPage = () => {
                 </p>
               </div>
               {officialConditions.length ? (
-                <dl className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {officialConditions.map((condition) => (
-                    <div
-                      key={condition.label}
-                      className={`rounded border border-slate-200 bg-slate-50 p-3 ${
-                        condition.wide ? "md:col-span-2 lg:col-span-3" : ""
-                      }`}
-                    >
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        {condition.label}
-                      </dt>
-                      <dd className="mt-1 whitespace-pre-line text-sm font-medium text-slate-900">
-                        {condition.value}
-                      </dd>
+                <div className="mt-4 space-y-5">
+                  {officialConditions.map((group) => (
+                    <div key={group.title} className="space-y-3">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                        {group.title}
+                      </h3>
+                      <ReadOnlyFieldGrid items={group.items} />
                     </div>
                   ))}
-                </dl>
+                </div>
               ) : (
                 <p className="mt-4 rounded border border-dashed border-slate-300 p-4 text-sm text-slate-500">
                   La solicitud no registra condiciones oficiales adicionales.
@@ -743,7 +829,9 @@ const ProveedorCotizacionPublicPage = () => {
                           />
                         </label>
                         <label className="space-y-1 text-sm">
-                          <span className="font-semibold">Precio unitario</span>
+                          <span className="font-semibold">
+                            Precio unitario ({unitPriceCurrencyLabel})
+                          </span>
                           <input
                             type="number"
                             min="0"
@@ -801,7 +889,7 @@ const ProveedorCotizacionPublicPage = () => {
             <section className="rounded bg-white p-6 shadow-sm">
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">
-                  Datos de la oferta del proveedor
+                  Datos generales de la oferta del proveedor
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
                   Complete aqui los datos propios de su propuesta. Las
@@ -811,7 +899,9 @@ const ProveedorCotizacionPublicPage = () => {
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold">Codigo del proveedor</span>
+                  <span className="font-semibold">
+                    N.º de cotizacion del proveedor
+                  </span>
                   <input
                     value={formData.codigoProveedorOpcional}
                     onChange={(event) =>
@@ -821,7 +911,7 @@ const ProveedorCotizacionPublicPage = () => {
                       }))
                     }
                     className="w-full rounded border border-slate-300 px-3 py-2"
-                    placeholder="Opcional"
+                    placeholder="Opcional. Ingrese el numero o referencia de su cotizacion, si cuenta con uno."
                   />
                 </label>
                 <label className="space-y-1 text-sm">
