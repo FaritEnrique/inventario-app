@@ -34,6 +34,11 @@ const formatDate = (value) =>
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
+const formatFormaPagoPropuesta = (cotizacion = {}) => {
+  if (cotizacion.pagoPropuestoResumen) return cotizacion.pagoPropuestoResumen;
+  return "Sin propuesta de pago";
+};
+
 const createEmptyComparativoDraft = () => ({
   observaciones: "",
   cotizacionIdsConsideradas: [],
@@ -151,7 +156,6 @@ const buildSolicitudDraft = (solicitud) => ({
   vigenciaOfertaDias: solicitud.vigenciaOfertaDias,
   tiempoEntregaDias: solicitud.tiempoEntregaDias,
   lugarEntrega: solicitud.lugarEntrega || "",
-  formaPago: solicitud.formaPago || "",
   garantia: solicitud.garantia || "",
   items: Array.isArray(solicitud.items)
     ? solicitud.items.map((item) => ({
@@ -170,7 +174,31 @@ const buildCotizacionDraft = (cotizacion) => ({
   tiempoEntregaDias: cotizacion.tiempoEntregaDias,
   vigenciaOfertaDias: cotizacion.vigenciaOfertaDias,
   lugarEntrega: cotizacion.lugarEntrega || "",
-  formaPago: cotizacion.formaPago || "",
+  formaPagoLocalPropuesta: cotizacion.formaPagoLocalPropuesta || "",
+  diasCreditoLocalPropuesto: cotizacion.diasCreditoLocalPropuesto || "",
+  porcentajeAnticipoLocalPropuesto:
+    cotizacion.porcentajeAnticipoLocalPropuesto || "",
+  porcentajeSaldoLocalPropuesto: cotizacion.porcentajeSaldoLocalPropuesto || "",
+  observacionPagoLocalPropuesta: cotizacion.observacionPagoLocalPropuesta || "",
+  estructuraPagoImportacionPropuesta:
+    cotizacion.estructuraPagoImportacionPropuesta || "",
+  instrumentoPagoImportacionPropuesta:
+    cotizacion.instrumentoPagoImportacionPropuesta || "",
+  gatilloPagoImportacionPropuesta:
+    cotizacion.gatilloPagoImportacionPropuesta || "",
+  porcentajeAnticipoImportacionPropuesto:
+    cotizacion.porcentajeAnticipoImportacionPropuesto || "",
+  porcentajeSaldoImportacionPropuesto:
+    cotizacion.porcentajeSaldoImportacionPropuesto || "",
+  diasCreditoImportacionPropuesto:
+    cotizacion.diasCreditoImportacionPropuesto || "",
+  referenciaPlazoImportacionPropuesta:
+    cotizacion.referenciaPlazoImportacionPropuesta || "",
+  gastosBancariosPorPropuesto: cotizacion.gastosBancariosPorPropuesto || "",
+  documentosPagoImportacionPropuestos:
+    cotizacion.documentosPagoImportacionPropuestos || "",
+  observacionPagoImportacionPropuesta:
+    cotizacion.observacionPagoImportacionPropuesta || "",
   observaciones: cotizacion.observaciones || "",
   items: Array.isArray(cotizacion.items)
     ? cotizacion.items.map((item) => ({
@@ -192,7 +220,21 @@ const createCotizacionDraftFromSolicitud = (solicitud) => ({
   tiempoEntregaDias: "",
   vigenciaOfertaDias: "",
   lugarEntrega: "",
-  formaPago: "",
+  formaPagoLocalPropuesta: "",
+  diasCreditoLocalPropuesto: "",
+  porcentajeAnticipoLocalPropuesto: "",
+  porcentajeSaldoLocalPropuesto: "",
+  observacionPagoLocalPropuesta: "",
+  estructuraPagoImportacionPropuesta: "",
+  instrumentoPagoImportacionPropuesta: "",
+  gatilloPagoImportacionPropuesta: "",
+  porcentajeAnticipoImportacionPropuesto: "",
+  porcentajeSaldoImportacionPropuesto: "",
+  diasCreditoImportacionPropuesto: "",
+  referenciaPlazoImportacionPropuesta: "",
+  gastosBancariosPorPropuesto: "",
+  documentosPagoImportacionPropuestos: "",
+  observacionPagoImportacionPropuesta: "",
   observaciones: "",
   items: Array.isArray(solicitud?.items)
     ? solicitud.items.map((item) => ({
@@ -2620,8 +2662,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                                   </p>
                                   <p className="mt-1 text-sm text-gray-600">
                                     {formatCurrency(cotizacion.totalOferta)} ·{" "}
-                                    {cotizacion.formaPago ||
-                                      "Sin forma de pago"}
+                                    {formatFormaPagoPropuesta(cotizacion)}
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     Entrega:{" "}

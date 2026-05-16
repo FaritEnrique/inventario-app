@@ -3,10 +3,15 @@ import { useParams } from "react-router-dom";
 import publicProveedorCotizacionesApi from "../../api/publicProveedorCotizacionesApi";
 import {
   BANK_CHARGE_PARTY_LABELS,
+  BANK_CHARGE_PARTY_OPTIONS,
   IMPORT_PAYMENT_INSTRUMENT_LABELS,
+  IMPORT_PAYMENT_INSTRUMENT_OPTIONS,
   IMPORT_PAYMENT_STRUCTURE_LABELS,
+  IMPORT_PAYMENT_STRUCTURE_OPTIONS,
   IMPORT_PAYMENT_TERM_REFERENCE_LABELS,
+  IMPORT_PAYMENT_TERM_REFERENCE_OPTIONS,
   IMPORT_PAYMENT_TRIGGER_LABELS,
+  IMPORT_PAYMENT_TRIGGER_OPTIONS,
   LOCAL_DELIVERY_PLACE_TYPE_LABELS,
   LOCAL_LOGISTICS_RESPONSIBLE_PARTY_LABELS,
   LOCAL_PAYMENT_CONDITION_LABELS,
@@ -17,12 +22,92 @@ import {
   SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
 } from "../../features/solicitud-cotizacion/solicitudCotizacionCatalog";
 
-const formasPago = [
+const formasPagoLocalPropuesta = [
   { value: "", label: "Seleccionar" },
-  { value: "ContraEntrega", label: "Contra entrega" },
-  { value: "Adelanto", label: "Adelanto" },
-  { value: "Credito", label: "Credito" },
+  { value: "CONTRA_ENTREGA", label: "Contra entrega" },
+  { value: "ADELANTO", label: "Adelanto" },
+  { value: "CREDITO", label: "Credito" },
+  { value: "MIXTO", label: "Mixto" },
 ];
+
+const resetLocalPaymentProposalFields = (formaPagoLocalPropuesta) => ({
+  formaPagoLocalPropuesta,
+  diasCreditoLocalPropuesto: "",
+  porcentajeAnticipoLocalPropuesto: "",
+  porcentajeSaldoLocalPropuesto: "",
+});
+
+const resetImportPaymentProposalStructureFields = (
+  estructuraPagoImportacionPropuesta,
+) => ({
+  estructuraPagoImportacionPropuesta,
+  gatilloPagoImportacionPropuesta: "",
+  porcentajeAnticipoImportacionPropuesto: "",
+  porcentajeSaldoImportacionPropuesto: "",
+  diasCreditoImportacionPropuesto: "",
+  referenciaPlazoImportacionPropuesta: "",
+});
+
+const resetImportPaymentProposalInstrumentFields = (
+  instrumentoPagoImportacionPropuesta,
+) => ({
+  instrumentoPagoImportacionPropuesta,
+  gastosBancariosPorPropuesto: "",
+});
+
+const buildPaymentProposalPayload = (formData, isImportacion) =>
+  isImportacion
+    ? {
+        estructuraPagoImportacionPropuesta:
+          formData.estructuraPagoImportacionPropuesta || null,
+        instrumentoPagoImportacionPropuesta:
+          formData.instrumentoPagoImportacionPropuesta || null,
+        gatilloPagoImportacionPropuesta:
+          formData.estructuraPagoImportacionPropuesta === "CONTRA_DOCUMENTOS"
+            ? formData.gatilloPagoImportacionPropuesta || null
+            : null,
+        porcentajeAnticipoImportacionPropuesto:
+          formData.estructuraPagoImportacionPropuesta === "MIXTO"
+            ? Number(formData.porcentajeAnticipoImportacionPropuesto)
+            : null,
+        porcentajeSaldoImportacionPropuesto:
+          formData.estructuraPagoImportacionPropuesta === "MIXTO"
+            ? Number(formData.porcentajeSaldoImportacionPropuesto)
+            : null,
+        diasCreditoImportacionPropuesto:
+          formData.estructuraPagoImportacionPropuesta === "CREDITO_PLAZO"
+            ? Number(formData.diasCreditoImportacionPropuesto)
+            : null,
+        referenciaPlazoImportacionPropuesta:
+          formData.estructuraPagoImportacionPropuesta === "CREDITO_PLAZO"
+            ? formData.referenciaPlazoImportacionPropuesta || null
+            : null,
+        gastosBancariosPorPropuesto:
+          formData.instrumentoPagoImportacionPropuesta === "CARTA_CREDITO"
+            ? formData.gastosBancariosPorPropuesto || null
+            : null,
+        documentosPagoImportacionPropuestos:
+          formData.documentosPagoImportacionPropuestos.trim() || null,
+        observacionPagoImportacionPropuesta:
+          formData.observacionPagoImportacionPropuesta.trim() || null,
+      }
+    : {
+        formaPagoLocalPropuesta: formData.formaPagoLocalPropuesta,
+        diasCreditoLocalPropuesto:
+          formData.formaPagoLocalPropuesta === "CREDITO"
+            ? Number(formData.diasCreditoLocalPropuesto)
+            : null,
+        porcentajeAnticipoLocalPropuesto:
+          formData.formaPagoLocalPropuesta === "MIXTO"
+            ? Number(formData.porcentajeAnticipoLocalPropuesto)
+            : null,
+        porcentajeSaldoLocalPropuesto:
+          formData.formaPagoLocalPropuesta === "MIXTO"
+            ? Number(formData.porcentajeSaldoLocalPropuesto)
+            : null,
+        observacionPagoLocalPropuesta:
+          formData.observacionPagoLocalPropuesta.trim() || null,
+      };
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString("es-PE") : "-";
@@ -214,13 +299,6 @@ const buildOfficialConditions = (solicitud = {}) =>
     },
   ].filter((item) => hasValue(item.value));
 
-const hasOfficialPaymentCondition = (solicitud = {}) =>
-  [
-    solicitud.condicionPagoLocal,
-    solicitud.estructuraPagoImportacion,
-    solicitud.instrumentoPagoImportacion,
-  ].some(hasValue);
-
 const normalizeConditionGroups = (solicitud = {}) => {
   const condiciones = solicitud.condicionesOficiales;
 
@@ -342,7 +420,21 @@ const ProveedorCotizacionPublicPage = () => {
     tiempoEntregaDias: "",
     vigenciaOfertaDias: "",
     lugarEntrega: "",
-    formaPago: "",
+    formaPagoLocalPropuesta: "",
+    diasCreditoLocalPropuesto: "",
+    porcentajeAnticipoLocalPropuesto: "",
+    porcentajeSaldoLocalPropuesto: "",
+    observacionPagoLocalPropuesta: "",
+    estructuraPagoImportacionPropuesta: "",
+    instrumentoPagoImportacionPropuesta: "",
+    gatilloPagoImportacionPropuesta: "",
+    porcentajeAnticipoImportacionPropuesto: "",
+    porcentajeSaldoImportacionPropuesto: "",
+    diasCreditoImportacionPropuesto: "",
+    referenciaPlazoImportacionPropuesta: "",
+    gastosBancariosPorPropuesto: "",
+    documentosPagoImportacionPropuestos: "",
+    observacionPagoImportacionPropuesta: "",
     observaciones: "",
     items: [],
   });
@@ -403,7 +495,11 @@ const ProveedorCotizacionPublicPage = () => {
 
   const unitPriceCurrencyLabel =
     getCurrencyPrefix(detail?.solicitud) || getCurrencyLabel(detail?.solicitud);
-  const hasOfficialPayment = hasOfficialPaymentCondition(detail?.solicitud);
+  const isImportacion =
+    String(detail?.solicitud?.tipoCompra || "").toUpperCase() ===
+    "IMPORTACION";
+  const isLocal =
+    String(detail?.solicitud?.tipoCompra || "").toUpperCase() === "LOCAL";
 
   const handleValidateKey = async (event) => {
     event.preventDefault();
@@ -497,6 +593,89 @@ const ProveedorCotizacionPublicPage = () => {
       errors.push("La vigencia de oferta debe ser 0 o un entero positivo.");
     }
 
+    if (isImportacion) {
+      if (!formData.estructuraPagoImportacionPropuesta) {
+        errors.push("Selecciona la estructura de pago de importacion propuesta.");
+      }
+      if (!formData.instrumentoPagoImportacionPropuesta) {
+        errors.push("Selecciona el instrumento de pago de importacion propuesto.");
+      }
+      if (formData.estructuraPagoImportacionPropuesta === "MIXTO") {
+        const anticipo = Number(formData.porcentajeAnticipoImportacionPropuesto);
+        const saldo = Number(formData.porcentajeSaldoImportacionPropuesto);
+        if (
+          !Number.isFinite(anticipo) ||
+          !Number.isFinite(saldo) ||
+          anticipo <= 0 ||
+          saldo <= 0
+        ) {
+          errors.push("El pago mixto de importacion requiere anticipo y saldo mayores a 0.");
+        } else if (Math.round((anticipo + saldo) * 100) / 100 !== 100) {
+          errors.push("Los porcentajes de importacion propuestos deben sumar 100.");
+        }
+      }
+      if (formData.estructuraPagoImportacionPropuesta === "CREDITO_PLAZO") {
+        if (
+          !Number.isInteger(Number(formData.diasCreditoImportacionPropuesto)) ||
+          Number(formData.diasCreditoImportacionPropuesto) <= 0
+        ) {
+          errors.push("El credito de importacion requiere dias mayores a 0.");
+        }
+        if (!formData.referenciaPlazoImportacionPropuesta) {
+          errors.push("Selecciona la referencia del plazo de importacion propuesta.");
+        }
+      }
+      if (
+        formData.estructuraPagoImportacionPropuesta === "CONTRA_DOCUMENTOS" &&
+        !formData.gatilloPagoImportacionPropuesta
+      ) {
+        errors.push("Selecciona el gatillo documentario propuesto.");
+      }
+      if (
+        formData.instrumentoPagoImportacionPropuesta === "CARTA_CREDITO" &&
+        !formData.gastosBancariosPorPropuesto
+      ) {
+        errors.push("Selecciona quien asume los gastos bancarios propuestos.");
+      }
+      if (formData.documentosPagoImportacionPropuestos.length > 1000) {
+        errors.push("Los documentos de pago propuestos no deben superar los 1000 caracteres.");
+      }
+      if (formData.observacionPagoImportacionPropuesta.length > 1000) {
+        errors.push("La observacion de pago de importacion propuesta no debe superar los 1000 caracteres.");
+      }
+    }
+
+    if (isLocal) {
+      if (!formData.formaPagoLocalPropuesta) {
+        errors.push("Selecciona la forma de pago local propuesta por el proveedor.");
+      }
+      if (formData.formaPagoLocalPropuesta === "CREDITO") {
+        if (
+          !Number.isInteger(Number(formData.diasCreditoLocalPropuesto)) ||
+          Number(formData.diasCreditoLocalPropuesto) <= 0
+        ) {
+          errors.push("El credito local requiere dias mayores a 0.");
+        }
+      }
+      if (formData.formaPagoLocalPropuesta === "MIXTO") {
+        const anticipo = Number(formData.porcentajeAnticipoLocalPropuesto);
+        const saldo = Number(formData.porcentajeSaldoLocalPropuesto);
+        if (
+          !Number.isFinite(anticipo) ||
+          !Number.isFinite(saldo) ||
+          anticipo <= 0 ||
+          saldo <= 0
+        ) {
+          errors.push("El pago local mixto requiere anticipo y saldo mayores a 0.");
+        } else if (Math.round((anticipo + saldo) * 100) / 100 !== 100) {
+          errors.push("Los porcentajes de pago local propuestos deben sumar 100.");
+        }
+      }
+      if (formData.observacionPagoLocalPropuesta.length > 1000) {
+        errors.push("La observacion sobre pago local propuesto no debe superar los 1000 caracteres.");
+      }
+    }
+
     return errors;
   };
 
@@ -530,7 +709,7 @@ const ProveedorCotizacionPublicPage = () => {
                 ? null
                 : Number(formData.vigenciaOfertaDias),
             lugarEntrega: formData.lugarEntrega.trim() || null,
-            formaPago: formData.formaPago || null,
+            ...buildPaymentProposalPayload(formData, isImportacion),
             observaciones: formData.observaciones.trim() || null,
             items: formData.items.map((item) => ({
               itemRequerimientoId: Number(item.itemRequerimientoId),
@@ -980,34 +1159,396 @@ const ProveedorCotizacionPublicPage = () => {
                     placeholder="Opcional"
                   />
                 </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-semibold">
-                    Forma de pago propuesta por el proveedor
-                  </span>
-                  <select
-                    value={formData.formaPago}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        formaPago: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-slate-300 px-3 py-2"
-                  >
-                    {formasPago.map((option) => (
-                      <option key={option.value || "empty"} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {hasOfficialPayment ? (
-                    <span className="block text-xs text-slate-500">
-                      Las condiciones oficiales de pago se muestran arriba. Use
-                      este campo solo para proponer una alternativa o precisar
-                      su forma de pago.
-                    </span>
-                  ) : null}
-                </label>
+                {isLocal ? (
+                  <div className="space-y-3 rounded border border-blue-100 bg-blue-50/50 p-4 md:col-span-2 lg:col-span-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-blue-950">
+                        Forma de pago local propuesta por el proveedor
+                      </h3>
+                      <p className="text-xs text-blue-800">
+                        Las condiciones oficiales de pago se muestran arriba. Use
+                        este bloque para registrar su propuesta local.
+                      </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      <label className="space-y-1 text-sm">
+                        <span className="font-semibold">
+                          Forma de pago local propuesta
+                        </span>
+                        <select
+                          value={formData.formaPagoLocalPropuesta}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              ...resetLocalPaymentProposalFields(
+                                event.target.value,
+                              ),
+                            }))
+                          }
+                          className="w-full rounded border border-slate-300 px-3 py-2"
+                          required
+                        >
+                          {formasPagoLocalPropuesta.map((option) => (
+                            <option
+                              key={option.value || "empty"}
+                              value={option.value}
+                            >
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {formData.formaPagoLocalPropuesta === "CREDITO" ? (
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold">
+                            Dias de credito local propuestos
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={formData.diasCreditoLocalPropuesto}
+                            onChange={(event) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                diasCreditoLocalPropuesto: event.target.value,
+                              }))
+                            }
+                            className="w-full rounded border border-slate-300 px-3 py-2"
+                            required
+                          />
+                        </label>
+                      ) : null}
+                      {formData.formaPagoLocalPropuesta === "MIXTO" ? (
+                        <>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              % anticipo local propuesto
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              max="100"
+                              step="0.01"
+                              value={formData.porcentajeAnticipoLocalPropuesto}
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  porcentajeAnticipoLocalPropuesto:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            />
+                          </label>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              % saldo local propuesto
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              max="100"
+                              step="0.01"
+                              value={formData.porcentajeSaldoLocalPropuesto}
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  porcentajeSaldoLocalPropuesto:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            />
+                          </label>
+                        </>
+                      ) : null}
+                    </div>
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold">
+                        Observacion sobre pago local propuesto
+                      </span>
+                      <textarea
+                        rows="2"
+                        value={formData.observacionPagoLocalPropuesta}
+                        onChange={(event) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            observacionPagoLocalPropuesta: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded border border-slate-300 px-3 py-2"
+                        placeholder="Opcional. Agregue precisiones sobre su propuesta de pago local."
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                {isImportacion ? (
+                  <div className="space-y-3 rounded border border-indigo-100 bg-indigo-50/50 p-4 md:col-span-2 lg:col-span-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-indigo-950">
+                        Propuesta de pago de importacion del proveedor
+                      </h3>
+                      <p className="text-xs text-indigo-800">
+                        Registre la estructura, instrumento y condiciones de
+                        pago de importacion propuestas. Incoterm y punto
+                        logistico se mantienen como contexto oficial.
+                      </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <label className="space-y-1 text-sm">
+                        <span className="font-semibold">
+                          Estructura propuesta
+                        </span>
+                        <select
+                          value={formData.estructuraPagoImportacionPropuesta}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              ...resetImportPaymentProposalStructureFields(
+                                event.target.value,
+                              ),
+                            }))
+                          }
+                          className="w-full rounded border border-slate-300 px-3 py-2"
+                          required
+                        >
+                          <option value="">Seleccionar</option>
+                          {IMPORT_PAYMENT_STRUCTURE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-sm">
+                        <span className="font-semibold">
+                          Instrumento propuesto
+                        </span>
+                        <select
+                          value={formData.instrumentoPagoImportacionPropuesta}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              ...resetImportPaymentProposalInstrumentFields(
+                                event.target.value,
+                              ),
+                            }))
+                          }
+                          className="w-full rounded border border-slate-300 px-3 py-2"
+                          required
+                        >
+                          <option value="">Seleccionar</option>
+                          {IMPORT_PAYMENT_INSTRUMENT_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {formData.estructuraPagoImportacionPropuesta ===
+                      "MIXTO" ? (
+                        <>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              % anticipo importacion propuesto
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              max="100"
+                              step="0.01"
+                              value={
+                                formData.porcentajeAnticipoImportacionPropuesto
+                              }
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  porcentajeAnticipoImportacionPropuesto:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            />
+                          </label>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              % saldo importacion propuesto
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              max="100"
+                              step="0.01"
+                              value={
+                                formData.porcentajeSaldoImportacionPropuesto
+                              }
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  porcentajeSaldoImportacionPropuesto:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            />
+                          </label>
+                        </>
+                      ) : null}
+                      {formData.estructuraPagoImportacionPropuesta ===
+                      "CREDITO_PLAZO" ? (
+                        <>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              Dias credito importacion propuestos
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={formData.diasCreditoImportacionPropuesto}
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  diasCreditoImportacionPropuesto:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            />
+                          </label>
+                          <label className="space-y-1 text-sm">
+                            <span className="font-semibold">
+                              Referencia plazo propuesta
+                            </span>
+                            <select
+                              value={
+                                formData.referenciaPlazoImportacionPropuesta
+                              }
+                              onChange={(event) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  referenciaPlazoImportacionPropuesta:
+                                    event.target.value,
+                                }))
+                              }
+                              className="w-full rounded border border-slate-300 px-3 py-2"
+                              required
+                            >
+                              <option value="">Seleccionar</option>
+                              {IMPORT_PAYMENT_TERM_REFERENCE_OPTIONS.map(
+                                (option) => (
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
+                                    {option.label}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          </label>
+                        </>
+                      ) : null}
+                      {formData.estructuraPagoImportacionPropuesta ===
+                      "CONTRA_DOCUMENTOS" ? (
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold">
+                            Gatillo documentario propuesto
+                          </span>
+                          <select
+                            value={formData.gatilloPagoImportacionPropuesta}
+                            onChange={(event) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                gatilloPagoImportacionPropuesta:
+                                  event.target.value,
+                              }))
+                            }
+                            className="w-full rounded border border-slate-300 px-3 py-2"
+                            required
+                          >
+                            <option value="">Seleccionar</option>
+                            {IMPORT_PAYMENT_TRIGGER_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                      {formData.instrumentoPagoImportacionPropuesta ===
+                      "CARTA_CREDITO" ? (
+                        <label className="space-y-1 text-sm">
+                          <span className="font-semibold">
+                            Gastos bancarios propuestos por
+                          </span>
+                          <select
+                            value={formData.gastosBancariosPorPropuesto}
+                            onChange={(event) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                gastosBancariosPorPropuesto:
+                                  event.target.value,
+                              }))
+                            }
+                            className="w-full rounded border border-slate-300 px-3 py-2"
+                            required
+                          >
+                            <option value="">Seleccionar</option>
+                            {BANK_CHARGE_PARTY_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                    </div>
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold">
+                        Documentos de pago propuestos
+                      </span>
+                      <textarea
+                        rows="2"
+                        value={formData.documentosPagoImportacionPropuestos}
+                        onChange={(event) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            documentosPagoImportacionPropuestos:
+                              event.target.value,
+                          }))
+                        }
+                        className="w-full rounded border border-slate-300 px-3 py-2"
+                        placeholder="Opcional. Factura comercial, packing list, BL, certificado u otros."
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="font-semibold">
+                        Observacion de pago de importacion propuesta
+                      </span>
+                      <textarea
+                        rows="2"
+                        value={formData.observacionPagoImportacionPropuesta}
+                        onChange={(event) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            observacionPagoImportacionPropuesta:
+                              event.target.value,
+                          }))
+                        }
+                        className="w-full rounded border border-slate-300 px-3 py-2"
+                        placeholder="Opcional. Agregue precisiones de pago de importacion."
+                      />
+                    </label>
+                  </div>
+                ) : null}
                 <label className="space-y-1 text-sm md:col-span-2 lg:col-span-4">
                   <span className="font-semibold">
                     Observaciones del proveedor
