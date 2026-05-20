@@ -34,6 +34,24 @@ const itemResponseOptions = [
   { value: "NO_COTIZA", label: "No cotiza" },
 ];
 
+const extractCodigoProveedorOpcional = (observaciones = "") => {
+  const lines = String(observaciones || "").split(/\r?\n/);
+  const firstLine = lines[0] || "";
+  const match = firstLine.match(/^Codigo proveedor:\s*(.+)$/i);
+
+  if (!match) {
+    return {
+      codigoProveedorOpcional: "",
+      observaciones,
+    };
+  }
+
+  return {
+    codigoProveedorOpcional: match[1].trim(),
+    observaciones: lines.slice(1).join("\n").trim(),
+  };
+};
+
 const formatNumberInput = (value) =>
   value === null || value === undefined || Number.isNaN(Number(value))
     ? ""
@@ -508,63 +526,71 @@ const buildItemsFromSolicitud = (solicitud, sourceItems = []) => {
   });
 };
 
-const normalizeInitialData = (initialData) => ({
-  id: initialData?.id || null,
-  codigo: initialData?.codigo || "",
-  solicitudId: initialData?.solicitudId ? String(initialData.solicitudId) : "",
-  fechaEmision: initialData?.fechaEmision
-    ? new Date(initialData.fechaEmision).toISOString().slice(0, 10)
-    : new Date().toISOString().slice(0, 10),
-  estado: initialData?.estado || "Pendiente",
-  garantia: initialData?.garantia || "",
-  tiempoEntregaDias:
-    initialData?.tiempoEntregaDias === null ||
-    initialData?.tiempoEntregaDias === undefined
-      ? ""
-      : String(initialData.tiempoEntregaDias),
-  vigenciaOfertaDias:
-    initialData?.vigenciaOfertaDias === null ||
-    initialData?.vigenciaOfertaDias === undefined
-      ? ""
-      : String(initialData.vigenciaOfertaDias),
-  lugarEntrega: initialData?.lugarEntrega || "",
-  formaPagoLocalPropuesta: initialData?.formaPagoLocalPropuesta || "",
-  diasCreditoLocalPropuesto: formatNumberInput(
-    initialData?.diasCreditoLocalPropuesto,
-  ),
-  porcentajeAnticipoLocalPropuesto: formatNumberInput(
-    initialData?.porcentajeAnticipoLocalPropuesto,
-  ),
-  porcentajeSaldoLocalPropuesto: formatNumberInput(
-    initialData?.porcentajeSaldoLocalPropuesto,
-  ),
-  observacionPagoLocalPropuesta:
-    initialData?.observacionPagoLocalPropuesta || "",
-  estructuraPagoImportacionPropuesta:
-    initialData?.estructuraPagoImportacionPropuesta || "",
-  instrumentoPagoImportacionPropuesta:
-    initialData?.instrumentoPagoImportacionPropuesta || "",
-  gatilloPagoImportacionPropuesta:
-    initialData?.gatilloPagoImportacionPropuesta || "",
-  porcentajeAnticipoImportacionPropuesto: formatNumberInput(
-    initialData?.porcentajeAnticipoImportacionPropuesto,
-  ),
-  porcentajeSaldoImportacionPropuesto: formatNumberInput(
-    initialData?.porcentajeSaldoImportacionPropuesto,
-  ),
-  diasCreditoImportacionPropuesto: formatNumberInput(
-    initialData?.diasCreditoImportacionPropuesto,
-  ),
-  referenciaPlazoImportacionPropuesta:
-    initialData?.referenciaPlazoImportacionPropuesta || "",
-  gastosBancariosPorPropuesto: initialData?.gastosBancariosPorPropuesto || "",
-  documentosPagoImportacionPropuestos:
-    initialData?.documentosPagoImportacionPropuestos || "",
-  observacionPagoImportacionPropuesta:
-    initialData?.observacionPagoImportacionPropuesta || "",
-  observaciones: initialData?.observaciones || "",
-  items: Array.isArray(initialData?.items)
-    ? initialData.items.map((item) => ({
+const normalizeInitialData = (initialData) => {
+  const proveedorCode = extractCodigoProveedorOpcional(
+    initialData?.observaciones || "",
+  );
+
+  return {
+    id: initialData?.id || null,
+    codigo: initialData?.codigo || "",
+    codigoProveedorOpcional:
+      initialData?.codigoProveedorOpcional ||
+      proveedorCode.codigoProveedorOpcional,
+    solicitudId: initialData?.solicitudId ? String(initialData.solicitudId) : "",
+    fechaEmision: initialData?.fechaEmision
+      ? new Date(initialData.fechaEmision).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+    estado: initialData?.estado || "Pendiente",
+    garantia: initialData?.garantia || "",
+    tiempoEntregaDias:
+      initialData?.tiempoEntregaDias === null ||
+      initialData?.tiempoEntregaDias === undefined
+        ? ""
+        : String(initialData.tiempoEntregaDias),
+    vigenciaOfertaDias:
+      initialData?.vigenciaOfertaDias === null ||
+      initialData?.vigenciaOfertaDias === undefined
+        ? ""
+        : String(initialData.vigenciaOfertaDias),
+    lugarEntrega: initialData?.lugarEntrega || "",
+    formaPagoLocalPropuesta: initialData?.formaPagoLocalPropuesta || "",
+    diasCreditoLocalPropuesto: formatNumberInput(
+      initialData?.diasCreditoLocalPropuesto,
+    ),
+    porcentajeAnticipoLocalPropuesto: formatNumberInput(
+      initialData?.porcentajeAnticipoLocalPropuesto,
+    ),
+    porcentajeSaldoLocalPropuesto: formatNumberInput(
+      initialData?.porcentajeSaldoLocalPropuesto,
+    ),
+    observacionPagoLocalPropuesta:
+      initialData?.observacionPagoLocalPropuesta || "",
+    estructuraPagoImportacionPropuesta:
+      initialData?.estructuraPagoImportacionPropuesta || "",
+    instrumentoPagoImportacionPropuesta:
+      initialData?.instrumentoPagoImportacionPropuesta || "",
+    gatilloPagoImportacionPropuesta:
+      initialData?.gatilloPagoImportacionPropuesta || "",
+    porcentajeAnticipoImportacionPropuesto: formatNumberInput(
+      initialData?.porcentajeAnticipoImportacionPropuesto,
+    ),
+    porcentajeSaldoImportacionPropuesto: formatNumberInput(
+      initialData?.porcentajeSaldoImportacionPropuesto,
+    ),
+    diasCreditoImportacionPropuesto: formatNumberInput(
+      initialData?.diasCreditoImportacionPropuesto,
+    ),
+    referenciaPlazoImportacionPropuesta:
+      initialData?.referenciaPlazoImportacionPropuesta || "",
+    gastosBancariosPorPropuesto: initialData?.gastosBancariosPorPropuesto || "",
+    documentosPagoImportacionPropuestos:
+      initialData?.documentosPagoImportacionPropuestos || "",
+    observacionPagoImportacionPropuesta:
+      initialData?.observacionPagoImportacionPropuesta || "",
+    observaciones: proveedorCode.observaciones || "",
+    items: Array.isArray(initialData?.items)
+      ? initialData.items.map((item) => ({
         itemRequerimientoId: Number(item.itemRequerimientoId),
         estadoRespuesta:
           String(item.estadoRespuesta || "COTIZADO").toUpperCase() ===
@@ -578,9 +604,10 @@ const normalizeInitialData = (initialData) => ({
             ? null
             : Number(item.precioTotal),
         descripcionTecnicaOfertada: item.descripcionTecnicaOfertada || "",
-      }))
-    : [],
-});
+        }))
+      : [],
+  };
+};
 
 const CotizacionForm = ({
   initialData,
@@ -701,6 +728,7 @@ const CotizacionForm = ({
 
     await onSubmit({
       codigo: formData.codigo.trim(),
+      codigoProveedorOpcional: formData.codigoProveedorOpcional.trim() || null,
       solicitudId: Number(formData.solicitudId),
       proveedorId: selectedSolicitud?.proveedorId || selectedSolicitud?.proveedor?.id,
       fechaEmision: formData.fechaEmision,
@@ -761,21 +789,6 @@ const CotizacionForm = ({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Codigo</span>
-          <input
-            type="text"
-            value={formData.codigo}
-            name="cotizacion-form-input-codigo"
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, codigo: event.target.value }))
-            }
-            className="w-full rounded border border-gray-300 px-3 py-2"
-            placeholder="COT-001"
-            required
-          />
-        </label>
-
         <label className="space-y-1 text-sm text-gray-700 xl:col-span-2">
           <span className="font-medium">Solicitud de cotizacion</span>
           <select
@@ -818,6 +831,27 @@ const CotizacionForm = ({
             className="w-full rounded border border-gray-300 px-3 py-2"
             required
           />
+        </label>
+
+        <label className="space-y-1 text-sm text-gray-700">
+          <span className="font-medium">Numero de cotizacion del proveedor</span>
+          <input
+            type="text"
+            value={formData.codigoProveedorOpcional}
+            name="cotizacion-form-input-codigo-proveedor"
+            onChange={(event) =>
+              setFormData((prev) => ({
+                ...prev,
+                codigoProveedorOpcional: event.target.value,
+              }))
+            }
+            className="w-full rounded border border-gray-300 px-3 py-2"
+            placeholder="Opcional"
+          />
+          <p className="text-xs text-gray-500">
+            Registra el numero o referencia de la cotizacion del proveedor, si
+            existe.
+          </p>
         </label>
       </div>
 
