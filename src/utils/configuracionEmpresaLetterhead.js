@@ -188,17 +188,16 @@ export const buildInstitutionalLetterheadPrintHtml = ({
     ["correo", contacts.correo],
     ["telefono", contacts.telefono],
   ]
-    .map(([type, value]) =>
+    .flatMap(([type, value]) =>
       value
-        ? `
+        ? [`
           <div class="footer-contact-item">
             <span class="footer-contact-icon">${buildLetterheadIconSvg(type)}</span>
             <span class="footer-contact-value">${escapeHtml(value)}</span>
           </div>
-        `
-        : "",
+        `]
+        : [],
     )
-    .filter(Boolean)
     .join("");
 
   const headerMarkup = shouldRenderInstitutionalBranding

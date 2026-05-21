@@ -51,9 +51,12 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
     return null;
   }
 
-  const tiposOficiales = (proveedor.especialidades || [])
-    .map((especialidad) => especialidad.tipoProducto?.nombre)
-    .filter(Boolean);
+  const tiposOficiales = (proveedor.especialidades || []).flatMap(
+    (especialidad) =>
+      especialidad.tipoProducto?.nombre
+        ? [especialidad.tipoProducto.nombre]
+        : []
+  );
 
   const tiposTemporales = (proveedor.solicitudesTipoProducto || []).filter(
     (solicitud) =>

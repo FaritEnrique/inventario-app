@@ -23,8 +23,10 @@ const buildInitialProducto = (searchParams) =>
 const buildPreviewProductos = (detalles = []) =>
   detalles
     .slice(0, 2)
-    .map((detalle) => detalle.producto?.nombre || detalle.producto?.codigo)
-    .filter(Boolean);
+    .flatMap((detalle) => {
+      const label = detalle.producto?.nombre || detalle.producto?.codigo;
+      return label ? [label] : [];
+    });
 
 const InventarioNotasSalidaPage = () => {
   const { loading, obtenerNotasSalida } = useInventario();

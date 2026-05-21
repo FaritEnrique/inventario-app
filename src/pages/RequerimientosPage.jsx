@@ -23,6 +23,9 @@ const initialFilters = {
   fechaHasta: "",
 };
 
+const formatRequerimientoDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : "-";
+
 const RequerimientosPage = () => {
   const { user } = useAuth();
   const canSelectArea = canSelectAreaRequerimientoEffective(user);
@@ -55,7 +58,7 @@ const RequerimientosPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Requerimientos</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Requerimientos</h1>
           <p className="mt-1 text-sm text-gray-600">
             Documento que inicia el proceso de compra o abastecimiento.
           </p>
@@ -230,7 +233,7 @@ const RequerimientosPage = () => {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">S/ {(req.totalReferencial || 0).toFixed(2)}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {req.fechaCreacion ? new Date(req.fechaCreacion).toLocaleDateString() : "-"}
+                    {formatRequerimientoDate(req.fechaCreacion)}
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
                     <div className="flex justify-end gap-2">

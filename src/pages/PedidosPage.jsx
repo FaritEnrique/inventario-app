@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import usePedidos from '../hooks/usePedidos';
 
+const formatPedidoDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : '-';
+
 const PedidosPage = () => {
   const { pedidos, fetchPedidos, cargando, error } = usePedidos();
 
@@ -32,7 +35,7 @@ const PedidosPage = () => {
               <td className="px-4 py-2">{pedido.producto?.nombre || '—'}</td>
               <td className="px-4 py-2">{pedido.cantidad}</td>
               <td className="px-4 py-2">{pedido.area?.nombre || '—'}</td>
-              <td className="px-4 py-2">{new Date(pedido.fecha).toLocaleDateString()}</td>
+              <td className="px-4 py-2">{formatPedidoDate(pedido.fecha)}</td>
             </tr>
           ))}
         </tbody>

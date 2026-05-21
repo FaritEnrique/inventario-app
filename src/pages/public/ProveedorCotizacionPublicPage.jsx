@@ -374,7 +374,9 @@ const buildProveedorFields = (proveedor = {}) =>
     },
   ].filter((item) => hasValue(item.value));
 
-const ReadOnlyFieldGrid = ({ items = [] }) =>
+const EMPTY_READ_ONLY_FIELDS = [];
+
+const ReadOnlyFieldGrid = ({ items = EMPTY_READ_ONLY_FIELDS }) =>
   items.length ? (
     <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (

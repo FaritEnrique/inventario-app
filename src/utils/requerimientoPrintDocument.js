@@ -40,14 +40,15 @@ const formatMoney = (value) =>
 const joinUniqueSegments = (segments) => {
   const seen = new Set();
   return segments
-    .map(normalizeText)
-    .filter((segment) => {
-      if (!segment) return false;
-      const key = segment.toLowerCase();
-      if (seen.has(key)) return false;
+    .reduce((result, segment) => {
+      const normalizedSegment = normalizeText(segment);
+      if (!normalizedSegment) return result;
+      const key = normalizedSegment.toLowerCase();
+      if (seen.has(key)) return result;
       seen.add(key);
-      return true;
-    })
+      result.push(normalizedSegment);
+      return result;
+    }, [])
     .join(" - ");
 };
 
