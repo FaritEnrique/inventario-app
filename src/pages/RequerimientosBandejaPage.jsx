@@ -114,7 +114,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">{title}</h1>
           <p className="mt-1 text-sm text-gray-600">
             Usuario actual: {user?.nombre || "-"}
           </p>
@@ -128,7 +128,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
       </div>
 
       <div className="mb-4 grid gap-3 rounded-xl bg-white p-4 shadow md:grid-cols-4">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 md:col-span-4">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-4">
           {trayGuidance}
         </div>
         <input

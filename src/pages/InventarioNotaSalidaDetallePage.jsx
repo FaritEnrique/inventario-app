@@ -90,7 +90,7 @@ const InventarioNotaSalidaDetallePage = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Detalle de nota de salida
           </h1>
           <p className="mt-1 text-sm text-slate-600">

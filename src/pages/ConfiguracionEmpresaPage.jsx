@@ -476,7 +476,7 @@ const ConfiguracionEmpresaPage = () => {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Identidad institucional
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-900">
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900">
                 Configuración de empresa emisora
               </h1>
               <p className="max-w-3xl mt-2 text-sm text-slate-600">

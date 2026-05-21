@@ -229,7 +229,7 @@ const CrearNotaPedidoPage = () => {
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Nueva Nota de Pedido</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Nueva Nota de Pedido</h1>
           <p className="mt-1 text-sm text-slate-600">
             Solicita solo lo que esta realmente disponible en stock. Si necesitas
             mas, usa el flujo de requerimiento por separado.

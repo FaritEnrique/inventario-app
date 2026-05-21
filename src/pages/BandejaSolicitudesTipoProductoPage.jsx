@@ -109,7 +109,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
       <div className="mx-auto max-w-7xl p-4 md:p-6 lg:p-8">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-semibold text-gray-800">
               Bandeja de Solicitudes de Tipos
             </h1>
             <p className="mt-2 text-sm text-gray-600">

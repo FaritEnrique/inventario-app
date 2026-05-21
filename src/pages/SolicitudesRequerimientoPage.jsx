@@ -116,7 +116,7 @@ const SolicitudesRequerimientoPage = () => {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Solicitudes de cotización del requerimiento
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -136,7 +136,7 @@ const SolicitudesRequerimientoPage = () => {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
       ) : null}

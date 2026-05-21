@@ -181,7 +181,7 @@ const CatalogoSelectorModal = ({
               ) : null}
             </div>
           ) : (
-            <div className="max-h-[26rem] overflow-y-auto px-3 py-3">
+            <div className="max-h-[26rem] overflow-y-auto p-3">
               <div className="space-y-2" role="listbox" aria-label={title}>
                 {items.map((item, index) => {
                   const optionId = String(item.id);

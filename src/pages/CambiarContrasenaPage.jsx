@@ -93,7 +93,7 @@ const CambiarContrasenaPage = () => {
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-indigo-700">
+            <h1 className="text-3xl font-semibold text-indigo-700">
               Cambiar contraseña
             </h1>
             <p className="mt-1 text-sm text-gray-600">

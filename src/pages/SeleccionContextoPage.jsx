@@ -149,7 +149,7 @@ const SeleccionContextoPage = () => {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6">
-      <section className="rounded-2xl bg-slate-900 px-6 py-6 text-white shadow-lg">
+      <section className="rounded-2xl bg-slate-900 p-6 text-white shadow-lg">
         <p className="text-sm uppercase tracking-[0.2em] text-slate-300">
           Sesion operativa
         </p>
@@ -194,7 +194,7 @@ const SeleccionContextoPage = () => {
       )}
 
       {availableContexts.length === 0 ? (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 shadow-sm">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-amber-900">
             No hay contextos operativos disponibles
           </h2>

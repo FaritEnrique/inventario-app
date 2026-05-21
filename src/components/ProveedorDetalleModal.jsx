@@ -76,7 +76,7 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Proveedor operativo
             </p>
-            <h3 className="text-2xl font-bold text-slate-800">
+            <h3 className="text-2xl font-semibold text-slate-800">
               {formatValue(proveedor.razonSocial)}
             </h3>
             <p className="mt-1 text-sm text-slate-600">

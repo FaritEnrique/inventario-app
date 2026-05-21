@@ -55,7 +55,7 @@ const CrearPrimerUsuarioPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-        <h1 className="mb-2 text-center text-2xl font-extrabold text-blue-600">
+        <h1 className="mb-2 text-center text-2xl font-semibold text-blue-600">
           Crear administrador inicial
         </h1>
         <p className="mb-5 text-center text-sm text-gray-500">

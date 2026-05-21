@@ -25,7 +25,7 @@ const SkeletonTable = ({ columns = 4, rows = 5, className = "" }) => (
           {Array.from({ length: rows }).map((_, rowIndex) => (
             <tr key={rowIndex}>
               {Array.from({ length: columns }).map((_, columnIndex) => (
-                <td key={columnIndex} className="px-4 py-4">
+                <td key={columnIndex} className="p-4">
                   <Skeleton
                     className={columnIndex === 0 ? "h-4 w-28" : "h-4 w-full"}
                   />

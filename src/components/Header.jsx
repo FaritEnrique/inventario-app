@@ -97,12 +97,12 @@ const Header = () => {
         ref={headerRef}
         className="fixed inset-x-0 top-0 z-40 bg-indigo-700 text-white shadow-md"
       >
-        <div className="mx-auto max-w-7xl px-4 py-4">
+        <div className="mx-auto max-w-7xl p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
               <Link
                 to="/"
-                className="inline-flex max-w-full items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-white/10"
+                className="inline-flex max-w-full items-center gap-3 rounded-xl p-1 transition hover:bg-white/10"
               >
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white shadow-lg shadow-indigo-900/20 sm:h-14 sm:w-14">
                   <svg

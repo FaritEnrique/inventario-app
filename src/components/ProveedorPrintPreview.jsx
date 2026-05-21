@@ -78,7 +78,7 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
   return (
     <div className="bg-white text-gray-900">
       <div id="print-area" className="px-20">
-        <h2 className="text-center text-3xl font-bold text-gray-800">
+        <h2 className="text-center text-3xl font-semibold text-gray-800">
           Datos de Proveedor
         </h2>
 
