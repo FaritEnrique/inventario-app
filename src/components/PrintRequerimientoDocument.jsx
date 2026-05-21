@@ -45,7 +45,7 @@ const PrintRequerimientoDocument = ({
       <div className="print-document__page">
         <header className="print-avoid-break border border-slate-900">
           <div className="border-b border-slate-900 px-4 py-3 text-center">
-            <h1 className="text-xl font-bold uppercase tracking-[0.2em] text-slate-950">
+            <h1 className="text-xl font-semibold uppercase tracking-[0.2em] text-slate-950">
               Requerimiento
             </h1>
           </div>
@@ -85,19 +85,19 @@ const PrintRequerimientoDocument = ({
           <table className="w-full border-collapse text-sm text-slate-950">
             <thead>
               <tr className="bg-slate-100">
-                <th className="w-[8%] border border-slate-900 px-2 py-2 text-center font-semibold">
+                <th className="w-[8%] border border-slate-900 p-2 text-center font-semibold">
                   Item
                 </th>
                 <th className="w-[48%] border border-slate-900 px-3 py-2 text-left font-semibold">
                   Descripcion
                 </th>
-                <th className="w-[12%] border border-slate-900 px-2 py-2 text-center font-semibold">
+                <th className="w-[12%] border border-slate-900 p-2 text-center font-semibold">
                   Cant.
                 </th>
-                <th className="w-[16%] border border-slate-900 px-2 py-2 text-right font-semibold">
+                <th className="w-[16%] border border-slate-900 p-2 text-right font-semibold">
                   Valor ref. unitario
                 </th>
-                <th className="w-[16%] border border-slate-900 px-2 py-2 text-right font-semibold">
+                <th className="w-[16%] border border-slate-900 p-2 text-right font-semibold">
                   Total referencial
                 </th>
               </tr>
@@ -105,7 +105,7 @@ const PrintRequerimientoDocument = ({
             <tbody>
               {activeItems.map((item, index) => (
                 <tr key={item.id || `${item.descripcionVisible}-${index}`} className="print-avoid-break">
-                  <td className="border border-slate-900 px-2 py-2 text-center align-top">
+                  <td className="border border-slate-900 p-2 text-center align-top">
                     {index + 1}
                   </td>
                   <td className="border border-slate-900 px-3 py-2 align-top">
@@ -113,13 +113,13 @@ const PrintRequerimientoDocument = ({
                       {buildPrintedItemDescription(item)}
                     </span>
                   </td>
-                  <td className="border border-slate-900 px-2 py-2 text-center align-top">
+                  <td className="border border-slate-900 p-2 text-center align-top">
                     {item.cantidadRequerida} {normalizeText(item.unidadMedida) || ""}
                   </td>
-                  <td className="border border-slate-900 px-2 py-2 text-right align-top">
+                  <td className="border border-slate-900 p-2 text-right align-top">
                     {moneyFormatter.format(Number(item.valorReferencialUnitario || 0))}
                   </td>
-                  <td className="border border-slate-900 px-2 py-2 text-right align-top">
+                  <td className="border border-slate-900 p-2 text-right align-top">
                     {moneyFormatter.format(Number(item.subtotalReferencial || 0))}
                   </td>
                 </tr>
@@ -139,7 +139,7 @@ const PrintRequerimientoDocument = ({
               <tr>
                 <td
                   colSpan={4}
-                  className="border border-slate-900 px-3 py-3 text-right font-semibold uppercase"
+                  className="border border-slate-900 p-3 text-right font-semibold uppercase"
                 >
                   Total general
                 </td>

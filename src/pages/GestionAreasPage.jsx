@@ -320,7 +320,7 @@ const GestionAreasPage = () => {
             <FaArrowCircleLeft className="w-5 h-5" aria-hidden="true" />
             <span>Gesti&oacute;n de usuarios</span>
           </Link>
-          <h1 className="text-3xl font-extrabold text-blue-600 dark:text-blue-500">
+          <h1 className="text-3xl font-semibold text-blue-600 dark:text-blue-500">
             Gestion de Unidades Organizacionales
           </h1>
           <p className="mt-2 text-sm text-gray-800 dark:text-gray-300">
@@ -632,10 +632,10 @@ const GestionAreasPage = () => {
                     key={area.id}
                     className="transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-gray-800"
                   >
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900 border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                    <td className="p-4 text-sm font-medium text-gray-900 border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
                       {area.codigo}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-800 border-r border-gray-200 dark:border-gray-700 dark:text-gray-200">
+                    <td className="p-4 text-sm text-gray-800 border-r border-gray-200 dark:border-gray-700 dark:text-gray-200">
                       <div className="font-semibold">{area.nombre}</div>
                       <div className="text-xs italic text-gray-500 dark:text-gray-400">
                         {area.branchDescription ||
@@ -646,7 +646,7 @@ const GestionAreasPage = () => {
                           "Sin tipo definido"}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
+                    <td className="p-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       {area.responsable ? (
                         <>
                           <div className="font-semibold">
@@ -662,7 +662,7 @@ const GestionAreasPage = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
+                    <td className="p-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${estadoMeta.className}`}
                       >
@@ -674,7 +674,7 @@ const GestionAreasPage = () => {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
+                    <td className="p-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       {Array.isArray(area.adscritos) &&
                       area.adscritos.length > 0 ? (
                         <div className="space-y-1">
@@ -692,7 +692,7 @@ const GestionAreasPage = () => {
                         "Sin adscritos"
                       )}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
+                    <td className="p-4 text-sm text-gray-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-300">
                       <div>
                         <span className="font-medium">Padre:</span>{" "}
                         {area.parent
@@ -709,7 +709,7 @@ const GestionAreasPage = () => {
                           : "Sin hijos"}
                       </div>
                     </td>
-                    <td className="px-4 py-4 space-x-3 text-sm font-medium text-center">
+                    <td className="p-4 space-x-3 text-sm font-medium text-center">
                       <button
                         onClick={() => handleEditIntent(area)}
                         className="font-bold text-blue-600 transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"

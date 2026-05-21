@@ -507,7 +507,7 @@ const GestionProductosPage = () => {
 
   return (
     <div className="max-w-5xl p-6 mx-auto">
-      <h1 className="text-2xl font-bold text-center text-indigo-700">
+      <h1 className="text-2xl font-semibold text-center text-indigo-700">
         Gestión de Productos
       </h1>
 
@@ -544,7 +544,7 @@ const GestionProductosPage = () => {
 
       {/* Formulario Crear/Actualizar */}
       <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
+        <h2 className="pb-3 mb-5 text-2xl font-semibold text-gray-700 border-b-2 border-blue-600">
           {modoEdicion ? "Actualizar Producto" : "Crear Nuevo Producto"}
         </h2>
         <form

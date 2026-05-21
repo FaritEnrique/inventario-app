@@ -67,7 +67,7 @@ const InventarioKardexPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Kardex por producto</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Kardex por producto</h1>
           <p className="mt-1 text-sm text-gray-600">
             Consulta cronológica con saldo acumulado, documento, motivo, uso y área.
           </p>

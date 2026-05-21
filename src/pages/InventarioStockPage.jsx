@@ -69,7 +69,7 @@ const InventarioStockPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Stock de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -189,7 +189,7 @@ const InventarioStockPage = () => {
         <div className="space-y-4">
           {rows.map((row) => (
             <div key={row.producto.id} className="rounded-lg bg-white shadow">
-              <div className="border-b px-4 py-4">
+              <div className="border-b p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">

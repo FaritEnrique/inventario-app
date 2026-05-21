@@ -214,7 +214,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
     return (
       <div className="mx-auto max-w-4xl p-6">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6">
-          <h1 className="text-2xl font-bold text-emerald-900">
+          <h1 className="text-2xl font-semibold text-emerald-900">
             Bandeja de almacen no disponible
           </h1>
           <p className="mt-2 text-sm text-emerald-800">
@@ -244,7 +244,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Bandeja de almacen
           </h1>
           <p className="mt-1 text-sm text-slate-600">

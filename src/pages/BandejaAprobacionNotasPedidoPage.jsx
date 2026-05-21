@@ -61,7 +61,7 @@ const BandejaAprobacionNotasPedidoPage = () => {
     return (
       <div className="mx-auto max-w-4xl p-6">
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
-          <h1 className="text-2xl font-bold text-amber-900">
+          <h1 className="text-2xl font-semibold text-amber-900">
             Bandeja de aprobacion no disponible
           </h1>
           <p className="mt-2 text-sm text-amber-800">
@@ -92,7 +92,7 @@ const BandejaAprobacionNotasPedidoPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Bandeja de aprobacion
           </h1>
           <p className="mt-1 text-sm text-slate-600">

@@ -180,7 +180,7 @@ const GestionMarcasPage = () => {
 
   return (
     <div className="max-w-4xl p-5 mx-auto my-5 border border-gray-200 shadow-2xl bg-gray-50 rounded-xl">
-      <h1 className="mb-8 text-4xl font-extrabold tracking-wide text-center text-gray-800">
+      <h1 className="mb-8 text-4xl font-semibold tracking-wide text-center text-gray-800">
         Gestión de Marcas
       </h1>
       <div className="flex items-center justify-end w-full px-6">
@@ -194,7 +194,7 @@ const GestionMarcasPage = () => {
       </div>
 
       <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
+        <h2 className="pb-3 mb-5 text-2xl font-semibold text-gray-700 border-b-2 border-blue-600">
           {marcaSeleccionadaId ? "Actualizar Marca" : "Crear Nueva Marca"}
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -238,7 +238,7 @@ const GestionMarcasPage = () => {
       </div>
 
       <div className="p-6 mb-8 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
+        <h2 className="pb-3 mb-5 text-2xl font-semibold text-gray-700 border-b-2 border-blue-600">
           Buscar Marcas
         </h2>
         <input
@@ -254,7 +254,7 @@ const GestionMarcasPage = () => {
       </div>
 
       <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <h2 className="pb-3 mb-5 text-2xl font-bold text-gray-700 border-b-2 border-blue-600">
+        <h2 className="pb-3 mb-5 text-2xl font-semibold text-gray-700 border-b-2 border-blue-600">
           Listado de Marcas
         </h2>
         {cargando && marcas.length === 0 && (

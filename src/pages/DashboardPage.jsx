@@ -237,7 +237,7 @@ const DashboardPage = () => {
               <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">
                 Resumen de sesion
               </p>
-              <h1 className="mt-1 text-3xl font-bold text-indigo-700">
+              <h1 className="mt-1 text-3xl font-semibold text-indigo-700">
                 Bienvenido, {user.nombre}
               </h1>
               <p className="mt-2 text-sm text-gray-600">
@@ -297,7 +297,7 @@ const DashboardPage = () => {
           )}
         </div>
 
-        <h2 className="mb-4 text-3xl font-bold text-indigo-700">
+        <h2 className="mb-4 text-3xl font-semibold text-indigo-700">
           Panel de Control
         </h2>
         <p className="mb-6 text-lg text-gray-700">

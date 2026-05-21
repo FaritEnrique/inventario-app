@@ -22,7 +22,7 @@ const ProductosPage = () => {
           <span className="text-lg font-semibold">Dashboard</span>
         </Link>
       </div>
-      <h1 className="mb-4 text-3xl font-bold text-indigo-700">
+      <h1 className="mb-4 text-3xl font-semibold text-indigo-700">
         Lista de Productos
       </h1>
 
@@ -36,7 +36,7 @@ const ProductosPage = () => {
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {productos.map((prod) => (
             <li key={prod.id} className="p-4 bg-white rounded shadow">
-              <h2 className="font-bold text-indigo-600">{prod.codigo}</h2>
+              <h2 className="font-semibold text-indigo-600">{prod.codigo}</h2>
               <p className="text-gray-800">{prod.nombre}</p>
               <p className="text-sm text-gray-600">
                 {prod.descripcion || "Sin descripción"}
