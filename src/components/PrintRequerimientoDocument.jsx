@@ -25,10 +25,13 @@ const normalizeText = (value) => {
 
 const renderValue = (value) => normalizeText(value) || "-";
 
+const EMPTY_SIGNATURES = [];
+const EMPTY_APPROVAL_LEVELS = [];
+
 const PrintRequerimientoDocument = ({
   requerimiento,
-  signatures = [],
-  applicableApprovalLevels = [],
+  signatures = EMPTY_SIGNATURES,
+  applicableApprovalLevels = EMPTY_APPROVAL_LEVELS,
 }) => {
   const { activeItems, approvalLevels, approvalMap, observaciones } =
     buildRequerimientoPrintModel({

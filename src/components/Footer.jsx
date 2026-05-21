@@ -1,6 +1,8 @@
 // src/components/Footer.jsx
 import React from "react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const Footer = () => {
   return (
     <footer className="border-t border-cyan-950/70 bg-[#123848]">
@@ -60,7 +62,7 @@ const Footer = () => {
             </span>
           </div>
           <p className="leading-relaxed sm:text-right">
-            © {new Date().getFullYear()} LogisticaAPP. Entorno interno para
+            © {CURRENT_YEAR} LogisticaAPP. Entorno interno para
             gestión operativa y control del flujo logístico.
           </p>
         </div>

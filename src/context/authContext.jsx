@@ -597,7 +597,7 @@ const routeSessionSyncMessage = ({
 };
 
 export const AuthProvider = ({ children }) => {
-  const location = useLocation();
+  const { pathname } = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [identity, setIdentity] = useState(null);
   const [user, setUser] = useState(null);
@@ -877,9 +877,9 @@ export const AuthProvider = ({ children }) => {
         applySessionState(storedSession);
       }
 
-       const shouldValidateSession =
+      const shouldValidateSession =
         Boolean(storedSession?.identity) ||
-        !isAuthOptionalPath(location.pathname);
+        !isAuthOptionalPath(pathname);
 
       if (!shouldValidateSession) {
         setLoading(false);
@@ -898,7 +898,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAppStatus();
-  }, [applySessionState, clearSessionState, location.pathname, refreshAuthSession]);
+  }, [applySessionState, clearSessionState, pathname, refreshAuthSession]);
 
   useEffect(() => {
     const handleInvalidContext = async () => {

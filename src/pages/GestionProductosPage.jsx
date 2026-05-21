@@ -818,6 +818,7 @@ const GestionProductosPage = () => {
             <div className="p-4 border rounded-md md:col-span-2 border-amber-200 bg-amber-50/80">
               <label
                 htmlFor="incluirStockInicial"
+                aria-label="Registrar stock inicial al crear"
                 className="flex items-start gap-2 cursor-pointer"
               >
                 <input

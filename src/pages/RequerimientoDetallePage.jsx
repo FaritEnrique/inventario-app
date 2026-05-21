@@ -563,8 +563,8 @@ const RequerimientoDetallePage = () => {
                       )}
                       {detailLines.length > 0 && (
                         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700">
-                          {detailLines.map((line, index) => (
-                            <li key={`${entry.id}-${index}`}>{line}</li>
+                          {detailLines.map((line) => (
+                            <li key={`${entry.id}-${line}`}>{line}</li>
                           ))}
                         </ul>
                       )}
