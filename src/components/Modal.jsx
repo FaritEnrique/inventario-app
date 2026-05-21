@@ -17,6 +17,23 @@ const Modal = ({
 }) => {
   const titleId = useId();
 
+  const handleBackdropClick = (event) => {
+    if (event.target === event.currentTarget && closeOnBackdrop) {
+      onClose?.();
+    }
+  };
+
+  const handleBackdropKeyDown = (event) => {
+    if (
+      event.target === event.currentTarget &&
+      closeOnBackdrop &&
+      (event.key === "Enter" || event.key === " ")
+    ) {
+      event.preventDefault();
+      onClose?.();
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -38,18 +55,17 @@ const Modal = ({
   return (
     <div
       className={`fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-gray-600 bg-opacity-50 p-4 ${overlayClassName}`}
-      onClick={() => {
-        if (closeOnBackdrop) {
-          onClose?.();
-        }
-      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Cerrar modal"
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
     >
       <div
         className={`relative mx-auto w-full rounded-md border bg-white shadow-lg ${maxWidth} ${panelClassName}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
-        onClick={(event) => event.stopPropagation()}
       >
         {title || showCloseButton ? (
           <div

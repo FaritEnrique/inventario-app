@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import useSolicitudesTipoProducto from "../hooks/useSolicitudesTipoProducto";
 
+const EMPTY_TIPOS_PRODUCTO = [];
+const EMPTY_SELECTED_IDS = [];
+const EMPTY_SOLICITUDES_TEMPORALES = [];
+const EMPTY_PROVEEDOR_CONTEXT = {};
+
 const normalizeSelectedIds = (values = []) =>
   [
     ...new Set(
@@ -14,13 +19,13 @@ const normalizeSelectedIds = (values = []) =>
 const ModalBuscarTiposProducto = ({
   isOpen,
   onClose,
-  tiposProducto = [],
+  tiposProducto = EMPTY_TIPOS_PRODUCTO,
   loadingTiposProducto = false,
-  initialSelectedIds = [],
-  initialSelectedSolicitudIds = [],
-  solicitudesTemporalesDisponibles = [],
+  initialSelectedIds = EMPTY_SELECTED_IDS,
+  initialSelectedSolicitudIds = EMPTY_SELECTED_IDS,
+  solicitudesTemporalesDisponibles = EMPTY_SOLICITUDES_TEMPORALES,
   onSaveSelection,
-  proveedorContext = {},
+  proveedorContext = EMPTY_PROVEEDOR_CONTEXT,
   onSolicitudCreada,
 }) => {
   const { crearSolicitud, loading: creatingSolicitud } = useSolicitudesTipoProducto();
@@ -153,6 +158,9 @@ const ModalBuscarTiposProducto = ({
                 return (
                   <label
                     htmlFor={inputId}
+                    aria-label={`Seleccionar ${
+                      tipoProducto.nombre || tipoProducto.prefijo || "tipo de producto"
+                    }`}
                     key={tipoProducto.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm ${
                       checked
@@ -205,6 +213,9 @@ const ModalBuscarTiposProducto = ({
                 return (
                   <label
                     htmlFor={inputId}
+                    aria-label={`Seleccionar ${
+                      solicitud.nombrePropuesto || "tipo temporal"
+                    }`}
                     key={solicitud.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm ${
                       checked

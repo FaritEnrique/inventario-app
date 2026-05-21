@@ -353,10 +353,14 @@ const BandejaSolicitudesTipoProductoPage = () => {
 
                           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                             <div>
-                              <label className="mb-1 block text-xs font-medium text-gray-600">
+                              <label
+                                htmlFor={`solicitud-tipo-prefijo-${solicitud.id}`}
+                                className="mb-1 block text-xs font-medium text-gray-600"
+                              >
                                 Prefijo
                               </label>
                               <input
+                                id={`solicitud-tipo-prefijo-${solicitud.id}`}
                                 type="text"
                                 maxLength="2"
                                 value={accion.prefijo}
@@ -371,10 +375,14 @@ const BandejaSolicitudesTipoProductoPage = () => {
                             </div>
 
                             <div>
-                              <label className="mb-1 block text-xs font-medium text-gray-600">
+                              <label
+                                htmlFor={`solicitud-tipo-frecuencia-${solicitud.id}`}
+                                className="mb-1 block text-xs font-medium text-gray-600"
+                              >
                                 Frecuencia
                               </label>
                               <select
+                                id={`solicitud-tipo-frecuencia-${solicitud.id}`}
                                 value={accion.frecuenciaReposicion}
                                 onChange={(event) =>
                                   updateAccion(solicitud.id, {

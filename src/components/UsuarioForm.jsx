@@ -21,7 +21,19 @@ const additionalRolesList = [
   "GERENTE_GENERAL",
 ];
 
+let rangoFormKeySequence = 0;
+
+const createRangoFormKey = (rango = {}) => {
+  if (rango.id !== null && rango.id !== undefined) {
+    return `rango-${rango.id}`;
+  }
+
+  rangoFormKeySequence += 1;
+  return `rango-nuevo-${rangoFormKeySequence}`;
+};
+
 const createEmptyRango = () => ({
+  formKey: createRangoFormKey(),
   rol: "",
   areaId: "",
   activo: true,
@@ -82,6 +94,7 @@ const normalizeRangos = (rangos = []) =>
   (Array.isArray(rangos) ? rangos : [])
     .filter((rango) => rango && rango.activo !== false)
     .map((rango) => ({
+      formKey: createRangoFormKey(rango),
       rol: rango.rol || "",
       areaId:
         rango.areaId !== null && rango.areaId !== undefined
@@ -230,8 +243,9 @@ const UsuarioForm = ({
       await onSave({
         ...form,
         rangos: form.rangos.map((rango) => ({
-          ...rango,
+          rol: rango.rol,
           areaId: rango.areaId,
+          activo: rango.activo,
         })),
       });
 
@@ -462,18 +476,18 @@ const UsuarioForm = ({
             <div className="space-y-3">
               {form.rangos.map((rango, index) => (
                 <div
-                  key={`${rango.rol}-${rango.areaId}-${index}`}
+                  key={rango.formKey}
                   className="grid grid-cols-1 gap-3 rounded border border-gray-200 bg-white p-3 md:grid-cols-[1fr_1fr_auto]"
                 >
                   <div>
                     <label
-                      htmlFor={`usuario-rango-rol-${index}`}
+                      htmlFor={`usuario-rango-rol-${rango.formKey}`}
                       className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Rol adicional
                     </label>
                     <ScrollableSelect
-                      id={`usuario-rango-rol-${index}`}
+                      id={`usuario-rango-rol-${rango.formKey}`}
                       value={rango.rol}
                       onChange={(event) =>
                         handleRangoChange(index, "rol", event.target.value)
@@ -494,13 +508,13 @@ const UsuarioForm = ({
 
                   <div>
                     <label
-                      htmlFor={`usuario-rango-area-${index}`}
+                      htmlFor={`usuario-rango-area-${rango.formKey}`}
                       className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Area del rango
                     </label>
                     <ScrollableSelect
-                      id={`usuario-rango-area-${index}`}
+                      id={`usuario-rango-area-${rango.formKey}`}
                       value={rango.areaId}
                       onChange={(event) =>
                         handleRangoChange(index, "areaId", event.target.value)
