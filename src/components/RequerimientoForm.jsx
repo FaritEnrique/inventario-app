@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "react-toastify";
 import { resolveProductoImageUrl } from "../utils/productoImage";
 
+const EMPTY_AREAS = [];
+
 const createEmptyExistingItem = () => ({
   localId: `item-${Date.now()}-${Math.random()}`,
   id: null,
@@ -119,7 +121,7 @@ const ProductDetailModal = ({ producto, onClose }) => {
 
 const RequerimientoForm = ({
   initialData,
-  areas = [],
+  areas = EMPTY_AREAS,
   prioridades,
   allowAreaSelection = false,
   lockAreaToContext = false,

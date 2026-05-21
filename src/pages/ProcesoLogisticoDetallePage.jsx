@@ -544,6 +544,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const expedientePath = `/cotizaciones/proceso/${id}`;
   const emisionPath = `/cotizaciones/proceso/${id}/emision`;
   const cotizacionesPath = `/cotizaciones/proceso/${id}/cotizaciones`;
+  const { hash, state: routeState } = location;
+  const routeCotizacionId = routeState?.cotizacionId;
+  const routePreselectSolicitudId = routeState?.preselectSolicitudId;
+  const routeSolicitudId = routeState?.solicitudId;
 
   const load = async () => {
     const [data, comparativoData] = await Promise.all([
@@ -584,28 +588,22 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   }, [id, directResponsableId]);
 
   useEffect(() => {
-    if (!isEmisionPhase && location.hash === "#solicitudes") {
+    if (!isEmisionPhase && hash === "#solicitudes") {
       navigate(emisionPath, {
         replace: true,
-        state: location.state,
+        state: routeState,
       });
     }
-  }, [emisionPath, isEmisionPhase, location.hash, location.state, navigate]);
+  }, [emisionPath, hash, isEmisionPhase, navigate, routeState]);
 
   useEffect(() => {
-    if (!isCotizacionesPhase && location.hash === "#cotizaciones") {
+    if (!isCotizacionesPhase && hash === "#cotizaciones") {
       navigate(cotizacionesPath, {
         replace: true,
-        state: location.state,
+        state: routeState,
       });
     }
-  }, [
-    cotizacionesPath,
-    isCotizacionesPhase,
-    location.hash,
-    location.state,
-    navigate,
-  ]);
+  }, [cotizacionesPath, hash, isCotizacionesPhase, navigate, routeState]);
 
   useEffect(() => {
     if (!canAssign) return;
@@ -646,9 +644,9 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   }, [activeContext?.area?.id, activeContext?.areaId, canAssign, isAdminUser]);
 
   useEffect(() => {
-    if (!location.hash || !detalle?.id) return;
+    if (!hash || !detalle?.id) return;
 
-    const targetId = location.hash.replace(/^#/, "");
+    const targetId = hash.replace(/^#/, "");
     const timer = window.setTimeout(() => {
       document.getElementById(targetId)?.scrollIntoView({
         behavior: "smooth",
@@ -657,7 +655,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     }, 120);
 
     return () => window.clearTimeout(timer);
-  }, [location.hash, detalle?.id]);
+  }, [hash, detalle?.id]);
 
   const resumenCotizaciones = useMemo(
     () => (Array.isArray(detalle?.cotizaciones) ? detalle.cotizaciones : []),
@@ -691,10 +689,9 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   useEffect(() => {
     if (!isCotizacionesPhase || !detalle?.id || cotizacionDraft) return;
 
-    const preselectedCotizacionId = location.state?.cotizacionId;
-    if (preselectedCotizacionId) {
+    if (routeCotizacionId) {
       const cotizacion = resumenCotizaciones.find(
-        (entry) => Number(entry.id) === Number(preselectedCotizacionId),
+        (entry) => Number(entry.id) === Number(routeCotizacionId),
       );
 
       if (cotizacion?.activo !== false) {
@@ -704,7 +701,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     }
 
     const preselectedSolicitudId =
-      location.state?.solicitudId || location.state?.preselectSolicitudId;
+      routeSolicitudId || routePreselectSolicitudId;
     if (!preselectedSolicitudId) return;
 
     const solicitud = (detalle.solicitudes || []).find(
@@ -719,10 +716,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     detalle?.id,
     detalle?.solicitudes,
     isCotizacionesPhase,
-    location.state?.cotizacionId,
-    location.state?.preselectSolicitudId,
-    location.state?.solicitudId,
     resumenCotizaciones,
+    routeCotizacionId,
+    routePreselectSolicitudId,
+    routeSolicitudId,
   ]);
 
   const handleAsignar = async () => {
@@ -2635,10 +2632,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                             String(cotizacion.id),
                           );
                         const canSelectWinner = checked;
+                        const checkboxId = `formal-comparativo-${cotizacion.id}`;
 
                         return (
                           <label
-                            key={`formal-comparativo-${cotizacion.id}`}
+                            key={checkboxId}
+                            htmlFor={checkboxId}
+                            aria-label={`Considerar cotizacion ${cotizacion.codigo || cotizacion.id} en el comparativo formal`}
                             className={`block rounded-lg border p-4 ${
                               checked
                                 ? "border-indigo-300 bg-indigo-50"
@@ -2648,6 +2648,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div className="flex items-start gap-3">
                                 <input
+                                  id={checkboxId}
                                   type="checkbox"
                                   checked={checked}
                                   onChange={() =>

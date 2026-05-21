@@ -10,6 +10,18 @@ const formatValue = (value) => {
   return normalizedValue ? normalizedValue : "No registrado";
 };
 
+const dateTimeFormatter = new Intl.DateTimeFormat("es-PE", {
+  dateStyle: "short",
+  timeStyle: "medium",
+});
+
+const formatDateTimeValue = (value) => {
+  if (!value) return null;
+
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : value;
+};
+
 const DetailRow = ({ label, value }) => (
   <div className="grid gap-1 border-b border-gray-100 py-3 md:grid-cols-[220px_1fr]">
     <dt className="text-sm font-semibold text-gray-700">{label}</dt>
@@ -48,6 +60,8 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
       solicitud &&
       ["PENDIENTE", "OBSERVADO"].includes(String(solicitud.estado || ""))
   );
+  const creado = formatDateTimeValue(proveedor.createdAt);
+  const actualizado = formatDateTimeValue(proveedor.updatedAt);
 
   return (
     <Modal
@@ -86,8 +100,8 @@ const ProveedorDetalleModal = ({ isOpen, onClose, proveedor }) => {
               <DetailRow label="Correo electrónico" value={proveedor.correoElectronico} />
               <DetailRow label="Representante" value={proveedor.representante} />
               <DetailRow label="Contacto" value={proveedor.contacto} />
-              <DetailRow label="Creado" value={proveedor.createdAt ? new Date(proveedor.createdAt).toLocaleString("es-PE") : null} />
-              <DetailRow label="Actualizado" value={proveedor.updatedAt ? new Date(proveedor.updatedAt).toLocaleString("es-PE") : null} />
+              <DetailRow label="Creado" value={creado} />
+              <DetailRow label="Actualizado" value={actualizado} />
             </dl>
           </section>
 

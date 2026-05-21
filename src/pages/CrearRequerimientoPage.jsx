@@ -11,6 +11,14 @@ const FeedbackModal = ({ isOpen, feedback, onClose }) => {
   if (!feedback) return null;
 
   const isSuccess = feedback.type === "success";
+  const feedbackDetails = Array.isArray(feedback.details)
+    ? feedback.details.map((detail) => String(detail))
+    : [];
+  const detailCounts = feedbackDetails.reduce((counts, detail) => {
+    counts[detail] = (counts[detail] || 0) + 1;
+    return counts;
+  }, {});
+  const detailOccurrences = {};
 
   return (
     <Modal
@@ -34,12 +42,18 @@ const FeedbackModal = ({ isOpen, feedback, onClose }) => {
           <p className="mt-2 text-sm text-gray-600">{feedback.message}</p>
         </div>
 
-        {Array.isArray(feedback.details) && feedback.details.length > 0 ? (
+        {feedbackDetails.length > 0 ? (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
             <ul className="list-disc space-y-1 pl-5">
-              {feedback.details.map((detail, index) => (
-                <li key={`${detail}-${index}`}>{detail}</li>
-              ))}
+              {feedbackDetails.map((detail) => {
+                detailOccurrences[detail] = (detailOccurrences[detail] || 0) + 1;
+                const key =
+                  detailCounts[detail] > 1
+                    ? `${detail}-${detailOccurrences[detail]}`
+                    : detail;
+
+                return <li key={key}>{detail}</li>;
+              })}
             </ul>
           </div>
         ) : null}
