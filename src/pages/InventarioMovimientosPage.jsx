@@ -4,6 +4,16 @@ import { toast } from "react-toastify";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useInventario from "../hooks/useInventario";
 
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "short",
+  timeStyle: "medium",
+});
+
+const formatDisplayDateTime = (value) => {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : "-";
+};
+
 const buildInitialFilters = (searchParams) => ({
   productoId: searchParams.get("productoId") || "",
   almacenId: searchParams.get("almacenId") || "",
@@ -219,7 +229,7 @@ const InventarioMovimientosPage = () => {
               result.data.map((movimiento) => (
                 <tr key={movimiento.id} className="border-t">
                   <td className="px-4 py-3">
-                    {new Date(movimiento.fechaMovimiento).toLocaleString()}
+                    {formatDisplayDateTime(movimiento.fechaMovimiento)}
                   </td>
                   <td className="px-4 py-3">{movimiento.tipoMovimiento}</td>
                   <td className="px-4 py-3">

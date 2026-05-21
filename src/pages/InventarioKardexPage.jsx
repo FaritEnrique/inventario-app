@@ -6,6 +6,16 @@ import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import useInventario from "../hooks/useInventario";
 
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "short",
+  timeStyle: "medium",
+});
+
+const formatDisplayDateTime = (value) => {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : "-";
+};
+
 const InventarioKardexPage = () => {
   const { loading, obtenerKardex } = useInventario();
   const [searchParams] = useSearchParams();
@@ -213,7 +223,7 @@ const InventarioKardexPage = () => {
                   kardex.movimientos.map((movimiento) => (
                     <tr key={movimiento.id} className="border-t align-top">
                       <td className="px-4 py-3">
-                        {new Date(movimiento.fecha).toLocaleString()}
+                        {formatDisplayDateTime(movimiento.fecha)}
                       </td>
                       <td className="px-4 py-3">{movimiento.claseMovimiento}</td>
                       <td className="px-4 py-3">{movimiento.motivo || "-"}</td>

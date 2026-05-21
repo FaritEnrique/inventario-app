@@ -26,6 +26,13 @@ import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
 
+const dateFormatter = new Intl.DateTimeFormat();
+
+const formatDisplayDate = (value) => {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? dateFormatter.format(timestamp) : "-";
+};
+
 const cards = [
   {
     title: "Gestión de Tipos de Producto",
@@ -1162,11 +1169,11 @@ const GestionProductosPage = () => {
               </p>
               <p>
                 <strong className="font-semibold">Creado:</strong>{" "}
-                {new Date(productoEnDetalle.createdAt).toLocaleDateString()}
+                {formatDisplayDate(productoEnDetalle.createdAt)}
               </p>
               <p>
                 <strong className="font-semibold">Última Actualización:</strong>{" "}
-                {new Date(productoEnDetalle.updatedAt).toLocaleDateString()}
+                {formatDisplayDate(productoEnDetalle.updatedAt)}
               </p>
             </div>
             <button

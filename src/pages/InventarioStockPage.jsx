@@ -11,6 +11,16 @@ import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "short",
+  timeStyle: "medium",
+});
+
+const formatDisplayDateTime = (value) => {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : "-";
+};
+
 const InventarioStockPage = () => {
   const { user } = useAuth();
   const { loading, obtenerStock } = useInventario();
@@ -223,7 +233,7 @@ const InventarioStockPage = () => {
                         <div>Area reservante: {reserva.area?.nombre || "-"}</div>
                         <div>Cantidad reservada: {reserva.cantidadReservada}</div>
                         <div>
-                          Vence: {reserva.expiresAt ? new Date(reserva.expiresAt).toLocaleString() : "-"}
+                          Vence: {formatDisplayDateTime(reserva.expiresAt)}
                         </div>
                       </div>
                     ))}
@@ -267,7 +277,7 @@ const InventarioStockPage = () => {
                                     {reserva.pedidoInterno?.codigo || "Sin pedido"} � {reserva.area?.abreviatura || reserva.area?.nombre || "-"}
                                   </div>
                                   <div>
-                                    {reserva.cantidadReservada} reservadas � vence {reserva.expiresAt ? new Date(reserva.expiresAt).toLocaleString() : "-"}
+                                    {reserva.cantidadReservada} reservadas � vence {formatDisplayDateTime(reserva.expiresAt)}
                                   </div>
                                 </div>
                               ))}
@@ -275,9 +285,7 @@ const InventarioStockPage = () => {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {almacen.updatedAt
-                            ? new Date(almacen.updatedAt).toLocaleString()
-                            : "-"}
+                          {formatDisplayDateTime(almacen.updatedAt)}
                         </td>
                         <td className="px-4 py-3">
                           <Link

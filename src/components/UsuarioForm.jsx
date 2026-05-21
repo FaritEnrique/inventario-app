@@ -21,6 +21,9 @@ const additionalRolesList = [
   "GERENTE_GENERAL",
 ];
 
+const EMPTY_AREAS = [];
+const EMPTY_TOAST_OPTIONS = {};
+
 let rangoFormKeySequence = 0;
 
 const createRangoFormKey = (rango = {}) => {
@@ -125,11 +128,11 @@ const buildErrorMessage = (error) => {
 
 const UsuarioForm = ({
   initialValues = null,
-  areas = [],
+  areas = EMPTY_AREAS,
   onCancel = () => {},
   onSave = async () => {},
   disableAdminRole = false,
-  toastOptions = {},
+  toastOptions = EMPTY_TOAST_OPTIONS,
 }) => {
   const [form, setForm] = useState(createEmptyForm);
   const [formError, setFormError] = useState("");

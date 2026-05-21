@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Modal from "./Modal";
 
+const EMPTY_ITEMS = [];
+
 const CatalogoSelectorModal = ({
   isOpen,
   onClose,
@@ -10,7 +12,7 @@ const CatalogoSelectorModal = ({
   onSearchChange,
   searchPlaceholder,
   searchLabel,
-  items = [],
+  items = EMPTY_ITEMS,
   loading = false,
   selectedId = "",
   onSelect,
