@@ -812,7 +812,7 @@ const FormularioProveedor = ({
   return (
     <>
       <div className="mx-auto max-w-6xl rounded-lg border border-gray-200 bg-white p-4 shadow-lg sm:p-6 md:p-8">
-        <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
+        <h2 className="mb-6 text-center text-2xl font-semibold text-gray-800">
           {proveedor?.id ? "Editar Proveedor" : "Registrar Nuevo Proveedor"}
         </h2>
 
@@ -917,7 +917,7 @@ const FormularioProveedor = ({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
+                <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
                   Aun no has seleccionado tipos oficiales para este proveedor.
                 </div>
               )}
@@ -1040,7 +1040,7 @@ const FormularioProveedor = ({
                 id="activo"
                 checked={formData.activo}
                 onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label
                 htmlFor="activo"
@@ -1076,7 +1076,7 @@ const FormularioProveedor = ({
               className="w-full rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {loading
-                ? "Guardando..."
+                ? "Guardando…"
                 : proveedor?.id
                   ? "Actualizar Proveedor"
                   : "Crear Proveedor"}

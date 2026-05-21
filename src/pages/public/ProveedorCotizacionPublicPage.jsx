@@ -747,7 +747,7 @@ const ProveedorCotizacionPublicPage = () => {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto max-w-3xl rounded bg-white p-6 shadow-sm">
-          <p className="text-sm text-slate-600">Validando enlace...</p>
+          <p className="text-sm text-slate-600">Validando enlace…</p>
         </div>
       </main>
     );
@@ -760,7 +760,7 @@ const ProveedorCotizacionPublicPage = () => {
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
             Cotizacion enviada
           </p>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">
             Gracias, su cotizacion fue registrada correctamente.
           </h1>
           <p className="mt-3 text-sm text-slate-600">
@@ -787,7 +787,7 @@ const ProveedorCotizacionPublicPage = () => {
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
             Portal publico de proveedores
           </p>
-          <h1 className="mt-2 text-2xl font-bold text-slate-950">
+          <h1 className="mt-2 text-2xl font-semibold text-slate-950">
             Registro de cotizacion
           </h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -821,7 +821,7 @@ const ProveedorCotizacionPublicPage = () => {
                 disabled={submitting}
                 className="self-end rounded bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
               >
-                {submitting ? "Validando..." : "Ingresar"}
+                {submitting ? "Validando…" : "Ingresar"}
               </button>
             </div>
             {fieldErrors.length ? (
@@ -839,7 +839,7 @@ const ProveedorCotizacionPublicPage = () => {
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               Cotizacion registrada
             </p>
-            <h2 className="mt-2 text-xl font-bold text-slate-950">
+            <h2 className="mt-2 text-xl font-semibold text-slate-950">
               Esta solicitud ya tiene una cotizacion enviada.
             </h2>
             <p className="mt-3 text-sm text-slate-600">
@@ -1597,7 +1597,7 @@ const ProveedorCotizacionPublicPage = () => {
                 disabled={submitting}
                 className="rounded bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
               >
-                {submitting ? "Enviando..." : "Enviar cotizacion"}
+                {submitting ? "Enviando…" : "Enviar cotizacion"}
               </button>
             </section>
           </form>

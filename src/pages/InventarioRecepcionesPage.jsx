@@ -343,7 +343,7 @@ const InventarioRecepcionesPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Recepciones y notas de ingreso
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -553,7 +553,7 @@ const InventarioRecepcionesPage = () => {
                 disabled={loading}
                 className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
               >
-                {loading ? "Registrando..." : "Registrar ingreso"}
+                {loading ? "Registrando…" : "Registrar ingreso"}
               </button>
             </form>
           ) : (
@@ -949,7 +949,7 @@ const InventarioRecepcionesPage = () => {
                   disabled={loading || !selectedOrdenCompra || ocForm.items.length === 0}
                   className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
                 >
-                  {loading ? "Registrando..." : "Registrar recepcion"}
+                  {loading ? "Registrando…" : "Registrar recepcion"}
                 </button>
               </div>
             </form>

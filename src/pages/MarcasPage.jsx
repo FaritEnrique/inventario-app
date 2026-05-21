@@ -12,7 +12,7 @@ const MarcasPage = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Marcas</h1>
+      <h1 className="text-2xl font-semibold mb-4">Marcas</h1>
       {cargando && marcas.length === 0 ? (
         <SkeletonSection rows={4} />
       ) : (

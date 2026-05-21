@@ -481,7 +481,7 @@ const RequerimientoForm = ({
               className="mt-3 w-full rounded border border-gray-300 px-3 py-2"
               placeholder="Buscar por codigo, nombre o descripcion"
             />
-            {searching && <p className="mt-2 text-sm text-gray-500">Buscando productos...</p>}
+            {searching && <p className="mt-2 text-sm text-gray-500">Buscando productos…</p>}
             {!searching && results.length > 0 && (
               <div className="mt-3 max-h-80 overflow-y-auto rounded border border-gray-200">
                 {results.map((producto) => (
@@ -679,7 +679,7 @@ const RequerimientoForm = ({
 
         <div className="flex items-center justify-end gap-3">
           <button type="submit" disabled={submitting} className="rounded bg-indigo-600 px-5 py-2 font-medium text-white disabled:opacity-60">
-            {submitting ? "Guardando..." : "Guardar requerimiento"}
+            {submitting ? "Guardando…" : "Guardar requerimiento"}
           </button>
         </div>
       </form>

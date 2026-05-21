@@ -209,7 +209,7 @@ const OrdenesCompraPage = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{labels.title}</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">{labels.title}</h1>
           <p className="mt-1 text-sm text-gray-600">{labels.description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -347,7 +347,7 @@ const OrdenesCompraPage = () => {
             disabled={loading}
             className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
           >
-            {loading ? "Consultando..." : "Aplicar filtros"}
+            {loading ? "Consultando…" : "Aplicar filtros"}
           </button>
         </div>
       </form>

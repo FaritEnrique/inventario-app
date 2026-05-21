@@ -196,7 +196,7 @@ const InventarioOperacionesPage = () => {
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Operaciones de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -403,7 +403,7 @@ const InventarioOperacionesPage = () => {
             disabled={inventario.loading}
             className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
           >
-            {inventario.loading ? "Procesando..." : "Registrar operación"}
+            {inventario.loading ? "Procesando…" : "Registrar operación"}
           </button>
         </form>
       )}

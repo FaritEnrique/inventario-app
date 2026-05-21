@@ -927,7 +927,7 @@ const SolicitudCotizacionDetallePage = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900">
             Detalle de solicitud de cotización
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -999,7 +999,7 @@ const SolicitudCotizacionDetallePage = () => {
               className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FaEnvelope className="text-xs" />
-              {sendingEmail ? "Enviando..." : "Enviar por correo"}
+              {sendingEmail ? "Enviando…" : "Enviar por correo"}
             </button>
           ) : null}
         </div>
@@ -1082,7 +1082,7 @@ const SolicitudCotizacionDetallePage = () => {
               className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FaEnvelope className="text-xs" />
-              {sendingEmail ? "Enviando..." : "Enviar"}
+              {sendingEmail ? "Enviando…" : "Enviar"}
             </button>
           </div>
         </form>
@@ -1121,35 +1121,35 @@ const SolicitudCotizacionDetallePage = () => {
 
           {historyLoading ? (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-600">
-              Cargando historial de envios...
+              Cargando historial de envios…
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Fecha y hora
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Destinatario
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Asunto
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Enviado por
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Tipo
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Resultado
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       PDF adjunto
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                       ID proveedor / error
                     </th>
                   </tr>
@@ -1158,22 +1158,22 @@ const SolicitudCotizacionDetallePage = () => {
                   {emailHistory.length > 0 ? (
                     emailHistory.map((event) => (
                       <tr key={event.id}>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {formatDateTime(event.fechaHoraEnvio)}
                         </td>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {readValue(event.correoDestino)}
                         </td>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {readValue(event.asunto)}
                         </td>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {readValue(event.enviadoPor?.nombre)}
                         </td>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {readValue(event.tipoEnvio)}
                         </td>
-                        <td className="px-3 py-3 text-sm">
+                        <td className="p-3 text-sm">
                           <span
                             className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                               event.resultadoEnvio === "EXITOSO"
@@ -1184,10 +1184,10 @@ const SolicitudCotizacionDetallePage = () => {
                             {readValue(event.resultadoEnvio)}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-sm text-gray-700">
+                        <td className="p-3 text-sm text-gray-700">
                           {readValue(event.nombreArchivoAdjunto)}
                         </td>
-                        <td className="max-w-xs px-3 py-3 text-sm text-gray-700">
+                        <td className="max-w-xs p-3 text-sm text-gray-700">
                           <span className="break-words">
                             {readValue(
                               event.providerMessageId || event.detalleError,
@@ -1298,7 +1298,7 @@ const SolicitudCotizacionDetallePage = () => {
                   className="inline-flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <FaKey className="text-xs" />
-                  {systemAccessLoading ? "Regenerando..." : "Regenerar acceso"}
+                  {systemAccessLoading ? "Regenerando…" : "Regenerar acceso"}
                 </button>
               ) : (
                 <button
@@ -1308,7 +1308,7 @@ const SolicitudCotizacionDetallePage = () => {
                   className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <FaKey className="text-xs" />
-                  {systemAccessLoading ? "Generando..." : "Generar acceso"}
+                  {systemAccessLoading ? "Generando…" : "Generar acceso"}
                 </button>
               )}
             </div>
@@ -1379,7 +1379,7 @@ const SolicitudCotizacionDetallePage = () => {
               disabled={accessTraceLoading}
               className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {accessTraceLoading ? "Actualizando..." : "Actualizar"}
+              {accessTraceLoading ? "Actualizando…" : "Actualizar"}
             </button>
             <button
               type="button"
@@ -1400,7 +1400,7 @@ const SolicitudCotizacionDetallePage = () => {
 
           {accessTraceLoading && !accessTraceData ? (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-600">
-              Cargando trazabilidad de acceso...
+              Cargando trazabilidad de acceso…
             </div>
           ) : (
             <>
@@ -1475,19 +1475,19 @@ const SolicitudCotizacionDetallePage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Fecha y hora
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Evento
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Actor
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Telefono
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Detalle seguro
                       </th>
                     </tr>
@@ -1496,19 +1496,19 @@ const SolicitudCotizacionDetallePage = () => {
                     {accessTraceEvents.length ? (
                       accessTraceEvents.map((event) => (
                         <tr key={event.id}>
-                          <td className="px-3 py-3 text-sm text-gray-700">
+                          <td className="p-3 text-sm text-gray-700">
                             {formatDateTime(event.fechaEvento)}
                           </td>
-                          <td className="px-3 py-3 text-sm font-medium text-gray-800">
+                          <td className="p-3 text-sm font-medium text-gray-800">
                             {formatAccessEventLabel(event.tipoEvento)}
                           </td>
-                          <td className="px-3 py-3 text-sm text-gray-700">
+                          <td className="p-3 text-sm text-gray-700">
                             {formatActorLabel(event)}
                           </td>
-                          <td className="px-3 py-3 text-sm text-gray-700">
+                          <td className="p-3 text-sm text-gray-700">
                             {readValue(getEventPhone(event, accessTraceAccess))}
                           </td>
-                          <td className="max-w-sm px-3 py-3 text-sm text-gray-700">
+                          <td className="max-w-sm p-3 text-sm text-gray-700">
                             <span className="break-words">
                               {formatTraceDetail(event.detalleSeguro)}
                             </span>
@@ -1535,21 +1535,21 @@ const SolicitudCotizacionDetallePage = () => {
       </Modal>
 
       {configuracionEmpresaError ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           La configuración institucional no pudo cargarse. La vista documentaria
           seguirá disponible, pero el membrete puede salir incompleto.
         </div>
       ) : null}
 
       {solicitud.activo === false ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-900">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
           Esta solicitud se encuentra desactivada y se conserva solo para
           trazabilidad.
         </div>
       ) : null}
 
       {missingDocumentFields.length > 0 ? (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-950">
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
           Esta solicitud aún tiene campos documentarios pendientes:{" "}
           <span className="font-semibold">
             {missingDocumentFields.join(", ")}

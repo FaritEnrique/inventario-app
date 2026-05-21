@@ -111,7 +111,7 @@ const InventarioReservaDetallePage = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Detalle de reserva de stock
           </h1>
           <p className="mt-1 text-sm text-slate-600">

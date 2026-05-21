@@ -105,7 +105,7 @@ const InventarioNotasIngresoPage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Notas de ingreso</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Notas de ingreso</h1>
           <p className="mt-1 text-sm text-slate-600">
             Consulta documental de ingresos registrados por recepcion y compra.
           </p>
@@ -182,7 +182,7 @@ const InventarioNotasIngresoPage = () => {
             disabled={loading}
             className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
           >
-            {loading ? "Consultando..." : "Filtrar"}
+            {loading ? "Consultando…" : "Filtrar"}
           </button>
           <button
             type="button"
