@@ -409,7 +409,7 @@ const GestionUsuariosPage = () => {
 
           <div className="mt-6 flex items-center justify-between">
             <button
-              onClick={() => setPage(page - 1)}
+              onClick={() => setPage((prev) => prev - 1)}
               disabled={page <= 1}
               className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
             >
@@ -419,7 +419,7 @@ const GestionUsuariosPage = () => {
               Pagina {page} de {totalPages}
             </span>
             <button
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((prev) => prev + 1)}
               disabled={page >= totalPages}
               className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
             >

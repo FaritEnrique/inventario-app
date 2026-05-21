@@ -29,11 +29,13 @@ const formatPrintDate = (value) => {
   return parsed.toLocaleDateString("es-PE");
 };
 
+const moneyFormatter = new Intl.NumberFormat("es-PE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const formatMoney = (value) =>
-  new Intl.NumberFormat("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+  moneyFormatter.format(Number(value || 0));
 
 const joinUniqueSegments = (segments) => {
   const seen = new Set();

@@ -22,7 +22,9 @@ const formatDateTime = (value) =>
 const InventarioReservasPage = () => {
   const { loading, obtenerReservas } = useInventario();
   const [searchParams] = useSearchParams();
-  const [producto, setProducto] = useState(buildInitialProducto(searchParams));
+  const [producto, setProducto] = useState(() =>
+    buildInitialProducto(searchParams)
+  );
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     estado: searchParams.get("estado") || "",
@@ -347,4 +349,3 @@ const InventarioReservasPage = () => {
 };
 
 export default InventarioReservasPage;
-

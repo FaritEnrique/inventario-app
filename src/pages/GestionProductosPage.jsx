@@ -1079,14 +1079,14 @@ const GestionProductosPage = () => {
           <div className="flex space-x-2">
             <button
               disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => setPage((prev) => prev - 1)}
               className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
             >
               Anterior
             </button>
             <button
               disabled={hasta >= total}
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((prev) => prev + 1)}
               className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
             >
               Siguiente

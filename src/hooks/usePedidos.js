@@ -21,7 +21,7 @@ const usePedidos = () => {
 
   const crearPedido = async (datos) => {
     const nuevo = await pedidosApi.crear(datos);
-    setPedidos([...pedidos, nuevo]);
+    setPedidos((prev) => [...prev, nuevo]);
   };
 
   const eliminarPedido = async (id) => {
