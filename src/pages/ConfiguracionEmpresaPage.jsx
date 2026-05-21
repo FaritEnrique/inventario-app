@@ -65,11 +65,11 @@ const FooterPreviewItem = ({
       className={`flex min-w-0 items-start gap-2.5 px-1 py-1 text-slate-700 ${className}`.trim()}
     >
       <div className="flex flex-none items-center gap-1 pt-0.5 text-slate-700">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[13px]">
+        <span className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-[13px]">
           {icon}
         </span>
         {extraIcon ? (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px]">
+          <span className="flex size-5 items-center justify-center rounded-full bg-slate-100 text-[10px]">
             {extraIcon}
           </span>
         ) : null}
@@ -664,10 +664,10 @@ const ConfiguracionEmpresaPage = () => {
                   <img
                     src={logoPreviewUrl}
                     alt="Logo institucional"
-                    className="object-contain p-3 bg-white border shadow-sm h-28 w-28 rounded-3xl border-slate-200"
+                    className="size-28 rounded-3xl border border-slate-200 bg-white object-contain p-3 shadow-sm"
                   />
                 ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <div className="flex size-28 items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Sin logo
                   </div>
                 )}

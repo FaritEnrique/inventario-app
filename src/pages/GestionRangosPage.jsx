@@ -51,7 +51,7 @@ const GestionRangosPage = () => {
   };
 
   if (loading)
-    return <div className="text-center mt-8 text-xl">Cargando rangos...</div>;
+    return <div className="text-center mt-8 text-xl">Cargando rangos…</div>;
   if (error)
     return (
       <div className="text-center mt-8 text-xl text-red-500">
@@ -61,7 +61,7 @@ const GestionRangosPage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-6 text-gray-800">
+      <h1 className="text-4xl font-semibold mb-6 text-gray-800">
         Gestión de Rangos
       </h1>
 

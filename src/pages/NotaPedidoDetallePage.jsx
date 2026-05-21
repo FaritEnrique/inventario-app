@@ -78,7 +78,7 @@ const NotaPedidoDetallePage = () => {
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-semibold text-slate-900">
             Detalle de Nota de Pedido
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -97,7 +97,7 @@ const NotaPedidoDetallePage = () => {
 
       {loading && !pedido ? (
         <div className="rounded-lg bg-white p-6 shadow">
-          <p className="text-sm text-slate-500">Cargando nota de pedido...</p>
+          <p className="text-sm text-slate-500">Cargando nota de pedido…</p>
         </div>
       ) : !pedido ? (
         <div className="rounded-lg bg-white p-6 shadow">

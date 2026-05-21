@@ -25,7 +25,7 @@ const UsersPage = () => {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
+      <h1 className="mb-4 text-2xl font-semibold">Gestión de Usuarios</h1>
 
       <form
         onSubmit={handleSubmit}
@@ -71,7 +71,7 @@ const UsersPage = () => {
       </form>
 
       {cargando ? (
-        <p>Cargando usuarios...</p>
+        <p>Cargando usuarios…</p>
       ) : (
         <ul className="space-y-2">
           {usuarios.map((user) => (

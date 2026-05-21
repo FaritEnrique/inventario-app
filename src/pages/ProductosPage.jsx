@@ -27,7 +27,7 @@ const ProductosPage = () => {
       </h1>
 
       {cargando ? (
-        <p className="text-gray-600">Cargando productos...</p>
+        <p className="text-gray-600">Cargando productos…</p>
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : productos.length === 0 ? (

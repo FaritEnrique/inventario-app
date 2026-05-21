@@ -317,7 +317,7 @@ const GestionAreasPage = () => {
             to="/gestion-usuarios"
             className="inline-flex items-center gap-2 mb-3 text-sm font-semibold text-blue-700 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-blue-300 dark:hover:text-blue-100 dark:focus:ring-offset-gray-800"
           >
-            <FaArrowCircleLeft className="w-5 h-5" aria-hidden="true" />
+            <FaArrowCircleLeft className="size-5" aria-hidden="true" />
             <span>Gesti&oacute;n de usuarios</span>
           </Link>
           <h1 className="text-3xl font-semibold text-blue-600 dark:text-blue-500">
@@ -337,9 +337,9 @@ const GestionAreasPage = () => {
           }
         >
           {isDarkModeLocal ? (
-            <FaSun className="w-6 h-6 text-yellow-300" />
+            <FaSun className="size-6 text-yellow-300" />
           ) : (
-            <FaMoon className="w-6 h-6 text-white" />
+            <FaMoon className="size-6 text-white" />
           )}
         </button>
       </div>
@@ -496,7 +496,7 @@ const GestionAreasPage = () => {
             name="esAreaLogistica"
             checked={formData.esAreaLogistica === true}
             onChange={handleChange}
-            className="w-4 h-4 border-blue-400 rounded accent-blue-600"
+            className="size-4 rounded border-blue-400 accent-blue-600"
           />
           <span className="text-sm font-medium text-blue-900">
             Es area de Logistica
@@ -514,7 +514,7 @@ const GestionAreasPage = () => {
             name="esAreaAlmacen"
             checked={formData.esAreaAlmacen === true}
             onChange={handleChange}
-            className="w-4 h-4 rounded border-amber-400 accent-amber-600"
+            className="size-4 rounded border-amber-400 accent-amber-600"
           />
           <span className="text-sm font-medium text-amber-900">
             Es area de Almacen

@@ -192,7 +192,7 @@ const GestionUsuariosPage = () => {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold">Gestión de Usuarios</h1>
+      <h1 className="mb-4 text-2xl font-semibold">Gestión de Usuarios</h1>
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Solo <code>ADMINISTRADOR_SISTEMA</code> y{" "}
         <code>GERENTE_ADMINISTRACION</code> pueden crear, editar y cambiar el
@@ -210,10 +210,10 @@ const GestionUsuariosPage = () => {
         className="mb-6 flex w-full flex-col gap-4 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-cyan-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center md:justify-between"
       >
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+          <div className="flex size-12 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
             <svg
               viewBox="0 0 24 24"
-              className="h-6 w-6"
+              className="size-6"
               aria-hidden="true"
               fill="none"
               stroke="currentColor"
@@ -292,7 +292,7 @@ const GestionUsuariosPage = () => {
       </div>
 
       {cargandoUsuarios ? (
-        <p>Cargando...</p>
+        <p>Cargando…</p>
       ) : (
         <>
           <ul className="space-y-2">

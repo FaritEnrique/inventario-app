@@ -220,7 +220,7 @@ const DashboardPage = () => {
   const { user, loading, activeContext } = useAuth();
 
   if (loading || !user || !activeContext) {
-    return <div>Cargando contenido del panel de control...</div>;
+    return <div>Cargando contenido del panel de control…</div>;
   }
 
   const availableApprovalTrays = getAvailableApprovalTraysEffective(user);
@@ -327,7 +327,7 @@ const DashboardPage = () => {
                   to={resolvedPath}
                   className={cardClasses}
                 >
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-blue-600 bg-indigo-100 text-3xl text-indigo-600">
+                  <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full border-2 border-blue-600 bg-indigo-100 text-3xl text-indigo-600">
                     {card.icon}
                   </div>
                   <h2 className="text-center text-lg font-semibold text-gray-800">

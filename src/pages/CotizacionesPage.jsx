@@ -16,7 +16,7 @@ const CotizacionesPage = () => {
   const canAccess = canAccessCotizacionesEffective(user);
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-600">Cargando acceso a cotizaciones...</div>;
+    return <div className="p-6 text-sm text-gray-600">Cargando acceso a cotizaciones…</div>;
   }
 
   if (!canAccess && (hasJefaturaContext || hasOperadorContext)) {

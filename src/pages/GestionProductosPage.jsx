@@ -528,7 +528,7 @@ const GestionProductosPage = () => {
         <div className="grid grid-cols-1 gap-6 mb-4 md:grid-cols-2 lg:grid-cols-3">
           {visibleCards.map((card) => (
             <Link key={card.title} to={card.path} className={cardClasses}>
-              <div className="flex items-center justify-center mx-auto mb-3 text-3xl text-indigo-600 bg-indigo-100 border-2 border-blue-600 rounded-full w-14 h-14">
+              <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full border-2 border-blue-600 bg-indigo-100 text-3xl text-indigo-600">
                 {card.icon}
               </div>
               <h2 className="text-lg font-semibold text-center text-gray-800">
@@ -576,7 +576,7 @@ const GestionProductosPage = () => {
                   onClick={openTipoModal}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
                 >
-                  <FaSearch className="h-4 w-4" />
+                  <FaSearch className="size-4" />
                   {productoActual.tipoProductoId ? "Cambiar" : "Seleccionar"}
                 </button>
                 {productoActual.tipoProductoId ? (
@@ -621,7 +621,7 @@ const GestionProductosPage = () => {
                   onClick={openMarcaModal}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
                 >
-                  <FaSearch className="h-4 w-4" />
+                  <FaSearch className="size-4" />
                   {productoActual.marcaId ? "Cambiar" : "Seleccionar"}
                 </button>
                 {productoActual.marcaId ? (
@@ -802,7 +802,7 @@ const GestionProductosPage = () => {
               <img
                 src={resolveProductoImageUrl(productoActual.imagenUrl)}
                 alt="Preview"
-                className="object-contain w-32 h-32 mt-2 border rounded"
+                className="mt-2 size-32 rounded border object-contain"
               />
             )}
           </div>
@@ -1114,7 +1114,7 @@ const GestionProductosPage = () => {
               <img
                 src={resolveProductoImageUrl(productoEnDetalle.imagenUrl)}
                 alt={`Imagen de ${productoEnDetalle.nombre}`}
-                className="object-cover w-48 h-48 mb-4 rounded-lg shadow-md"
+                className="mb-4 size-48 rounded-lg object-cover shadow-md"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src =
@@ -1122,7 +1122,7 @@ const GestionProductosPage = () => {
                 }}
               />
             ) : (
-              <div className="flex items-center justify-center w-48 h-48 mb-4 text-gray-500 bg-gray-200 rounded-lg shadow-md">
+              <div className="mb-4 flex size-48 items-center justify-center rounded-lg bg-gray-200 text-gray-500 shadow-md">
                 No hay imagen disponible
               </div>
             )}

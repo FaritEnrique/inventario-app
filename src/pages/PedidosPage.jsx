@@ -12,7 +12,7 @@ const PedidosPage = () => {
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-4 text-indigo-700">Gestión de Pedidos</h1>
 
-      {cargando && <p>Cargando pedidos...</p>}
+      {cargando && <p>Cargando pedidos…</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
 
       <table className="w-full table-auto border mt-4">

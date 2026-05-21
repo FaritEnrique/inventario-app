@@ -36,7 +36,7 @@ const SeleccionContextoPage = () => {
   if (loading) {
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-3xl items-center justify-center px-4 text-sm text-slate-600">
-        Cargando contextos operativos...
+        Cargando contextos operativos…
       </div>
     );
   }

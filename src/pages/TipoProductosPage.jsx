@@ -9,7 +9,7 @@ const TipoProductosPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-indigo-700 mb-4">
+        <h1 className="text-2xl font-semibold text-indigo-700 mb-4">
           Tipos de Producto
         </h1>
 

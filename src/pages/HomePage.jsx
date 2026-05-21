@@ -10,7 +10,7 @@ import {
 const EyeIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
+    className="size-4"
     viewBox="0 0 20 20"
     fill="currentColor"
   >
@@ -26,7 +26,7 @@ const EyeIcon = () => (
 const EyeSlashIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
+    className="size-4"
     viewBox="0 0 20 20"
     fill="currentColor"
   >
@@ -97,7 +97,7 @@ const HomePage = () => {
   if (cargando) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        Cargando...
+        Cargando…
       </div>
     );
   }
@@ -106,7 +106,7 @@ const HomePage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
         <div className="mx-auto w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-          <h1 className="mb-1 text-center text-2xl font-extrabold text-blue-600">
+          <h1 className="mb-1 text-center text-2xl font-semibold text-blue-600">
             Crear cuenta de administrador del sistema
           </h1>
           <p className="mb-4 text-center text-sm text-gray-500">
@@ -207,7 +207,7 @@ const HomePage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-white p-8 text-center shadow-lg">
-        <h1 className="mb-4 text-4xl font-bold text-blue-700">
+        <h1 className="mb-4 text-4xl font-semibold text-blue-700">
           Bienvenido al Sistema Logistico
         </h1>
         <p className="mb-6 text-lg text-gray-600">

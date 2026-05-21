@@ -9,10 +9,10 @@ const Footer = () => {
       <div className="flex flex-col gap-4 px-4 py-5 mx-auto text-sm max-w-7xl text-cyan-50 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 border shadow-sm rounded-xl border-cyan-200/15 bg-white/10">
+            <div className="flex size-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-200/15 bg-white/10 shadow-sm">
               <svg
                 viewBox="0 0 64 64"
-                className="w-6 h-6 text-cyan-100"
+                className="size-6 text-cyan-100"
                 aria-hidden="true"
                 fill="none"
               >

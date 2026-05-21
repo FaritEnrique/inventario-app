@@ -21,7 +21,7 @@ const ConfirmDeleteToast2 = ({ closeToast, message, onConfirm }) => {
       className="max-w-md p-6 mx-auto bg-white border border-gray-300 shadow-xl dark:bg-gray-900 rounded-2xl dark:border-gray-700"
     >
       <div className="flex items-center gap-3 mb-4">
-        <Trash2 className="w-6 h-6 text-red-600 dark:text-red-500" />
+        <Trash2 className="size-6 text-red-600 dark:text-red-500" />
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
           Confirmar Eliminación
         </h3>
@@ -32,7 +32,7 @@ const ConfirmDeleteToast2 = ({ closeToast, message, onConfirm }) => {
           onClick={handleCancel}
           className="flex items-center gap-1 px-4 py-2 font-medium text-gray-800 transition bg-gray-200 rounded-md dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
         >
-          <XCircle className="w-4 h-4" /> Cancelar
+          <XCircle className="size-4" /> Cancelar
         </button>
         <button
           onClick={handleConfirm}
