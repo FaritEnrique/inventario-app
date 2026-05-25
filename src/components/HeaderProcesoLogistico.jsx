@@ -3,7 +3,22 @@ import React, { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+const linkClasses = ({ isActive }) =>
+  `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
+    isActive
+      ? "bg-indigo-500 text-white"
+      : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
+  }`;
+
 const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
+  const basePath = `/cotizaciones/proceso/${id}`;
+  const navItems = [
+    { label: "Detalle", to: basePath, end: true },
+    { label: "Solicitudes", to: `${basePath}/solicitudes` },
+    { label: "Cotizaciones", to: `${basePath}/cotizaciones` },
+    { label: "Comparativos", to: `${basePath}/comparativos` },
+    { label: "Orden de Compra", to: `${basePath}/orden-compra` },
+  ];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef();
 
@@ -53,102 +68,31 @@ const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
             </button>
             {isMobileMenuOpen ? (
               <nav className="absolute right-0 z-20 flex flex-col w-56 gap-2 p-2 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
-                <NavLink
-                  to={`/cotizaciones/proceso/${id}`}
-                  end
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Detalle
-                </NavLink>
-                <NavLink
-                  to={`/cotizaciones/proceso/${id}/solicitudes`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Solicitudes
-                </NavLink>
-                <NavLink
-                  to={`/cotizaciones/proceso/${id}/cotizaciones`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Cotizaciones
-                </NavLink>
-                <NavLink
-                  to={`/cotizaciones/proceso/${id}/comparativos`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Comparativos
-                </NavLink>
-                <NavLink
-                  to={`/cotizaciones/proceso/${id}/orden-compra`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Orden de Compra
-                </NavLink>
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={linkClasses}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
               </nav>
             ) : null}
           </div>
           <nav className="hidden mt-4 space-x-4 lg:flex">
-            <NavLink
-              to={`/cotizaciones/proceso/${id}`}
-              end
-              className={({ isActive }) =>
-                `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
-                  isActive
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
-                }`
-              }
-            >
-              Detalle
-            </NavLink>
-            <NavLink
-              to={`/cotizaciones/proceso/${id}/solicitudes`}
-              className={({ isActive }) =>
-                `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
-                  isActive
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
-                }`
-              }
-            >
-              Solicitudes
-            </NavLink>
-            <NavLink
-              to={`/cotizaciones/proceso/${id}/cotizaciones`}
-              className={({ isActive }) =>
-                `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
-                  isActive
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
-                }`
-              }
-            >
-              Cotizaciones
-            </NavLink>
-            <NavLink
-              to={`/cotizaciones/proceso/${id}/comparativos`}
-              className={({ isActive }) =>
-                `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
-                  isActive
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
-                }`
-              }
-            >
-              Comparativos
-            </NavLink>
-            <NavLink
-              to={`/cotizaciones/proceso/${id}/orden-compra`}
-              className={({ isActive }) =>
-                `px-4 py-2 font-semibold transition-transform duration-200 rounded-lg hover:scale-105 ${
-                  isActive
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
-                }`
-              }
-            >
-              Orden de Compra
-            </NavLink>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={linkClasses}
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
       </div>
