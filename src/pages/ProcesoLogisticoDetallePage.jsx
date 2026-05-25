@@ -1,5 +1,11 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+  Outlet,
+} from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   canAdjudicateCotizacionesLogisticaEffective,
@@ -2258,7 +2264,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                         <Link
                           to={`/solicitudes-cotizacion/${solicitud.id}`}
                           state={{ from: location }}
-                          className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                          className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                         >
                           Ver solicitud
                         </Link>
@@ -2285,8 +2291,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                         {canManageDrafts && activeCotizacion ? (
                           <button
                             type="button"
-                            onClick={() => handleEditCotizacion(activeCotizacion)}
-                            className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                            onClick={() =>
+                              handleEditCotizacion(activeCotizacion)
+                            }
+                            className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                           >
                             Editar cotizacion
                           </button>
@@ -2409,7 +2417,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                               <Link
                                 to={`/solicitudes-cotizacion/${solicitud.id}`}
                                 state={{ from: location }}
-                                className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                                className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                               >
                                 Ver solicitud
                               </Link>
@@ -2443,7 +2451,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                                   onClick={() =>
                                     handleEditCotizacion(activeCotizacion)
                                   }
-                                  className="px-3 py-1 border rounded border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                                  className="px-3 py-1 text-indigo-700 border border-indigo-300 rounded hover:bg-indigo-50"
                                 >
                                   Editar
                                 </button>

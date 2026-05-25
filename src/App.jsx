@@ -37,106 +37,126 @@ import { hasRole } from "./utils/userRoles";
 import { canAccessUserManagementEffective } from "./accessRules";
 import "./index.css";
 
-const CrearPrimerUsuarioPage = lazy(() => import("./pages/CrearPrimerUsuarioPage"));
-const CambiarContrasenaPage = lazy(() =>
-  import("./pages/CambiarContrasenaPage")
+const CrearPrimerUsuarioPage = lazy(
+  () => import("./pages/CrearPrimerUsuarioPage"),
 );
-const CrearRequerimientoPage = lazy(() => import("./pages/CrearRequerimientoPage"));
-const BandejaAlmacenNotasPedidoPage = lazy(() =>
-  import("./pages/BandejaAlmacenNotasPedidoPage")
+const CambiarContrasenaPage = lazy(
+  () => import("./pages/CambiarContrasenaPage"),
 );
-const BandejaAprobacionNotasPedidoPage = lazy(() =>
-  import("./pages/BandejaAprobacionNotasPedidoPage")
+const CrearRequerimientoPage = lazy(
+  () => import("./pages/CrearRequerimientoPage"),
+);
+const BandejaAlmacenNotasPedidoPage = lazy(
+  () => import("./pages/BandejaAlmacenNotasPedidoPage"),
+);
+const BandejaAprobacionNotasPedidoPage = lazy(
+  () => import("./pages/BandejaAprobacionNotasPedidoPage"),
 );
 const CrearNotaPedidoPage = lazy(() => import("./pages/CrearNotaPedidoPage"));
-const EditarRequerimientoPage = lazy(() =>
-  import("./pages/EditarRequerimientoPage")
+const EditarRequerimientoPage = lazy(
+  () => import("./pages/EditarRequerimientoPage"),
 );
 const GestionAreasPage = lazy(() => import("./pages/GestionAreasPage"));
 const GestionMarcasPage = lazy(() => import("./pages/GestionMarcasPage"));
 const GestionProductosPage = lazy(() => import("./pages/GestionProductosPage"));
-const GestionProveedoresPage = lazy(() =>
-  import("./pages/GestionProveedoresPage")
+const GestionProveedoresPage = lazy(
+  () => import("./pages/GestionProveedoresPage"),
 );
-const ConfiguracionEmpresaPage = lazy(() =>
-  import("./pages/ConfiguracionEmpresaPage")
+const ConfiguracionEmpresaPage = lazy(
+  () => import("./pages/ConfiguracionEmpresaPage"),
 );
-const BandejaSolicitudesTipoProductoPage = lazy(() =>
-  import("./pages/BandejaSolicitudesTipoProductoPage")
+const BandejaSolicitudesTipoProductoPage = lazy(
+  () => import("./pages/BandejaSolicitudesTipoProductoPage"),
 );
-const GestionTipoProductosPage = lazy(() =>
-  import("./pages/GestionTipoProductosPage")
+const GestionTipoProductosPage = lazy(
+  () => import("./pages/GestionTipoProductosPage"),
 );
 const GestionUsuariosPage = lazy(() => import("./pages/GestionUsuariosPage"));
 const InventarioKardexPage = lazy(() => import("./pages/InventarioKardexPage"));
-const InventarioNotaIngresoDetallePage = lazy(() =>
-  import("./pages/InventarioNotaIngresoDetallePage")
+const InventarioNotaIngresoDetallePage = lazy(
+  () => import("./pages/InventarioNotaIngresoDetallePage"),
 );
-const InventarioNotaSalidaDetallePage = lazy(() =>
-  import("./pages/InventarioNotaSalidaDetallePage")
+const InventarioNotaSalidaDetallePage = lazy(
+  () => import("./pages/InventarioNotaSalidaDetallePage"),
 );
-const InventarioMovimientosPage = lazy(() =>
-  import("./pages/InventarioMovimientosPage")
+const InventarioMovimientosPage = lazy(
+  () => import("./pages/InventarioMovimientosPage"),
 );
-const InventarioNotasIngresoPage = lazy(() =>
-  import("./pages/InventarioNotasIngresoPage")
+const InventarioNotasIngresoPage = lazy(
+  () => import("./pages/InventarioNotasIngresoPage"),
 );
-const InventarioNotasSalidaPage = lazy(() =>
-  import("./pages/InventarioNotasSalidaPage")
+const InventarioNotasSalidaPage = lazy(
+  () => import("./pages/InventarioNotasSalidaPage"),
 );
-const InventarioOperacionesPage = lazy(() =>
-  import("./pages/InventarioOperacionesPage")
+const InventarioOperacionesPage = lazy(
+  () => import("./pages/InventarioOperacionesPage"),
 );
-const InventarioReservaDetallePage = lazy(() =>
-  import("./pages/InventarioReservaDetallePage")
+const InventarioReservaDetallePage = lazy(
+  () => import("./pages/InventarioReservaDetallePage"),
 );
-const InventarioReservasPage = lazy(() =>
-  import("./pages/InventarioReservasPage")
+const InventarioReservasPage = lazy(
+  () => import("./pages/InventarioReservasPage"),
 );
-const InventarioRecepcionesPage = lazy(() =>
-  import("./pages/InventarioRecepcionesPage")
+const InventarioRecepcionesPage = lazy(
+  () => import("./pages/InventarioRecepcionesPage"),
 );
 const InventarioStockPage = lazy(() => import("./pages/InventarioStockPage"));
-const NotaPedidoDetallePage = lazy(() => import("./pages/NotaPedidoDetallePage"));
+const NotaPedidoDetallePage = lazy(
+  () => import("./pages/NotaPedidoDetallePage"),
+);
 const NotasPedidoPage = lazy(() => import("./pages/NotasPedidoPage"));
-const OrdenCompraDetallePage = lazy(() =>
-  import("./pages/OrdenCompraDetallePage")
+const OrdenCompraDetallePage = lazy(
+  () => import("./pages/OrdenCompraDetallePage"),
 );
 const OrdenesCompraPage = lazy(() => import("./pages/OrdenesCompraPage"));
-const RequerimientoDetallePage = lazy(() =>
-  import("./pages/RequerimientoDetallePage")
+const RequerimientoDetallePage = lazy(
+  () => import("./pages/RequerimientoDetallePage"),
 );
-const RequerimientosBandejaPage = lazy(() =>
-  import("./pages/RequerimientosBandejaPage")
+const RequerimientosBandejaPage = lazy(
+  () => import("./pages/RequerimientosBandejaPage"),
 );
 const RequerimientosPage = lazy(() => import("./pages/RequerimientosPage"));
-const RestablecerContrasenaPage = lazy(() =>
-  import("./pages/RestablecerContrasenaPage")
+const RestablecerContrasenaPage = lazy(
+  () => import("./pages/RestablecerContrasenaPage"),
 );
-const SolicitarRestablecimientoPage = lazy(() =>
-  import("./pages/SolicitarRestablecimientoPage")
+const SolicitarRestablecimientoPage = lazy(
+  () => import("./pages/SolicitarRestablecimientoPage"),
 );
-const CotizacionesBandejaPage = lazy(() =>
-  import("./pages/CotizacionesBandejaPage")
+const CotizacionesBandejaPage = lazy(
+  () => import("./pages/CotizacionesBandejaPage"),
 );
-const ProcesoLogisticoDetallePage = lazy(() =>
-  import("./pages/ProcesoLogisticoDetallePage")
+const ProcesoLogisticoPage = lazy(() => import("./pages/ProcesoLogisticoPage"));
+const ProcesoLogisticoDetallePage = lazy(
+  () => import("./pages/ProcesoLogisticoDetallePage"),
 );
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
-const SolicitudCotizacionDetallePage = lazy(() =>
-  import("./pages/SolicitudCotizacionDetallePage")
+const SolicitudCotizacionDetallePage = lazy(
+  () => import("./pages/SolicitudCotizacionDetallePage"),
 );
-const SolicitudCotizacionDocumentoPage = lazy(() =>
-  import("./pages/SolicitudCotizacionDocumentoPage")
+const SolicitudCotizacionDocumentoPage = lazy(
+  () => import("./pages/SolicitudCotizacionDocumentoPage"),
 );
-const SolicitudesRequerimientoPage = lazy(() =>
-  import("./pages/SolicitudesRequerimientoPage")
+const SolicitudesRequerimientoPage = lazy(
+  () => import("./pages/SolicitudesRequerimientoPage"),
 );
-const ProveedorCotizacionPublicPage = lazy(() =>
-  import("./pages/public/ProveedorCotizacionPublicPage")
+const ProveedorCotizacionPublicPage = lazy(
+  () => import("./pages/public/ProveedorCotizacionPublicPage"),
 );
-
-const SeleccionContextoPage = lazy(() => import("./pages/SeleccionContextoPage"));
+const ResumenProcesoLogisticoPage = lazy(
+  () => import("./pages/ResumenProcesoLogisticoPage"),
+);
+const ComparativosProcesoLogisticoPage = lazy(
+  () => import("./pages/ComparativosProcesoLogisticoPage"),
+);
+const SolicitudesProcesoLogisticoPage = lazy(
+  () => import("./pages/SolicitudesProcesoLogisticoPage"),
+);
+const CotizacionesProcesoLogisticoPage = lazy(
+  () => import("./pages/CotizacionesProcesoLogisticoPage"),
+);
+const SeleccionContextoPage = lazy(
+  () => import("./pages/SeleccionContextoPage"),
+);
 
 const AppRoutes = () => {
   const { loading, needsInitialSetup } = useAuth();
@@ -150,8 +170,20 @@ const AppRoutes = () => {
     return (
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/crear-primer-usuario" element={<CrearPrimerUsuarioPage />} />
-          <Route path="*" element={<Navigate to="/crear-primer-usuario" state={{ from: location }} replace />} />
+          <Route
+            path="/crear-primer-usuario"
+            element={<CrearPrimerUsuarioPage />}
+          />
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/crear-primer-usuario"
+                state={{ from: location }}
+                replace
+              />
+            }
+          />
         </Routes>
       </Suspense>
     );
@@ -167,13 +199,24 @@ const AppRoutes = () => {
         <Route path="/" element={<LayoutInventario />}>
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="solicitar-restablecimiento" element={<SolicitarRestablecimientoPage />} />
-          <Route path="reset-password" element={<RestablecerContrasenaPage />} />
-
+          <Route
+            path="solicitar-restablecimiento"
+            element={<SolicitarRestablecimientoPage />}
+          />
+          <Route
+            path="reset-password"
+            element={<RestablecerContrasenaPage />}
+          />
           <Route element={<ProtectedRoute />}>
-            <Route path="seleccionar-contexto" element={<SeleccionContextoPage />} />
+            <Route
+              path="seleccionar-contexto"
+              element={<SeleccionContextoPage />}
+            />
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="cambiar-contrasena" element={<CambiarContrasenaPage />} />
+            <Route
+              path="cambiar-contrasena"
+              element={<CambiarContrasenaPage />}
+            />
             <Route
               path="gestion-productos"
               element={
@@ -193,9 +236,7 @@ const AppRoutes = () => {
             <Route
               path="gestion-tipo-producto"
               element={
-                <RoutePermissionGuard
-                  allow={canManageCatalogMasterEffective}
-                >
+                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
                   <GestionTipoProductosPage />
                 </RoutePermissionGuard>
               }
@@ -219,7 +260,9 @@ const AppRoutes = () => {
             <Route
               path="gestion-proveedores"
               element={
-                <RoutePermissionGuard allow={canAccessProveedorManagementEffective}>
+                <RoutePermissionGuard
+                  allow={canAccessProveedorManagementEffective}
+                >
                   <GestionProveedoresPage />
                 </RoutePermissionGuard>
               }
@@ -280,23 +323,29 @@ const AppRoutes = () => {
               path="cotizaciones/proceso/:id"
               element={
                 <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
+                  <ProcesoLogisticoPage />
+                </RoutePermissionGuard>
+              }
+            >
+              <Route index element={<ResumenProcesoLogisticoPage />} />
+              <Route
+                path="solicitudes"
+                element={<SolicitudesProcesoLogisticoPage />}
+              />
+              <Route
+                path="cotizaciones"
+                element={<CotizacionesProcesoLogisticoPage />}
+              />
+              <Route
+                path="comparativos"
+                element={<ComparativosProcesoLogisticoPage />}
+              />
+            </Route>
+            <Route
+              path="cotizaciones/proceso/:id/prueba"
+              element={
+                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
                   <ProcesoLogisticoDetallePage />
-                </RoutePermissionGuard>
-              }
-            />
-            <Route
-              path="cotizaciones/proceso/:id/emision"
-              element={
-                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
-                  <ProcesoLogisticoDetallePage fase="emision" />
-                </RoutePermissionGuard>
-              }
-            />
-            <Route
-              path="cotizaciones/proceso/:id/cotizaciones"
-              element={
-                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
-                  <ProcesoLogisticoDetallePage fase="cotizaciones" />
                 </RoutePermissionGuard>
               }
             />
@@ -366,7 +415,10 @@ const AppRoutes = () => {
                 </RoutePermissionGuard>
               }
             />
-            <Route path="notas-pedido/:id" element={<NotaPedidoDetallePage />} />
+            <Route
+              path="notas-pedido/:id"
+              element={<NotaPedidoDetallePage />}
+            />
             <Route
               path="inventario-movimientos"
               element={
@@ -464,13 +516,26 @@ const AppRoutes = () => {
               }
             />
             <Route path="requerimientos" element={<RequerimientosPage />} />
-            <Route path="requerimientos/nuevo" element={<CrearRequerimientoPage />} />
-            <Route path="requerimientos/:id" element={<RequerimientoDetallePage />} />
-            <Route path="requerimientos/:id/editar" element={<EditarRequerimientoPage />} />
+            <Route
+              path="requerimientos/nuevo"
+              element={<CrearRequerimientoPage />}
+            />
+            <Route
+              path="requerimientos/:id"
+              element={<RequerimientoDetallePage />}
+            />
+            <Route
+              path="requerimientos/:id/editar"
+              element={<EditarRequerimientoPage />}
+            />
             <Route
               path="requerimientos/bandeja/jefatura"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "jefatura")}>
+                <RoutePermissionGuard
+                  allow={(user) =>
+                    canAccessTrayLevelEffective(user, "jefatura")
+                  }
+                >
                   <RequerimientosBandejaPage nivel="jefatura" />
                 </RoutePermissionGuard>
               }
@@ -478,7 +543,11 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-area"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-area")}>
+                <RoutePermissionGuard
+                  allow={(user) =>
+                    canAccessTrayLevelEffective(user, "gerencia-area")
+                  }
+                >
                   <RequerimientosBandejaPage nivel="gerencia-area" />
                 </RoutePermissionGuard>
               }
@@ -486,7 +555,11 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-administracion"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-administracion")}>
+                <RoutePermissionGuard
+                  allow={(user) =>
+                    canAccessTrayLevelEffective(user, "gerencia-administracion")
+                  }
+                >
                   <RequerimientosBandejaPage nivel="gerencia-administracion" />
                 </RoutePermissionGuard>
               }
@@ -494,22 +567,56 @@ const AppRoutes = () => {
             <Route
               path="requerimientos/bandeja/gerencia-general"
               element={
-                <RoutePermissionGuard allow={(user) => canAccessTrayLevelEffective(user, "gerencia-general")}>
+                <RoutePermissionGuard
+                  allow={(user) =>
+                    canAccessTrayLevelEffective(user, "gerencia-general")
+                  }
+                >
                   <RequerimientosBandejaPage nivel="gerencia-general" />
                 </RoutePermissionGuard>
               }
             />
-            <Route path="crear-requerimiento" element={<Navigate to="/requerimientos/nuevo" replace />} />
+            <Route
+              path="crear-requerimiento"
+              element={<Navigate to="/requerimientos/nuevo" replace />}
+            />
 
-            <Route path="productos" element={<Navigate to="/gestion-productos" replace />} />
-            <Route path="marcas" element={<Navigate to="/gestion-marcas" replace />} />
-            <Route path="tipos-producto" element={<Navigate to="/gestion-tipo-producto" replace />} />
-            <Route path="areas" element={<Navigate to="/gestion-areas" replace />} />
-            <Route path="usuarios" element={<Navigate to="/gestion-usuarios" replace />} />
-            <Route path="gestion-rangos" element={<Navigate to="/dashboard" replace />} />
-            <Route path="movimientos" element={<Navigate to="/inventario-movimientos" replace />} />
-            <Route path="reportes" element={<Navigate to="/dashboard" replace />} />
-            <Route path="pedidos" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="productos"
+              element={<Navigate to="/gestion-productos" replace />}
+            />
+            <Route
+              path="marcas"
+              element={<Navigate to="/gestion-marcas" replace />}
+            />
+            <Route
+              path="tipos-producto"
+              element={<Navigate to="/gestion-tipo-producto" replace />}
+            />
+            <Route
+              path="areas"
+              element={<Navigate to="/gestion-areas" replace />}
+            />
+            <Route
+              path="usuarios"
+              element={<Navigate to="/gestion-usuarios" replace />}
+            />
+            <Route
+              path="gestion-rangos"
+              element={<Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="movimientos"
+              element={<Navigate to="/inventario-movimientos" replace />}
+            />
+            <Route
+              path="reportes"
+              element={<Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="pedidos"
+              element={<Navigate to="/dashboard" replace />}
+            />
           </Route>
         </Route>
 
@@ -526,7 +633,10 @@ const App = () => {
         <AuthProvider>
           <Helmet>
             <title>Sistema de Inventario</title>
-            <meta name="description" content="Sistema web para gestion de inventarios" />
+            <meta
+              name="description"
+              content="Sistema web para gestion de inventarios"
+            />
           </Helmet>
           <ToastContainer position="top-right" autoClose={3000} />
           <AppRoutes />
@@ -537,11 +647,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
-
-
-
-
-

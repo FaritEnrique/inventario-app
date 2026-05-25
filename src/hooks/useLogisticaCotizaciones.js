@@ -1,3 +1,4 @@
+// src/hooks/useLogisticaCotizaciones.js
 import { useCallback, useState } from "react";
 import { toast } from "react-toastify";
 import logisticaCotizacionesApi from "../api/logisticaCotizacionesApi";
@@ -29,87 +30,88 @@ const useLogisticaCotizaciones = () => {
           tipo === "jefatura"
             ? logisticaCotizacionesApi.obtenerBandejaJefatura(params)
             : logisticaCotizacionesApi.obtenerBandejaOperador(params),
-        "No se pudo cargar la bandeja logistica."
+        "No se pudo cargar la bandeja logistica.",
       );
     },
-    [run]
+    [run],
   );
 
   const obtenerDetalle = useCallback(
     async (requerimientoId) =>
       run(
         () => logisticaCotizacionesApi.obtenerDetalle(requerimientoId),
-        "No se pudo cargar el expediente logistico."
+        "No se pudo cargar el expediente logistico.",
       ),
-    [run]
+    [run],
   );
 
   const definirFlujo = useCallback(
     async (requerimientoId, payload) =>
       run(
         () => logisticaCotizacionesApi.definirFlujo(requerimientoId, payload),
-        "No se pudo definir la modalidad del flujo logistico."
+        "No se pudo definir la modalidad del flujo logistico.",
       ),
-    [run]
+    [run],
   );
 
   const obtenerOperadores = useCallback(
     async () =>
       run(
         () => logisticaCotizacionesApi.obtenerOperadores(),
-        "No se pudo cargar la lista de operadores logisticos."
+        "No se pudo cargar la lista de operadores logisticos.",
       ),
-    [run]
+    [run],
   );
 
   const obtenerComparativo = useCallback(
     async (requerimientoId) =>
       run(
         () => logisticaCotizacionesApi.obtenerComparativo(requerimientoId),
-        "No se pudo cargar el comparativo formal."
+        "No se pudo cargar el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const obtenerComparativoPdfUrl = useCallback(
-    (comparativoId) => logisticaCotizacionesApi.obtenerComparativoPdfUrl(comparativoId),
-    []
+    (comparativoId) =>
+      logisticaCotizacionesApi.obtenerComparativoPdfUrl(comparativoId),
+    [],
   );
 
   const asignar = useCallback(
     async (requerimientoId, payload) =>
       run(
         () => logisticaCotizacionesApi.asignar(requerimientoId, payload),
-        "No se pudo asignar el expediente logistico."
+        "No se pudo asignar el expediente logistico.",
       ),
-    [run]
+    [run],
   );
 
   const iniciar = useCallback(
     async (requerimientoId) =>
       run(
         () => logisticaCotizacionesApi.iniciar(requerimientoId),
-        "No se pudo iniciar el expediente logistico."
+        "No se pudo iniciar el expediente logistico.",
       ),
-    [run]
+    [run],
   );
 
   const cerrarEmision = useCallback(
     async (requerimientoId, payload = {}) =>
       run(
         () => logisticaCotizacionesApi.cerrarEmision(requerimientoId, payload),
-        "No se pudo cerrar la emision de solicitudes."
+        "No se pudo cerrar la emision de solicitudes.",
       ),
-    [run]
+    [run],
   );
 
   const reabrirEmision = useCallback(
     async (requerimientoId, payload = {}) =>
       run(
         () => logisticaCotizacionesApi.reabrirEmision(requerimientoId, payload),
-        "No se pudo reabrir la emision de solicitudes."
+        "No se pudo reabrir la emision de solicitudes.",
       ),
-    [run]
+    [run],
   );
 
   const formalizarDecisionExcepcional = useCallback(
@@ -118,65 +120,73 @@ const useLogisticaCotizaciones = () => {
         () =>
           logisticaCotizacionesApi.formalizarDecisionExcepcional(
             requerimientoId,
-            payload
+            payload,
           ),
-        "No se pudo formalizar la decision excepcional."
+        "No se pudo formalizar la decision excepcional.",
       ),
-    [run]
+    [run],
   );
 
   const marcarListoAdjudicacion = useCallback(
     async (requerimientoId) =>
       run(
         () => logisticaCotizacionesApi.marcarListoAdjudicacion(requerimientoId),
-        "No se pudo dejar listo el expediente para adjudicacion."
+        "No se pudo dejar listo el expediente para adjudicacion.",
       ),
-    [run]
+    [run],
   );
 
   const crearComparativo = useCallback(
     async (requerimientoId, payload) =>
       run(
-        () => logisticaCotizacionesApi.crearComparativo(requerimientoId, payload),
-        "No se pudo crear el comparativo formal."
+        () =>
+          logisticaCotizacionesApi.crearComparativo(requerimientoId, payload),
+        "No se pudo crear el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const actualizarComparativo = useCallback(
     async (comparativoId, payload) =>
       run(
-        () => logisticaCotizacionesApi.actualizarComparativo(comparativoId, payload),
-        "No se pudo actualizar el comparativo formal."
+        () =>
+          logisticaCotizacionesApi.actualizarComparativo(
+            comparativoId,
+            payload,
+          ),
+        "No se pudo actualizar el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const aprobarComparativo = useCallback(
     async (comparativoId, payload = {}) =>
       run(
-        () => logisticaCotizacionesApi.aprobarComparativo(comparativoId, payload),
-        "No se pudo aprobar el comparativo formal."
+        () =>
+          logisticaCotizacionesApi.aprobarComparativo(comparativoId, payload),
+        "No se pudo aprobar el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const observarComparativo = useCallback(
     async (comparativoId, payload = {}) =>
       run(
-        () => logisticaCotizacionesApi.observarComparativo(comparativoId, payload),
-        "No se pudo observar el comparativo formal."
+        () =>
+          logisticaCotizacionesApi.observarComparativo(comparativoId, payload),
+        "No se pudo observar el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const rechazarComparativo = useCallback(
     async (comparativoId, payload = {}) =>
       run(
-        () => logisticaCotizacionesApi.rechazarComparativo(comparativoId, payload),
-        "No se pudo rechazar el comparativo formal."
+        () =>
+          logisticaCotizacionesApi.rechazarComparativo(comparativoId, payload),
+        "No se pudo rechazar el comparativo formal.",
       ),
-    [run]
+    [run],
   );
 
   const adjudicarCotizacionDirectaExcepcional = useCallback(
@@ -185,20 +195,20 @@ const useLogisticaCotizaciones = () => {
         () =>
           logisticaCotizacionesApi.adjudicarCotizacionDirectaExcepcional(
             cotizacionId,
-            payload
+            payload,
           ),
-        "No se pudo registrar la adjudicacion directa excepcional."
+        "No se pudo registrar la adjudicacion directa excepcional.",
       ),
-    [run]
+    [run],
   );
 
   const generarOrdenCompra = useCallback(
     async (requerimientoId) =>
       run(
         () => logisticaCotizacionesApi.generarOrdenCompra(requerimientoId),
-        "No se pudo generar la orden de compra."
+        "No se pudo generar la orden de compra.",
       ),
-    [run]
+    [run],
   );
 
   return {
