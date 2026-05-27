@@ -14,7 +14,7 @@ import {
   isLogisticaJefaturaContext,
 } from "../accessRules";
 import ComparativoEstadoBadge from "../components/ComparativoEstadoBadge";
-import ConfirmToast from "../components/ConfirmToast";
+import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import CotizacionForm from "../components/CotizacionForm";
 import Loader from "../components/Loader";
@@ -913,15 +913,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const handleDeactivateSolicitud = async (solicitudId) => {
     toast(
       ({ closeToast }) => (
-        <ConfirmToast
+        <ConfirmDeactivateSolicitudToast
           closeToast={closeToast}
-          title="Desactivar solicitud"
-          message="La solicitud de cotizacion se desactivara logicamente. Esta accion no elimina el registro ni su trazabilidad."
-          confirmButtonText="Desactivar"
-          cancelButtonText="Cancelar"
-          variant="warning"
-          onConfirm={async () => {
-            await desactivarSolicitud(solicitudId);
+          onConfirm={async (motivo) => {
+            await desactivarSolicitud(solicitudId, {
+              motivoInactivacion: motivo,
+            });
             await load();
           }}
         />

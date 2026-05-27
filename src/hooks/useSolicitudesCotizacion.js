@@ -3,6 +3,9 @@ import { toast } from "react-toastify";
 import solicitudesCotizacionApi from "../api/solicitudesCotizacionApi";
 
 const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
+  const [solicitudesAnuladas, setSolicitudesAnuladas] = useState([]);
+  const [cargandoAnuladas, setCargandoAnuladas] = useState(false);
+  const [anuladasCargadas, setAnuladasCargadas] = useState(false);
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -22,28 +25,32 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const cargarSolicitudesPorRequerimiento = async (requerimientoId) => {
-    try {
-      setCargando(true);
-      const data = await solicitudesCotizacionApi.obtenerPorRequerimiento(
-        requerimientoId
-      );
-      const normalizedData = Array.isArray(data) ? data : [];
-      setSolicitudes(normalizedData);
-      setError(null);
-      return normalizedData;
-    } catch (err) {
-      console.error("Error cargando solicitudes por requerimiento:", err);
-      const errorMessage =
-        err.message ||
-        "No se pudieron cargar las solicitudes de cotización del requerimiento.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setCargando(false);
-    }
-  };
+  const cargarSolicitudesPorRequerimiento = useCallback(
+    async (requerimientoId, { estado = "vigentes" } = {}) => {
+      try {
+        setCargando(true);
+        const data = await solicitudesCotizacionApi.obtenerPorRequerimiento(
+          requerimientoId,
+          { estado },
+        );
+        const normalizedData = Array.isArray(data) ? data : [];
+        setSolicitudes(normalizedData);
+        setError(null);
+        return normalizedData;
+      } catch (err) {
+        console.error("Error cargando solicitudes por requerimiento:", err);
+        const errorMessage =
+          err.message ||
+          "No se pudieron cargar las solicitudes de cotización del requerimiento.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setCargando(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (autoLoad) {
@@ -72,12 +79,12 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     try {
       const solicitudActualizada = await solicitudesCotizacionApi.actualizar(
         id,
-        datos
+        datos,
       );
       setSolicitudes((prev) =>
         prev.map((solicitud) =>
-          solicitud.id === id ? solicitudActualizada : solicitud
-        )
+          solicitud.id === id ? solicitudActualizada : solicitud,
+        ),
       );
       toast.success("Solicitud de cotización actualizada con éxito.");
       return solicitudActualizada;
@@ -90,13 +97,16 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const desactivarSolicitud = async (id) => {
+  const desactivarSolicitud = async (id, payload = {}) => {
     try {
-      const solicitudDesactivada = await solicitudesCotizacionApi.desactivar(id);
+      const solicitudDesactivada = await solicitudesCotizacionApi.desactivar(
+        id,
+        payload,
+      );
       setSolicitudes((prev) =>
         prev.map((solicitud) =>
-          solicitud.id === id ? solicitudDesactivada : solicitud
-        )
+          solicitud.id === id ? solicitudDesactivada : solicitud,
+        ),
       );
       toast.success("Solicitud de cotización desactivada con éxito.");
       return solicitudDesactivada;
@@ -114,6 +124,24 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
 
   const obtenerHistorialEnvios = useCallback(
     (id) => solicitudesCotizacionApi.obtenerHistorialEnvios(id),
+    [],
+  );
+
+  const cargarSolicitudesAnuladasPorRequerimiento = useCallback(
+    async (requerimientoId) => {
+      setCargandoAnuladas(true);
+      try {
+        const data = await solicitudesCotizacionApi.obtenerPorRequerimiento(
+          requerimientoId,
+          { estado: "anuladas" },
+        );
+        setSolicitudesAnuladas(Array.isArray(data) ? data : []);
+        setAnuladasCargadas(true);
+        return data;
+      } finally {
+        setCargandoAnuladas(false);
+      }
+    },
     [],
   );
 
@@ -139,7 +167,9 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
       );
 
       if (response?.status === "EXISTENTE") {
-        toast.info("Ya existe un acceso por sistema activo para esta solicitud.");
+        toast.info(
+          "Ya existe un acceso por sistema activo para esta solicitud.",
+        );
       } else {
         toast.success("Acceso por sistema generado correctamente.");
       }
@@ -169,9 +199,14 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
 
   const obtenerTrazabilidadAccesoSistema = async (id) => {
     try {
-      return await solicitudesCotizacionApi.obtenerTrazabilidadAccesoSistema(id);
+      return await solicitudesCotizacionApi.obtenerTrazabilidadAccesoSistema(
+        id,
+      );
     } catch (err) {
-      console.error("Error obteniendo trazabilidad de acceso por sistema:", err);
+      console.error(
+        "Error obteniendo trazabilidad de acceso por sistema:",
+        err,
+      );
       throw err;
     }
   };
@@ -180,6 +215,10 @@ const useSolicitudesCotizacion = ({ autoLoad = true } = {}) => {
     solicitudes,
     cargando,
     error,
+    solicitudesAnuladas,
+    cargandoAnuladas,
+    anuladasCargadas,
+    cargarSolicitudesAnuladasPorRequerimiento,
     cargarSolicitudes,
     cargarSolicitudesPorRequerimiento,
     crearSolicitud,
