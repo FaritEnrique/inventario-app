@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import ResumenProcesoLogisticoSkeleton from "../components/ui/skeletons/ResumenProcesoLogisticoSkeleton";
 import useHistorialAprobacionesStore from "../stores/useHistorialAprobacionesStore";
 
 const formatDate = (value) =>
@@ -20,7 +21,7 @@ const formatNumber = (value) =>
   }).format(Number(value || 0));
 
 const ResumenProcesoLogisticoPage = () => {
-  const { id, detalleGlobal } = useOutletContext();
+  const { id, detalleGlobal, loading } = useOutletContext();
   const items = Array.isArray(detalleGlobal?.items) ? detalleGlobal.items : [];
   const requerimientoKey = String(id || "");
   const {
@@ -51,6 +52,10 @@ const ResumenProcesoLogisticoPage = () => {
     if (entry.aprobado === false) return "Rechazado";
     return entry.accion || "Registrado";
   };
+
+  if (loading && !detalleGlobal) {
+    return <ResumenProcesoLogisticoSkeleton />;
+  }
 
   return (
     <>

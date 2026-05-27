@@ -5,10 +5,13 @@ import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
+  hasAdminOverrideEffective,
 } from "../accessRules";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
-import SolicitudesRequerimientoSkeleton from "../components/ui/skeletons/SolicitudesRequerimientoSkeleton";
+import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
+import SolicitudesProcesoLogisticoSkeleton from "../components/ui/skeletons/SolicitudesProcesoLogisticoSkeleton";
 import { useAuth } from "../context/authContext";
+import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
 
@@ -34,10 +37,16 @@ const SolicitudesProcesoLogisticoPage = () => {
     cargarSolicitudesAnuladasPorRequerimiento,
     cargarSolicitudesPorRequerimiento,
     obtenerSolicitudPdfUrl,
+    crearSolicitud,
+    actualizarSolicitud,
     desactivarSolicitud,
   } = useSolicitudesCotizacion({ autoLoad: false });
+  const { proveedores } = useProveedores();
 
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [solicitudDraft, setSolicitudDraft] = useState(null);
+  const [submittingSolicitud, setSubmittingSolicitud] = useState(false);
 
   useEffect(() => {
     cargarSolicitudesPorRequerimiento(id).catch(() => {});
@@ -45,6 +54,7 @@ const SolicitudesProcesoLogisticoPage = () => {
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canOperate = canOperateCotizacionesLogisticaEffective(user);
+  const isAdminUser = hasAdminOverrideEffective(user);
   const responsableActualId =
     detalleGlobal?.responsableLogisticaId ||
     detalleGlobal?.responsableLogistica?.id ||
@@ -61,7 +71,10 @@ const SolicitudesProcesoLogisticoPage = () => {
     canOperate &&
     !expedienteBloqueado &&
     flujoDefinido &&
-    (!assignedToOtherResponsable || !canAssign || assignedToCurrentUser);
+    (!assignedToOtherResponsable ||
+      !canAssign ||
+      assignedToCurrentUser ||
+      isAdminUser);
 
   const activeSolicitudesCount = useMemo(
     () =>
@@ -69,6 +82,26 @@ const SolicitudesProcesoLogisticoPage = () => {
         ? solicitudes.filter((solicitud) => solicitud.activo !== false).length
         : 0,
     [solicitudes],
+  );
+
+  const requerimientoOption = useMemo(
+    () =>
+      detalleGlobal
+        ? [
+            {
+              id: detalleGlobal.id,
+              codigo: detalleGlobal.codigo,
+              areaNombreSnapshot:
+                detalleGlobal.area?.nombre || detalleGlobal.areaNombreSnapshot,
+            },
+          ]
+        : [],
+    [detalleGlobal],
+  );
+
+  const proveedoresActivos = useMemo(
+    () => proveedores.filter((proveedor) => proveedor.activo !== false),
+    [proveedores],
   );
 
   const handlePrintSolicitud = (solicitudId) => {
@@ -107,11 +140,44 @@ const SolicitudesProcesoLogisticoPage = () => {
     );
   };
 
-  if (loading && !detalleGlobal) return <SolicitudesRequerimientoSkeleton />;
+  const handleOpenNewSolicitudForm = () => {
+    setSolicitudDraft({ requerimientoId: Number(id) });
+    setMostrarFormulario(true);
+
+    window.setTimeout(() => {
+      document.getElementById("solicitud-cotizacion-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
+
+  const handleCloseSolicitudForm = () => {
+    setSolicitudDraft(null);
+    setMostrarFormulario(false);
+  };
+
+  const handleSolicitudSubmit = async (payload) => {
+    setSubmittingSolicitud(true);
+    try {
+      if (solicitudDraft?.id) {
+        await actualizarSolicitud(solicitudDraft.id, payload);
+      } else {
+        await crearSolicitud(payload);
+      }
+
+      await cargarSolicitudesPorRequerimiento(id);
+      handleCloseSolicitudForm();
+    } finally {
+      setSubmittingSolicitud(false);
+    }
+  };
+
+  if (loading && !detalleGlobal) return <SolicitudesProcesoLogisticoSkeleton />;
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
             Solicitudes de cotizacion del proceso logistico
@@ -121,6 +187,21 @@ const SolicitudesProcesoLogisticoPage = () => {
             documento o desactivalas cuando el expediente aun permite gestion.
           </p>
         </div>
+        {canManageSolicitudes ? (
+          <button
+            type="button"
+            onClick={
+              mostrarFormulario
+                ? handleCloseSolicitudForm
+                : handleOpenNewSolicitudForm
+            }
+            className="inline-flex w-full items-center justify-center rounded border border-indigo-500 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 sm:w-fit"
+          >
+            {mostrarFormulario
+              ? "Ocultar formulario"
+              : "Emitir nueva solicitud"}
+          </button>
+        ) : null}
       </div>
 
       {detalleError || error ? (
@@ -167,6 +248,24 @@ const SolicitudesProcesoLogisticoPage = () => {
           ) : null}
         </div>
       </div>
+
+      {mostrarFormulario ? (
+        <section
+          id="solicitud-cotizacion-form"
+          className="scroll-mt-4"
+        >
+          <SolicitudCotizacionForm
+            initialData={solicitudDraft || { requerimientoId: Number(id) }}
+            proveedores={proveedoresActivos}
+            requerimientos={requerimientoOption}
+            requerimientoDetalle={detalleGlobal}
+            onRequerimientoChange={() => {}}
+            onSubmit={handleSolicitudSubmit}
+            onCancel={handleCloseSolicitudForm}
+            submitting={submittingSolicitud}
+          />
+        </section>
+      ) : null}
 
       <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="flex flex-col gap-3 px-4 py-3 border-b border-indigo-500 sm:px-5 sm:py-4 md:flex-row md:items-start md:justify-between">

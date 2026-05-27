@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
+  hasAdminOverrideEffective,
 } from "../accessRules";
 import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
@@ -52,6 +53,7 @@ const SolicitudesRequerimientoPage = () => {
   const backTarget = buildBackTarget(location.state?.from);
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canOperate = canOperateCotizacionesLogisticaEffective(user);
+  const isAdminUser = hasAdminOverrideEffective(user);
   const responsableActualId =
     detalle?.responsableLogisticaId || detalle?.responsableLogistica?.id || null;
   const assignedToCurrentUser =
@@ -66,7 +68,10 @@ const SolicitudesRequerimientoPage = () => {
     canOperate &&
     !expedienteBloqueado &&
     flujoDefinido &&
-    (!assignedToOtherResponsable || !canAssign || assignedToCurrentUser);
+    (!assignedToOtherResponsable ||
+      !canAssign ||
+      assignedToCurrentUser ||
+      isAdminUser);
 
   const activeSolicitudesCount = useMemo(
     () =>

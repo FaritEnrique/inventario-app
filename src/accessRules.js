@@ -28,6 +28,8 @@ const hasIdentityRole = (user = {}, role) =>
 const isAdminOverride = (user = {}) =>
   hasRole(user, "ADMINISTRADOR_SISTEMA") ||
   hasIdentityRole(user, "ADMINISTRADOR_SISTEMA");
+
+export const hasAdminOverrideEffective = isAdminOverride;
 const hasOperationalSession = (user = {}) =>
   Boolean(user?.id && user?.activo !== false && user?.activeContext);
 

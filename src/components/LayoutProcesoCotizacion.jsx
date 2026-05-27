@@ -5,6 +5,8 @@ import { CircleAlert } from "lucide-react";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import HeaderProcesoLogistico from "./HeaderProcesoLogistico";
 import Loader from "./Loader";
+import ResumenProcesoLogisticoSkeleton from "./ui/skeletons/ResumenProcesoLogisticoSkeleton";
+import SolicitudesProcesoLogisticoSkeleton from "./ui/skeletons/SolicitudesProcesoLogisticoSkeleton";
 
 const LayoutProcesoCotizacion = () => {
   const { id } = useParams();
@@ -12,6 +14,10 @@ const LayoutProcesoCotizacion = () => {
   const { obtenerDetalle, cargando, error } = useLogisticaCotizaciones();
   const [activeTab, setActiveTab] = useState("detalle");
   const [detalleGlobal, setDetalleGlobal] = useState(null);
+  const normalizedPath = location.pathname.replace(/\/+$/, "");
+  const procesoBasePath = `/cotizaciones/proceso/${id}`;
+  const isResumenRoute = normalizedPath === procesoBasePath;
+  const isSolicitudesRoute = normalizedPath === `${procesoBasePath}/solicitudes`;
 
   useEffect(() => {
     obtenerDetalle(id)
@@ -32,12 +38,18 @@ const LayoutProcesoCotizacion = () => {
       />
       <main className="min-w-0 mt-4 overflow-x-hidden">
         {cargando ? (
-          <div className="flex flex-col items-center justify-center py-10 space-y-4">
-            <Loader className="animate-spin" />
-            <p className="text-sm font-medium text-gray-600">
-              Cargando detalle de cotización...
-            </p>
-          </div>
+          isSolicitudesRoute ? (
+            <SolicitudesProcesoLogisticoSkeleton />
+          ) : isResumenRoute ? (
+            <ResumenProcesoLogisticoSkeleton />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 space-y-4">
+              <Loader className="animate-spin" />
+              <p className="text-sm font-medium text-gray-600">
+                Cargando detalle de cotización...
+              </p>
+            </div>
+          )
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-4">
             <CircleAlert className="text-red-500 shrink-0" size={48} />

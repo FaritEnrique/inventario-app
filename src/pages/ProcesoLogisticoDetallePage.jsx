@@ -11,6 +11,7 @@ import {
   canAdjudicateCotizacionesLogisticaEffective,
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
+  hasAdminOverrideEffective,
   isLogisticaJefaturaContext,
 } from "../accessRules";
 import ComparativoEstadoBadge from "../components/ComparativoEstadoBadge";
@@ -534,9 +535,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canAdjudicate = canAdjudicateCotizacionesLogisticaEffective(user);
-  const isAdminUser = Array.isArray(user?.identityRoles)
-    ? user.identityRoles.includes("ADMINISTRADOR_SISTEMA")
-    : false;
+  const isAdminUser = hasAdminOverrideEffective(user);
   const canProcessDirectly =
     canAssign &&
     (isLogisticaJefaturaContext(activeContext || {}) || isAdminUser);
@@ -1322,7 +1321,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const canManageSolicitudes =
     canManageDrafts &&
     !emisionCerrada &&
-    (!assignedToOtherResponsable || !canAssign || assignedToCurrentUser);
+    (!assignedToOtherResponsable ||
+      !canAssign ||
+      assignedToCurrentUser ||
+      isAdminUser);
   const canManageComparativo =
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
   const canPrepareExceptionalDecision =
