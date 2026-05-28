@@ -2687,7 +2687,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                                       : cotizacion.tiempoEntregaDias != null
                                         ? `${cotizacion.tiempoEntregaDias} días`
                                         : "-"}{" "}
-                                    · Garantia:{" "}
+                                    · Periodo de garantia:{" "}
                                     {cotizacion.garantia || "Sin definir"} ·
                                     Vigencia:{" "}
                                     {cotizacion.vigenciaOfertaDias ?? "-"} dias
@@ -2719,7 +2719,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
                       Define a que cotizacion se adjudica cada item. Si una
-                      cotizacion omitio plazo, garantia o forma de pago, igual
+                      cotizacion omitio plazo, periodo de garantia o forma de pago, igual
                       podras adjudicar el item mientras tenga precio y cantidad.
                     </p>
                     <div className="mt-3 space-y-3">

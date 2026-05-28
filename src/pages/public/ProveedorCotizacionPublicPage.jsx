@@ -176,7 +176,7 @@ const buildOfficialConditions = (solicitud = {}) =>
       label: "Plazo de entrega solicitado",
       value: formatDays(solicitud.tiempoEntregaDias),
     },
-    { label: "Garantia solicitada", value: solicitud.garantia },
+    { label: "Periodo de garantia solicitado", value: solicitud.garantia },
     { label: "Lugar de entrega", value: solicitud.lugarEntrega },
     {
       label: "Alcance de compra local",
@@ -1096,8 +1096,13 @@ const ProveedorCotizacionPublicPage = () => {
                   />
                 </label>
                 <label className="space-y-1 text-sm">
-                  <span className="font-semibold">Garantia ofertada</span>
+                  <span className="font-semibold">
+                    Periodo de garantía ofertado (dias)
+                  </span>
                   <input
+                    type="number"
+                    min="0"
+                    step="1"
                     value={formData.garantia}
                     onChange={(event) =>
                       setFormData((prev) => ({
@@ -1106,7 +1111,7 @@ const ProveedorCotizacionPublicPage = () => {
                       }))
                     }
                     className="w-full rounded border border-slate-300 px-3 py-2"
-                    placeholder="Opcional"
+                    placeholder="Ej. 365"
                   />
                 </label>
                 <label className="space-y-1 text-sm">

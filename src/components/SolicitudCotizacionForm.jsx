@@ -2158,11 +2158,15 @@ const SolicitudCotizacionForm = ({
             ) : null}
           </div>
           <label className="space-y-1 text-sm text-gray-700">
-            <span className="font-medium">Garantía</span>
+            <span className="font-medium">
+              Periodo de garantía solicitado (dias)
+            </span>
             <input
               id={`${formIdPrefix}-garantia`}
               name="garantia"
-              type="text"
+              type="number"
+              min="0"
+              step="1"
               value={formData.garantia}
               onChange={(event) =>
                 setFormData((prev) => ({
@@ -2171,7 +2175,7 @@ const SolicitudCotizacionForm = ({
                 }))
               }
               className="w-full rounded border border-gray-300 px-3 py-2"
-              placeholder="Ej: 6 meses contra defectos de fábrica"
+              placeholder="Ej. 365"
             />
           </label>
         </div>

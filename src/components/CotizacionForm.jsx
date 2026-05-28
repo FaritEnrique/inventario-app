@@ -338,7 +338,7 @@ const buildOfficialContextGroups = (solicitud = {}) => {
         label: "Plazo de entrega solicitado",
         value: formatDays(solicitud.tiempoEntregaDias),
       },
-      { label: "Garantia solicitada", value: solicitud.garantia },
+      { label: "Periodo de garantia solicitado", value: solicitud.garantia },
       { label: "Lugar de entrega oficial", value: solicitud.lugarEntrega },
     ]),
     buildContextGroup("Condiciones oficiales de pago", [
@@ -899,16 +899,20 @@ const CotizacionForm = ({
         </label>
 
         <label className="space-y-1 text-sm text-gray-700">
-          <span className="font-medium">Garantia ofertada</span>
+          <span className="font-medium">
+            Periodo de garantía ofertado (dias)
+          </span>
           <input
-            type="text"
+            type="number"
+            min="0"
+            step="1"
             value={formData.garantia}
             name="cotizacion-form-input-garantia"
             onChange={(event) =>
               setFormData((prev) => ({ ...prev, garantia: event.target.value }))
             }
             className="w-full rounded border border-gray-300 px-3 py-2"
-            placeholder="Ej. Carta fianza"
+            placeholder="Ej. 365"
           />
         </label>
 

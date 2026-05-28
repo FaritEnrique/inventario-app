@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { FaEdit, FaFileSignature, FaPrint } from "react-icons/fa";
+import { FaEdit, FaEye, FaFileSignature, FaPrint } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
   hasAdminOverrideEffective,
 } from "../accessRules";
-import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import CotizacionForm from "../components/CotizacionForm";
 import { useAuth } from "../context/authContext";
 import useCotizaciones from "../hooks/useCotizaciones";
@@ -15,6 +14,7 @@ import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import {
   formatCurrency,
   formatInteger,
+  formatQuantity,
 } from "../utils/numberFormatters";
 
 const formatDate = (value) =>
@@ -24,6 +24,111 @@ const getActiveCotizacionForSolicitud = (solicitud) =>
   Array.isArray(solicitud?.cotizaciones)
     ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
     : null;
+
+const normalizeItemResponse = (value) =>
+  String(value || "").toUpperCase() === "COTIZADO" ? "COTIZADO" : "NO_COTIZA";
+
+const getSolicitudItemId = (item) =>
+  Number(item?.itemRequerimientoId || item?.itemRequerimiento?.id || item?.id || 0);
+
+const getItemDescription = (item) =>
+  item?.itemRequerimiento?.descripcionVisible ||
+  item?.descripcionVisible ||
+  item?.itemRequerimiento?.producto?.nombre ||
+  item?.producto?.nombre ||
+  item?.itemRequerimiento?.productoTemporal?.nombre ||
+  item?.productoTemporal?.nombre ||
+  "Item sin descripcion";
+
+const getItemQuantity = (item) =>
+  item?.itemRequerimiento?.cantidadRequerida ?? item?.cantidadRequerida ?? null;
+
+const getItemUnit = (item) =>
+  item?.itemRequerimiento?.unidadMedida || item?.unidadMedida || "";
+
+const buildCotizacionResponseSummary = (cotizacion, solicitudes = []) => {
+  const solicitud =
+    solicitudes.find(
+      (item) => Number(item.id) === Number(cotizacion?.solicitudId || 0),
+    ) || null;
+  const solicitudItems = Array.isArray(solicitud?.items) ? solicitud.items : [];
+  const cotizacionItems = Array.isArray(cotizacion?.items) ? cotizacion.items : [];
+  const cotizacionItemsById = new Map(
+    cotizacionItems.map((item) => [Number(item.itemRequerimientoId || 0), item]),
+  );
+  const baseItems = solicitudItems.length ? solicitudItems : cotizacionItems;
+
+  const items = baseItems.map((solicitudItem) => {
+    const itemId = getSolicitudItemId(solicitudItem);
+    const cotizacionItem = cotizacionItemsById.get(itemId) || null;
+    const response = normalizeItemResponse(cotizacionItem?.estadoRespuesta);
+
+    return {
+      itemRequerimientoId: itemId,
+      descripcionVisible: getItemDescription(cotizacionItem || solicitudItem),
+      cantidadRequerida: getItemQuantity(solicitudItem),
+      unidadMedida: getItemUnit(cotizacionItem || solicitudItem),
+      cotiza: response === "COTIZADO",
+      cantidadOfrecida: cotizacionItem?.cantidadOfrecida ?? null,
+      precioUnidad: cotizacionItem?.precioUnidad ?? null,
+      precioTotal: cotizacionItem?.precioTotal ?? null,
+      descripcionTecnicaOfertada:
+        cotizacionItem?.descripcionTecnicaOfertada || "",
+    };
+  });
+
+  cotizacionItems.forEach((cotizacionItem) => {
+    const itemId = Number(cotizacionItem.itemRequerimientoId || 0);
+    if (!itemId || items.some((item) => Number(item.itemRequerimientoId) === itemId)) {
+      return;
+    }
+
+    const response = normalizeItemResponse(cotizacionItem.estadoRespuesta);
+    items.push({
+      itemRequerimientoId: itemId,
+      descripcionVisible: getItemDescription(cotizacionItem),
+      cantidadRequerida: getItemQuantity(cotizacionItem),
+      unidadMedida: getItemUnit(cotizacionItem),
+      cotiza: response === "COTIZADO",
+      cantidadOfrecida: cotizacionItem.cantidadOfrecida ?? null,
+      precioUnidad: cotizacionItem.precioUnidad ?? null,
+      precioTotal: cotizacionItem.precioTotal ?? null,
+      descripcionTecnicaOfertada:
+        cotizacionItem.descripcionTecnicaOfertada || "",
+    });
+  });
+
+  const totalItems = items.length;
+  const totalCotizados = items.filter((item) => item.cotiza).length;
+  const scope =
+    totalItems > 0 && totalCotizados === totalItems
+      ? "TOTAL"
+      : totalCotizados > 0
+        ? "PARCIAL"
+        : "SIN_COTIZACION";
+  const scopeLabel =
+    scope === "TOTAL"
+      ? "Total"
+      : scope === "PARCIAL"
+        ? "Parcial"
+        : "Sin cotizacion";
+  const scopeClassName =
+    scope === "TOTAL"
+      ? "bg-emerald-100 text-emerald-700"
+      : scope === "PARCIAL"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-slate-100 text-slate-700";
+
+  return {
+    responseLabel: "Respondida",
+    scope,
+    scopeLabel,
+    scopeClassName,
+    totalItems,
+    totalCotizados,
+    items,
+  };
+};
 
 const buildCotizacionDraft = (cotizacion) => ({
   id: cotizacion.id,
@@ -128,6 +233,7 @@ const CotizacionesProcesoLogisticoPage = () => {
   } = useCotizaciones({ autoLoad: false });
 
   const [cotizacionDraft, setCotizacionDraft] = useState(null);
+  const [detalleCotizacion, setDetalleCotizacion] = useState(null);
   const [submittingCotizacion, setSubmittingCotizacion] = useState(false);
   const [submittingCierre, setSubmittingCierre] = useState(false);
 
@@ -148,6 +254,14 @@ const CotizacionesProcesoLogisticoPage = () => {
         ? detalleGlobal.cotizaciones.filter((cotizacion) => cotizacion.activo !== false)
         : [],
     [detalleGlobal?.cotizaciones],
+  );
+  const cotizacionesConResumen = useMemo(
+    () =>
+      cotizaciones.map((cotizacion) => ({
+        cotizacion,
+        resumenRespuesta: buildCotizacionResponseSummary(cotizacion, solicitudes),
+      })),
+    [cotizaciones, solicitudes],
   );
   const solicitudesPendientes = useMemo(
     () =>
@@ -522,13 +636,13 @@ const CotizacionesProcesoLogisticoPage = () => {
           </h2>
         </div>
         <div className="divide-y divide-slate-200">
-          {cotizaciones.length > 0 ? (
-            cotizaciones.map((cotizacion) => (
+          {cotizacionesConResumen.length > 0 ? (
+            cotizacionesConResumen.map(({ cotizacion, resumenRespuesta }) => (
               <article
                 key={cotizacion.id}
                 className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-slate-900">
                     {cotizacion.codigo}
                   </p>
@@ -536,12 +650,25 @@ const CotizacionesProcesoLogisticoPage = () => {
                     {cotizacion.proveedor?.razonSocial || "-"} ·{" "}
                     {formatDate(cotizacion.fechaEmision)}
                   </p>
-                  <p className="text-right text-sm font-medium text-slate-800 tabular-nums">
+                  <p className="text-left text-sm font-medium text-slate-800 tabular-nums md:text-right">
                     {formatCurrency(cotizacion.totalOferta)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <CotizacionEstadoBadge estado={cotizacion.estado} />
+                  <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+                    {resumenRespuesta.responseLabel}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDetalleCotizacion({ cotizacion, resumenRespuesta })}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${resumenRespuesta.scopeClassName}`}
+                    title="Ver detalle de items cotizados"
+                  >
+                    <FaEye />
+                    {resumenRespuesta.scopeLabel} -{" "}
+                    {formatInteger(resumenRespuesta.totalCotizados)}/
+                    {formatInteger(resumenRespuesta.totalItems)}
+                  </button>
                   <button
                     type="button"
                     onClick={() =>
@@ -627,6 +754,197 @@ const CotizacionesProcesoLogisticoPage = () => {
           Para cierre conforme faltan cotizaciones validas en{" "}
           {formatInteger(itemsIncompletos.length)} item(s). Si agotaste la gestion con
           proveedores, puedes cerrar con justificacion desde esta pantalla.
+        </div>
+      ) : null}
+
+      {detalleCotizacion ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 p-0 sm:items-center sm:p-4">
+          <div className="max-h-[92vh] w-full overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-xl sm:max-w-5xl sm:rounded-2xl">
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">
+                  Detalle de respuesta
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  {detalleCotizacion.cotizacion.codigo}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {detalleCotizacion.cotizacion.proveedor?.razonSocial || "-"} -{" "}
+                  {formatDate(detalleCotizacion.cotizacion.fechaEmision)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      obtenerCotizacionPdfUrl(detalleCotizacion.cotizacion.id),
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <FaPrint />
+                  Imprimir cotizacion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDetalleCotizacion(null)}
+                  className="rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[calc(92vh-98px)] overflow-y-auto p-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">
+                    Estado
+                  </p>
+                  <p className="mt-1 font-semibold text-sky-700">
+                    {detalleCotizacion.resumenRespuesta.responseLabel}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">
+                    Alcance
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {detalleCotizacion.resumenRespuesta.scopeLabel}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">
+                    Items que cotizan
+                  </p>
+                  <p className="mt-1 text-right font-semibold text-slate-900 tabular-nums">
+                    {formatInteger(detalleCotizacion.resumenRespuesta.totalCotizados)}/
+                    {formatInteger(detalleCotizacion.resumenRespuesta.totalItems)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 hidden overflow-x-auto rounded-lg border border-slate-200 md:block">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        Item
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        Estado
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        Cant. req.
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        Cant. ofert.
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        P. unit.
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {detalleCotizacion.resumenRespuesta.items.map((item) => (
+                      <tr key={item.itemRequerimientoId}>
+                        <td className="px-3 py-3 text-sm text-slate-700">
+                          <p>{item.descripcionVisible}</p>
+                          {item.descripcionTecnicaOfertada ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {item.descripcionTecnicaOfertada}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                              item.cotiza
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {item.cotiza ? "Cotiza" : "No cotiza"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-right text-sm text-slate-700 tabular-nums">
+                          {item.cantidadRequerida === null
+                            ? "-"
+                            : formatQuantity(item.cantidadRequerida)}
+                          {item.unidadMedida ? ` ${item.unidadMedida}` : ""}
+                        </td>
+                        <td className="px-3 py-3 text-right text-sm text-slate-700 tabular-nums">
+                          {item.cotiza ? formatQuantity(item.cantidadOfrecida) : "-"}
+                        </td>
+                        <td className="px-3 py-3 text-right text-sm text-slate-700 tabular-nums">
+                          {item.cotiza ? formatCurrency(item.precioUnidad) : "-"}
+                        </td>
+                        <td className="px-3 py-3 text-right text-sm font-medium text-slate-800 tabular-nums">
+                          {item.cotiza ? formatCurrency(item.precioTotal) : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 space-y-2 md:hidden">
+                {detalleCotizacion.resumenRespuesta.items.map((item) => (
+                  <article
+                    key={item.itemRequerimientoId}
+                    className="rounded-lg border border-slate-200 p-3 text-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold text-slate-900">
+                        {item.descripcionVisible}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
+                          item.cotiza
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {item.cotiza ? "Cotiza" : "No cotiza"}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                      <span>Cant. req.</span>
+                      <span className="text-right tabular-nums">
+                        {item.cantidadRequerida === null
+                          ? "-"
+                          : formatQuantity(item.cantidadRequerida)}
+                        {item.unidadMedida ? ` ${item.unidadMedida}` : ""}
+                      </span>
+                      <span>Cant. ofert.</span>
+                      <span className="text-right tabular-nums">
+                        {item.cotiza ? formatQuantity(item.cantidadOfrecida) : "-"}
+                      </span>
+                      <span>P. unit.</span>
+                      <span className="text-right tabular-nums">
+                        {item.cotiza ? formatCurrency(item.precioUnidad) : "-"}
+                      </span>
+                      <span>Total</span>
+                      <span className="text-right font-semibold tabular-nums text-slate-900">
+                        {item.cotiza ? formatCurrency(item.precioTotal) : "-"}
+                      </span>
+                    </div>
+                    {item.descripcionTecnicaOfertada ? (
+                      <p className="mt-2 text-xs text-slate-500">
+                        {item.descripcionTecnicaOfertada}
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

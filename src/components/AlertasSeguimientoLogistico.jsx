@@ -1,0 +1,214 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, Clock, ListChecks } from "lucide-react";
+import Modal from "./Modal";
+import { formatInteger } from "../utils/numberFormatters";
+
+const alertMeta = {
+  PLAZO_VENCIDO: {
+    label: "Plazo vencido",
+    description: "Solicitudes sin respuesta con fecha limite vencida.",
+    icon: AlertTriangle,
+    cardClass: "border-red-200 bg-red-50 text-red-800",
+    buttonClass: "border-red-300 text-red-700 hover:bg-red-100",
+  },
+  PLAZO_POR_VENCER: {
+    label: "Por vencer",
+    description: "Solicitudes sin respuesta cerca de vencer.",
+    icon: Clock,
+    cardClass: "border-amber-200 bg-amber-50 text-amber-800",
+    buttonClass: "border-amber-300 text-amber-800 hover:bg-amber-100",
+  },
+  COBERTURA_INCOMPLETA: {
+    label: "Cobertura incompleta",
+    description: "Items que no cumplen la cobertura minima de cotizaciones.",
+    icon: ListChecks,
+    cardClass: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    buttonClass: "border-indigo-300 text-indigo-700 hover:bg-indigo-100",
+  },
+};
+
+const alertOrder = ["PLAZO_VENCIDO", "PLAZO_POR_VENCER", "COBERTURA_INCOMPLETA"];
+
+const getAlertCount = (alertas, tipo) => {
+  if (!alertas) return 0;
+  if (alertas.byTipo) {
+    return Number(alertas.byTipo[tipo]?.totalExpedientes || 0);
+  }
+  if (tipo === "PLAZO_VENCIDO") return Number(alertas.solicitudesVencidas || 0);
+  if (tipo === "PLAZO_POR_VENCER") return Number(alertas.solicitudesPorVencer || 0);
+  return Number(alertas.itemsCoberturaIncompleta || 0);
+};
+
+const hasSeguimientoAlerts = (alertas) => {
+  if (!alertas) return false;
+  if (alertas.byTipo) {
+    return alertOrder.some((tipo) => getAlertCount(alertas, tipo) > 0);
+  }
+  return alertas.tieneAlertas === true;
+};
+
+export const AlertasSeguimientoCards = ({
+  alertas,
+  onSelectTipo,
+  title = "Alertas de seguimiento",
+  description = "Prioriza expedientes con plazos vencidos, por vencer o cobertura incompleta.",
+  compact = false,
+}) => {
+  if (!hasSeguimientoAlerts(alertas)) return null;
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <p className="text-xs text-slate-500 sm:text-sm">{description}</p>
+        </div>
+        {alertas.totalExpedientesConAlertas != null ? (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+            {formatInteger(alertas.totalExpedientesConAlertas)} expediente(s)
+          </span>
+        ) : null}
+      </div>
+
+      <div className={`mt-3 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
+        {alertOrder.map((tipo) => {
+          const count = getAlertCount(alertas, tipo);
+          if (count <= 0) return null;
+
+          const meta = alertMeta[tipo];
+          const Icon = meta.icon;
+
+          return (
+            <button
+              key={tipo}
+              type="button"
+              onClick={() => onSelectTipo?.(tipo)}
+              disabled={!onSelectTipo}
+              className={`rounded-lg border p-3 text-left transition disabled:cursor-default ${meta.cardClass}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase">{meta.label}</p>
+                  <p className="mt-2 text-right text-2xl font-bold tabular-nums">
+                    {formatInteger(count)}
+                  </p>
+                </div>
+                <Icon size={22} className="shrink-0" />
+              </div>
+              <p className="mt-2 text-xs leading-relaxed">{meta.description}</p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+export const AlertasSeguimientoExpediente = ({ alertas }) => {
+  if (!hasSeguimientoAlerts(alertas)) return null;
+
+  return (
+    <AlertasSeguimientoCards
+      alertas={alertas}
+      compact
+      title="Seguimiento del expediente"
+      description="Este expediente tiene puntos de atencion antes de cerrar o continuar el flujo logistico."
+    />
+  );
+};
+
+const getTipoDetalle = (expediente, tipo) => {
+  const detalle = expediente?.alertasSeguimiento?.detalle || {};
+  if (tipo === "PLAZO_VENCIDO") return detalle.solicitudesVencidas || [];
+  if (tipo === "PLAZO_POR_VENCER") return detalle.solicitudesPorVencer || [];
+  return detalle.itemsCoberturaIncompleta || [];
+};
+
+export const AlertasSeguimientoModal = ({
+  alertas,
+  tipo,
+  onClose,
+  buildExpedientePath,
+}) => {
+  const isOpen = Boolean(tipo);
+  const meta = tipo ? alertMeta[tipo] : null;
+  const expedientes = tipo ? alertas?.byTipo?.[tipo]?.expedientes || [] : [];
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={meta ? meta.label : "Alertas de seguimiento"}
+      maxWidth="max-w-4xl"
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-slate-600">
+          {meta?.description || "Revisa los expedientes con alerta."}
+        </p>
+
+        {expedientes.length > 0 ? (
+          <div className="max-h-[65vh] space-y-3 overflow-y-auto pr-1">
+            {expedientes.map((expediente) => {
+              const detalles = getTipoDetalle(expediente, tipo);
+
+              return (
+                <article
+                  key={expediente.id}
+                  className="rounded-lg border border-slate-200 p-3"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {expediente.codigo}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {expediente.area || "-"} · {expediente.solicitante || "-"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Responsable: {expediente.responsableLogistica || "Sin asignar"}
+                      </p>
+                    </div>
+                    <Link
+                      to={buildExpedientePath?.(expediente, tipo) || `/cotizaciones/proceso/${expediente.id}`}
+                      onClick={onClose}
+                      className={`inline-flex justify-center rounded border px-3 py-2 text-xs font-semibold ${meta?.buttonClass || "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                    >
+                      Abrir expediente
+                    </Link>
+                  </div>
+
+                  {detalles.length > 0 ? (
+                    <div className="mt-3 rounded border border-slate-100 bg-slate-50 p-2">
+                      <p className="text-xs font-semibold uppercase text-slate-500">
+                        Detalle
+                      </p>
+                      <ul className="mt-1 space-y-1 text-xs text-slate-600">
+                        {detalles.slice(0, 5).map((detalle) => (
+                          <li key={detalle.id || detalle.itemRequerimientoId}>
+                            {tipo === "COBERTURA_INCOMPLETA"
+                              ? `${detalle.descripcionVisible} (${formatInteger(detalle.coberturaValida)}/${formatInteger(detalle.coberturaMinima)})`
+                              : `${detalle.codigo} · ${detalle.proveedor?.razonSocial || "Proveedor"} · limite ${detalle.fechaLimiteRecepcion ? new Date(detalle.fechaLimiteRecepcion).toLocaleDateString("es-PE") : "-"}`}
+                          </li>
+                        ))}
+                        {detalles.length > 5 ? (
+                          <li>+ {formatInteger(detalles.length - 5)} registro(s) mas</li>
+                        ) : null}
+                      </ul>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+            No hay expedientes para esta alerta.
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+export default AlertasSeguimientoCards;

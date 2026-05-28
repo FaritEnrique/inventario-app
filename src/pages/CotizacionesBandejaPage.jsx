@@ -3,6 +3,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Modal from "../components/Modal";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
+import {
+  AlertasSeguimientoCards,
+  AlertasSeguimientoModal,
+} from "../components/AlertasSeguimientoLogistico";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import {
@@ -218,6 +222,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [serverCounters, setServerCounters] = useState(null);
+  const [seguimientoAlertas, setSeguimientoAlertas] = useState(null);
+  const [seguimientoAlertModalTipo, setSeguimientoAlertModalTipo] =
+    useState(null);
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
   const [flowDrafts, setFlowDrafts] = useState({});
   const [expandedFlowId, setExpandedFlowId] = useState(null);
@@ -242,6 +249,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     setPage(1);
     setPagination(null);
     setServerCounters(null);
+    setSeguimientoAlertas(null);
+    setSeguimientoAlertModalTipo(null);
   }, [tipo]);
   const hasJefaturaContext = hasLogisticaJefaturaContext(availableContexts);
   const hasOperadorContext = hasLogisticaOperadorContext(availableContexts);
@@ -322,6 +331,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       setServerCounters(
         tipo === "jefatura" ? response?.counters || null : null,
       );
+      setSeguimientoAlertas(response?.alertas || null);
       setItems(filteredData);
       setContextError(null);
       setSeleccionOperadores(() => {
@@ -771,6 +781,11 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           })}
         </div>
       )}
+
+      <AlertasSeguimientoCards
+        alertas={seguimientoAlertas}
+        onSelectTipo={setSeguimientoAlertModalTipo}
+      />
 
       <div className="grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-3">
         <input
@@ -1518,6 +1533,17 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </div>
       </form>
     </Modal>
+
+    <AlertasSeguimientoModal
+      alertas={seguimientoAlertas}
+      tipo={seguimientoAlertModalTipo}
+      onClose={() => setSeguimientoAlertModalTipo(null)}
+      buildExpedientePath={(expediente, tipoAlerta) =>
+        tipoAlerta === "COBERTURA_INCOMPLETA"
+          ? `/cotizaciones/proceso/${expediente.id}/cotizaciones`
+          : `/cotizaciones/proceso/${expediente.id}`
+      }
+    />
     </>
   );
 };

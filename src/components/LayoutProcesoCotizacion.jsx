@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useLocation, Outlet } from "react-router-dom";
 import { CircleAlert } from "lucide-react";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
+import { AlertasSeguimientoExpediente } from "./AlertasSeguimientoLogistico";
 import HeaderProcesoLogistico from "./HeaderProcesoLogistico";
 import Loader from "./Loader";
 import ResumenProcesoLogisticoSkeleton from "./ui/skeletons/ResumenProcesoLogisticoSkeleton";
@@ -43,6 +44,13 @@ const LayoutProcesoCotizacion = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
+      {!cargando && !error ? (
+        <div className="mt-4">
+          <AlertasSeguimientoExpediente
+            alertas={detalleGlobal?.alertasSeguimiento}
+          />
+        </div>
+      ) : null}
       <main className="min-w-0 mt-4 overflow-x-hidden">
         {cargando ? (
           isSolicitudesRoute ? (
