@@ -20,6 +20,7 @@ import {
   SOLICITUD_COTIZACION_CURRENCY_LABELS,
   SOLICITUD_COTIZACION_RECEPTION_CHANNEL_LABELS,
 } from "../features/solicitud-cotizacion/solicitudCotizacionCatalog";
+import { formatMoneyWithPrefix } from "../utils/numberFormatters";
 
 const cotizacionStates = ["Pendiente", "Rechazada"];
 const formasPagoLocalPropuesta = [
@@ -276,7 +277,7 @@ const getCurrencyPrefix = (solicitud = {}) => {
 
 const formatCurrency = (value, solicitud = {}) => {
   const prefix = getCurrencyPrefix(solicitud);
-  return `${prefix ? `${prefix} ` : ""}${Number(value || 0).toFixed(2)}`;
+  return formatMoneyWithPrefix(value, prefix);
 };
 
 const buildContextGroup = (title, items = []) => {

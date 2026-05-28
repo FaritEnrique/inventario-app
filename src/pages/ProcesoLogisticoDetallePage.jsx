@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Link,
   useLocation,
@@ -34,8 +34,12 @@ import {
   findLogisticaJefaturaResponsable,
   getDefaultLogisticaResponsableSelection,
 } from "../utils/logisticaAssignment";
+import {
+  formatCurrency,
+  formatInteger,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
-const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "-";
 const formatDateTime = (value) =>
@@ -486,8 +490,8 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     obtenerOperadores,
     asignar,
     iniciar,
-    cerrarEmision,
-    reabrirEmision,
+    cerrarCotizaciones,
+    reabrirCotizaciones,
     formalizarDecisionExcepcional,
     marcarListoAdjudicacion,
     crearComparativo,
@@ -966,7 +970,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   const handleCerrarEmision = async () => {
     const motivo = window.prompt(
-      "Motivo para cerrar la emision de solicitudes (opcional):",
+      "Motivo para cerrar la etapa de cotizacion (opcional):",
       "",
     );
 
@@ -976,7 +980,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
     setSubmittingAction(true);
     try {
-      const result = await cerrarEmision(detalle.id, {
+      const result = await cerrarCotizaciones(detalle.id, {
         motivo: motivo.trim() || null,
       });
       setDetalle(result);
@@ -987,7 +991,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   const handleReabrirEmision = async () => {
     const motivo = window.prompt(
-      "Motivo para reabrir la emision de solicitudes (opcional):",
+      "Motivo para reabrir la etapa de cotizacion (opcional):",
       "",
     );
 
@@ -997,7 +1001,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
     setSubmittingAction(true);
     try {
-      const result = await reabrirEmision(detalle.id, {
+      const result = await reabrirCotizaciones(detalle.id, {
         motivo: motivo.trim() || null,
       });
       setDetalle(result);
@@ -1085,7 +1089,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
     setSubmittingAction(true);
     try {
-      const wasEmisionClosed = detalle.emisionSolicitudesCerrada === true;
+      const wasCotizacionesClosed = detalle.cotizacionesCerradas === true;
       const result = await definirFlujo(detalle.id, {
         modalidadFlujoLogistico: modalidad,
         causalFlujoExcepcional:
@@ -1100,7 +1104,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
       setDetalle(result);
       await load();
       toast.success(
-        wasEmisionClosed && result?.emisionSolicitudesCerrada === false
+        wasCotizacionesClosed && result?.cotizacionesCerradas === false
           ? "Flujo logistico actualizado y emision reabierta automaticamente por cobertura insuficiente."
           : "Flujo logistico definido correctamente.",
       );
@@ -1311,7 +1315,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const flujoDefinido = Boolean(detalle.modalidadFlujoLogistico);
   const isFlujoRegular = detalle.modalidadFlujoLogistico === "REGULAR";
   const isFlujoExcepcional = detalle.modalidadFlujoLogistico === "EXCEPCIONAL";
-  const emisionCerrada = detalle.emisionSolicitudesCerrada === true;
+  const cotizacionesCerradas = detalle.cotizacionesCerradas === true;
   const responsableNoOperativo =
     detalle.requiereReasignacionResponsable === true;
   const canDefineFlow = canAdjudicate && !expedienteBloqueado;
@@ -1320,7 +1324,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const canManageDrafts = canOperate && !expedienteBloqueado && flujoDefinido;
   const canManageSolicitudes =
     canManageDrafts &&
-    !emisionCerrada &&
+    !cotizacionesCerradas &&
     (!assignedToOtherResponsable ||
       !canAssign ||
       assignedToCurrentUser ||
@@ -1465,21 +1469,23 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
           <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
             Solicitudes / cotizaciones
           </p>
-          <p className="mt-2 text-lg font-semibold text-gray-900">
-            {detalle.resumenComparativo?.totalSolicitudes || 0} /{" "}
-            {detalle.resumenComparativo?.totalCotizaciones || 0}
+          <p className="mt-2 text-right text-lg font-semibold text-gray-900 tabular-nums">
+            {formatInteger(detalle.resumenComparativo?.totalSolicitudes)} /{" "}
+            {formatInteger(detalle.resumenComparativo?.totalCotizaciones)}
           </p>
           <p className="mt-2 text-xs text-gray-500">
-            Emisión {emisionCerrada ? "cerrada" : "abierta"} · cobertura mínima
-            por ítem {detalle.resumenComparativo?.coberturaMinimaPorItem || 0}
+            Cotizacion {cotizacionesCerradas ? "cerrada" : "abierta"} · cobertura mínima
+            por ítem {formatInteger(
+              detalle.resumenComparativo?.coberturaMinimaPorItem,
+            )}
           </p>
         </div>
         <div className="p-5 bg-white shadow-sm rounded-xl">
           <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
             Ordenes de compra
           </p>
-          <p className="mt-2 text-lg font-semibold text-gray-900">
-            {ordenesCompraRelacionadas.length || 0}
+          <p className="mt-2 text-right text-lg font-semibold text-gray-900 tabular-nums">
+            {formatInteger(ordenesCompraRelacionadas.length)}
           </p>
           {ordenesCompraRelacionadas[0]?.id ? (
             <Link
@@ -2005,16 +2011,16 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               </div>
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                  emisionCerrada
+                  cotizacionesCerradas
                     ? "bg-amber-100 text-amber-800"
                     : "bg-emerald-100 text-emerald-800"
                 }`}
               >
-                {emisionCerrada ? "Emisión cerrada" : "Emisión abierta"}
+                {cotizacionesCerradas ? "Cotizacion cerrada" : "Cotizacion abierta"}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {emisionCerrada ? (
+              {cotizacionesCerradas ? (
                 <button
                   type="button"
                   onClick={handleReabrirEmision}
@@ -2048,12 +2054,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                     {item.descripcionVisible}
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
-                    Invitaciones emitidas {item.coberturaInvitada} /{" "}
-                    {item.coverageMinimum}
+                    Invitaciones emitidas {formatInteger(item.coberturaInvitada)} /{" "}
+                    {formatInteger(item.coverageMinimum)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Respuestas válidas {item.coberturaValida} /{" "}
-                    {item.coverageMinimum}
+                    Respuestas válidas {formatInteger(item.coberturaValida)} /{" "}
+                    {formatInteger(item.coverageMinimum)}
                   </p>
                   <p
                     className={`mt-2 text-xs font-medium ${
@@ -2084,12 +2090,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               </div>
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                  emisionCerrada
+                  cotizacionesCerradas
                     ? "bg-amber-100 text-amber-800"
                     : "bg-emerald-100 text-emerald-800"
                 }`}
               >
-                {emisionCerrada ? "Emisión cerrada" : "Emisión abierta"}
+                {cotizacionesCerradas ? "Cotizacion cerrada" : "Cotizacion abierta"}
               </span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -2102,12 +2108,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                     {item.descripcionVisible}
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
-                    Invitaciones emitidas {item.coberturaInvitada} /{" "}
-                    {item.coverageMinimum}
+                    Invitaciones emitidas {formatInteger(item.coberturaInvitada)} /{" "}
+                    {formatInteger(item.coverageMinimum)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Respuestas válidas {item.coberturaValida} /{" "}
-                    {item.coverageMinimum}
+                    Respuestas válidas {formatInteger(item.coberturaValida)} /{" "}
+                    {formatInteger(item.coverageMinimum)}
                   </p>
                 </div>
               ))}
@@ -2149,8 +2155,8 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                 id="solicitudes"
                 className="p-5 text-sm border shadow-sm rounded-xl border-amber-200 bg-amber-50 text-amber-900"
               >
-                {emisionCerrada
-                  ? "La emision de solicitudes se encuentra cerrada. Reabre la etapa para emitir nuevas invitaciones."
+                {cotizacionesCerradas
+                  ? "La etapa de cotizacion se encuentra cerrada. Reabre la etapa para emitir nuevas invitaciones."
                   : "La emision y edicion de solicitudes de cotizacion queda deshabilitada mientras el expediente este asignado a otro responsable logistico."}
               </div>
             )}
@@ -2328,19 +2334,19 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Solicitud
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Proveedor
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Medio
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Respuesta
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-right text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Acciones
                     </th>
                   </tr>
@@ -2609,9 +2615,11 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                 <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
                   Cotizaciones consideradas
                 </p>
-                <p className="mt-1 text-sm font-medium text-gray-900">
-                  {comparativo.cotizacionesConsideradasSnapshot
-                    ?.totalCotizaciones || 0}
+                <p className="mt-1 text-right text-sm font-medium text-gray-900 tabular-nums">
+                  {formatInteger(
+                    comparativo.cotizacionesConsideradasSnapshot
+                      ?.totalCotizaciones,
+                  )}
                 </p>
               </div>
             </div>
@@ -2743,7 +2751,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                                 "Item sin descripcion"}
                             </p>
                             <p className="mt-1 text-xs text-gray-500">
-                              Requerido: {item.cantidadRequerida}{" "}
+                              Requerido: {formatQuantity(item.cantidadRequerida)}{" "}
                               {item.unidadMedida || ""}
                             </p>
                             <select
@@ -2909,12 +2917,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                               <p className="font-medium text-emerald-950">
                                 {proveedor.proveedor?.razonSocial || "-"}
                               </p>
-                              <span className="text-sm font-semibold text-emerald-900">
+                              <span className="text-right text-sm font-semibold text-emerald-900 tabular-nums">
                                 {formatCurrency(proveedor.totalAdjudicado)}
                               </span>
                             </div>
                             <p className="mt-1 text-xs text-emerald-800">
-                              Items adjudicados: {proveedor.totalItems}
+                              Items adjudicados: {formatInteger(proveedor.totalItems)}
                             </p>
                           </div>
                         ),
@@ -3165,16 +3173,16 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Codigo
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Proveedor
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-right text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Acciones
                     </th>
                   </tr>
@@ -3400,19 +3408,19 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Codigo
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Proveedor
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Total
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-right text-gray-600 uppercase">
+                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                       Acciones
                     </th>
                   </tr>

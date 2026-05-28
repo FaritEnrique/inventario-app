@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useOutletContext } from "react-router-dom";
-import { FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
+import { FaClipboardCheck, FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
@@ -14,9 +14,49 @@ import { useAuth } from "../context/authContext";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
+import { formatInteger, formatQuantity } from "../utils/numberFormatters";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
+
+const getActiveCotizacionForSolicitud = (solicitud) =>
+  Array.isArray(solicitud?.cotizaciones)
+    ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
+    : null;
+
+const buildSolicitudCoverage = (solicitud) => {
+  const requestedItems = Array.isArray(solicitud?.items) ? solicitud.items : [];
+  const activeCotizacion = getActiveCotizacionForSolicitud(solicitud);
+  const quotedItems = Array.isArray(activeCotizacion?.items)
+    ? activeCotizacion.items.filter(
+        (item) =>
+          String(item.estadoRespuesta || "").toUpperCase() === "COTIZADO",
+      )
+    : [];
+  const quotedItemIds = new Set(
+    quotedItems.map((item) => Number(item.itemRequerimientoId || 0)),
+  );
+
+  return {
+    activeCotizacion,
+    totalSolicitados: requestedItems.length,
+    totalCotizados: quotedItemIds.size,
+    items: requestedItems.map((item) => {
+      const itemId = Number(item.itemRequerimientoId || 0);
+      return {
+        id: itemId,
+        descripcion:
+          item.itemRequerimiento?.descripcionVisible ||
+          item.itemRequerimiento?.producto?.nombre ||
+          item.itemRequerimiento?.productoTemporal?.nombre ||
+          `Item ${itemId}`,
+        unidadMedida: item.itemRequerimiento?.unidadMedida || "",
+        cantidadRequerida: item.itemRequerimiento?.cantidadRequerida ?? "-",
+        cotizado: quotedItemIds.has(itemId),
+      };
+    }),
+  };
+};
 
 const SolicitudesProcesoLogisticoPage = () => {
   const location = useLocation();
@@ -47,6 +87,7 @@ const SolicitudesProcesoLogisticoPage = () => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [solicitudDraft, setSolicitudDraft] = useState(null);
   const [submittingSolicitud, setSubmittingSolicitud] = useState(false);
+  const [solicitudSeguimiento, setSolicitudSeguimiento] = useState(null);
 
   useEffect(() => {
     cargarSolicitudesPorRequerimiento(id).catch(() => {});
@@ -229,8 +270,8 @@ const SolicitudesProcesoLogisticoPage = () => {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:text-xs">
             Solicitudes activas
           </p>
-          <p className="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl">
-            {activeSolicitudesCount}
+          <p className="mt-1 text-right text-2xl font-bold text-slate-900 tabular-nums sm:mt-2 sm:text-3xl">
+            {formatInteger(activeSolicitudesCount)}
           </p>
         </div>
 
@@ -344,6 +385,15 @@ const SolicitudesProcesoLogisticoPage = () => {
                   </Link>
                   <button
                     type="button"
+                    onClick={() => setSolicitudSeguimiento(solicitud)}
+                    className="inline-flex items-center gap-1.5 rounded border border-emerald-300 px-2.5 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs"
+                    title="Ver cobertura de respuesta"
+                  >
+                    <FaClipboardCheck className="text-xs" />
+                    Estado
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handlePrintSolicitud(solicitud.id)}
                     className="inline-flex items-center gap-1.5 rounded border border-slate-300 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs"
                     title="Imprimir solicitud"
@@ -377,19 +427,19 @@ const SolicitudesProcesoLogisticoPage = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                   Codigo
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                   Proveedor
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                   Fecha
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-gray-600 uppercase">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                   Estado
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-right text-gray-600 uppercase">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-center text-gray-600 uppercase">
                   Acciones
                 </th>
               </tr>
@@ -439,6 +489,14 @@ const SolicitudesProcesoLogisticoPage = () => {
                         >
                           <FaEye className="text-xs" />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => setSolicitudSeguimiento(solicitud)}
+                          className="inline-flex items-center gap-2 rounded border border-emerald-300 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                          title="Ver cobertura de respuesta"
+                        >
+                          <FaClipboardCheck className="text-xs" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handlePrintSolicitud(solicitud.id)}
@@ -521,6 +579,104 @@ const SolicitudesProcesoLogisticoPage = () => {
           </section>
         ) : null}
       </div>
+
+      {solicitudSeguimiento ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-3 sm:items-center">
+          <div className="max-h-[88vh] w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
+            {(() => {
+              const coverage = buildSolicitudCoverage(solicitudSeguimiento);
+              const estadoRespuesta =
+                coverage.totalCotizados === 0
+                  ? "Sin respuesta"
+                  : coverage.totalCotizados >= coverage.totalSolicitados
+                    ? "Respondida completa"
+                    : "Respuesta parcial";
+
+              return (
+                <>
+                  <div className="border-b border-slate-200 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {solicitudSeguimiento.codigo}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {solicitudSeguimiento.proveedor?.razonSocial || "-"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSolicitudSeguimiento(null)}
+                        className="rounded border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-500">
+                          Estado
+                        </p>
+                        <p className="mt-1 text-slate-900">
+                          {estadoRespuesta}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-500">
+                          Items solicitados
+                        </p>
+                        <p className="mt-1 text-right text-slate-900 tabular-nums">
+                          {formatInteger(coverage.totalSolicitados)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-500">
+                          Items cotizados
+                        </p>
+                        <p className="mt-1 text-right text-slate-900 tabular-nums">
+                          {formatInteger(coverage.totalCotizados)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="max-h-[55vh] overflow-y-auto p-4">
+                    <div className="space-y-2">
+                      {coverage.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {item.descripcion}
+                            </p>
+                            <p className="text-slate-500">
+                              Cantidad:{" "}
+                              {item.cantidadRequerida === "-"
+                                ? "-"
+                                : formatQuantity(item.cantidadRequerida)}{" "}
+                              {item.unidadMedida}
+                            </p>
+                          </div>
+                          <span
+                            className={`w-fit rounded-full px-2 py-1 font-semibold ${
+                              item.cotizado
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {item.cotizado ? "Cotizado" : "Pendiente"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

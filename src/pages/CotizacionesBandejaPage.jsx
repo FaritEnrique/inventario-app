@@ -24,6 +24,11 @@ import {
   findLogisticaJefaturaResponsable,
   getDefaultLogisticaResponsableSelection,
 } from "../utils/logisticaAssignment";
+import {
+  formatCurrency,
+  formatInteger,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
 const titles = {
   jefatura: "Bandeja Operativa de Logística",
@@ -37,7 +42,6 @@ const subtitles = {
     "Trabaja solo los expedientes logísticos que tienes asignados y déjalos listos para decisión de jefatura.",
 };
 
-const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "-";
 const trayStatusOrder = [
@@ -67,18 +71,18 @@ const trayStatusMeta = {
     chipClass: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700",
   },
   REGISTRO_COTIZACION_INCOMPLETA: {
-    label: "Registro incompleto",
-    summaryLabel: "Registro incompleto",
+    label: "Cotizaciones incompletas",
+    summaryLabel: "Cotizaciones incompletas",
     chipClass: "border-amber-300 bg-amber-50 text-amber-800",
   },
   REGISTRO_COTIZACION_COMPLETA: {
-    label: "Registro completo",
-    summaryLabel: "Registro completo",
+    label: "Cotizaciones completas",
+    summaryLabel: "Cotizaciones completas",
     chipClass: "border-emerald-300 bg-emerald-50 text-emerald-700",
   },
   COMPARATIVO_GENERADO: {
-    label: "Comparativo generado",
-    summaryLabel: "Comparativos",
+    label: "En comparativo",
+    summaryLabel: "En comparativo",
     chipClass: "border-sky-300 bg-sky-50 text-sky-700",
   },
   BUENA_PRO_OTORGADA: {
@@ -638,7 +642,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
     setSubmittingFlowId(item.id);
     try {
-      const wasEmisionClosed = item.emisionSolicitudesCerrada === true;
+      const wasCotizacionesClosed = item.cotizacionesCerradas === true;
       await definirFlujo(item.id, {
         modalidadFlujoLogistico: modalidad,
         causalFlujoExcepcional:
@@ -651,8 +655,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       await load();
       setExpandedFlowId(null);
       toast.success(
-        wasEmisionClosed
-          ? "Flujo logístico actualizado. Si la cobertura invitada quedó insuficiente, la emisión se reabrió automáticamente."
+        wasCotizacionesClosed
+          ? "Flujo logístico actualizado. Si la cobertura invitada quedó insuficiente, la etapa de cotizacion se reabrio automaticamente."
           : "Flujo logístico actualizado.",
       );
     } finally {
@@ -748,8 +752,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Total expedientes
             </p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
-              {resumen.total}
+            <p className="mt-2 text-right text-3xl font-bold text-gray-900 tabular-nums">
+              {formatInteger(resumen.total)}
             </p>
           </div>
           {trayStatusOrder.map((status) => {
@@ -759,8 +763,8 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   {meta.summaryLabel}
                 </p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {resumen.counts[status] || 0}
+                <p className="mt-2 text-right text-3xl font-bold text-gray-900 tabular-nums">
+                  {formatInteger(resumen.counts[status])}
                 </p>
               </div>
             );
@@ -922,7 +926,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                         {getAprobacionChipLabel(item)}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-medium text-gray-700">
+                    <p className="mt-2 text-right text-sm font-medium text-gray-700 tabular-nums">
                       {formatCurrency(item.totalReferencial)}
                     </p>
                   </div>
@@ -955,9 +959,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                       Solicitudes / cotizaciones
                     </p>
-                    <p className="text-sm text-gray-700">
-                      {item.resumenComparativo?.totalSolicitudes || 0} /{" "}
-                      {item.resumenComparativo?.totalCotizaciones || 0}
+                    <p className="text-right text-sm text-gray-700 tabular-nums">
+                      {formatInteger(item.resumenComparativo?.totalSolicitudes)} /{" "}
+                      {formatInteger(item.resumenComparativo?.totalCotizaciones)}
                     </p>
                   </div>
                   <div>
@@ -977,7 +981,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
                       {requerimientoItems.length > 0
-                        ? `${requerimientoItems.length} item(s) visibles en el expediente`
+                        ? `${formatInteger(
+                            requerimientoItems.length,
+                          )} item(s) visibles en el expediente`
                         : "No se encontraron items visibles en la data devuelta para este expediente."}
                     </p>
                   </div>
@@ -986,13 +992,13 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                       <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50">
                           <tr>
-                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                            <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
                               Item
                             </th>
-                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                            <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
                               Cantidad
                             </th>
-                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                            <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
                               Subtotal
                             </th>
                           </tr>
@@ -1003,11 +1009,11 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                               <td className="px-4 py-3 text-sm text-slate-700">
                                 {getItemDescription(requerimientoItem)}
                               </td>
-                              <td className="px-4 py-3 text-sm text-slate-700">
-                                {requerimientoItem.cantidadRequerida || 0}{" "}
+                              <td className="px-4 py-3 text-right text-sm text-slate-700 tabular-nums">
+                                {formatQuantity(requerimientoItem.cantidadRequerida)}{" "}
                                 {requerimientoItem.unidadMedida || ""}
                               </td>
-                              <td className="px-4 py-3 text-sm text-slate-700">
+                              <td className="px-4 py-3 text-right text-sm text-slate-700 tabular-nums">
                                 {formatCurrency(
                                   requerimientoItem.subtotalReferencial,
                                 )}
@@ -1058,17 +1064,17 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                       Emision de solicitudes
                     </p>
                     <p className="mt-1 text-sm font-medium text-slate-900">
-                      {item.resumenComparativo?.totalSolicitudes || 0}{" "}
+                      {formatInteger(item.resumenComparativo?.totalSolicitudes)}{" "}
                       solicitud(es)
                     </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {item.modalidadFlujoLogistico === "REGULAR"
                         ? assignedToOtherResponsable
-                          ? "La emisión de solicitudes queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
+                          ? "La etapa de cotizacion queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
                           : "Puedes emitir solicitudes de cotización desde esta bandeja."
                         : item.modalidadFlujoLogistico === "EXCEPCIONAL"
                           ? assignedToOtherResponsable
-                            ? "La emisión de solicitudes queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
+                            ? "La etapa de cotizacion queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
                             : "Puedes emitir solicitudes de cotización desde esta bandeja incluso en flujo excepcional."
                           : "Primero debes definir el flujo logístico."}
                     </p>
@@ -1349,7 +1355,9 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 text-sm text-slate-700 shadow-sm">
           <p>
             {pagination.total > 0
-              ? `${pagination.from}-${pagination.to} de ${pagination.total}`
+              ? `${formatInteger(pagination.from)}-${formatInteger(
+                  pagination.to,
+                )} de ${formatInteger(pagination.total)}`
               : "0 de 0"}
           </p>
           <div className="flex gap-2">

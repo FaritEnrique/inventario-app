@@ -2,23 +2,14 @@ import React, { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import ResumenProcesoLogisticoSkeleton from "../components/ui/skeletons/ResumenProcesoLogisticoSkeleton";
 import useHistorialAprobacionesStore from "../stores/useHistorialAprobacionesStore";
+import {
+  formatCurrency,
+  formatInteger,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "No disponible";
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
-
-const formatNumber = (value) =>
-  new Intl.NumberFormat("es-PE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
 
 const ResumenProcesoLogisticoPage = () => {
   const { id, detalleGlobal, loading } = useOutletContext();
@@ -153,8 +144,8 @@ const ResumenProcesoLogisticoPage = () => {
                 {items.length > 0 ? (
                   items.map((item, index) => (
                     <tr key={item.id}>
-                      <td className="text-center border border-gray-300">
-                        {index + 1}
+                      <td className="px-3 py-2 text-right border border-gray-300 tabular-nums">
+                        {formatInteger(index + 1)}
                       </td>
                       <td className="border border-gray-300">
                         {item.descripcionVisible || "Sin descripcion"}
@@ -162,13 +153,13 @@ const ResumenProcesoLogisticoPage = () => {
                       <td className="text-center border border-gray-300">
                         {item.unidadMedida || "-"}
                       </td>
-                      <td className="text-center border border-gray-300">
-                        {formatNumber(item.cantidadRequerida)}
+                      <td className="px-3 py-2 text-right border border-gray-300 tabular-nums">
+                        {formatQuantity(item.cantidadRequerida)}
                       </td>
-                      <td className="text-right border border-gray-300">
+                      <td className="px-3 py-2 text-right border border-gray-300 tabular-nums">
                         {formatCurrency(item.valorReferencialUnitario)}
                       </td>
-                      <td className="text-right border border-gray-300">
+                      <td className="px-3 py-2 text-right border border-gray-300 tabular-nums">
                         {formatCurrency(item.subtotalReferencial)}
                       </td>
                     </tr>
@@ -192,7 +183,7 @@ const ResumenProcesoLogisticoPage = () => {
             Total
           </p>
           <div>
-            <p className="p-2 mb-2 text-lg font-bold text-center text-gray-700 border border-indigo-500 rounded-lg bg-indigo-50">
+            <p className="p-2 mb-2 text-lg font-bold text-right text-gray-700 border border-indigo-500 rounded-lg bg-indigo-50 tabular-nums">
               {formatCurrency(detalleGlobal?.totalReferencial)}
             </p>
           </div>

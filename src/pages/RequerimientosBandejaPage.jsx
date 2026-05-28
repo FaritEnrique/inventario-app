@@ -13,6 +13,10 @@ import {
   getTrayEmptyStateEffective,
   getTrayGuidanceEffective,
 } from "../accessRules";
+import {
+  formatCurrency,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
 const titles = {
   jefatura: "Bandeja de Jefatura",
@@ -218,8 +222,8 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                     nivelPendiente={req.nivelPendiente}
                     compact
                   />
-                  <p className="mt-2 text-sm font-medium text-gray-700">
-                    S/ {(req.totalReferencial || 0).toFixed(2)}
+                  <p className="mt-2 text-right text-sm font-medium text-gray-700 tabular-nums">
+                    {formatCurrency(req.totalReferencial)}
                   </p>
                 </div>
               </div>
@@ -228,16 +232,16 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Item
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Cantidad
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Subtotal
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Decision item
                       </th>
                     </tr>
@@ -250,11 +254,12 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                           <td className="px-4 py-2 text-sm text-gray-700">
                             {item.descripcionVisible}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-700">
-                            {item.cantidadRequerida} {item.unidadMedida}
+                          <td className="px-4 py-2 text-right text-sm text-gray-700 tabular-nums">
+                            {formatQuantity(item.cantidadRequerida)}{" "}
+                            {item.unidadMedida}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-700">
-                            S/ {(item.subtotalReferencial || 0).toFixed(2)}
+                          <td className="px-4 py-2 text-right text-sm text-gray-700 tabular-nums">
+                            {formatCurrency(item.subtotalReferencial)}
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-700">
                             <select

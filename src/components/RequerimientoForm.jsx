@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "react-toastify";
 import { resolveProductoImageUrl } from "../utils/productoImage";
+import {
+  formatCurrency,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
 const EMPTY_AREAS = [];
 
@@ -108,10 +112,10 @@ const ProductDetailModal = ({ producto, onClose }) => {
             <p><span className="font-semibold">Marca:</span> {producto.marca?.nombre || "-"}</p>
             <p><span className="font-semibold">Tipo:</span> {producto.tipoProducto?.nombre || "-"}</p>
             <p><span className="font-semibold">Unidad:</span> {producto.unidadMedida}</p>
-            <p><span className="font-semibold">Stock actual:</span> {producto.stock?.cantidadActual ?? 0}</p>
-            <p><span className="font-semibold">Stock reservado:</span> {producto.stock?.cantidadReservada ?? 0}</p>
-            <p><span className="font-semibold">Stock disponible:</span> {producto.stock?.cantidadDisponible ?? 0}</p>
-            <p><span className="font-semibold">Valor referencial sugerido:</span> S/ {(producto.valorReferencialSugerido || 0).toFixed(2)}</p>
+            <p><span className="font-semibold">Stock actual:</span> <span className="tabular-nums">{formatQuantity(producto.stock?.cantidadActual)}</span></p>
+            <p><span className="font-semibold">Stock reservado:</span> <span className="tabular-nums">{formatQuantity(producto.stock?.cantidadReservada)}</span></p>
+            <p><span className="font-semibold">Stock disponible:</span> <span className="tabular-nums">{formatQuantity(producto.stock?.cantidadDisponible)}</span></p>
+            <p><span className="font-semibold">Valor referencial sugerido:</span> <span className="tabular-nums">{formatCurrency(producto.valorReferencialSugerido)}</span></p>
           </div>
         </div>
       </div>
@@ -490,8 +494,19 @@ const RequerimientoForm = ({
                       <div>
                         <p className="font-medium text-gray-900">{producto.nombre}</p>
                         <p className="text-sm text-gray-500">{producto.codigo}</p>
-                        <p className="text-sm text-gray-600">Disponible: {producto.stock?.cantidadDisponible ?? 0} {producto.unidadMedida}</p>
-                        <p className="text-sm text-gray-600">Valor sugerido: S/ {(producto.valorReferencialSugerido || 0).toFixed(2)}</p>
+                        <p className="text-sm text-gray-600">
+                          Disponible:{" "}
+                          <span className="tabular-nums">
+                            {formatQuantity(producto.stock?.cantidadDisponible)}
+                          </span>{" "}
+                          {producto.unidadMedida}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Valor sugerido:{" "}
+                          <span className="tabular-nums">
+                            {formatCurrency(producto.valorReferencialSugerido)}
+                          </span>
+                        </p>
                       </div>
                       <div className="flex flex-col gap-2">
                         <button type="button" onClick={() => addCatalogProduct(producto)} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white">Agregar</button>
@@ -615,7 +630,9 @@ const RequerimientoForm = ({
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Items del requerimiento</h3>
-            <span className="rounded bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">Total referencial: S/ {totalReferencial.toFixed(2)}</span>
+            <span className="rounded bg-indigo-50 px-3 py-1 text-right text-sm font-medium text-indigo-700 tabular-nums">
+              Total referencial: {formatCurrency(totalReferencial)}
+            </span>
           </div>
           {state.items.length === 0 ? (
             <div className="rounded border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500">Todavia no agregaste items.</div>
@@ -667,8 +684,27 @@ const RequerimientoForm = ({
                       <textarea id={`requerimiento-item-observaciones-${item.localId}`} value={item.observaciones} name="requerimiento-form-textarea-473" onChange={(event) => dispatch({ type: "UPDATE_ITEM", localId: item.localId, name: "observaciones", value: event.target.value })} rows="2" className="w-full rounded border border-gray-300 px-3 py-2" placeholder="Observaciones del item" />
                     </div>
                     <div className="rounded bg-gray-50 p-3 text-sm text-gray-600">
-                      <p><span className="font-semibold">Subtotal referencial:</span> S/ {(Number(item.cantidadRequerida || 0) * Number(item.valorReferencialUnitario || 0)).toFixed(2)}</p>
-                      <p><span className="font-semibold">Stock al momento:</span> {item.producto?.stock?.cantidadDisponible ?? item.stockAlMomento ?? "-"}</p>
+                      <p>
+                        <span className="font-semibold">Subtotal referencial:</span>{" "}
+                        <span className="tabular-nums">
+                          {formatCurrency(
+                            Number(item.cantidadRequerida || 0) *
+                              Number(item.valorReferencialUnitario || 0),
+                          )}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-semibold">Stock al momento:</span>{" "}
+                        <span className="tabular-nums">
+                          {item.producto?.stock?.cantidadDisponible != null ||
+                          item.stockAlMomento != null
+                            ? formatQuantity(
+                                item.producto?.stock?.cantidadDisponible ??
+                                  item.stockAlMomento,
+                              )
+                            : "-"}
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ import {
   getLogisticaOperativeTrayPathEffective,
   getAvailableApprovalTraysEffective,
 } from "../accessRules";
+import { formatCurrency } from "../utils/numberFormatters";
 
 const initialFilters = {
   search: "",
@@ -207,13 +208,13 @@ const RequerimientosPage = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Codigo</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Area</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Solicitante</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Total</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">Fecha</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-600">Acciones</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Codigo</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Area</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Solicitante</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Estado</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Total</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Fecha</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -231,7 +232,9 @@ const RequerimientosPage = () => {
                       compact
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">S/ {(req.totalReferencial || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                    {formatCurrency(req.totalReferencial)}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
                     {formatRequerimientoDate(req.fechaCreacion)}
                   </td>

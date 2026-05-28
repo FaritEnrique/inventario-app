@@ -1,5 +1,5 @@
 // src/components/LayoutProcesoCotizacion.jsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useLocation, Outlet } from "react-router-dom";
 import { CircleAlert } from "lucide-react";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
@@ -19,13 +19,20 @@ const LayoutProcesoCotizacion = () => {
   const isResumenRoute = normalizedPath === procesoBasePath;
   const isSolicitudesRoute = normalizedPath === `${procesoBasePath}/solicitudes`;
 
-  useEffect(() => {
-    obtenerDetalle(id)
-      .then((data) => setDetalleGlobal(data))
-      .catch((err) =>
-        console.error("Error al obtener detalle de cotización:", err),
-      );
+  const cargarDetalle = useCallback(async () => {
+    try {
+      const data = await obtenerDetalle(id);
+      setDetalleGlobal(data);
+      return data;
+    } catch (err) {
+      console.error("Error al obtener detalle de cotizacion:", err);
+      throw err;
+    }
   }, [id, obtenerDetalle]);
+
+  useEffect(() => {
+    cargarDetalle().catch(() => {});
+  }, [cargarDetalle]);
 
   return (
     <div className="w-full min-w-0 p-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -46,7 +53,7 @@ const LayoutProcesoCotizacion = () => {
             <div className="flex flex-col items-center justify-center py-10 space-y-4">
               <Loader className="animate-spin" />
               <p className="text-sm font-medium text-gray-600">
-                Cargando detalle de cotización...
+                Cargando detalle de cotizacion...
               </p>
             </div>
           )
@@ -61,6 +68,8 @@ const LayoutProcesoCotizacion = () => {
             context={{
               id,
               detalleGlobal,
+              setDetalleGlobal,
+              recargarDetalle: cargarDetalle,
               loading: cargando,
               error,
               activeTab,

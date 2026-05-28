@@ -16,6 +16,11 @@ import {
   canEditRequerimientoEffective,
   getAvailableApprovalTraysEffective,
 } from "../accessRules";
+import {
+  formatCurrency,
+  formatInteger,
+  formatQuantity,
+} from "../utils/numberFormatters";
 
 const eventLabels = {
   CREACION: "Creacion",
@@ -69,7 +74,7 @@ const buildDetailLines = (entry) => {
       return [
         detail.descripcionVisible ? `Item: ${detail.descripcionVisible}` : null,
         detail.cantidadRequerida != null
-          ? `Cantidad: ${detail.cantidadRequerida}`
+          ? `Cantidad: ${formatQuantity(detail.cantidadRequerida)}`
           : null,
       ].filter(Boolean);
     case "RETIRAR_ITEM":
@@ -81,7 +86,7 @@ const buildDetailLines = (entry) => {
         detail.nombre ? `Nombre: ${detail.nombre}` : null,
         detail.unidadMedida ? `Unidad: ${detail.unidadMedida}` : null,
         detail.valorReferencialUnitario != null
-          ? `Valor referencial: S/ ${Number(detail.valorReferencialUnitario || 0).toFixed(2)}`
+          ? `Valor referencial: ${formatCurrency(detail.valorReferencialUnitario)}`
           : null,
       ].filter(Boolean);
     case "APROBACION":
@@ -333,8 +338,8 @@ const RequerimientoDetallePage = () => {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Total referencial
               </p>
-              <p className="text-lg font-semibold text-gray-900">
-                S/ {(requerimiento.totalReferencial || 0).toFixed(2)}
+              <p className="text-right text-lg font-semibold text-gray-900 tabular-nums">
+                {formatCurrency(requerimiento.totalReferencial)}
               </p>
             </div>
           </div>
@@ -386,8 +391,8 @@ const RequerimientoDetallePage = () => {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Version actual
               </p>
-              <p className="text-sm text-gray-700">
-                {requerimiento.versionActual || 1}
+              <p className="text-right text-sm text-gray-700 tabular-nums">
+                {formatInteger(requerimiento.versionActual || 1)}
               </p>
             </div>
             <div>
@@ -438,14 +443,23 @@ const RequerimientoDetallePage = () => {
                   <div className="mt-3 grid gap-1 text-sm text-gray-700">
                     <p>Tipo: {item.esTemporal ? "Temporal" : "Catalogado"}</p>
                     <p>
-                      Cantidad: {item.cantidadRequerida} {item.unidadMedida}
+                      Cantidad:{" "}
+                      <span className="tabular-nums">
+                        {formatQuantity(item.cantidadRequerida)}
+                      </span>{" "}
+                      {item.unidadMedida}
                     </p>
                     <p>
-                      Valor: S/{" "}
-                      {(item.valorReferencialUnitario || 0).toFixed(2)}
+                      Valor:{" "}
+                      <span className="tabular-nums">
+                        {formatCurrency(item.valorReferencialUnitario)}
+                      </span>
                     </p>
                     <p>
-                      Subtotal: S/ {(item.subtotalReferencial || 0).toFixed(2)}
+                      Subtotal:{" "}
+                      <span className="tabular-nums">
+                        {formatCurrency(item.subtotalReferencial)}
+                      </span>
                     </p>
                     <p>Estado: {item.estado}</p>
                   </div>
@@ -457,22 +471,22 @@ const RequerimientoDetallePage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Descripcion
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Tipo
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Cantidad
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Valor
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Subtotal
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Estado
                       </th>
                     </tr>
@@ -505,14 +519,15 @@ const RequerimientoDetallePage = () => {
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.esTemporal ? "Temporal" : "Catalogado"}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.cantidadRequerida} {item.unidadMedida}
+                        <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                          {formatQuantity(item.cantidadRequerida)}{" "}
+                          {item.unidadMedida}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          S/ {(item.valorReferencialUnitario || 0).toFixed(2)}
+                        <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                          {formatCurrency(item.valorReferencialUnitario)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          S/ {(item.subtotalReferencial || 0).toFixed(2)}
+                        <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                          {formatCurrency(item.subtotalReferencial)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.estado}
