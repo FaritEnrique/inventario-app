@@ -100,6 +100,7 @@ const buildOfferRows = (condiciones = {}, tipoCompra) => {
     ["Garantia", condiciones.garantia],
     ["Vigencia de oferta", condiciones.vigenciaOfertaDias],
     ["Observacion de pago", condiciones.observacionPagoLocalPropuesta],
+    ["Observaciones", condiciones.observaciones],
   ];
 
   if (tipoCompra === "IMPORTACION") {
@@ -455,6 +456,15 @@ const ComparativosProcesoLogisticoPage = () => {
     viewModel.condicionesSolicitadas,
     viewModel.tipoCompra,
   );
+  const matrixMinWidth = `${560 + viewModel.cotizacionesComparables.length * 780}px`;
+  const providerColumnWidths = [
+    "w-56",
+    "w-28",
+    "w-36",
+    "w-36",
+    "w-32",
+    "w-28",
+  ];
 
   if (loading && !detalleGlobal) {
     return (
@@ -588,7 +598,7 @@ const ComparativosProcesoLogisticoPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3">
               {[
                 ["Tipo de compra", viewModel.tipoCompra || "No definido"],
                 ["Items requeridos", formatInteger(totalItems)],
@@ -605,12 +615,12 @@ const ComparativosProcesoLogisticoPage = () => {
               ].map(([label, value]) => (
                 <div
                   key={label}
-                  className="rounded-lg border border-slate-200 p-3"
+                  className="flex min-h-24 flex-col justify-between rounded-lg border border-slate-200 p-3"
                 >
-                  <p className="text-xs font-semibold uppercase text-slate-500">
+                  <p className="text-center text-xs font-semibold uppercase leading-tight text-slate-500">
                     {label}
                   </p>
-                  <p className="mt-2 text-right text-lg font-bold text-slate-900 tabular-nums">
+                  <p className="mt-3 whitespace-nowrap text-center text-lg font-bold text-slate-900 tabular-nums">
                     {value}
                   </p>
                 </div>
@@ -658,30 +668,49 @@ const ComparativosProcesoLogisticoPage = () => {
 
             {viewModel.cotizacionesComparables.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="min-w-[1400px] w-full border-collapse text-sm">
+                <table
+                  className="w-full border-collapse text-sm"
+                  style={{ minWidth: matrixMinWidth }}
+                >
+                  <colgroup>
+                    <col className="w-16" />
+                    <col className="w-80" />
+                    <col className="w-24" />
+                    <col className="w-32" />
+                    {viewModel.cotizacionesComparables.map((cotizacion) => (
+                      <React.Fragment key={`cols-${cotizacion.cotizacionId}`}>
+                        {providerColumnWidths.map((width, index) => (
+                          <col
+                            key={`${cotizacion.cotizacionId}-${index}`}
+                            className={width}
+                          />
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </colgroup>
                   <thead className="bg-slate-50 text-xs uppercase text-slate-600">
                     <tr>
                       <th
                         rowSpan={2}
-                        className="border-b border-slate-200 px-3 py-3 text-center"
+                        className="border-b border-slate-200 px-3 py-3 text-center align-middle"
                       >
                         Item
                       </th>
                       <th
                         rowSpan={2}
-                        className="min-w-72 border-b border-slate-200 px-3 py-3 text-center"
+                        className="border-b border-slate-200 px-3 py-3 text-center align-middle"
                       >
                         Descripcion / especificacion solicitada
                       </th>
                       <th
                         rowSpan={2}
-                        className="border-b border-slate-200 px-3 py-3 text-center"
+                        className="border-b border-slate-200 px-3 py-3 text-center align-middle"
                       >
                         Unidad
                       </th>
                       <th
                         rowSpan={2}
-                        className="border-b border-slate-200 px-3 py-3 text-center"
+                        className="border-b border-slate-200 px-3 py-3 text-center align-middle"
                       >
                         Cantidad requerida
                       </th>
@@ -689,14 +718,23 @@ const ComparativosProcesoLogisticoPage = () => {
                         <th
                           key={cotizacion.cotizacionId}
                           colSpan={6}
-                          className="border-b border-l border-slate-200 px-3 py-3 text-center"
+                          className="border-b border-l border-slate-200 px-3 py-3 text-center align-middle"
                         >
-                          <div className="font-semibold text-slate-900">
+                          <div className="font-semibold leading-tight text-slate-900">
                             {cotizacion.proveedor.razonSocial}
                           </div>
-                          <div className="mt-1 normal-case text-slate-500">
-                            RUC {formatText(cotizacion.proveedor.ruc, "-")} ·{" "}
-                            {cotizacion.solicitudCodigo} · {cotizacion.moneda}
+                          <div className="mt-1 normal-case leading-snug text-slate-500">
+                            <span className="whitespace-nowrap">
+                              RUC {formatText(cotizacion.proveedor.ruc, "-")}
+                            </span>{" "}
+                            ·{" "}
+                            <span className="whitespace-nowrap">
+                              {cotizacion.solicitudCodigo}
+                            </span>{" "}
+                            ·{" "}
+                            <span className="whitespace-nowrap">
+                              {cotizacion.moneda}
+                            </span>
                           </div>
                         </th>
                       ))}
@@ -714,7 +752,7 @@ const ComparativosProcesoLogisticoPage = () => {
                           ].map((label) => (
                             <th
                               key={`${cotizacion.cotizacionId}-${label}`}
-                              className="border-b border-l border-slate-200 px-3 py-2 text-center"
+                              className="border-b border-l border-slate-200 px-3 py-2 text-center align-middle"
                             >
                               {label}
                             </th>
@@ -758,7 +796,7 @@ const ComparativosProcesoLogisticoPage = () => {
                             <React.Fragment
                               key={`${item.itemRequerimientoId}-${cotizacion.cotizacionId}`}
                             >
-                              <td className="border-l border-slate-100 px-3 py-3">
+                              <td className="border-l border-slate-100 px-3 py-3 align-middle">
                                 {cell?.estado === "COTIZADO"
                                   ? formatText(
                                       cell.descripcionTecnicaOfertada,
@@ -766,12 +804,12 @@ const ComparativosProcesoLogisticoPage = () => {
                                     )
                                   : cell?.estado}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums">
+                              <td className="px-3 py-3 text-right tabular-nums align-middle">
                                 {cell?.estado === "COTIZADO"
                                   ? formatQuantity(cell.cantidadOfrecida)
                                   : "-"}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums">
+                              <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums align-middle">
                                 {cell?.estado === "COTIZADO"
                                   ? formatMoney(
                                       cell.precioUnitario,
@@ -779,12 +817,12 @@ const ComparativosProcesoLogisticoPage = () => {
                                     )
                                   : "-"}
                               </td>
-                              <td className="px-3 py-3 text-right tabular-nums">
+                              <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums align-middle">
                                 {cell?.estado === "COTIZADO"
                                   ? formatMoney(cell.precioTotal, cotizacion.moneda)
                                   : "-"}
                               </td>
-                              <td className="px-3 py-3 text-center">
+                              <td className="px-3 py-3 text-center align-middle">
                                 <span
                                   className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                                     cell?.estado === "COTIZADO"
@@ -795,7 +833,7 @@ const ComparativosProcesoLogisticoPage = () => {
                                   {cell?.estado || "NO_SOLICITADO"}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-center">
+                              <td className="px-3 py-3 text-center align-middle">
                                 {cell?.adjudicable ? (
                                   <input
                                     type="checkbox"
