@@ -19,6 +19,12 @@ const LayoutProcesoCotizacion = () => {
   const procesoBasePath = `/cotizaciones/proceso/${id}`;
   const isResumenRoute = normalizedPath === procesoBasePath;
   const isSolicitudesRoute = normalizedPath === `${procesoBasePath}/solicitudes`;
+  const isComparativosRoute =
+    normalizedPath === `${procesoBasePath}/comparativos`;
+  const isOrdenCompraRoute =
+    normalizedPath === `${procesoBasePath}/orden-compra`;
+  const shouldShowSeguimientoAlertas =
+    !cargando && !error && !isComparativosRoute && !isOrdenCompraRoute;
 
   const cargarDetalle = useCallback(async () => {
     try {
@@ -44,7 +50,7 @@ const LayoutProcesoCotizacion = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
-      {!cargando && !error ? (
+      {shouldShowSeguimientoAlertas ? (
         <div className="mt-4">
           <AlertasSeguimientoExpediente
             alertas={detalleGlobal?.alertasSeguimiento}
