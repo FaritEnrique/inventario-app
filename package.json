@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
     "@heroicons/react": "^2.2.0",
     "@tanstack/react-query": "^5.83.0",
     "browser-image-compression": "^2.0.2",

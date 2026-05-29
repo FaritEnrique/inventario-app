@@ -157,6 +157,15 @@ const CotizacionesProcesoLogisticoPage = lazy(
 const SeleccionContextoPage = lazy(
   () => import("./pages/SeleccionContextoPage"),
 );
+const ModuloAlmacenPage = lazy(() => import("./pages/ModuloAlmacenPage"));
+const DashboardAlmacenPage = lazy(() => import("./pages/DashboardAlmacenPage"));
+const ProductosAlmacenPage = lazy(() => import("./pages/ProductosAlmacenPage"));
+const MovimientosAlmacenPage = lazy(
+  () => import("./pages/MovimientosAlmacenPage"),
+);
+const RecepcionOrdenCompraPage = lazy(
+  () => import("./pages/RecepcionOrdenCompraPage"),
+);
 
 const AppRoutes = () => {
   const { loading, needsInitialSetup } = useAuth();
@@ -371,6 +380,26 @@ const AppRoutes = () => {
                 </RoutePermissionGuard>
               }
             />
+            <Route
+              path="modulo-almacen"
+              element={
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <ModuloAlmacenPage />
+                </RoutePermissionGuard>
+              }
+            >
+              <Route index element={<DashboardAlmacenPage />} />
+              <Route path="productos" element={<ProductosAlmacenPage />} />
+              <Route
+                path="tipo-productos"
+                element={<GestionTipoProductosPage />}
+              />
+              <Route path="movimientos" element={<MovimientosAlmacenPage />} />
+              <Route
+                path="recepcion-oc"
+                element={<RecepcionOrdenCompraPage />}
+              />
+            </Route>
             <Route
               path="solicitudes-cotizacion/:id/documento"
               element={

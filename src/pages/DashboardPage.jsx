@@ -111,6 +111,14 @@ const baseCards = [
     visible: ({ user }) => canViewOrdenCompraApprovalTrayEffective(user),
   },
   {
+    title: "Módulo Almacén",
+    description:
+      "Acceder al panel avanzado de inventarios, control de movimientos, catálogos y recepción de O/C.",
+    icon: <FaBoxes />, // Usamos el ícono de cajas que calza ideal
+    path: "/modulo-almacen", // La ruta raíz que activará tu LayoutAlmacen
+    visible: ({ user }) => canOperateInventoryEffective(user), // Valida si el contexto opera inventario
+  },
+  {
     title: "Stock de Inventario",
     description:
       "Consultar stock actual, reservado y disponible solo desde un contexto compatible.",
@@ -225,7 +233,7 @@ const DashboardPage = () => {
 
   const availableApprovalTrays = getAvailableApprovalTraysEffective(user);
   const filteredCards = baseCards.filter((card) =>
-    typeof card.visible === "function" ? card.visible({ user }) : true
+    typeof card.visible === "function" ? card.visible({ user }) : true,
   );
 
   return (
@@ -241,8 +249,8 @@ const DashboardPage = () => {
                 Bienvenido, {user.nombre}
               </h1>
               <p className="mt-2 text-sm text-gray-600">
-                Este panel refleja solo los modulos y accesos compatibles con
-                el contexto operativo activo.
+                Este panel refleja solo los modulos y accesos compatibles con el
+                contexto operativo activo.
               </p>
             </div>
             <Link
@@ -319,7 +327,9 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredCards.map((card) => {
               const resolvedPath =
-                typeof card.path === "function" ? card.path({ user }) : card.path;
+                typeof card.path === "function"
+                  ? card.path({ user })
+                  : card.path;
 
               return (
                 <Link
