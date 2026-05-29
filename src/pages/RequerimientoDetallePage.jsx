@@ -5,6 +5,7 @@ import configuracionEmpresaApi from "../api/configuracionEmpresaApi";
 import RequerimientoEstadoBadge from "../components/RequerimientoEstadoBadge";
 import RequerimientoDetalleSkeleton from "../components/ui/skeletons/RequerimientoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import useRequerimientos from "../hooks/useRequerimientos";
 import {
   buildLetterheadDocumentData,
@@ -106,6 +107,7 @@ const RequerimientoDetallePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { confirm, dialogNode } = useAppDialog();
   const { getRequerimientoById, eliminarRequerimiento } = useRequerimientos();
   const [loading, setLoading] = useState(true);
   const [requerimiento, setRequerimiento] = useState(null);
@@ -203,11 +205,14 @@ const RequerimientoDetallePage = () => {
   );
 
   const handleAnular = async () => {
-    if (
-      !window.confirm(
-        "Se anulara logicamente el requerimiento. Deseas continuar?",
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Anular requerimiento",
+      message: "Se anulara logicamente el requerimiento. Deseas continuar?",
+      confirmText: "Anular",
+      variant: "danger",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -254,6 +259,7 @@ const RequerimientoDetallePage = () => {
 
   return (
     <div className="mx-auto max-w-7xl p-6 print:p-0">
+      {dialogNode}
       <div className="print:hidden">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4 print:hidden">
           <div>

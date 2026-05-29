@@ -8,6 +8,7 @@ import {
   hasAdminOverrideEffective,
 } from "../accessRules";
 import CotizacionForm from "../components/CotizacionForm";
+import Modal from "../components/Modal";
 import { useAuth } from "../context/authContext";
 import useCotizaciones from "../hooks/useCotizaciones";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
@@ -236,6 +237,7 @@ const CotizacionesProcesoLogisticoPage = () => {
   const [detalleCotizacion, setDetalleCotizacion] = useState(null);
   const [submittingCotizacion, setSubmittingCotizacion] = useState(false);
   const [submittingCierre, setSubmittingCierre] = useState(false);
+  const [cierreDialog, setCierreDialog] = useState(null);
 
   const resumen = detalleGlobal?.resumenComparativo || {};
   const coberturaItems = Array.isArray(resumen.coberturaItems)
@@ -346,58 +348,54 @@ const CotizacionesProcesoLogisticoPage = () => {
     }
   };
 
-  const handleCerrarEtapa = async () => {
-    let motivo = null;
-    let confirmarCierreIncompleto = false;
-
+  const handleCerrarEtapa = () => {
     if (flujoRegular && !coberturaCompleta) {
-      const message = `Este expediente no cumple la regla minima de ${coverageMinimum} cotizaciones validas por item. Registra una justificacion para cerrar la etapa y pasar a comparativo con las cotizaciones existentes.`;
-      motivo = window.prompt(message, "");
+      setCierreDialog({ type: "cerrar-incompleto", motivo: "" });
+      return;
+    }
 
-      if (motivo === null) return;
+    setCierreDialog({ type: "cerrar", motivo: "" });
+  };
 
-      motivo = motivo.trim();
-      if (!motivo) {
-        toast.error("Debe registrar una justificacion para cerrar incompleto.");
-        return;
-      }
+  const handleReabrirEtapa = () => {
+    setCierreDialog({ type: "reabrir", motivo: "" });
+  };
 
-      confirmarCierreIncompleto = true;
-    } else if (
-      !window.confirm(
-        "Se cerrara la etapa de cotizacion y se habilitara el comparativo. Deseas continuar?",
-      )
-    ) {
+  const handleCloseCierreDialog = () => {
+    if (submittingCierre) return;
+    setCierreDialog(null);
+  };
+
+  const handleConfirmCierreDialog = async () => {
+    if (!cierreDialog) return;
+
+    const motivo = cierreDialog.motivo.trim();
+    const isCierreIncompleto = cierreDialog.type === "cerrar-incompleto";
+    const isReapertura = cierreDialog.type === "reabrir";
+
+    if (isCierreIncompleto && !motivo) {
+      toast.error("Debe registrar una justificacion para cerrar incompleto.");
       return;
     }
 
     setSubmittingCierre(true);
     try {
-      const result = await cerrarCotizaciones(id, {
-        motivo,
-        confirmarCierreIncompleto,
-      });
-      setDetalleGlobal?.(result);
-      toast.success("Etapa de cotizacion cerrada correctamente.");
-    } finally {
-      setSubmittingCierre(false);
-    }
-  };
+      const result = isReapertura
+        ? await reabrirCotizaciones(id, {
+            motivo: motivo || null,
+          })
+        : await cerrarCotizaciones(id, {
+            motivo: isCierreIncompleto ? motivo : null,
+            confirmarCierreIncompleto: isCierreIncompleto,
+          });
 
-  const handleReabrirEtapa = async () => {
-    const motivo = window.prompt(
-      "Motivo para reabrir la etapa de cotizacion:",
-      "",
-    );
-    if (motivo === null) return;
-
-    setSubmittingCierre(true);
-    try {
-      const result = await reabrirCotizaciones(id, {
-        motivo: motivo.trim() || null,
-      });
       setDetalleGlobal?.(result);
-      toast.success("Etapa de cotizacion reabierta correctamente.");
+      setCierreDialog(null);
+      toast.success(
+        isReapertura
+          ? "Etapa de cotizacion reabierta correctamente."
+          : "Etapa de cotizacion cerrada correctamente.",
+      );
     } finally {
       setSubmittingCierre(false);
     }
@@ -415,6 +413,22 @@ const CotizacionesProcesoLogisticoPage = () => {
       </div>
     );
   }
+
+  const cierreDialogTitle =
+    cierreDialog?.type === "reabrir"
+      ? "Reabrir etapa de cotizacion"
+      : cierreDialog?.type === "cerrar-incompleto"
+        ? "Cerrar con cobertura incompleta"
+        : "Cerrar etapa de cotizacion";
+  const cierreDialogMessage =
+    cierreDialog?.type === "reabrir"
+      ? "La etapa volvera a quedar disponible para registrar o editar cotizaciones."
+      : cierreDialog?.type === "cerrar-incompleto"
+        ? `Este expediente no cumple la regla minima de ${coverageMinimum} cotizaciones validas por item. Para cerrar y pasar a comparativo con las cotizaciones existentes, registra una justificacion.`
+        : "Se cerrara la etapa de cotizacion y se habilitara el comparativo.";
+  const cierreRequiresMotivo = cierreDialog?.type === "cerrar-incompleto";
+  const cierreShowsMotivo =
+    cierreDialog?.type === "cerrar-incompleto" || cierreDialog?.type === "reabrir";
 
   return (
     <div className="space-y-5">
@@ -947,6 +961,84 @@ const CotizacionesProcesoLogisticoPage = () => {
           </div>
         </div>
       ) : null}
+
+      <Modal
+        isOpen={Boolean(cierreDialog)}
+        onClose={handleCloseCierreDialog}
+        title={cierreDialogTitle}
+        maxWidth="max-w-lg"
+        closeOnBackdrop={!submittingCierre}
+      >
+        <div className="space-y-4">
+          <p className="text-sm leading-6 text-slate-600">
+            {cierreDialogMessage}
+          </p>
+
+          {cierreDialog?.type === "cerrar" ? (
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-800">
+              Confirma solo cuando las cotizaciones ya esten listas para
+              continuar con el comparativo.
+            </div>
+          ) : null}
+
+          {cierreShowsMotivo ? (
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">
+                {cierreRequiresMotivo
+                  ? "Justificacion obligatoria"
+                  : "Motivo de reapertura"}
+              </span>
+              <textarea
+                value={cierreDialog?.motivo || ""}
+                onChange={(event) =>
+                  setCierreDialog((current) =>
+                    current
+                      ? { ...current, motivo: event.target.value }
+                      : current,
+                  )
+                }
+                disabled={submittingCierre}
+                rows={4}
+                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100"
+                placeholder={
+                  cierreRequiresMotivo
+                    ? "Explica por que se cerrara sin cumplir la cobertura minima."
+                    : "Opcional: registra el motivo de reapertura."
+                }
+              />
+            </label>
+          ) : null}
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={handleCloseCierreDialog}
+              disabled={submittingCierre}
+              className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmCierreDialog}
+              disabled={submittingCierre}
+              className={`rounded px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
+                cierreDialog?.type === "reabrir"
+                  ? "bg-slate-700 hover:bg-slate-800"
+                  : cierreDialog?.type === "cerrar-incompleto"
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
+            >
+              {submittingCierre
+                ? "Procesando..."
+                : cierreDialog?.type === "reabrir"
+                  ? "Reabrir etapa"
+                  : "Cerrar etapa"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
 import OrdenCompraDetalleSkeleton from "../components/ui/skeletons/OrdenCompraDetalleSkeleton";
 import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
 const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
@@ -28,12 +29,6 @@ const approvalLabels = {
   JEFATURA_LOGISTICA: "Jefatura de logistica",
 };
 
-const requestOptionalText = (message, defaultValue = "") => {
-  const value = window.prompt(message, defaultValue);
-  if (value === null) return null;
-  return value.trim();
-};
-
 const buildRequerimientos = (ordenCompra) => {
   const map = new Map();
 
@@ -49,6 +44,7 @@ const buildRequerimientos = (ordenCompra) => {
 const OrdenCompraDetallePage = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { confirm, prompt, dialogNode } = useAppDialog();
   const {
     loading,
     error,
@@ -126,11 +122,17 @@ const OrdenCompraDetallePage = () => {
       ordenCompra?.nivelPendienteActual ||
       "el nivel pendiente";
 
-    if (
-      !window.confirm(
-        `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title:
+        estadoAprobacion === "APROBADA"
+          ? "Aprobar orden de compra"
+          : "Rechazar orden de compra",
+      message: `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`,
+      confirmText: estadoAprobacion === "APROBADA" ? "Aprobar" : "Rechazar",
+      variant: estadoAprobacion === "APROBADA" ? "default" : "danger",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -144,25 +146,35 @@ const OrdenCompraDetallePage = () => {
   };
 
   const handleClose = async (estadoRecepcionFinal) => {
-    const decisionSaldoPendiente = requestOptionalText(
-      "Describe brevemente la decision sobre el saldo pendiente (opcional).",
-      estadoRecepcionFinal === "INCUMPLIDA"
-        ? "Cierre por incumplimiento del proveedor."
-        : "Saldo pendiente cerrado manualmente.",
-    );
+    const decisionSaldoPendiente = await prompt({
+      title: "Decision sobre saldo pendiente",
+      message: "Describe brevemente la decision sobre el saldo pendiente (opcional).",
+      defaultValue:
+        estadoRecepcionFinal === "INCUMPLIDA"
+          ? "Cierre por incumplimiento del proveedor."
+          : "Saldo pendiente cerrado manualmente.",
+      placeholder: "Decision sobre el saldo pendiente",
+      variant: "warning",
+    });
 
     if (decisionSaldoPendiente === null) return;
 
-    const motivoIncidencia = requestOptionalText(
-      "Motivo o incidencia adicional (opcional).",
-      "",
-    );
+    const motivoIncidencia = await prompt({
+      title: "Incidencia adicional",
+      message: "Motivo o incidencia adicional (opcional).",
+      defaultValue: "",
+      placeholder: "Motivo o incidencia opcional",
+      variant: "warning",
+    });
 
-    if (
-      !window.confirm(
-        `Se registrara el cierre documental ${estadoRecepcionFinal.toLowerCase()} para la orden ${ordenCompra.codigo}. Deseas continuar?`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Registrar cierre documental",
+      message: `Se registrara el cierre documental ${estadoRecepcionFinal.toLowerCase()} para la orden ${ordenCompra.codigo}. Deseas continuar?`,
+      confirmText: "Registrar cierre",
+      variant: "warning",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -170,39 +182,48 @@ const OrdenCompraDetallePage = () => {
       () =>
         cerrarOrdenCompra(ordenCompra.id, {
           estadoRecepcionFinal,
-          decisionSaldoPendiente: decisionSaldoPendiente || undefined,
-          motivoIncidencia: motivoIncidencia || undefined,
+          decisionSaldoPendiente: decisionSaldoPendiente.trim() || undefined,
+          motivoIncidencia: motivoIncidencia.trim() || undefined,
         }),
       "Cierre documental registrado correctamente.",
     );
   };
 
   const handleCancel = async () => {
-    const decisionSaldoPendiente = requestOptionalText(
-      "Describe brevemente la razon de cancelacion (opcional).",
-      "Orden de compra cancelada antes de la recepcion.",
-    );
+    const decisionSaldoPendiente = await prompt({
+      title: "Cancelar orden de compra",
+      message: "Describe brevemente la razon de cancelacion (opcional).",
+      defaultValue: "Orden de compra cancelada antes de la recepcion.",
+      placeholder: "Razon de cancelacion",
+      variant: "danger",
+    });
 
     if (decisionSaldoPendiente === null) return;
 
-    const motivoIncidencia = requestOptionalText(
-      "Motivo o incidencia adicional (opcional).",
-      "",
-    );
+    const motivoIncidencia = await prompt({
+      title: "Incidencia adicional",
+      message: "Motivo o incidencia adicional (opcional).",
+      defaultValue: "",
+      placeholder: "Motivo o incidencia opcional",
+      variant: "danger",
+    });
 
-    if (
-      !window.confirm(
-        `Se cancelara la orden de compra ${ordenCompra.codigo}. Deseas continuar?`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Confirmar cancelacion",
+      message: `Se cancelara la orden de compra ${ordenCompra.codigo}. Deseas continuar?`,
+      confirmText: "Cancelar orden",
+      variant: "danger",
+    });
+
+    if (!confirmed) {
       return;
     }
 
     await runAction(
       () =>
         cancelarOrdenCompra(ordenCompra.id, {
-          decisionSaldoPendiente: decisionSaldoPendiente || undefined,
-          motivoIncidencia: motivoIncidencia || undefined,
+          decisionSaldoPendiente: decisionSaldoPendiente.trim() || undefined,
+          motivoIncidencia: motivoIncidencia.trim() || undefined,
         }),
       "Orden de compra cancelada correctamente.",
     );
@@ -225,6 +246,7 @@ const OrdenCompraDetallePage = () => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      {dialogNode}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Clock, ListChecks } from "lucide-react";
 import Modal from "./Modal";
@@ -105,16 +105,75 @@ export const AlertasSeguimientoCards = ({
   );
 };
 
-export const AlertasSeguimientoExpediente = ({ alertas }) => {
+const getExpedienteNombre = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  return value.nombre || value.codigo || null;
+};
+
+const buildSingleExpedienteAlertas = (alertas, expediente) => ({
+  byTipo: Object.fromEntries(
+    alertOrder.map((tipo) => {
+      const count = getAlertCount(alertas, tipo);
+
+      return [
+        tipo,
+        {
+          totalExpedientes: count > 0 ? 1 : 0,
+          expedientes:
+            count > 0
+              ? [
+                  {
+                    id: expediente?.id,
+                    codigo: expediente?.codigo || expediente?.detalleGlobal?.codigo,
+                    area:
+                      getExpedienteNombre(expediente?.area) ||
+                      expediente?.areaNombreSnapshot ||
+                      null,
+                    solicitante: getExpedienteNombre(expediente?.solicitante),
+                    responsableLogistica: getExpedienteNombre(
+                      expediente?.responsableLogistica,
+                    ),
+                    alertasSeguimiento: alertas,
+                  },
+                ]
+              : [],
+        },
+      ];
+    }),
+  ),
+});
+
+export const AlertasSeguimientoExpediente = ({ alertas, expediente }) => {
+  const [selectedTipo, setSelectedTipo] = useState(null);
+  const modalAlertas = useMemo(() => {
+    if (!selectedTipo) return null;
+    if (alertas?.byTipo) return alertas;
+    return buildSingleExpedienteAlertas(alertas, expediente);
+  }, [alertas, expediente, selectedTipo]);
+
   if (!hasSeguimientoAlerts(alertas)) return null;
 
   return (
-    <AlertasSeguimientoCards
-      alertas={alertas}
-      compact
-      title="Seguimiento del expediente"
-      description="Este expediente tiene puntos de atencion antes de cerrar o continuar el flujo logistico."
-    />
+    <>
+      <AlertasSeguimientoCards
+        alertas={alertas}
+        compact
+        onSelectTipo={setSelectedTipo}
+        title="Seguimiento del expediente"
+        description="Este expediente tiene puntos de atencion antes de cerrar o continuar el flujo logistico."
+      />
+      <AlertasSeguimientoModal
+        alertas={modalAlertas}
+        tipo={selectedTipo}
+        onClose={() => setSelectedTipo(null)}
+        buildExpedientePath={(item, tipo) =>
+          tipo === "COBERTURA_INCOMPLETA"
+            ? `/cotizaciones/proceso/${item.id}/cotizaciones`
+            : `/cotizaciones/proceso/${item.id}`
+        }
+      />
+    </>
   );
 };
 

@@ -6,6 +6,7 @@ import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBad
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
 import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import useInventario from "../hooks/useInventario";
 
 const formatDateTime = (value) =>
@@ -19,6 +20,7 @@ const formalLevelLabels = {
 const InventarioNotaIngresoDetallePage = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { prompt, dialogNode } = useAppDialog();
   const {
     loading,
     error,
@@ -46,10 +48,16 @@ const InventarioNotaIngresoDetallePage = () => {
   const canAct = canActOnNoteDocument(user, documentoFormal);
 
   const handleDecision = async (accion) => {
-    const comentario = window.prompt(
-      `Comentario para ${accion.toLowerCase()} la nota de ingreso (opcional).`,
-      ""
-    );
+    const comentario = await prompt({
+      title:
+        accion === "APROBAR"
+          ? "Aprobar nota de ingreso"
+          : "Rechazar nota de ingreso",
+      message: `Comentario para ${accion.toLowerCase()} la nota de ingreso (opcional).`,
+      defaultValue: "",
+      placeholder: "Comentario opcional",
+      variant: accion === "APROBAR" ? "default" : "danger",
+    });
 
     if (comentario === null) return;
 
@@ -88,6 +96,7 @@ const InventarioNotaIngresoDetallePage = () => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      {dialogNode}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">

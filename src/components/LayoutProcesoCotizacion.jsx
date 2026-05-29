@@ -48,6 +48,7 @@ const LayoutProcesoCotizacion = () => {
         <div className="mt-4">
           <AlertasSeguimientoExpediente
             alertas={detalleGlobal?.alertasSeguimiento}
+            expediente={detalleGlobal}
           />
         </div>
       ) : null}

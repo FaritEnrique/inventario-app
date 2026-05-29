@@ -3,6 +3,7 @@ import {
   collectPrintableHeadMarkup,
   printHtmlInNewWindow,
 } from "../utils/printWindow";
+import useAppDialog from "../hooks/useAppDialog";
 
 const PrintField = ({ label, value }) => (
   <div className="break-inside-avoid py-2">
@@ -12,6 +13,8 @@ const PrintField = ({ label, value }) => (
 );
 
 const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
+  const { alert, dialogNode } = useAppDialog();
+
   const handlePrint = async () => {
     const printArea = document.getElementById("print-area");
 
@@ -71,12 +74,17 @@ const ProveedorPrintPreview = ({ proveedor, onCancel }) => {
       await printHtmlInNewWindow(fullHtmlContent);
     } catch (error) {
       console.error("Error al preparar la impresion:", error);
-      alert("Error al preparar la impresion. Por favor, intentalo de nuevo.");
+      await alert({
+        title: "No se pudo imprimir",
+        message: "Error al preparar la impresion. Por favor, intentalo de nuevo.",
+        variant: "danger",
+      });
     }
   };
 
   return (
     <div className="bg-white text-gray-900">
+      {dialogNode}
       <div id="print-area" className="px-20">
         <h2 className="text-center text-3xl font-semibold text-gray-800">
           Datos de Proveedor

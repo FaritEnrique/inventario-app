@@ -24,6 +24,7 @@ import ProcesoLogisticoDetalleSkeleton from "../components/ui/skeletons/ProcesoL
 import usersApi from "../api/usersApi";
 import { useAuth } from "../context/authContext";
 import useCotizaciones from "../hooks/useCotizaciones";
+import useAppDialog from "../hooks/useAppDialog";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
@@ -411,9 +412,10 @@ const getRegularWorkflowStep = ({ detalle, comparativo, canAdjudicate }) => {
   return null;
 };
 
-const promptLogisticaReassignmentPayload = ({
+const promptLogisticaReassignmentPayload = async ({
   currentResponsableId,
   nextResponsableId,
+  prompt,
 }) => {
   if (
     !currentResponsableId ||
@@ -422,10 +424,12 @@ const promptLogisticaReassignmentPayload = ({
     return { responsableId: Number(nextResponsableId) };
   }
 
-  const tipoInput = window.prompt(
-    "Tipo de reasignacion: TEMPORAL o DEFINITIVA.",
-    "DEFINITIVA",
-  );
+  const tipoInput = await prompt({
+    title: "Tipo de reasignacion",
+    message: "Selecciona TEMPORAL o DEFINITIVA.",
+    defaultValue: "DEFINITIVA",
+    multiline: false,
+  });
   if (tipoInput === null) return null;
 
   const tipoReasignacion = String(tipoInput || "")
@@ -437,10 +441,12 @@ const promptLogisticaReassignmentPayload = ({
     return null;
   }
 
-  const motivoInput = window.prompt(
-    "Motivo obligatorio de la reasignacion.",
-    "",
-  );
+  const motivoInput = await prompt({
+    title: "Motivo de reasignacion",
+    message: "Registra el motivo obligatorio de la reasignacion.",
+    defaultValue: "",
+    placeholder: "Motivo obligatorio",
+  });
   if (motivoInput === null) return null;
 
   const motivo = String(motivoInput || "").trim();
@@ -449,18 +455,23 @@ const promptLogisticaReassignmentPayload = ({
     return null;
   }
 
-  const comentarioInput = window.prompt(
-    "Comentario adicional de la reasignacion (opcional).",
-    "",
-  );
+  const comentarioInput = await prompt({
+    title: "Comentario adicional",
+    message: "Comentario adicional de la reasignacion (opcional).",
+    defaultValue: "",
+    placeholder: "Comentario opcional",
+  });
   if (comentarioInput === null) return null;
 
   let vigenteHasta = null;
   if (tipoReasignacion === "TEMPORAL") {
-    const vigenteHastaInput = window.prompt(
-      "Vigente hasta (AAAA-MM-DD) opcional para la reasignacion temporal.",
-      "",
-    );
+    const vigenteHastaInput = await prompt({
+      title: "Vigencia temporal",
+      message: "Vigente hasta (AAAA-MM-DD) opcional para la reasignacion temporal.",
+      defaultValue: "",
+      multiline: false,
+      placeholder: "AAAA-MM-DD",
+    });
     if (vigenteHastaInput === null) return null;
     vigenteHasta = String(vigenteHastaInput || "").trim() || null;
   }
@@ -479,6 +490,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, activeContext } = useAuth();
+  const { confirm, prompt, dialogNode } = useAppDialog();
   const { proveedores } = useProveedores();
   const {
     cargando,
@@ -744,9 +756,10 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
       return;
     }
 
-    const payload = promptLogisticaReassignmentPayload({
+    const payload = await promptLogisticaReassignmentPayload({
       currentResponsableId: responsableActualId,
       nextResponsableId: responsableId,
+      prompt,
     });
     if (!payload) return;
 
@@ -774,10 +787,11 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
       return;
     }
 
-    const payload = promptLogisticaReassignmentPayload({
+    const payload = await promptLogisticaReassignmentPayload({
       currentResponsableId:
         detalle?.responsableLogisticaId || detalle?.responsableLogistica?.id,
       nextResponsableId: directResponsableId,
+      prompt,
     });
     if (!payload) return;
 
@@ -818,11 +832,15 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const handleGenerarOrdenCompra = async () => {
-    if (
-      !window.confirm(
+    const confirmed = await confirm({
+      title: "Generar orden de compra",
+      message:
         "Se generaran las ordenes de compra a partir de la buena pro vigente del expediente. Deseas continuar?",
-      )
-    ) {
+      confirmText: "Generar",
+      variant: "default",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -937,10 +955,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const handleInactivateCotizacion = async (cotizacionId) => {
-    const motivo = window.prompt(
-      "Motivo para desactivar la cotizacion (opcional):",
-      "",
-    );
+    const motivo = await prompt({
+      title: "Desactivar cotizacion",
+      message: "Motivo para desactivar la cotizacion (opcional):",
+      defaultValue: "",
+      placeholder: "Motivo opcional",
+      variant: "warning",
+    });
 
     if (motivo === null) {
       return;
@@ -953,10 +974,12 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const handleReactivateCotizacion = async (cotizacionId) => {
-    const motivo = window.prompt(
-      "Motivo para reactivar la cotizacion (opcional):",
-      "",
-    );
+    const motivo = await prompt({
+      title: "Reactivar cotizacion",
+      message: "Motivo para reactivar la cotizacion (opcional):",
+      defaultValue: "",
+      placeholder: "Motivo opcional",
+    });
 
     if (motivo === null) {
       return;
@@ -969,10 +992,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const handleCerrarEmision = async () => {
-    const motivo = window.prompt(
-      "Motivo para cerrar la etapa de cotizacion (opcional):",
-      "",
-    );
+    const motivo = await prompt({
+      title: "Cerrar etapa de cotizacion",
+      message: "Motivo para cerrar la etapa de cotizacion (opcional):",
+      defaultValue: "",
+      placeholder: "Motivo opcional",
+      variant: "warning",
+    });
 
     if (motivo === null) {
       return;
@@ -990,10 +1016,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const handleReabrirEmision = async () => {
-    const motivo = window.prompt(
-      "Motivo para reabrir la etapa de cotizacion (opcional):",
-      "",
-    );
+    const motivo = await prompt({
+      title: "Reabrir etapa de cotizacion",
+      message: "Motivo para reabrir la etapa de cotizacion (opcional):",
+      defaultValue: "",
+      placeholder: "Motivo opcional",
+      variant: "neutral",
+    });
 
     if (motivo === null) {
       return;
@@ -1043,10 +1072,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   const handleSendSolicitudByEmail = async (solicitud) => {
     const defaultRecipient = solicitud?.proveedor?.correoElectronico || "";
-    const recipient = window.prompt(
-      "Correo destino para la solicitud de cotizacion:",
-      defaultRecipient,
-    );
+    const recipient = await prompt({
+      title: "Enviar solicitud por correo",
+      message: "Correo destino para la solicitud de cotizacion:",
+      defaultValue: defaultRecipient,
+      multiline: false,
+      placeholder: "correo@empresa.com",
+    });
 
     if (recipient === null) {
       return;
@@ -1121,11 +1153,15 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
       return;
     }
 
-    if (
-      !window.confirm(
+    const confirmed = await confirm({
+      title: "Formalizar decision excepcional",
+      message:
         "Se formalizara la decision excepcional del expediente con la cotizacion seleccionada. Deseas continuar?",
-      )
-    ) {
+      confirmText: "Formalizar",
+      variant: "warning",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -1260,10 +1296,13 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
   };
 
   const runComparativoDecision = async (actionLabel, executor) => {
-    const comentario = window.prompt(
-      `Comentario para ${actionLabel.toLowerCase()} el comparativo (opcional).`,
-      "",
-    );
+    const comentario = await prompt({
+      title: `${actionLabel} comparativo`,
+      message: `Comentario para ${actionLabel.toLowerCase()} el comparativo (opcional).`,
+      defaultValue: "",
+      placeholder: "Comentario opcional",
+      variant: "neutral",
+    });
 
     if (comentario === null) return;
 
@@ -1346,6 +1385,7 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
   return (
     <div className="p-6 mx-auto space-y-6 max-w-7xl">
+      {dialogNode}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
