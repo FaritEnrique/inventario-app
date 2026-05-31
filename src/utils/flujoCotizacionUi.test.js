@@ -63,6 +63,18 @@ describe("buildFlujoTipoCompraWarning", () => {
     expect(result.shouldConfirm).toBe(false);
   });
 
+  it("permite confirmar un nuevo flujo distinto aunque el flujo existente de otro tipo este cerrado", () => {
+    const result = buildFlujoTipoCompraWarning({
+      flujosCotizacion: [flujo("LOCAL", "CERRADO")],
+      nextTipoCompra: "IMPORTACION",
+    });
+
+    expect(result.blocked).toBe(false);
+    expect(result.shouldConfirm).toBe(true);
+    expect(result.existingTipoCompra).toBe("LOCAL");
+    expect(result.nextTipoCompra).toBe("IMPORTACION");
+  });
+
   it("no advierte cuando ambos flujos estan abiertos y se elige LOCAL", () => {
     const result = buildFlujoTipoCompraWarning({
       flujosCotizacion: [flujo("LOCAL"), flujo("IMPORTACION")],

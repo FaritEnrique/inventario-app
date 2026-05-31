@@ -6,7 +6,9 @@ export const TIPO_COMPRA_LABELS = {
 const VALID_TIPOS_COMPRA = new Set(Object.keys(TIPO_COMPRA_LABELS));
 
 export const normalizeTipoCompra = (value) => {
-  const normalized = String(value ?? "").trim().toUpperCase();
+  const normalized = String(value ?? "")
+    .trim()
+    .toUpperCase();
   return VALID_TIPOS_COMPRA.has(normalized) ? normalized : "";
 };
 
@@ -21,7 +23,8 @@ export const findFlujoByTipoCompra = (flujosCotizacion, tipoCompra) => {
 
   return (
     getFlujosActivos(flujosCotizacion).find(
-      (flujo) => normalizeTipoCompra(flujo?.tipoCompra) === normalizedTipoCompra,
+      (flujo) =>
+        normalizeTipoCompra(flujo?.tipoCompra) === normalizedTipoCompra,
     ) || null
   );
 };
@@ -32,19 +35,22 @@ export const findOtherActiveFlow = (flujosCotizacion, tipoCompra) => {
 
   return (
     getFlujosActivos(flujosCotizacion).find(
-      (flujo) => normalizeTipoCompra(flujo?.tipoCompra) !== normalizedTipoCompra,
+      (flujo) =>
+        normalizeTipoCompra(flujo?.tipoCompra) !== normalizedTipoCompra,
     ) || null
   );
 };
 
 export const isFlujoCerrado = (flujo) =>
-  String(flujo?.estado || "").trim().toUpperCase() === "CERRADO";
+  String(flujo?.estado || "")
+    .trim()
+    .toUpperCase() === "CERRADO";
 
 const buildClosedFlowMessage = (tipoCompra) =>
-  `El flujo de cotizacion ${TIPO_COMPRA_LABELS[tipoCompra] || tipoCompra} se encuentra cerrado. Reabralo con sustento antes de emitir nuevas solicitudes.`;
+  `El flujo de cotización ${TIPO_COMPRA_LABELS[tipoCompra] || tipoCompra} se encuentra cerrado. Reabralo con sustento antes de emitir nuevas solicitudes.`;
 
 const buildIndependentFlowMessage = (existingTipoCompra, nextTipoCompra) =>
-  `Este requerimiento ya tiene solicitudes de cotizacion de tipo ${TIPO_COMPRA_LABELS[existingTipoCompra] || existingTipoCompra}. Una solicitud de tipo ${TIPO_COMPRA_LABELS[nextTipoCompra] || nextTipoCompra} no sera comparable dentro del mismo cuadro ${String(existingTipoCompra || "").toLowerCase()}. Si continua, se generara o usara un flujo comparativo independiente de ${TIPO_COMPRA_LABELS[nextTipoCompra] || nextTipoCompra}. Los items adjudicados en un flujo no podran adjudicarse nuevamente en otro. Desea continuar?`;
+  `Este requerimiento ya tiene solicitudes de cotización de tipo ${TIPO_COMPRA_LABELS[existingTipoCompra] || existingTipoCompra}. Una solicitud de tipo ${TIPO_COMPRA_LABELS[nextTipoCompra] || nextTipoCompra} no sera comparable dentro del mismo cuadro ${String(existingTipoCompra || "").toLowerCase()}. Si continua, se generara o usara un flujo comparativo independiente de ${TIPO_COMPRA_LABELS[nextTipoCompra] || nextTipoCompra}. Los items adjudicados en un flujo no podran adjudicarse nuevamente en otro. Desea continuar?`;
 
 export const buildFlujoTipoCompraWarning = ({
   flujosCotizacion,
