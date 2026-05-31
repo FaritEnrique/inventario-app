@@ -10,6 +10,7 @@ import { Helmet, HelmetProvider } from "react-helmet-async";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LayoutInventario from "./components/LayoutInventario";
+import LayoutAlmacen from "./components/LayoutAlmacen";
 import Loader from "./components/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoutePermissionGuard from "./components/RoutePermissionGuard";
@@ -384,7 +385,7 @@ const AppRoutes = () => {
               path="modulo-almacen"
               element={
                 <RoutePermissionGuard allow={canOperateInventoryEffective}>
-                  <ModuloAlmacenPage />
+                  <LayoutAlmacen />
                 </RoutePermissionGuard>
               }
             >

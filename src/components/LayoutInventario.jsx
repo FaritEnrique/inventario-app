@@ -9,7 +9,7 @@ const LayoutInventario = () => {
     <div className="flex flex-col min-w-0 min-h-screen overflow-x-hidden">
       <Header />
       <main
-        className="px-4 min-w-0flex-1"
+        className="px-4 min-w-0 flex-1"
         style={{ paddingTop: "var(--app-header-height, 96px)" }}
       >
         <Outlet />
