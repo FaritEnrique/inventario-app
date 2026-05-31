@@ -27,6 +27,9 @@ const logisticaCotizacionesApi = {
       body: JSON.stringify(payload),
     });
   },
+  obtenerComparativoPorFlujo: async (flujoId) => {
+    return apiFetch(`logistica/flujos/${flujoId}/comparativo`);
+  },
   definirFlujo: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/flujo`, {
       method: "PATCH",

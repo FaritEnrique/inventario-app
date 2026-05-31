@@ -72,6 +72,15 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
+  const obtenerComparativoPorFlujo = useCallback(
+    async (flujoId) =>
+      run(
+        () => logisticaCotizacionesApi.obtenerComparativoPorFlujo(flujoId),
+        "No se pudo cargar el comparativo del flujo.",
+      ),
+    [run],
+  );
+
   const definirFlujo = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -246,6 +255,7 @@ const useLogisticaCotizaciones = () => {
     listarFlujosCotizacion,
     cerrarFlujoCotizacion,
     reabrirFlujoCotizacion,
+    obtenerComparativoPorFlujo,
     definirFlujo,
     obtenerComparativo,
     obtenerComparativoPdfUrl,
