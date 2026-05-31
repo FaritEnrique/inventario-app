@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useOutletContext } from "react-router-dom";
 import { FaClipboardCheck, FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -8,10 +8,12 @@ import {
   hasAdminOverrideEffective,
 } from "../accessRules";
 import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
+import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
 import SolicitudesProcesoLogisticoSkeleton from "../components/ui/skeletons/SolicitudesProcesoLogisticoSkeleton";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
+import useFlujoCotizacionActions from "../hooks/useFlujoCotizacionActions";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
@@ -85,7 +87,11 @@ const SolicitudesProcesoLogisticoPage = () => {
     desactivarSolicitud,
   } = useSolicitudesCotizacion({ autoLoad: false });
   const { proveedores } = useProveedores();
-  const { confirm, alert: showAlert, dialogNode } = useAppDialog();
+  const {
+    confirm,
+    alert: showAlert,
+    dialogNode: solicitudDialogNode,
+  } = useAppDialog();
 
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -96,6 +102,18 @@ const SolicitudesProcesoLogisticoPage = () => {
   useEffect(() => {
     cargarSolicitudesPorRequerimiento(id).catch(() => {});
   }, [cargarSolicitudesPorRequerimiento, id]);
+
+  const refreshSolicitudesContext = useCallback(async () => {
+    await cargarSolicitudesPorRequerimiento(id);
+    await recargarDetalle?.();
+  }, [cargarSolicitudesPorRequerimiento, id, recargarDetalle]);
+
+  const {
+    dialogNode: flujosDialogNode,
+    submittingFlujo,
+    handleCerrarFlujo,
+    handleReabrirFlujo,
+  } = useFlujoCotizacionActions({ onAfterChange: refreshSolicitudesContext });
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canOperate = canOperateCotizacionesLogisticaEffective(user);
@@ -249,7 +267,8 @@ const SolicitudesProcesoLogisticoPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {dialogNode}
+      {solicitudDialogNode}
+      {flujosDialogNode}
       <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
@@ -282,6 +301,14 @@ const SolicitudesProcesoLogisticoPage = () => {
           {detalleError || error}
         </div>
       ) : null}
+
+      <FlujosCotizacionPanel
+        flujosCotizacion={detalleGlobal?.flujosCotizacion}
+        canManage={canManageSolicitudes}
+        loading={submittingFlujo}
+        onCerrarFlujo={handleCerrarFlujo}
+        onReabrirFlujo={handleReabrirFlujo}
+      />
 
       <div className="grid gap-3 sm:gap-4 md:grid-cols-4">
         <div className="p-3 bg-white border shadow-sm rounded-xl border-slate-200 sm:p-4 md:col-span-2">

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
 import Modal from "../components/Modal";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
 import {
@@ -18,6 +19,7 @@ import {
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
+import useFlujoCotizacionActions from "../hooks/useFlujoCotizacionActions";
 import usersApi from "../api/usersApi";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useProveedores from "../hooks/useProveedores";
@@ -369,6 +371,13 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       }
     }
   };
+
+  const {
+    dialogNode: flujosDialogNode,
+    submittingFlujo,
+    handleCerrarFlujo,
+    handleReabrirFlujo,
+  } = useFlujoCotizacionActions({ onAfterChange: load });
 
   useEffect(() => {
     load().catch(() => {});
@@ -734,6 +743,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   return (
     <>
     {dialogNode}
+    {flujosDialogNode}
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -929,6 +939,15 @@ const CotizacionesBandejaPage = ({ tipo }) => {
             const canOperatorManageSolicitud =
               canOperatorContinueExpediente &&
               ["REGULAR", "EXCEPCIONAL"].includes(item.modalidadFlujoLogistico);
+            const hasFlujosCotizacion =
+              Array.isArray(item.flujosCotizacion) &&
+              item.flujosCotizacion.length > 0;
+            const canManageItemFlujos =
+              !blocked &&
+              (canQuickDefineFlow ||
+                canQuickCreateSolicitud ||
+                canOperatorManageSolicitud ||
+                isAdminUser);
             const expedientePrimaryPath = canOperatorManageSolicitud
               ? `/cotizaciones/proceso/${item.id}#solicitudes`
               : `/cotizaciones/proceso/${item.id}`;
@@ -1286,6 +1305,19 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     Procesar directamente esta disponible para la jefatura de
                     logistica y para administradores del sistema.
                   </p>
+                ) : null}
+
+                {hasFlujosCotizacion ? (
+                  <div className="mt-4">
+                    <FlujosCotizacionPanel
+                      flujosCotizacion={item.flujosCotizacion}
+                      canManage={canManageItemFlujos}
+                      compact
+                      loading={submittingFlujo}
+                      onCerrarFlujo={handleCerrarFlujo}
+                      onReabrirFlujo={handleReabrirFlujo}
+                    />
+                  </div>
                 ) : null}
 
                 {expandedFlowId === item.id ? (

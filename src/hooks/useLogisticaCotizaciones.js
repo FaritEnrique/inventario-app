@@ -45,6 +45,33 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
+  const listarFlujosCotizacion = useCallback(
+    async (requerimientoId) =>
+      run(
+        () => logisticaCotizacionesApi.listarFlujosCotizacion(requerimientoId),
+        "No se pudieron cargar los flujos de cotización.",
+      ),
+    [run],
+  );
+
+  const cerrarFlujoCotizacion = useCallback(
+    async (flujoId, payload = {}) =>
+      run(
+        () => logisticaCotizacionesApi.cerrarFlujoCotizacion(flujoId, payload),
+        "No se pudo cerrar el flujo de cotización.",
+      ),
+    [run],
+  );
+
+  const reabrirFlujoCotizacion = useCallback(
+    async (flujoId, payload = {}) =>
+      run(
+        () => logisticaCotizacionesApi.reabrirFlujoCotizacion(flujoId, payload),
+        "No se pudo reabrir el flujo de cotización.",
+      ),
+    [run],
+  );
+
   const definirFlujo = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -216,6 +243,9 @@ const useLogisticaCotizaciones = () => {
     error,
     obtenerBandeja,
     obtenerDetalle,
+    listarFlujosCotizacion,
+    cerrarFlujoCotizacion,
+    reabrirFlujoCotizacion,
     definirFlujo,
     obtenerComparativo,
     obtenerComparativoPdfUrl,

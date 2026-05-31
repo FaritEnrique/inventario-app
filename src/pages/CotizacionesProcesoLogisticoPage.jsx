@@ -1,17 +1,22 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { FaEdit, FaEye, FaFileSignature, FaPrint } from "react-icons/fa";
-import { toast } from "react-toastify";
 import {
   canAssignCotizacionesLogisticaEffective,
   canOperateCotizacionesLogisticaEffective,
   hasAdminOverrideEffective,
 } from "../accessRules";
 import CotizacionForm from "../components/CotizacionForm";
-import Modal from "../components/Modal";
+import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
 import { useAuth } from "../context/authContext";
+import useFlujoCotizacionActions from "../hooks/useFlujoCotizacionActions";
 import useCotizaciones from "../hooks/useCotizaciones";
-import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
+import {
+  findFlujoByTipoCompra,
+  getFlujosActivos,
+  isFlujoCerrado,
+  normalizeTipoCompra,
+} from "../utils/flujoCotizacionUi";
 import {
   formatCurrency,
   formatInteger,
@@ -25,6 +30,28 @@ const getActiveCotizacionForSolicitud = (solicitud) =>
   Array.isArray(solicitud?.cotizaciones)
     ? solicitud.cotizaciones.find((cotizacion) => cotizacion.activo !== false)
     : null;
+
+const getSolicitudTipoCompra = (solicitud) =>
+  normalizeTipoCompra(
+    solicitud?.tipoCompra || solicitud?.flujoCotizacion?.tipoCompra,
+  );
+
+const getCotizacionTipoCompra = (cotizacion, solicitudes = []) => {
+  const solicitud =
+    cotizacion?.solicitud ||
+    cotizacion?.solicitudCotizacion ||
+    solicitudes.find(
+      (item) => Number(item.id) === Number(cotizacion?.solicitudId || 0),
+    ) ||
+    null;
+
+  return normalizeTipoCompra(
+    solicitud?.tipoCompra ||
+      solicitud?.flujoCotizacion?.tipoCompra ||
+      cotizacion?.tipoCompra ||
+      cotizacion?.flujoCotizacion?.tipoCompra,
+  );
+};
 
 const normalizeItemResponse = (value) =>
   String(value || "").toUpperCase() === "COTIZADO" ? "COTIZADO" : "NO_COTIZA";
@@ -221,12 +248,10 @@ const CotizacionesProcesoLogisticoPage = () => {
   const {
     id,
     detalleGlobal,
-    setDetalleGlobal,
     recargarDetalle,
     loading,
     error,
   } = useOutletContext();
-  const { cerrarCotizaciones, reabrirCotizaciones } = useLogisticaCotizaciones();
   const {
     crearCotizacion,
     actualizarCotizacion,
@@ -236,8 +261,6 @@ const CotizacionesProcesoLogisticoPage = () => {
   const [cotizacionDraft, setCotizacionDraft] = useState(null);
   const [detalleCotizacion, setDetalleCotizacion] = useState(null);
   const [submittingCotizacion, setSubmittingCotizacion] = useState(false);
-  const [submittingCierre, setSubmittingCierre] = useState(false);
-  const [cierreDialog, setCierreDialog] = useState(null);
 
   const resumen = detalleGlobal?.resumenComparativo || {};
   const coberturaItems = Array.isArray(resumen.coberturaItems)
@@ -270,18 +293,55 @@ const CotizacionesProcesoLogisticoPage = () => {
       solicitudes.filter((solicitud) => !getActiveCotizacionForSolicitud(solicitud)),
     [solicitudes],
   );
+  const flujosCotizacion = useMemo(
+    () => getFlujosActivos(detalleGlobal?.flujosCotizacion),
+    [detalleGlobal?.flujosCotizacion],
+  );
 
   const coverageMinimum = Number(resumen.coberturaMinimaPorItem || 0);
-  const flujoRegular = detalleGlobal?.modalidadFlujoLogistico === "REGULAR";
-  const etapaCerrada = detalleGlobal?.cotizacionesCerradas === true;
   const coberturaCompleta =
     coberturaItems.length > 0 &&
     coberturaItems.every((item) => item.cumpleCoberturaValida);
   const itemsIncompletos = coberturaItems.filter(
     (item) => !item.cumpleCoberturaValida,
   );
-  const cierreJustificado =
-    etapaCerrada && flujoRegular && !coberturaCompleta;
+  const tieneFlujoCerrado = flujosCotizacion.some(isFlujoCerrado);
+  const tieneFlujoAbierto = flujosCotizacion.some((flujo) => !isFlujoCerrado(flujo));
+  const estadoFlujosLabel = !flujosCotizacion.length
+    ? "Sin flujos de cotizacion"
+    : tieneFlujoCerrado && tieneFlujoAbierto
+      ? "Flujos mixtos"
+      : tieneFlujoCerrado
+        ? "Flujos cerrados"
+        : "Con flujos abiertos";
+  const estadoFlujosClassName = !flujosCotizacion.length
+    ? "text-slate-700"
+    : tieneFlujoCerrado && tieneFlujoAbierto
+      ? "text-amber-700"
+      : tieneFlujoCerrado
+        ? "text-indigo-700"
+        : "text-emerald-700";
+  const getFlujoForTipoCompra = useCallback(
+    (tipoCompra) => findFlujoByTipoCompra(flujosCotizacion, tipoCompra),
+    [flujosCotizacion],
+  );
+  const getFlujoForSolicitud = useCallback(
+    (solicitud) => getFlujoForTipoCompra(getSolicitudTipoCompra(solicitud)),
+    [getFlujoForTipoCompra],
+  );
+  const getFlujoForCotizacion = useCallback(
+    (cotizacion) =>
+      getFlujoForTipoCompra(getCotizacionTipoCompra(cotizacion, solicitudes)),
+    [getFlujoForTipoCompra, solicitudes],
+  );
+  const isSolicitudFlujoCerrado = useCallback(
+    (solicitud) => isFlujoCerrado(getFlujoForSolicitud(solicitud)),
+    [getFlujoForSolicitud],
+  );
+  const isCotizacionFlujoCerrado = useCallback(
+    (cotizacion) => isFlujoCerrado(getFlujoForCotizacion(cotizacion)),
+    [getFlujoForCotizacion],
+  );
 
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canOperate = canOperateCotizacionesLogisticaEffective(user);
@@ -306,12 +366,19 @@ const CotizacionesProcesoLogisticoPage = () => {
       assignedToCurrentUser ||
       isAdminUser);
 
-  const refreshDetalle = async () => {
+  const refreshDetalle = useCallback(async () => {
     if (recargarDetalle) {
       return recargarDetalle();
     }
     return null;
-  };
+  }, [recargarDetalle]);
+
+  const {
+    dialogNode: flujosDialogNode,
+    submittingFlujo,
+    handleCerrarFlujo,
+    handleReabrirFlujo,
+  } = useFlujoCotizacionActions({ onAfterChange: refreshDetalle });
 
   const handleRegisterCotizacion = (solicitud) => {
     setCotizacionDraft(createCotizacionDraftFromSolicitud(solicitud));
@@ -348,59 +415,6 @@ const CotizacionesProcesoLogisticoPage = () => {
     }
   };
 
-  const handleCerrarEtapa = () => {
-    if (flujoRegular && !coberturaCompleta) {
-      setCierreDialog({ type: "cerrar-incompleto", motivo: "" });
-      return;
-    }
-
-    setCierreDialog({ type: "cerrar", motivo: "" });
-  };
-
-  const handleReabrirEtapa = () => {
-    setCierreDialog({ type: "reabrir", motivo: "" });
-  };
-
-  const handleCloseCierreDialog = () => {
-    if (submittingCierre) return;
-    setCierreDialog(null);
-  };
-
-  const handleConfirmCierreDialog = async () => {
-    if (!cierreDialog) return;
-
-    const motivo = cierreDialog.motivo.trim();
-    const isCierreIncompleto = cierreDialog.type === "cerrar-incompleto";
-    const isReapertura = cierreDialog.type === "reabrir";
-
-    if (isCierreIncompleto && !motivo) {
-      toast.error("Debe registrar una justificacion para cerrar incompleto.");
-      return;
-    }
-
-    setSubmittingCierre(true);
-    try {
-      const result = isReapertura
-        ? await reabrirCotizaciones(id, {
-            motivo: motivo || null,
-          })
-        : await cerrarCotizaciones(id, {
-            motivo: isCierreIncompleto ? motivo : null,
-            confirmarCierreIncompleto: isCierreIncompleto,
-          });
-
-      setDetalleGlobal?.(result);
-      setCierreDialog(null);
-      toast.success(
-        isReapertura
-          ? "Etapa de cotizacion reabierta correctamente."
-          : "Etapa de cotizacion cerrada correctamente.",
-      );
-    } finally {
-      setSubmittingCierre(false);
-    }
-  };
-
   if (loading && !detalleGlobal) {
     return (
       <div className="space-y-4">
@@ -414,24 +428,9 @@ const CotizacionesProcesoLogisticoPage = () => {
     );
   }
 
-  const cierreDialogTitle =
-    cierreDialog?.type === "reabrir"
-      ? "Reabrir etapa de cotizacion"
-      : cierreDialog?.type === "cerrar-incompleto"
-        ? "Cerrar con cobertura incompleta"
-        : "Cerrar etapa de cotizacion";
-  const cierreDialogMessage =
-    cierreDialog?.type === "reabrir"
-      ? "La etapa volvera a quedar disponible para registrar o editar cotizaciones."
-      : cierreDialog?.type === "cerrar-incompleto"
-        ? `Este expediente no cumple la regla minima de ${coverageMinimum} cotizaciones validas por item. Para cerrar y pasar a comparativo con las cotizaciones existentes, registra una justificacion.`
-        : "Se cerrara la etapa de cotizacion y se habilitara el comparativo.";
-  const cierreRequiresMotivo = cierreDialog?.type === "cerrar-incompleto";
-  const cierreShowsMotivo =
-    cierreDialog?.type === "cerrar-incompleto" || cierreDialog?.type === "reabrir";
-
   return (
     <div className="space-y-5">
+      {flujosDialogNode}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
@@ -439,38 +438,17 @@ const CotizacionesProcesoLogisticoPage = () => {
           </h1>
           <p className="mt-1 text-xs leading-relaxed text-gray-600 sm:text-sm">
             Controla la cobertura por item, registra respuestas de proveedores
-            y cierra la etapa antes de pasar al comparativo.
+            y gestiona los flujos antes de pasar al comparativo.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          {etapaCerrada ? (
+          {tieneFlujoCerrado ? (
             <Link
               to={`/cotizaciones/proceso/${id}/comparativos`}
               className="inline-flex items-center justify-center rounded border border-indigo-500 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
             >
               Ir a comparativo
             </Link>
-          ) : null}
-          {canManage ? (
-            etapaCerrada ? (
-              <button
-                type="button"
-                onClick={handleReabrirEtapa}
-                disabled={submittingCierre}
-                className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
-                Reabrir etapa
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleCerrarEtapa}
-                disabled={submittingCierre}
-                className="rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
-              >
-                Cerrar etapa de cotizacion
-              </button>
-            )
           ) : null}
         </div>
       </div>
@@ -481,12 +459,13 @@ const CotizacionesProcesoLogisticoPage = () => {
         </div>
       ) : null}
 
-      {cierreJustificado ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Esta etapa fue cerrada con cobertura incompleta. Motivo:{" "}
-          {detalleGlobal?.motivoCierreCotizaciones || "No registrado"}.
-        </div>
-      ) : null}
+      <FlujosCotizacionPanel
+        flujosCotizacion={detalleGlobal?.flujosCotizacion}
+        canManage={canManage}
+        loading={submittingFlujo}
+        onCerrarFlujo={handleCerrarFlujo}
+        onReabrirFlujo={handleReabrirFlujo}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -517,20 +496,11 @@ const CotizacionesProcesoLogisticoPage = () => {
           <p className="text-xs font-semibold uppercase text-slate-500">
             Estado
           </p>
-          <p
-            className={`mt-2 text-sm font-semibold ${
-              etapaCerrada
-                ? "text-indigo-700"
-                : coberturaCompleta
-                  ? "text-emerald-700"
-                  : "text-amber-700"
-            }`}
-          >
-            {etapaCerrada
-              ? "Etapa cerrada"
-              : coberturaCompleta
-                ? "Lista para cerrar"
-                : "Cobertura pendiente"}
+          <p className={`mt-2 text-sm font-semibold ${estadoFlujosClassName}`}>
+            {estadoFlujosLabel}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {coberturaCompleta ? "Cobertura completa" : "Cobertura pendiente"}
           </p>
         </div>
       </div>
@@ -697,7 +667,7 @@ const CotizacionesProcesoLogisticoPage = () => {
                     <FaPrint />
                     Imprimir
                   </button>
-                  {canManage && !etapaCerrada ? (
+                  {canManage && !isCotizacionFlujoCerrado(cotizacion) ? (
                     <button
                       type="button"
                       onClick={() => handleEditCotizacion(cotizacion)}
@@ -743,7 +713,7 @@ const CotizacionesProcesoLogisticoPage = () => {
                     {formatDate(solicitud.fechaEmision)}
                   </p>
                 </div>
-                {canManage && !etapaCerrada ? (
+                {canManage && !isSolicitudFlujoCerrado(solicitud) ? (
                   <button
                     type="button"
                     onClick={() => handleRegisterCotizacion(solicitud)}
@@ -763,7 +733,7 @@ const CotizacionesProcesoLogisticoPage = () => {
         </div>
       </section>
 
-      {itemsIncompletos.length > 0 && !etapaCerrada ? (
+      {itemsIncompletos.length > 0 && tieneFlujoAbierto ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Para cierre conforme faltan cotizaciones validas en{" "}
           {formatInteger(itemsIncompletos.length)} item(s). Si agotaste la gestion con
@@ -962,83 +932,6 @@ const CotizacionesProcesoLogisticoPage = () => {
         </div>
       ) : null}
 
-      <Modal
-        isOpen={Boolean(cierreDialog)}
-        onClose={handleCloseCierreDialog}
-        title={cierreDialogTitle}
-        maxWidth="max-w-lg"
-        closeOnBackdrop={!submittingCierre}
-      >
-        <div className="space-y-4">
-          <p className="text-sm leading-6 text-slate-600">
-            {cierreDialogMessage}
-          </p>
-
-          {cierreDialog?.type === "cerrar" ? (
-            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-800">
-              Confirma solo cuando las cotizaciones ya esten listas para
-              continuar con el comparativo.
-            </div>
-          ) : null}
-
-          {cierreShowsMotivo ? (
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">
-                {cierreRequiresMotivo
-                  ? "Justificacion obligatoria"
-                  : "Motivo de reapertura"}
-              </span>
-              <textarea
-                value={cierreDialog?.motivo || ""}
-                onChange={(event) =>
-                  setCierreDialog((current) =>
-                    current
-                      ? { ...current, motivo: event.target.value }
-                      : current,
-                  )
-                }
-                disabled={submittingCierre}
-                rows={4}
-                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100"
-                placeholder={
-                  cierreRequiresMotivo
-                    ? "Explica por que se cerrara sin cumplir la cobertura minima."
-                    : "Opcional: registra el motivo de reapertura."
-                }
-              />
-            </label>
-          ) : null}
-
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={handleCloseCierreDialog}
-              disabled={submittingCierre}
-              className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmCierreDialog}
-              disabled={submittingCierre}
-              className={`rounded px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
-                cierreDialog?.type === "reabrir"
-                  ? "bg-slate-700 hover:bg-slate-800"
-                  : cierreDialog?.type === "cerrar-incompleto"
-                    ? "bg-amber-600 hover:bg-amber-700"
-                    : "bg-indigo-600 hover:bg-indigo-700"
-              }`}
-            >
-              {submittingCierre
-                ? "Procesando..."
-                : cierreDialog?.type === "reabrir"
-                  ? "Reabrir etapa"
-                  : "Cerrar etapa"}
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };

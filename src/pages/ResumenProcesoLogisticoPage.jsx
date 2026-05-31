@@ -1,6 +1,14 @@
 import React, { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import {
+  canAssignCotizacionesLogisticaEffective,
+  canOperateCotizacionesLogisticaEffective,
+  hasAdminOverrideEffective,
+} from "../accessRules";
+import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
 import ResumenProcesoLogisticoSkeleton from "../components/ui/skeletons/ResumenProcesoLogisticoSkeleton";
+import { useAuth } from "../context/authContext";
+import useFlujoCotizacionActions from "../hooks/useFlujoCotizacionActions";
 import useHistorialAprobacionesStore from "../stores/useHistorialAprobacionesStore";
 import {
   formatCurrency,
@@ -12,8 +20,11 @@ const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "No disponible";
 
 const ResumenProcesoLogisticoPage = () => {
-  const { id, detalleGlobal, loading } = useOutletContext();
+  const { user } = useAuth();
+  const { id, detalleGlobal, recargarDetalle, loading } = useOutletContext();
   const items = Array.isArray(detalleGlobal?.items) ? detalleGlobal.items : [];
+  const { dialogNode, submittingFlujo, handleCerrarFlujo, handleReabrirFlujo } =
+    useFlujoCotizacionActions({ onAfterChange: recargarDetalle });
   const requerimientoKey = String(id || "");
   const {
     historialPorRequerimiento,
@@ -48,8 +59,32 @@ const ResumenProcesoLogisticoPage = () => {
     return <ResumenProcesoLogisticoSkeleton />;
   }
 
+  const canAssign = canAssignCotizacionesLogisticaEffective(user);
+  const canOperate = canOperateCotizacionesLogisticaEffective(user);
+  const isAdminUser = hasAdminOverrideEffective(user);
+  const responsableActualId =
+    detalleGlobal?.responsableLogisticaId ||
+    detalleGlobal?.responsableLogistica?.id ||
+    null;
+  const assignedToCurrentUser =
+    Number(responsableActualId || 0) === Number(user?.id || 0);
+  const assignedToOtherResponsable =
+    Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
+  const expedienteBloqueado = ["ADJUDICADO", "OC_GENERADA"].includes(
+    detalleGlobal?.estadoLogistica,
+  );
+  const canManageFlujos =
+    canOperate &&
+    !expedienteBloqueado &&
+    Boolean(detalleGlobal?.modalidadFlujoLogistico) &&
+    (!assignedToOtherResponsable ||
+      !canAssign ||
+      assignedToCurrentUser ||
+      isAdminUser);
+
   return (
     <>
+      {dialogNode}
       <section>
         <h1 className="mb-4 text-3xl font-bold text-indigo-500">
           Resumen Estado de Requerimiento
@@ -121,6 +156,15 @@ const ResumenProcesoLogisticoPage = () => {
               </p>
             </div>
           </div>
+        </div>
+        <div className="mb-4">
+          <FlujosCotizacionPanel
+            flujosCotizacion={detalleGlobal?.flujosCotizacion}
+            canManage={canManageFlujos}
+            loading={submittingFlujo}
+            onCerrarFlujo={handleCerrarFlujo}
+            onReabrirFlujo={handleReabrirFlujo}
+          />
         </div>
         <div>
           <div>

@@ -12,6 +12,21 @@ const logisticaCotizacionesApi = {
   obtenerDetalle: async (requerimientoId) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}`);
   },
+  listarFlujosCotizacion: async (requerimientoId) => {
+    return apiFetch(`logistica/requerimientos/${requerimientoId}/flujos`);
+  },
+  cerrarFlujoCotizacion: async (flujoId, payload = {}) => {
+    return apiFetch(`logistica/flujos/${flujoId}/cerrar-cotizaciones`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+  reabrirFlujoCotizacion: async (flujoId, payload = {}) => {
+    return apiFetch(`logistica/flujos/${flujoId}/reabrir-cotizaciones`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
   definirFlujo: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/flujo`, {
       method: "PATCH",
