@@ -11,18 +11,35 @@ describe("buildComparativoFlujoViewModel", () => {
       ],
       cotizacionesComparables: [
         {
+          flujoCotizacionId: 1,
+          tipoCompra: "LOCAL",
+          solicitudCotizacionId: 9,
+          solicitudCodigo: "SOL-1",
           cotizacionId: 20,
+          cotizacionCodigo: "COT-1",
           codigo: "COT-1",
+          proveedorId: 5,
           proveedor: { id: 5, razonSocial: "Proveedor A" },
+          moneda: "PEN",
           totalOferta: 100,
           items: [
             {
+              itemCotizacionId: 30,
+              flujoCotizacionId: 1,
+              tipoCompra: "LOCAL",
+              solicitudCotizacionId: 9,
+              solicitudCodigo: "SOL-1",
+              cotizacionId: 20,
+              cotizacionCodigo: "COT-1",
+              proveedorId: 5,
               itemRequerimientoId: 10,
               estadoRespuesta: "COTIZADO",
               precioUnidad: 100,
               precioTotal: 100,
+              moneda: "PEN",
             },
             {
+              itemCotizacionId: 31,
               itemRequerimientoId: 11,
               estadoRespuesta: "NO_COTIZA",
             },
@@ -33,15 +50,28 @@ describe("buildComparativoFlujoViewModel", () => {
 
     expect(vm.cotizacionesComparables).toHaveLength(1);
     expect(vm.cotizacionesComparables[0].matrizPorItem["10"]).toMatchObject({
+      flujoCotizacionId: 1,
+      tipoCompra: "LOCAL",
+      solicitudCotizacionId: 9,
+      solicitudCodigo: "SOL-1",
+      cotizacionId: 20,
+      cotizacionCodigo: "COT-1",
+      proveedorId: 5,
+      itemRequerimientoId: 10,
+      itemCotizacionId: 30,
       estado: "COTIZADO",
-      adjudicable: false,
       cotizado: true,
+      precioUnidad: 100,
+      precioTotal: 100,
+      moneda: "PEN",
     });
     expect(vm.cotizacionesComparables[0].matrizPorItem["11"]).toMatchObject({
       estado: "NO_COTIZA",
-      adjudicable: false,
       cotizado: false,
     });
+    expect(
+      vm.cotizacionesComparables[0].matrizPorItem["10"],
+    ).not.toHaveProperty("adjudicable");
   });
 
   it("normaliza proveedores sin cotizacion valida con motivo legible", () => {

@@ -49,8 +49,28 @@ const buildMatrizPorItem = (itemsRequeridos, cotizacion) => {
       : "SIN_RESPUESTA";
 
     acc[String(itemId)] = {
+      id: cotizacionItem?.id || cotizacionItem?.itemCotizacionId || null,
+      itemCotizacionId:
+        cotizacionItem?.itemCotizacionId || cotizacionItem?.id || null,
+      flujoCotizacionId:
+        cotizacionItem?.flujoCotizacionId || cotizacion?.flujoCotizacionId || null,
+      tipoCompra: cotizacionItem?.tipoCompra || cotizacion?.tipoCompra || null,
+      solicitudCotizacionId:
+        cotizacionItem?.solicitudCotizacionId ||
+        cotizacion?.solicitudCotizacionId ||
+        cotizacion?.solicitudId ||
+        null,
+      solicitudCodigo:
+        cotizacionItem?.solicitudCodigo ||
+        cotizacion?.solicitudCodigo ||
+        cotizacion?.solicitud?.codigo ||
+        null,
       itemRequerimientoId: itemId,
       cotizacionId: cotizacion?.cotizacionId || cotizacion?.id,
+      cotizacionCodigo:
+        cotizacionItem?.cotizacionCodigo || cotizacion?.cotizacionCodigo || cotizacion?.codigo || null,
+      proveedorId:
+        cotizacionItem?.proveedorId || cotizacion?.proveedorId || cotizacion?.proveedor?.id || null,
       estado,
       descripcionTecnicaOfertada:
         cotizacionItem?.descripcionTecnicaOfertada || "-",
@@ -60,7 +80,7 @@ const buildMatrizPorItem = (itemsRequeridos, cotizacion) => {
       precioUnidad:
         cotizacionItem?.precioUnidad ?? cotizacionItem?.precioUnitario ?? null,
       precioTotal: cotizacionItem?.precioTotal ?? null,
-      adjudicable: false,
+      moneda: cotizacionItem?.moneda || cotizacion?.moneda || null,
       cotizado: isItemCotizado(cotizacionItem),
     };
 
@@ -73,11 +93,29 @@ const buildCotizacionesComparables = (cotizaciones, itemsRequeridos) =>
     const cotizacionId = cotizacion?.cotizacionId || cotizacion?.id;
     return {
       id: cotizacionId,
+      flujoCotizacionId:
+        cotizacion?.flujoCotizacionId || cotizacion?.flujoCotizacion?.id || null,
+      tipoCompra:
+        cotizacion?.tipoCompra ||
+        cotizacion?.solicitud?.tipoCompra ||
+        cotizacion?.flujoCotizacion?.tipoCompra ||
+        null,
       cotizacionId,
-      codigo: cotizacion?.codigo || "-",
-      solicitudId: cotizacion?.solicitudId || cotizacion?.solicitud?.id || null,
+      cotizacionCodigo: cotizacion?.cotizacionCodigo || cotizacion?.codigo || "-",
+      codigo: cotizacion?.codigo || cotizacion?.cotizacionCodigo || "-",
+      solicitudCotizacionId:
+        cotizacion?.solicitudCotizacionId ||
+        cotizacion?.solicitudId ||
+        cotizacion?.solicitud?.id ||
+        null,
+      solicitudId:
+        cotizacion?.solicitudCotizacionId ||
+        cotizacion?.solicitudId ||
+        cotizacion?.solicitud?.id ||
+        null,
       solicitudCodigo:
         cotizacion?.solicitudCodigo || cotizacion?.solicitud?.codigo || "-",
+      proveedorId: cotizacion?.proveedorId || cotizacion?.proveedor?.id || null,
       proveedor: cotizacion?.proveedor || {},
       moneda:
         cotizacion?.moneda ||

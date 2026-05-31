@@ -213,8 +213,9 @@ const ComparativosProcesoLogisticoPage = () => {
           Cuadro comparativo de bienes por flujo
         </h1>
         <p className="mt-1 text-xs leading-relaxed text-gray-600 sm:text-sm">
-          LOCAL e IMPORTACION se revisan como comparativos derivados separados.
-          La Buena Pro se registrara en una etapa posterior.
+          LOCAL e IMPORTACIÓN se revisan como comparativos derivados separados.
+          Esta matriz es informativa y deriva de las cotizaciones cerradas del flujo.
+          La decisión formal se registrará en una etapa posterior.
         </p>
       </div>
 
