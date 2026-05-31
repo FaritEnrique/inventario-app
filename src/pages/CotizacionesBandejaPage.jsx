@@ -17,6 +17,7 @@ import {
   isLogisticaJefaturaContext,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import usersApi from "../api/usersApi";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
 import useProveedores from "../hooks/useProveedores";
@@ -28,6 +29,7 @@ import {
   findLogisticaJefaturaResponsable,
   getDefaultLogisticaResponsableSelection,
 } from "../utils/logisticaAssignment";
+import { buildFlujoTipoCompraWarning } from "../utils/flujoCotizacionUi";
 import {
   formatCurrency,
   formatInteger,
@@ -210,6 +212,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   } = useLogisticaCotizaciones();
   const { proveedores } = useProveedores();
   const { crearSolicitud } = useSolicitudesCotizacion({ autoLoad: false });
+  const { confirm, alert: showAlert, dialogNode } = useAppDialog();
 
   const [items, setItems] = useState([]);
   const [summaryItems, setSummaryItems] = useState([]);
@@ -674,7 +677,49 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     }
   };
 
+  const getFlujosCotizacionForSolicitud = async (item) => {
+    if (Array.isArray(item?.flujosCotizacion)) {
+      return item.flujosCotizacion;
+    }
+
+    try {
+      const detalle = await obtenerDetalle(item.id);
+      return Array.isArray(detalle?.flujosCotizacion)
+        ? detalle.flujosCotizacion
+        : [];
+    } catch {
+      return [];
+    }
+  };
+
   const handleCreateSolicitud = async (item, payload) => {
+    const flujosCotizacion = await getFlujosCotizacionForSolicitud(item);
+    const flujoWarning = buildFlujoTipoCompraWarning({
+      flujosCotizacion,
+      nextTipoCompra: payload?.tipoCompra,
+    });
+
+    if (flujoWarning.blocked) {
+      await showAlert({
+        title: flujoWarning.title,
+        message: flujoWarning.message,
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (flujoWarning.shouldConfirm) {
+      const confirmed = await confirm({
+        title: flujoWarning.title,
+        message: flujoWarning.message,
+        confirmText: "Continuar",
+        cancelText: "Cancelar",
+        variant: "warning",
+      });
+
+      if (!confirmed) return;
+    }
+
     setSubmittingSolicitudId(item.id);
     try {
       await crearSolicitud(payload);
@@ -688,6 +733,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   return (
     <>
+    {dialogNode}
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

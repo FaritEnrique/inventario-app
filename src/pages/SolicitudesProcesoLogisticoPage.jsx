@@ -11,9 +11,11 @@ import CotizacionEstadoBadge from "../components/CotizacionEstadoBadge";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
 import SolicitudesProcesoLogisticoSkeleton from "../components/ui/skeletons/SolicitudesProcesoLogisticoSkeleton";
 import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import useProveedores from "../hooks/useProveedores";
 import useSolicitudesCotizacion from "../hooks/useSolicitudesCotizacion";
 import ConfirmDeactivateSolicitudToast from "../components/confirmDesactivateSolicitudToast";
+import { buildFlujoTipoCompraWarning } from "../utils/flujoCotizacionUi";
 import { formatInteger, formatQuantity } from "../utils/numberFormatters";
 
 const formatDate = (value) =>
@@ -64,6 +66,7 @@ const SolicitudesProcesoLogisticoPage = () => {
   const {
     id,
     detalleGlobal,
+    recargarDetalle,
     loading,
     error: detalleError,
   } = useOutletContext();
@@ -82,6 +85,7 @@ const SolicitudesProcesoLogisticoPage = () => {
     desactivarSolicitud,
   } = useSolicitudesCotizacion({ autoLoad: false });
   const { proveedores } = useProveedores();
+  const { confirm, alert: showAlert, dialogNode } = useAppDialog();
 
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -199,6 +203,32 @@ const SolicitudesProcesoLogisticoPage = () => {
   };
 
   const handleSolicitudSubmit = async (payload) => {
+    const flujoWarning = buildFlujoTipoCompraWarning({
+      flujosCotizacion: detalleGlobal?.flujosCotizacion,
+      nextTipoCompra: payload?.tipoCompra,
+    });
+
+    if (flujoWarning.blocked) {
+      await showAlert({
+        title: flujoWarning.title,
+        message: flujoWarning.message,
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (flujoWarning.shouldConfirm) {
+      const confirmed = await confirm({
+        title: flujoWarning.title,
+        message: flujoWarning.message,
+        confirmText: "Continuar",
+        cancelText: "Cancelar",
+        variant: "warning",
+      });
+
+      if (!confirmed) return;
+    }
+
     setSubmittingSolicitud(true);
     try {
       if (solicitudDraft?.id) {
@@ -208,6 +238,7 @@ const SolicitudesProcesoLogisticoPage = () => {
       }
 
       await cargarSolicitudesPorRequerimiento(id);
+      await recargarDetalle?.();
       handleCloseSolicitudForm();
     } finally {
       setSubmittingSolicitud(false);
@@ -218,6 +249,7 @@ const SolicitudesProcesoLogisticoPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {dialogNode}
       <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
