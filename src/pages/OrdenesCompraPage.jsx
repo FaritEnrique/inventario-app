@@ -12,7 +12,17 @@ import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
-const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
+const formatCurrency = (value, currency = "PEN") => {
+  const normalizedCurrency = String(currency || "PEN").toUpperCase();
+  const prefix =
+    normalizedCurrency === "USD"
+      ? "US$"
+      : normalizedCurrency === "PEN"
+        ? "S/"
+        : normalizedCurrency;
+
+  return `${prefix} ${Number(value || 0).toFixed(2)}`;
+};
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "-";
 
@@ -382,7 +392,10 @@ const OrdenesCompraPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(ordenCompra.montoTotal)}
+                        {formatCurrency(
+                          ordenCompra.montoTotal,
+                          ordenCompra.moneda,
+                        )}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDate(ordenCompra.fechaEmision)}
@@ -513,7 +526,10 @@ const OrdenesCompraPage = () => {
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
                             <p className="font-semibold text-gray-900">
-                              {formatCurrency(ordenCompra.montoTotal)}
+                              {formatCurrency(
+                                ordenCompra.montoTotal,
+                                ordenCompra.moneda,
+                              )}
                             </p>
                             <p className="text-xs text-gray-500">
                               Pendiente:{" "}

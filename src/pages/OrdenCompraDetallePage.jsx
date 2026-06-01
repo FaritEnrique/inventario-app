@@ -12,7 +12,17 @@ import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
 
-const formatCurrency = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
+const formatCurrency = (value, currency = "PEN") => {
+  const normalizedCurrency = String(currency || "PEN").toUpperCase();
+  const prefix =
+    normalizedCurrency === "USD"
+      ? "US$"
+      : normalizedCurrency === "PEN"
+        ? "S/"
+        : normalizedCurrency;
+
+  return `${prefix} ${Number(value || 0).toFixed(2)}`;
+};
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "-";
 const formatDateTime = (value) =>
@@ -39,6 +49,39 @@ const buildRequerimientos = (ordenCompra) => {
   });
 
   return Array.from(map.values());
+};
+
+const buildOrigenDocumental = (ordenCompra) => {
+  const origen = ordenCompra?.origenDocumental || {};
+  const buenaPro = ordenCompra?.buenaPro || origen.buenaPro || null;
+  const comparativo =
+    ordenCompra?.comparativoBase || origen.comparativo || null;
+
+  if (ordenCompra?.buenaProId || buenaPro || origen.tipo === "BUENA_PRO") {
+    return {
+      label: "Buena Pro",
+      detailLabel: "Codigo Buena Pro",
+      detailValue: buenaPro?.codigo || "-",
+    };
+  }
+
+  if (
+    ordenCompra?.comparativoId ||
+    comparativo?.codigo ||
+    origen.tipo === "COMPARATIVO"
+  ) {
+    return {
+      label: "Comparativo",
+      detailLabel: "Comparativo base",
+      detailValue: comparativo?.codigo || "-",
+    };
+  }
+
+  return {
+    label: "No determinado",
+    detailLabel: "",
+    detailValue: "",
+  };
 };
 
 const OrdenCompraDetallePage = () => {
@@ -74,6 +117,10 @@ const OrdenCompraDetallePage = () => {
 
   const requerimientos = useMemo(
     () => buildRequerimientos(ordenCompra),
+    [ordenCompra],
+  );
+  const origenDocumental = useMemo(
+    () => buildOrigenDocumental(ordenCompra),
     [ordenCompra],
   );
 
@@ -316,16 +363,21 @@ const OrdenCompraDetallePage = () => {
             Monto total
           </p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
-            {formatCurrency(ordenCompra.montoTotal)}
+            {formatCurrency(ordenCompra.montoTotal, ordenCompra.moneda)}
           </p>
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Comparativo base
+            Origen documental
           </p>
           <p className="mt-2 text-lg font-semibold text-gray-900">
-            {ordenCompra.comparativoBase?.codigo || "-"}
+            {origenDocumental.label}
           </p>
+          {origenDocumental.detailLabel ? (
+            <p className="mt-1 text-sm text-gray-600">
+              {origenDocumental.detailLabel}: {origenDocumental.detailValue}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -379,9 +431,10 @@ const OrdenCompraDetallePage = () => {
                 <p className="font-medium text-gray-900">Umbral GG</p>
                 <p>
                   {snapshotFormal.requiereGerenciaGeneralSnapshot
-                    ? `Si · S/ ${Number(
+                    ? `Si · ${formatCurrency(
                         snapshotFormal.umbralGerenciaGeneralSnapshot || 0,
-                      ).toFixed(2)}`
+                        ordenCompra.moneda,
+                      )}`
                     : "No aplica"}
                 </p>
               </div>
@@ -652,7 +705,10 @@ const OrdenCompraDetallePage = () => {
               <p>Ordenada: {item.cantidadOrdenada}</p>
               <p>Aceptada: {item.cantidadAceptada}</p>
               <p>Pendiente: {item.cantidadPendiente}</p>
-              <p>Precio: {formatCurrency(item.precioUnidad)}</p>
+              <p>
+                Precio:{" "}
+                {formatCurrency(item.precioUnidad, ordenCompra.moneda)}
+              </p>
             </div>
           </div>
         ))}
@@ -715,9 +771,9 @@ const OrdenCompraDetallePage = () => {
                     <p>Pendiente: {item.cantidadPendiente}</p>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    <p>{formatCurrency(item.precioUnidad)}</p>
+                    <p>{formatCurrency(item.precioUnidad, ordenCompra.moneda)}</p>
                     <p className="font-medium text-gray-900">
-                      {formatCurrency(item.subtotal)}
+                      {formatCurrency(item.subtotal, ordenCompra.moneda)}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
