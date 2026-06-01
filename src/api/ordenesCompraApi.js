@@ -49,6 +49,13 @@ const ordenesCompraApi = {
       body: JSON.stringify(payload),
       sessionActivity: "interactive",
     }),
+
+  anularOrdenCompra: (id, payload) =>
+    apiFetch(`ordenes-compra/${id}/anular`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
 };
 
 export default ordenesCompraApi;

@@ -5,12 +5,17 @@ import {
   canApproveOrdenCompraStageEffective,
   canManageOrdenCompraLifecycleEffective,
 } from "../accessRules";
+import AnularOrdenCompraModal from "../components/AnularOrdenCompraModal";
 import Loader from "../components/Loader";
 import OrdenCompraEstadoBadge from "../components/OrdenCompraEstadoBadge";
 import OrdenCompraDetalleSkeleton from "../components/ui/skeletons/OrdenCompraDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
+import {
+  canAnularOrdenCompra,
+  getCausalAnulacionOrdenCompraLabel,
+} from "../utils/ordenCompraAnulacionUi";
 
 const formatCurrency = (value, currency = "PEN") => {
   const normalizedCurrency = String(currency || "PEN").toUpperCase();
@@ -95,8 +100,10 @@ const OrdenCompraDetallePage = () => {
     actualizarAprobacionOrdenCompra,
     cerrarOrdenCompra,
     cancelarOrdenCompra,
+    anularOrdenCompra,
   } = useOrdenesCompra();
   const [ordenCompra, setOrdenCompra] = useState(null);
+  const [annulModalOpen, setAnnulModalOpen] = useState(false);
   const [submittingAction, setSubmittingAction] = useState(false);
   const [actionFeedback, setActionFeedback] = useState({
     type: "",
@@ -126,6 +133,8 @@ const OrdenCompraDetallePage = () => {
 
   const canApprove = canApproveOrdenCompraStageEffective(user, ordenCompra);
   const canManageLifecycle = canManageOrdenCompraLifecycleEffective(user);
+  const isOrdenCompraActiva = ordenCompra?.activo !== false;
+  const isOrdenCompraAnulada = ordenCompra?.estadoAprobacion === "ANULADA";
   const isReceptionFinal = finalReceptionStates.has(
     ordenCompra?.estadoRecepcion,
   );
@@ -134,28 +143,78 @@ const OrdenCompraDetallePage = () => {
   const hasAcceptedReception =
     Number(ordenCompra?.resumen?.totalAceptado || 0) > 0;
   const allowApprovalAction =
+    isOrdenCompraActiva &&
+    !isOrdenCompraAnulada &&
     canApprove &&
     ordenCompra?.estadoAprobacion === "PENDIENTE_APROBACION" &&
     !isReceptionFinal;
   const allowCloseAction =
-    canManageLifecycle && !isReceptionFinal && hasPendingBalance;
+    isOrdenCompraActiva &&
+    !isOrdenCompraAnulada &&
+    canManageLifecycle &&
+    !isReceptionFinal &&
+    hasPendingBalance;
   const allowCancelAction =
+    isOrdenCompraActiva &&
+    !isOrdenCompraAnulada &&
     canManageLifecycle &&
     !isReceptionFinal &&
     !hasAcceptedReception &&
     ordenCompra?.estadoRecepcion !== "COMPLETAMENTE_RECIBIDA";
+  const allowAnnulAction =
+    canManageLifecycle && canAnularOrdenCompra(ordenCompra);
+  const hasAnulacionInfo =
+    isOrdenCompraAnulada ||
+    Boolean(
+      ordenCompra?.fechaAnulacion ||
+        ordenCompra?.motivoAnulacion ||
+        ordenCompra?.causalAnulacion ||
+        ordenCompra?.anuladoPor,
+    );
 
   const runAction = async (operation, successMessage) => {
     setSubmittingAction(true);
     try {
       setActionFeedback({ type: "", message: "" });
       const data = await operation();
-      setOrdenCompra(data);
+      if (data?.id) {
+        setOrdenCompra(data);
+      } else {
+        await load();
+      }
       setActionFeedback({ type: "success", message: successMessage });
       toast.success(successMessage);
     } catch (actionError) {
       const message =
         actionError.message || "No se pudo completar la accion solicitada.";
+      setActionFeedback({ type: "error", message });
+      toast.error(message);
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleAnnul = async (payload) => {
+    setSubmittingAction(true);
+    try {
+      setActionFeedback({ type: "", message: "" });
+      const data = await anularOrdenCompra(ordenCompra.id, payload);
+
+      if (data?.id) {
+        setOrdenCompra(data);
+      } else {
+        await load();
+      }
+
+      setAnnulModalOpen(false);
+      setActionFeedback({
+        type: "success",
+        message: "Orden de Compra anulada correctamente.",
+      });
+      toast.success("Orden de Compra anulada correctamente.");
+    } catch (actionError) {
+      const message =
+        actionError.message || "No se pudo anular la Orden de Compra.";
       setActionFeedback({ type: "error", message });
       toast.error(message);
     } finally {
@@ -294,6 +353,15 @@ const OrdenCompraDetallePage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       {dialogNode}
+      <AnularOrdenCompraModal
+        open={annulModalOpen}
+        ordenCompra={ordenCompra}
+        submitting={submittingAction}
+        onCancel={() => {
+          if (!submittingAction) setAnnulModalOpen(false);
+        }}
+        onConfirm={handleAnnul}
+      />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
@@ -325,6 +393,53 @@ const OrdenCompraDetallePage = () => {
           </Link>
         </div>
       </div>
+
+      {hasAnulacionInfo ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Anulación lógica
+          </h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Causal
+              </p>
+              <p className="mt-1 text-sm text-slate-800">
+                {getCausalAnulacionOrdenCompraLabel(
+                  ordenCompra.causalAnulacion,
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Fecha
+              </p>
+              <p className="mt-1 text-sm text-slate-800">
+                {formatDateTime(ordenCompra.fechaAnulacion)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Usuario
+              </p>
+              <p className="mt-1 text-sm text-slate-800">
+                {ordenCompra.anuladoPor?.nombre ||
+                  ordenCompra.anuladoPorNombre ||
+                  ordenCompra.anuladoPorId ||
+                  "-"}
+              </p>
+            </div>
+            <div className="md:col-span-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Motivo
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
+                {ordenCompra.motivoAnulacion || "-"}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
@@ -542,7 +657,30 @@ const OrdenCompraDetallePage = () => {
               </div>
             ) : null}
 
-            {!allowApprovalAction && !allowCloseAction && !allowCancelAction ? (
+            {allowAnnulAction ? (
+              <div className="rounded-lg border border-slate-300 bg-slate-50 p-4">
+                <p className="text-sm font-medium text-slate-900">
+                  Anulación lógica
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  Disponible solo antes de aprobación final y antes de iniciar
+                  la recepción.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setAnnulModalOpen(true)}
+                  disabled={submittingAction}
+                  className="mt-3 rounded border border-slate-400 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 disabled:opacity-60"
+                >
+                  Anular Orden de Compra
+                </button>
+              </div>
+            ) : null}
+
+            {!allowApprovalAction &&
+            !allowCloseAction &&
+            !allowCancelAction &&
+            !allowAnnulAction ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
                 No hay acciones manuales habilitadas para tu perfil o para el
                 estado actual.

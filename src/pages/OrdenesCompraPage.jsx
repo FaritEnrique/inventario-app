@@ -315,6 +315,7 @@ const OrdenesCompraPage = () => {
               <option value="PENDIENTE_APROBACION">Pendiente aprobación</option>
               <option value="APROBADA">Aprobada</option>
               <option value="RECHAZADA">Rechazada</option>
+              <option value="ANULADA">Anulada</option>
             </select>
             <select
               value={filters.estadoRecepcion}

@@ -3,6 +3,7 @@ const approvalStyles = {
   PENDIENTE_APROBACION: "bg-amber-100 text-amber-800",
   APROBADA: "bg-emerald-100 text-emerald-800",
   RECHAZADA: "bg-rose-100 text-rose-800",
+  ANULADA: "bg-slate-200 text-slate-800",
 };
 
 const receptionStyles = {
@@ -19,6 +20,7 @@ const labels = {
   PENDIENTE_APROBACION: "Pendiente aprobacion",
   APROBADA: "Aprobada",
   RECHAZADA: "Rechazada",
+  ANULADA: "Anulada",
   PENDIENTE_RECEPCION: "Pendiente recepcion",
   PARCIALMENTE_RECIBIDA: "Parcialmente recibida",
   COMPLETAMENTE_RECIBIDA: "Completamente recibida",

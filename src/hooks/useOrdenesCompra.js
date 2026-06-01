@@ -52,6 +52,11 @@ const useOrdenesCompra = () => {
         execute(() => ordenesCompraApi.cancelarOrdenCompra(id, payload)),
       [execute]
     ),
+    anularOrdenCompra: useCallback(
+      (id, payload = {}) =>
+        execute(() => ordenesCompraApi.anularOrdenCompra(id, payload)),
+      [execute]
+    ),
   };
 };
 
