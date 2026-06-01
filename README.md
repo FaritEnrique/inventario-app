@@ -69,7 +69,9 @@ El layout general vive en:
 
 ## Proceso logistico
 
-El flujo logistico esta en migracion hacia una estructura de sublayout.
+El flujo logistico usa una estructura de sublayout bajo el expediente del
+requerimiento. Las nuevas implementaciones deben trabajar sobre estas paginas
+hijas y no sobre la pantalla historica de prueba.
 
 Entrada actual:
 
@@ -99,9 +101,12 @@ Componentes hijos actuales:
 - `src/pages/CotizacionesProcesoLogisticoPage.jsx`
 - `src/pages/ComparativosProcesoLogisticoPage.jsx`
 
-Estas paginas hijas aun pueden contener placeholders de migracion. La referencia funcional completa sigue siendo:
+Ruta historica de prueba:
 
 - `src/pages/ProcesoLogisticoDetallePage.jsx`
+
+`ProcesoLogisticoDetallePage.jsx` debe tratarse como referencia historica y no
+como objetivo principal para nuevas funcionalidades.
 
 ### Responsabilidades del sublayout logistico
 
@@ -121,6 +126,45 @@ Estas paginas hijas aun pueden contener placeholders de migracion. La referencia
 - navegar usando rutas absolutas bajo `/cotizaciones/proceso/:id`.
 - usar menu hamburguesa antes de `lg`.
 - cerrar el menu al seleccionar una opcion, al volver a pulsar el boton o al hacer click fuera.
+
+### Solicitudes y flujos de cotizacion
+
+El frontend debe respetar la separacion del backend por `FlujoCotizacion`:
+
+- Un requerimiento puede tener un flujo `LOCAL` y uno `IMPORTACION`.
+- Las solicitudes nuevas se asocian al flujo segun su `tipoCompra`.
+- Si el usuario crea una solicitud de un tipo distinto al flujo ya existente,
+  la UI debe advertir que se usara o creara un flujo comparativo independiente.
+- Si el flujo elegido esta cerrado, la UI debe bloquear la emision de nuevas
+  solicitudes para ese flujo.
+- La seleccion parcial de items por solicitud se mantiene.
+
+Puntos principales de creacion:
+
+- `src/pages/SolicitudesProcesoLogisticoPage.jsx`
+- `src/pages/CotizacionesBandejaPage.jsx`
+
+Helper relacionado:
+
+- `src/utils/flujoCotizacionUi.js`
+
+### Cotizaciones, comparativo y Buena Pro
+
+- `CotizacionesProcesoLogisticoPage.jsx` gestiona cotizaciones por flujo y
+  cierre/reapertura.
+- `ComparativosProcesoLogisticoPage.jsx` muestra el comparativo derivado por
+  flujo cerrado.
+- El comparativo no aprueba ni rechaza la decision. La decision formal se
+  registra como Buena Pro.
+- La Buena Pro se otorga por item desde celdas `COTIZADO` validas.
+- Los items `NO_COTIZA` se muestran, pero no son seleccionables.
+- La Buena Pro vigente puede anularse logicamente con motivo y causal.
+- La pantalla no genera Orden de Compra todavia.
+
+Utilidades relacionadas:
+
+- `src/utils/comparativoFlujoViewModel.js`
+- `src/utils/buenaProPayload.js`
 
 ## Estado funcional actual
 
@@ -146,11 +190,13 @@ Rutas activas:
 
 - Bandeja de jefatura operativa.
 - Bandeja de operador operativa.
-- Detalle logistico operativo en la pagina historica.
-- Nueva estructura de sublayout logistico en proceso.
-- Comparativo y adjudicacion conectados al flujo principal en la implementacion historica.
-
-La pagina `ProcesoLogisticoDetallePage.jsx` debe tratarse como referencia durante la migracion al nuevo sublayout.
+- Sublayout logistico operativo para resumen, solicitudes, cotizaciones y
+  comparativos.
+- Advertencia `LOCAL` / `IMPORTACION` al crear solicitudes cuando corresponde.
+- Comparativo derivado por flujo cerrado.
+- Buena Pro por item desde comparativo por flujo.
+- Preparado para que una tanda posterior conecte Buena Pro con generacion de
+  Orden de Compra.
 
 ### Inventario / Abastecimiento
 
