@@ -45,6 +45,11 @@ const logisticaCotizacionesApi = {
       body: JSON.stringify(payload),
     });
   },
+  generarOrdenesCompraDesdeBuenaPro: async (buenaProId) => {
+    return apiFetch(`logistica/buenas-pro/${buenaProId}/generar-orden-compra`, {
+      method: "POST",
+    });
+  },
   definirFlujo: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/flujo`, {
       method: "PATCH",

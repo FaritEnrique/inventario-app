@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canAdjudicateCotizacionesLogisticaEffective } from "../accessRules";
+import OrdenesCompraGeneradasPanel from "../components/OrdenesCompraGeneradasPanel";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
@@ -13,6 +14,10 @@ import {
 import { buildComparativoFlujoViewModel } from "../utils/comparativoFlujoViewModel";
 import { getFlujosActivos, isFlujoCerrado } from "../utils/flujoCotizacionUi";
 import { formatInteger, formatQuantity } from "../utils/numberFormatters";
+import {
+  getOrdenesCompraFromBuenaPro,
+  normalizeOrdenesGeneradasResponse,
+} from "../utils/ordenCompraDesdeBuenaProViewModel";
 
 const TIPO_COMPRA_LABELS = {
   LOCAL: "LOCAL",
@@ -175,6 +180,7 @@ const ComparativosProcesoLogisticoPage = () => {
     obtenerBuenaProPorFlujo,
     registrarBuenaPro,
     anularBuenaPro,
+    generarOrdenesCompraDesdeBuenaPro,
   } = useLogisticaCotizaciones();
   const flujos = useMemo(
     () => getFlujosActivos(detalleGlobal?.flujosCotizacion),
@@ -190,6 +196,8 @@ const ComparativosProcesoLogisticoPage = () => {
   const [justificaciones, setJustificaciones] = useState({});
   const [savingBuenaPro, setSavingBuenaPro] = useState(false);
   const [anulandoBuenaPro, setAnulandoBuenaPro] = useState(false);
+  const [generandoOrdenesCompra, setGenerandoOrdenesCompra] = useState(false);
+  const [ordenesCompraGeneradas, setOrdenesCompraGeneradas] = useState([]);
   const [anulacionDraft, setAnulacionDraft] = useState({
     motivoAnulacion: "",
     causalAnulacion: "ERROR_MATERIAL",
@@ -266,6 +274,7 @@ const ComparativosProcesoLogisticoPage = () => {
     setSelectedByItem({});
     setSustentoBuenaPro("");
     setJustificaciones({});
+    setOrdenesCompraGeneradas(getOrdenesCompraFromBuenaPro(buenaProVigente));
     setAnulacionDraft({
       motivoAnulacion: "",
       causalAnulacion: "ERROR_MATERIAL",
@@ -303,6 +312,16 @@ const ComparativosProcesoLogisticoPage = () => {
     selectedEntries[0]?.[1]?.moneda ||
     viewModel.cotizacionesComparables[0]?.moneda ||
     "PEN";
+  const ordenesCompraVigentes = useMemo(
+    () =>
+      ordenesCompraGeneradas.length
+        ? ordenesCompraGeneradas
+        : getOrdenesCompraFromBuenaPro(buenaProVigente),
+    [buenaProVigente, ordenesCompraGeneradas],
+  );
+  const hasOrdenesCompraGeneradas = ordenesCompraVigentes.length > 0;
+  const canGenerateOrdenesCompra =
+    canManageBuenaPro && Boolean(buenaProVigente?.id);
   const matrixMinWidth = `${520 + viewModel.cotizacionesComparables.length * 840}px`;
 
   const handleToggleOferta = (item, cotizacion, oferta) => {
@@ -371,6 +390,42 @@ const ComparativosProcesoLogisticoPage = () => {
     }
   };
 
+  const handleGenerarOrdenesCompra = async () => {
+    if (!buenaProVigente?.id || !canGenerateOrdenesCompra) return;
+
+    if (hasOrdenesCompraGeneradas) {
+      toast.info("La Buena Pro ya registra Orden(es) de Compra generada(s).");
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: "Generar Orden(es) de Compra",
+      message:
+        "Se generará una Orden de Compra por cada proveedor adjudicado en la Buena Pro. Las órdenes quedarán pendientes de aprobación. ¿Desea continuar?",
+      confirmText: "Generar Orden(es)",
+      cancelText: "Cancelar",
+      variant: "warning",
+    });
+
+    if (!confirmed) return;
+
+    setGenerandoOrdenesCompra(true);
+    try {
+      const response = await generarOrdenesCompraDesdeBuenaPro(
+        buenaProVigente.id,
+      );
+      const normalized = normalizeOrdenesGeneradasResponse(response);
+      setOrdenesCompraGeneradas(normalized.ordenesCompra);
+      toast.success(
+        normalized.ordenesCompra.length === 1
+          ? "Orden de Compra generada correctamente."
+          : "Órdenes de Compra generadas correctamente.",
+      );
+    } finally {
+      setGenerandoOrdenesCompra(false);
+    }
+  };
+
   const handleAnularBuenaPro = async () => {
     if (!buenaProVigente?.id || !canManageBuenaPro) return;
 
@@ -382,8 +437,9 @@ const ComparativosProcesoLogisticoPage = () => {
 
     const confirmed = await confirm({
       title: "Anular Buena Pro",
-      message:
-        "La Buena Pro vigente será anulada lógicamente y los ítems quedarán liberados para una nueva adjudicación. ¿Desea continuar?",
+      message: hasOrdenesCompraGeneradas
+        ? "Esta Buena Pro ya tiene Orden(es) de Compra generada(s). La anulación puede requerir revisar o anular las órdenes asociadas. ¿Desea continuar?"
+        : "La Buena Pro vigente será anulada lógicamente y los ítems quedarán liberados para una nueva adjudicación. ¿Desea continuar?",
       confirmText: "Anular Buena Pro",
       cancelText: "Cancelar",
       variant: "danger",
@@ -836,6 +892,39 @@ const ComparativosProcesoLogisticoPage = () => {
                         </tbody>
                       </table>
                     </div>
+
+                    {ordenesCompraVigentes.length ? (
+                      <OrdenesCompraGeneradasPanel
+                        ordenesCompra={ordenesCompraVigentes}
+                      />
+                    ) : null}
+
+                    {canGenerateOrdenesCompra && !hasOrdenesCompraGeneradas ? (
+                      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-indigo-950">
+                              Generación de Orden(es) de Compra
+                            </h3>
+                            <p className="mt-1 text-sm text-indigo-900">
+                              Se generará una Orden de Compra por cada proveedor
+                              adjudicado. Las órdenes quedarán pendientes de
+                              aprobación.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGenerarOrdenesCompra}
+                            disabled={generandoOrdenesCompra}
+                            className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                          >
+                            {generandoOrdenesCompra
+                              ? "Generando..."
+                              : "Generar Orden(es) de Compra"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     {canManageBuenaPro ? (
                       <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">

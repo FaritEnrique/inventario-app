@@ -108,6 +108,18 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
+  const generarOrdenesCompraDesdeBuenaPro = useCallback(
+    async (buenaProId) =>
+      run(
+        () =>
+          logisticaCotizacionesApi.generarOrdenesCompraDesdeBuenaPro(
+            buenaProId,
+          ),
+        "No se pudieron generar las Órdenes de Compra desde la Buena Pro.",
+      ),
+    [run],
+  );
+
   const definirFlujo = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -286,6 +298,7 @@ const useLogisticaCotizaciones = () => {
     obtenerBuenaProPorFlujo,
     registrarBuenaPro,
     anularBuenaPro,
+    generarOrdenesCompraDesdeBuenaPro,
     definirFlujo,
     obtenerComparativo,
     obtenerComparativoPdfUrl,
