@@ -1,14 +1,33 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
+import { toast } from "react-toastify";
+import { canAdjudicateCotizacionesLogisticaEffective } from "../accessRules";
+import { useAuth } from "../context/authContext";
+import useAppDialog from "../hooks/useAppDialog";
 import useLogisticaCotizaciones from "../hooks/useLogisticaCotizaciones";
+import {
+  buildBuenaProPayload,
+  canSelectOferta,
+  validateBuenaProDraft,
+} from "../utils/buenaProPayload";
 import { buildComparativoFlujoViewModel } from "../utils/comparativoFlujoViewModel";
 import { getFlujosActivos, isFlujoCerrado } from "../utils/flujoCotizacionUi";
 import { formatInteger, formatQuantity } from "../utils/numberFormatters";
 
 const TIPO_COMPRA_LABELS = {
   LOCAL: "LOCAL",
-  IMPORTACION: "IMPORTACION",
+  IMPORTACION: "IMPORTACIÓN",
 };
+
+const CAUSALES_ANULACION_BUENA_PRO = [
+  ["RECLAMO_FUNDADO", "Reclamo fundado"],
+  ["PROVEEDOR_NO_IDONEO", "Proveedor no idóneo"],
+  ["IMPOSIBILIDAD_CUMPLIMIENTO", "Imposibilidad de cumplimiento"],
+  ["ERROR_MATERIAL", "Error material"],
+  ["FALTA_PRESUPUESTO", "Falta de presupuesto"],
+  ["DESAPARICION_NECESIDAD", "Desaparición de necesidad"],
+  ["DECISION_ADMINISTRATIVA", "Decisión administrativa"],
+];
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
@@ -38,7 +57,7 @@ const hasValue = (value) =>
   value !== undefined && value !== null && String(value).trim() !== "";
 
 const booleanText = (value) => {
-  if (value === true) return "Si";
+  if (value === true) return "Sí";
   if (value === false) return "No";
   return "";
 };
@@ -46,10 +65,10 @@ const booleanText = (value) => {
 const buildConditionRows = (condiciones = {}, tipoCompra) => {
   const commonRows = [
     ["Moneda", condiciones.moneda],
-    ["Codigo moneda otra", condiciones.codigoMonedaOtra],
+    ["Código moneda otra", condiciones.codigoMonedaOtra],
     ["Incluye IGV", booleanText(condiciones.incluyeIgv)],
     ["Tiempo de entrega", condiciones.tiempoEntregaDias],
-    ["Garantia", condiciones.garantia],
+    ["Garantía", condiciones.garantia],
     ["Vigencia de oferta", condiciones.vigenciaOfertaDias],
     ["Lugar de entrega", condiciones.lugarEntrega],
   ];
@@ -58,14 +77,14 @@ const buildConditionRows = (condiciones = {}, tipoCompra) => {
     tipoCompra === "IMPORTACION"
       ? [
           ["Incoterm", condiciones.incoterm],
-          ["Version Incoterm", condiciones.incotermVersion],
-          ["Punto logistico", condiciones.incotermPuntoLogistico],
+          ["Versión Incoterm", condiciones.incotermVersion],
+          ["Punto logístico", condiciones.incotermPuntoLogistico],
           ["Estructura de pago", condiciones.estructuraPagoImportacion],
           ["Instrumento de pago", condiciones.instrumentoPagoImportacion],
           ["Gatillo de pago", condiciones.gatilloPagoImportacion],
           ["Anticipo", condiciones.porcentajeAnticipoImportacion],
           ["Saldo", condiciones.porcentajeSaldoImportacion],
-          ["Dias de credito", condiciones.diasCreditoImportacion],
+          ["Días de crédito", condiciones.diasCreditoImportacion],
           ["Referencia de plazo", condiciones.referenciaPlazoImportacion],
           ["Gastos bancarios", condiciones.gastosBancariosPor],
           ...commonRows,
@@ -80,12 +99,12 @@ const buildConditionRows = (condiciones = {}, tipoCompra) => {
             "Entregas parciales",
             booleanText(condiciones.permiteEntregasParciales),
           ],
-          ["Condiciones logisticas", condiciones.condicionesLogisticasLocales],
-          ["Condicion de pago", condiciones.condicionPagoLocal],
+          ["Condiciones logísticas", condiciones.condicionesLogisticasLocales],
+          ["Condición de pago", condiciones.condicionPagoLocal],
           ["Hito de pago", condiciones.hitoPagoLocal],
           ["Anticipo", condiciones.porcentajeAnticipoLocal],
           ["Saldo", condiciones.porcentajeSaldoLocal],
-          ["Dias de credito", condiciones.diasCreditoLocal],
+          ["Días de crédito", condiciones.diasCreditoLocal],
           ...commonRows,
         ];
 
@@ -97,7 +116,7 @@ const buildOfferRows = (condiciones = {}, tipoCompra) => {
     ["Pago propuesto", condiciones.pagoPropuestoResumen],
     ["Plazo de entrega", condiciones.tiempoEntregaDias],
     ["Lugar de entrega", condiciones.lugarEntrega],
-    ["Garantia", condiciones.garantia],
+    ["Garantía", condiciones.garantia],
     ["Vigencia de oferta", condiciones.vigenciaOfertaDias],
     ["Observaciones", condiciones.observaciones],
   ];
@@ -109,35 +128,73 @@ const buildOfferRows = (condiciones = {}, tipoCompra) => {
       ["Gatillo de pago", condiciones.gatilloPagoImportacionPropuesta],
       ["Anticipo", condiciones.porcentajeAnticipoImportacionPropuesto],
       ["Saldo", condiciones.porcentajeSaldoImportacionPropuesto],
-      ["Dias de credito", condiciones.diasCreditoImportacionPropuesto],
+      ["Días de crédito", condiciones.diasCreditoImportacionPropuesto],
       ["Referencia plazo", condiciones.referenciaPlazoImportacionPropuesta],
       ["Gastos bancarios", condiciones.gastosBancariosPorPropuesto],
       ["Documentos", condiciones.documentosPagoImportacionPropuestos],
-      ["Observacion pago", condiciones.observacionPagoImportacionPropuesta],
+      ["Observación pago", condiciones.observacionPagoImportacionPropuesta],
     );
   } else {
     rows.push(
       ["Forma de pago", condiciones.formaPagoLocalPropuesta],
-      ["Dias de credito", condiciones.diasCreditoLocalPropuesto],
+      ["Días de crédito", condiciones.diasCreditoLocalPropuesto],
       ["Anticipo", condiciones.porcentajeAnticipoLocalPropuesto],
       ["Saldo", condiciones.porcentajeSaldoLocalPropuesto],
-      ["Observacion pago", condiciones.observacionPagoLocalPropuesta],
+      ["Observación pago", condiciones.observacionPagoLocalPropuesta],
     );
   }
 
   return rows.filter(([, value]) => hasValue(value));
 };
 
+const findCurrencyForBuenaProDetalle = (
+  detalle,
+  cotizaciones = [],
+  fallback = "PEN",
+) => {
+  const cotizacionId = Number(detalle?.cotizacionId || detalle?.cotizacion?.id);
+  const cotizacion = cotizaciones.find(
+    (entry) => Number(entry.cotizacionId || entry.id) === cotizacionId,
+  );
+
+  return (
+    detalle?.moneda ||
+    detalle?.itemCotizacion?.moneda ||
+    detalle?.cotizacion?.moneda ||
+    cotizacion?.moneda ||
+    fallback
+  );
+};
+
 const ComparativosProcesoLogisticoPage = () => {
   const { id, detalleGlobal, loading, error } = useOutletContext();
-  const { obtenerComparativoPorFlujo } = useLogisticaCotizaciones();
+  const { user } = useAuth();
+  const { confirm, dialogNode } = useAppDialog();
+  const {
+    obtenerComparativoPorFlujo,
+    obtenerBuenaProPorFlujo,
+    registrarBuenaPro,
+    anularBuenaPro,
+  } = useLogisticaCotizaciones();
   const flujos = useMemo(
     () => getFlujosActivos(detalleGlobal?.flujosCotizacion),
     [detalleGlobal?.flujosCotizacion],
   );
   const [selectedFlujoId, setSelectedFlujoId] = useState(null);
   const [comparativoFlujo, setComparativoFlujo] = useState(null);
+  const [buenaProVigente, setBuenaProVigente] = useState(null);
   const [loadingComparativo, setLoadingComparativo] = useState(false);
+  const [loadingBuenaPro, setLoadingBuenaPro] = useState(false);
+  const [selectedByItem, setSelectedByItem] = useState({});
+  const [sustentoBuenaPro, setSustentoBuenaPro] = useState("");
+  const [justificaciones, setJustificaciones] = useState({});
+  const [savingBuenaPro, setSavingBuenaPro] = useState(false);
+  const [anulandoBuenaPro, setAnulandoBuenaPro] = useState(false);
+  const [anulacionDraft, setAnulacionDraft] = useState({
+    motivoAnulacion: "",
+    causalAnulacion: "ERROR_MATERIAL",
+  });
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
     if (!flujos.length) {
@@ -159,6 +216,9 @@ const ComparativosProcesoLogisticoPage = () => {
     [flujos, selectedFlujoId],
   );
   const selectedFlujoCerrado = isFlujoCerrado(selectedFlujo);
+  const canManageBuenaPro =
+    selectedFlujoCerrado &&
+    canAdjudicateCotizacionesLogisticaEffective(user, detalleGlobal);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,15 +226,26 @@ const ComparativosProcesoLogisticoPage = () => {
     const load = async () => {
       if (!selectedFlujo?.id || !selectedFlujoCerrado) {
         setComparativoFlujo(null);
+        setBuenaProVigente(null);
         return;
       }
 
       setLoadingComparativo(true);
+      setLoadingBuenaPro(true);
       try {
-        const data = await obtenerComparativoPorFlujo(selectedFlujo.id);
-        if (!cancelled) setComparativoFlujo(data);
+        const [comparativoData, buenaProData] = await Promise.all([
+          obtenerComparativoPorFlujo(selectedFlujo.id),
+          obtenerBuenaProPorFlujo(selectedFlujo.id),
+        ]);
+        if (!cancelled) {
+          setComparativoFlujo(comparativoData);
+          setBuenaProVigente(buenaProData?.data ?? buenaProData ?? null);
+        }
       } finally {
-        if (!cancelled) setLoadingComparativo(false);
+        if (!cancelled) {
+          setLoadingComparativo(false);
+          setLoadingBuenaPro(false);
+        }
       }
     };
 
@@ -183,7 +254,23 @@ const ComparativosProcesoLogisticoPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [obtenerComparativoPorFlujo, selectedFlujo?.id, selectedFlujoCerrado]);
+  }, [
+    obtenerComparativoPorFlujo,
+    obtenerBuenaProPorFlujo,
+    refreshToken,
+    selectedFlujo?.id,
+    selectedFlujoCerrado,
+  ]);
+
+  useEffect(() => {
+    setSelectedByItem({});
+    setSustentoBuenaPro("");
+    setJustificaciones({});
+    setAnulacionDraft({
+      motivoAnulacion: "",
+      causalAnulacion: "ERROR_MATERIAL",
+    });
+  }, [selectedFlujo?.id, buenaProVigente?.id]);
 
   const viewModel = useMemo(
     () => buildComparativoFlujoViewModel(comparativoFlujo || {}),
@@ -195,7 +282,127 @@ const ComparativosProcesoLogisticoPage = () => {
     viewModel.condicionesSolicitadas,
     tipoCompra,
   );
-  const matrixMinWidth = `${520 + viewModel.cotizacionesComparables.length * 720}px`;
+  const buenaProDraftValidation = useMemo(
+    () =>
+      validateBuenaProDraft({
+        selectedByItem,
+        sustento: sustentoBuenaPro,
+        justificaciones,
+      }),
+    [justificaciones, selectedByItem, sustentoBuenaPro],
+  );
+  const selectedEntries = useMemo(
+    () => Object.entries(selectedByItem).filter(([, oferta]) => oferta),
+    [selectedByItem],
+  );
+  const selectedTotal = selectedEntries.reduce(
+    (sum, [, oferta]) => sum + (Number(oferta?.precioTotal) || 0),
+    0,
+  );
+  const selectedCurrency =
+    selectedEntries[0]?.[1]?.moneda ||
+    viewModel.cotizacionesComparables[0]?.moneda ||
+    "PEN";
+  const matrixMinWidth = `${520 + viewModel.cotizacionesComparables.length * 840}px`;
+
+  const handleToggleOferta = (item, cotizacion, oferta) => {
+    if (!canManageBuenaPro || buenaProVigente || !canSelectOferta(oferta)) return;
+
+    setSelectedByItem((current) => {
+      const key = String(item.itemRequerimientoId);
+      const selected = current[key];
+      const sameOferta =
+        Number(selected?.cotizacionId) === Number(oferta.cotizacionId) &&
+        Number(selected?.itemCotizacionId) === Number(oferta.itemCotizacionId);
+
+      if (sameOferta) {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      }
+
+      return {
+        ...current,
+        [key]: {
+          ...oferta,
+          itemNumero: item.numero,
+          itemDescripcion: item.descripcionSolicitada,
+          proveedor: cotizacion.proveedor,
+        },
+      };
+    });
+  };
+
+  const handleSubmitBuenaPro = async () => {
+    if (!selectedFlujo?.id || !canManageBuenaPro || buenaProVigente) return;
+
+    if (!buenaProDraftValidation.valid) {
+      toast.error(buenaProDraftValidation.errors[0]);
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: "Otorgar Buena Pro",
+      message:
+        "Se registrará la decisión formal de adjudicación para los ítems seleccionados. ¿Desea continuar?",
+      confirmText: "Otorgar Buena Pro",
+      cancelText: "Cancelar",
+      variant: "warning",
+    });
+
+    if (!confirmed) return;
+
+    setSavingBuenaPro(true);
+    try {
+      const payload = buildBuenaProPayload({
+        selectedByItem,
+        sustento: sustentoBuenaPro,
+        justificaciones,
+      });
+      await registrarBuenaPro(selectedFlujo.id, payload);
+      toast.success("Buena Pro registrada correctamente.");
+      setRefreshToken((current) => current + 1);
+    } catch (submitError) {
+      if (submitError?.validationErrors?.length) {
+        toast.error(submitError.validationErrors[0]);
+      }
+    } finally {
+      setSavingBuenaPro(false);
+    }
+  };
+
+  const handleAnularBuenaPro = async () => {
+    if (!buenaProVigente?.id || !canManageBuenaPro) return;
+
+    const motivo = String(anulacionDraft.motivoAnulacion || "").trim();
+    if (!motivo) {
+      toast.error("Debe registrar el motivo de anulación.");
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: "Anular Buena Pro",
+      message:
+        "La Buena Pro vigente será anulada lógicamente y los ítems quedarán liberados para una nueva adjudicación. ¿Desea continuar?",
+      confirmText: "Anular Buena Pro",
+      cancelText: "Cancelar",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
+
+    setAnulandoBuenaPro(true);
+    try {
+      await anularBuenaPro(buenaProVigente.id, {
+        motivoAnulacion: motivo,
+        causalAnulacion: anulacionDraft.causalAnulacion,
+      });
+      toast.success("Buena Pro anulada correctamente.");
+      setRefreshToken((current) => current + 1);
+    } finally {
+      setAnulandoBuenaPro(false);
+    }
+  };
 
   if (loading && !detalleGlobal) {
     return (
@@ -208,6 +415,7 @@ const ComparativosProcesoLogisticoPage = () => {
 
   return (
     <section className="space-y-4">
+      {dialogNode}
       <div>
         <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
           Cuadro comparativo de bienes por flujo
@@ -227,8 +435,8 @@ const ComparativosProcesoLogisticoPage = () => {
 
       {!flujos.length ? (
         <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-          Aun no existen flujos de cotizacion. Emita solicitudes para generar
-          un flujo LOCAL o de IMPORTACION.
+          Aún no existen flujos de cotización. Emita solicitudes para generar
+          un flujo LOCAL o de IMPORTACIÓN.
         </section>
       ) : (
         <>
@@ -267,7 +475,7 @@ const ComparativosProcesoLogisticoPage = () => {
           {!selectedFlujoCerrado ? (
             <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
               El flujo {tipoCompraLabel} se encuentra abierto. Cierre el flujo
-              de cotizacion para generar el cuadro comparativo derivado.
+              de cotización para generar el cuadro comparativo derivado.
               <div className="mt-3">
                 <Link
                   to={`/cotizaciones/proceso/${id}/cotizaciones`}
@@ -277,7 +485,7 @@ const ComparativosProcesoLogisticoPage = () => {
                 </Link>
               </div>
             </section>
-          ) : loadingComparativo ? (
+          ) : loadingComparativo || loadingBuenaPro ? (
             <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="h-5 w-52 animate-pulse rounded bg-slate-200" />
               <div className="mt-3 h-20 animate-pulse rounded-lg bg-slate-100" />
@@ -309,10 +517,10 @@ const ComparativosProcesoLogisticoPage = () => {
                       viewModel.resumen.totalProveedoresComparables,
                     ],
                     [
-                      "Sin cotizacion valida",
+                      "Sin cotización válida",
                       viewModel.resumen.totalProveedoresSinCotizacionValida,
                     ],
-                    ["Items", viewModel.resumen.totalItemsRequeridos],
+                    ["Ítems", viewModel.resumen.totalItemsRequeridos],
                   ].map(([label, value]) => (
                     <div
                       key={label}
@@ -360,7 +568,7 @@ const ComparativosProcesoLogisticoPage = () => {
                     Matriz comparativa de bienes
                   </h2>
                   <p className="mt-1 text-sm text-slate-600">
-                    Los items NO COTIZA se mantienen visibles como
+                    Los ítems NO COTIZA se mantienen visibles como
                     trazabilidad.
                   </p>
                 </div>
@@ -373,10 +581,10 @@ const ComparativosProcesoLogisticoPage = () => {
                       <thead className="bg-slate-50 text-xs uppercase text-slate-600">
                         <tr>
                           <th rowSpan={2} className="w-16 px-3 py-3 text-center">
-                            Item
+                            Ítem
                           </th>
                           <th rowSpan={2} className="w-72 px-3 py-3 text-center">
-                            Descripcion requerida
+                            Descripción requerida
                           </th>
                           <th rowSpan={2} className="w-24 px-3 py-3 text-center">
                             Unidad
@@ -387,7 +595,7 @@ const ComparativosProcesoLogisticoPage = () => {
                           {viewModel.cotizacionesComparables.map((cotizacion) => (
                             <th
                               key={cotizacion.cotizacionId}
-                              colSpan={5}
+                              colSpan={6}
                               className="border-l border-slate-200 px-3 py-3 text-center"
                             >
                               <div className="font-semibold text-slate-800">
@@ -405,11 +613,12 @@ const ComparativosProcesoLogisticoPage = () => {
                           {viewModel.cotizacionesComparables.map((cotizacion) => (
                             <React.Fragment key={`sub-${cotizacion.cotizacionId}`}>
                               {[
-                                "Especificacion ofertada",
+                                "Especificación ofertada",
                                 "Cantidad",
                                 "P.U.",
                                 "P.T.",
                                 "Estado",
+                                "Buena Pro",
                               ].map((label) => (
                                 <th
                                   key={`${cotizacion.cotizacionId}-${label}`}
@@ -496,6 +705,36 @@ const ComparativosProcesoLogisticoPage = () => {
                                         : cell?.estado || "SIN RESPUESTA"}
                                     </span>
                                   </td>
+                                  <td className="px-3 py-3 text-center align-middle">
+                                    {canSelectOferta(cell) ? (
+                                      <input
+                                        type="checkbox"
+                                        checked={
+                                          Number(
+                                            selectedByItem[
+                                              String(item.itemRequerimientoId)
+                                            ]?.itemCotizacionId,
+                                          ) === Number(cell.itemCotizacionId)
+                                        }
+                                        disabled={
+                                          !canManageBuenaPro || Boolean(buenaProVigente)
+                                        }
+                                        onChange={() =>
+                                          handleToggleOferta(
+                                            item,
+                                            cotizacion,
+                                            cell,
+                                          )
+                                        }
+                                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label={`Seleccionar ítem ${item.numero} para ${formatText(cotizacion.proveedor?.razonSocial)}`}
+                                      />
+                                    ) : (
+                                      <span className="text-xs text-slate-400">
+                                        No aplica
+                                      </span>
+                                    )}
+                                  </td>
                                 </React.Fragment>
                               );
                             })}
@@ -508,6 +747,254 @@ const ComparativosProcesoLogisticoPage = () => {
                   <div className="p-4 text-sm text-slate-500">
                     No hay cotizaciones comparables en este flujo.
                   </div>
+                )}
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">
+                      Buena Pro del flujo
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                      La Buena Pro registra la decisión formal por ítem.
+                    </p>
+                  </div>
+                  {buenaProVigente ? (
+                    <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Vigente
+                    </span>
+                  ) : (
+                    <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                      Sin registrar
+                    </span>
+                  )}
+                </div>
+
+                {buenaProVigente ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                      <p className="font-semibold">
+                        {formatText(buenaProVigente.codigo, "Buena Pro vigente")}
+                      </p>
+                      <p className="mt-1">
+                        Registrada el {formatDate(buenaProVigente.fechaRegistro)}
+                        {buenaProVigente.registradaPor?.nombre
+                          ? ` por ${buenaProVigente.registradaPor.nombre}`
+                          : ""}
+                      </p>
+                      <p className="mt-2 text-emerald-950">
+                        {formatText(buenaProVigente.sustentoGeneral)}
+                      </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[760px] text-sm">
+                        <thead className="bg-slate-50 text-xs uppercase text-slate-600">
+                          <tr>
+                            <th className="px-3 py-2 text-center">Ítem</th>
+                            <th className="px-3 py-2 text-center">Proveedor</th>
+                            <th className="px-3 py-2 text-center">Cotización</th>
+                            <th className="px-3 py-2 text-center">Cantidad</th>
+                            <th className="px-3 py-2 text-center">Total</th>
+                            <th className="px-3 py-2 text-center">Justificación</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(buenaProVigente.detalles || []).map((detalle) => (
+                            <tr key={detalle.id} className="border-b border-slate-100">
+                              <td className="px-3 py-3">
+                                {formatText(
+                                  detalle.itemRequerimiento?.descripcionVisible,
+                                  `Ítem ${detalle.itemRequerimientoId}`,
+                                )}
+                              </td>
+                              <td className="px-3 py-3">
+                                {formatText(detalle.proveedor?.razonSocial)}
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                {formatText(detalle.cotizacion?.codigo)}
+                              </td>
+                              <td className="px-3 py-3 text-right tabular-nums">
+                                {formatQuantity(detalle.cantidadAdjudicada)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                                {formatMoney(
+                                  detalle.precioTotal,
+                                  findCurrencyForBuenaProDetalle(
+                                    detalle,
+                                    viewModel.cotizacionesComparables,
+                                    selectedCurrency,
+                                  ),
+                                )}
+                              </td>
+                              <td className="px-3 py-3">
+                                {formatText(detalle.justificacion)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {canManageBuenaPro ? (
+                      <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                        <h3 className="text-sm font-semibold text-rose-900">
+                          Anulación lógica
+                        </h3>
+                        <div className="mt-3 grid gap-3 lg:grid-cols-[240px_1fr_auto] lg:items-end">
+                          <label className="block">
+                            <span className="text-xs font-semibold uppercase text-rose-800">
+                              Causal
+                            </span>
+                            <select
+                              value={anulacionDraft.causalAnulacion}
+                              onChange={(event) =>
+                                setAnulacionDraft((current) => ({
+                                  ...current,
+                                  causalAnulacion: event.target.value,
+                                }))
+                              }
+                              className="mt-1 w-full rounded border border-rose-200 bg-white px-3 py-2 text-sm"
+                            >
+                              {CAUSALES_ANULACION_BUENA_PRO.map(([value, label]) => (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="block">
+                            <span className="text-xs font-semibold uppercase text-rose-800">
+                              Motivo
+                            </span>
+                            <textarea
+                              value={anulacionDraft.motivoAnulacion}
+                              onChange={(event) =>
+                                setAnulacionDraft((current) => ({
+                                  ...current,
+                                  motivoAnulacion: event.target.value,
+                                }))
+                              }
+                              rows={2}
+                              className="mt-1 w-full rounded border border-rose-200 bg-white px-3 py-2 text-sm"
+                              placeholder="Registre el motivo de anulación"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleAnularBuenaPro}
+                            disabled={anulandoBuenaPro}
+                            className="rounded bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {anulandoBuenaPro ? "Anulando..." : "Anular Buena Pro"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : canManageBuenaPro ? (
+                  <div className="mt-4 space-y-4">
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase text-slate-600">
+                        Sustento general de la Buena Pro
+                      </span>
+                      <textarea
+                        value={sustentoBuenaPro}
+                        onChange={(event) => setSustentoBuenaPro(event.target.value)}
+                        rows={3}
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        placeholder="Explique el sustento general de la adjudicación"
+                      />
+                    </label>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Ítems seleccionados
+                      </h3>
+                      {selectedEntries.length ? (
+                        <div className="mt-3 space-y-3">
+                          {selectedEntries.map(([itemId, oferta]) => (
+                            <article
+                              key={itemId}
+                              className="rounded-lg border border-slate-200 p-3"
+                            >
+                              <div className="grid gap-2 lg:grid-cols-[1fr_220px_180px] lg:items-start">
+                                <div>
+                                  <p className="font-semibold text-slate-900">
+                                    Ítem {formatInteger(oferta.itemNumero)} -{" "}
+                                    {formatText(oferta.itemDescripcion)}
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-600">
+                                    {formatText(oferta.proveedor?.razonSocial)} -{" "}
+                                    {formatText(oferta.cotizacionCodigo)}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-slate-700 lg:text-right">
+                                  Cantidad: {formatQuantity(oferta.cantidadOfrecida)}
+                                </p>
+                                <p className="whitespace-nowrap text-sm font-semibold tabular-nums text-slate-900 lg:text-right">
+                                  {formatMoney(oferta.precioTotal, oferta.moneda)}
+                                </p>
+                              </div>
+                              <label className="mt-3 block">
+                                <span className="text-xs font-semibold uppercase text-slate-600">
+                                  Justificación del ítem adjudicado
+                                </span>
+                                <textarea
+                                  value={justificaciones[String(itemId)] || ""}
+                                  onChange={(event) =>
+                                    setJustificaciones((current) => ({
+                                      ...current,
+                                      [String(itemId)]: event.target.value,
+                                    }))
+                                  }
+                                  rows={2}
+                                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                  placeholder="Registre la justificación específica"
+                                />
+                              </label>
+                            </article>
+                          ))}
+                          <div className="rounded-lg bg-slate-50 p-3 text-right text-sm font-semibold text-slate-900">
+                            Total seleccionado:{" "}
+                            {formatMoney(selectedTotal, selectedCurrency)}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm text-slate-500">
+                          Seleccione ítems COTIZADO en la matriz para otorgar
+                          Buena Pro.
+                        </p>
+                      )}
+                    </div>
+
+                    {!buenaProDraftValidation.valid && selectedEntries.length ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                        {buenaProDraftValidation.errors[0]}
+                      </div>
+                    ) : null}
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSubmitBuenaPro}
+                        disabled={
+                          savingBuenaPro ||
+                          !selectedEntries.length ||
+                          !buenaProDraftValidation.valid
+                        }
+                        className="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {savingBuenaPro ? "Registrando..." : "Otorgar Buena Pro"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-slate-500">
+                    Puede visualizar el comparativo y la Buena Pro vigente, pero
+                    no tiene permisos para registrar o anular adjudicaciones.
+                  </p>
                 )}
               </section>
 
@@ -537,7 +1024,7 @@ const ComparativosProcesoLogisticoPage = () => {
                               {formatText(cotizacion.solicitudCodigo)}
                             </p>
                             <p className="text-xs text-slate-500">
-                              Fecha cotizacion: {formatDate(cotizacion.fechaEmision)}
+                              Fecha cotización: {formatDate(cotizacion.fechaEmision)}
                             </p>
                           </div>
                           <p className="text-right font-semibold tabular-nums text-slate-900">
@@ -570,7 +1057,7 @@ const ComparativosProcesoLogisticoPage = () => {
 
               <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">
-                  Proveedores invitados sin cotizacion valida
+                  Proveedores invitados sin cotización válida
                 </h2>
                 {viewModel.proveedoresSinCotizacionValida.length ? (
                   <div className="mt-3 overflow-x-auto">
@@ -608,8 +1095,8 @@ const ComparativosProcesoLogisticoPage = () => {
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">
-                    No hay proveedores invitados pendientes de cotizacion
-                    valida en este flujo.
+                    No hay proveedores invitados pendientes de cotización
+                    válida en este flujo.
                   </p>
                 )}
               </section>

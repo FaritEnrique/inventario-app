@@ -81,6 +81,33 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
+  const obtenerBuenaProPorFlujo = useCallback(
+    async (flujoId) =>
+      run(
+        () => logisticaCotizacionesApi.obtenerBuenaProPorFlujo(flujoId),
+        "No se pudo cargar la Buena Pro del flujo.",
+      ),
+    [run],
+  );
+
+  const registrarBuenaPro = useCallback(
+    async (flujoId, payload) =>
+      run(
+        () => logisticaCotizacionesApi.registrarBuenaPro(flujoId, payload),
+        "No se pudo registrar la Buena Pro.",
+      ),
+    [run],
+  );
+
+  const anularBuenaPro = useCallback(
+    async (buenaProId, payload) =>
+      run(
+        () => logisticaCotizacionesApi.anularBuenaPro(buenaProId, payload),
+        "No se pudo anular la Buena Pro.",
+      ),
+    [run],
+  );
+
   const definirFlujo = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -256,6 +283,9 @@ const useLogisticaCotizaciones = () => {
     cerrarFlujoCotizacion,
     reabrirFlujoCotizacion,
     obtenerComparativoPorFlujo,
+    obtenerBuenaProPorFlujo,
+    registrarBuenaPro,
+    anularBuenaPro,
     definirFlujo,
     obtenerComparativo,
     obtenerComparativoPdfUrl,

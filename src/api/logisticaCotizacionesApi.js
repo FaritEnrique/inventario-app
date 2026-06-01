@@ -30,6 +30,21 @@ const logisticaCotizacionesApi = {
   obtenerComparativoPorFlujo: async (flujoId) => {
     return apiFetch(`logistica/flujos/${flujoId}/comparativo`);
   },
+  obtenerBuenaProPorFlujo: async (flujoId) => {
+    return apiFetch(`logistica/flujos/${flujoId}/buena-pro`);
+  },
+  registrarBuenaPro: async (flujoId, payload) => {
+    return apiFetch(`logistica/flujos/${flujoId}/buena-pro`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  anularBuenaPro: async (buenaProId, payload) => {
+    return apiFetch(`logistica/buenas-pro/${buenaProId}/anular`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
   definirFlujo: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/flujo`, {
       method: "PATCH",

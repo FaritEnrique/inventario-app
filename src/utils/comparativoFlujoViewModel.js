@@ -72,6 +72,7 @@ const buildMatrizPorItem = (itemsRequeridos, cotizacion) => {
       proveedorId:
         cotizacionItem?.proveedorId || cotizacion?.proveedorId || cotizacion?.proveedor?.id || null,
       estado,
+      estadoRespuesta: estado,
       descripcionTecnicaOfertada:
         cotizacionItem?.descripcionTecnicaOfertada || "-",
       cantidadOfrecida: cotizacionItem?.cantidadOfrecida ?? null,
