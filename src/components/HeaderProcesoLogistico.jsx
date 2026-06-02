@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { getAlertasSeguimientoCount } from "../utils/logisticaAlertasUi";
 
 const linkClasses = ({ isActive }) =>
   `px-3 py-1.5 text-sm font-semibold transition-transform duration-200 rounded-lg hover:scale-105 sm:px-4 sm:py-2 sm:text-base ${
@@ -12,12 +13,14 @@ const linkClasses = ({ isActive }) =>
 
 const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
   const basePath = `/cotizaciones/proceso/${id}`;
+  const alertasCount = getAlertasSeguimientoCount(detalleGlobal);
   const navItems = [
-    { label: "Detalle", to: basePath, end: true },
+    { label: "Resumen", to: basePath, end: true },
     { label: "Solicitudes", to: `${basePath}/solicitudes` },
     { label: "Cotizaciones", to: `${basePath}/cotizaciones` },
-    { label: "Comparativos", to: `${basePath}/comparativos` },
-    { label: "Orden de Compra", to: `${basePath}/orden-compra` },
+    { label: "Comparativo", to: `${basePath}/comparativos` },
+    { label: "Órdenes de Compra", to: `${basePath}/orden-compra` },
+    { label: "Alertas", to: `${basePath}/alertas`, badge: alertasCount },
   ];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef();
@@ -40,6 +43,17 @@ const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMobileMenuOpen]);
+
+  const renderNavLabel = (item) => (
+    <span className="inline-flex items-center gap-2">
+      {item.label}
+      {item.badge > 0 ? (
+        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+          {item.badge}
+        </span>
+      ) : null}
+    </span>
+  );
 
   return (
     <header className="p-3 border border-indigo-500 rounded-lg bg-slate-200 sm:p-4">
@@ -76,7 +90,7 @@ const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={linkClasses}
                   >
-                    {item.label}
+                    {renderNavLabel(item)}
                   </NavLink>
                 ))}
               </nav>
@@ -90,7 +104,7 @@ const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
                 end={item.end}
                 className={linkClasses}
               >
-                {item.label}
+                {renderNavLabel(item)}
               </NavLink>
             ))}
           </nav>

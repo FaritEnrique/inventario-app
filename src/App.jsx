@@ -126,6 +126,9 @@ const SolicitarRestablecimientoPage = lazy(
 const CotizacionesBandejaPage = lazy(
   () => import("./pages/CotizacionesBandejaPage"),
 );
+const AlertasLogisticasPage = lazy(
+  () => import("./pages/AlertasLogisticasPage"),
+);
 const ProcesoLogisticoPage = lazy(() => import("./pages/ProcesoLogisticoPage"));
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
 const SolicitudCotizacionDetallePage = lazy(
@@ -151,6 +154,9 @@ const SolicitudesProcesoLogisticoPage = lazy(
 );
 const CotizacionesProcesoLogisticoPage = lazy(
   () => import("./pages/CotizacionesProcesoLogisticoPage"),
+);
+const AlertasProcesoLogisticoPage = lazy(
+  () => import("./pages/AlertasProcesoLogisticoPage"),
 );
 const SeleccionContextoPage = lazy(
   () => import("./pages/SeleccionContextoPage"),
@@ -302,6 +308,17 @@ const AppRoutes = () => {
               }
             />
             <Route
+              path="cotizaciones/alertas"
+              element={
+                <RoutePermissionGuard
+                  allow={canAccessCotizacionesEffective}
+                  contextGate="logistica-access"
+                >
+                  <AlertasLogisticasPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
               path="cotizaciones/bandeja/jefatura"
               element={
                 <RoutePermissionGuard
@@ -347,6 +364,7 @@ const AppRoutes = () => {
                 path="comparativos"
                 element={<ComparativosProcesoLogisticoPage />}
               />
+              <Route path="alertas" element={<AlertasProcesoLogisticoPage />} />
             </Route>
             <Route
               path="cotizaciones/requerimientos/:id/solicitudes"

@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Clock, ListChecks } from "lucide-react";
+import {
+  AlertTriangle,
+  Award,
+  CheckCircle2,
+  Clock,
+  FileClock,
+  ListChecks,
+  ShoppingCart,
+} from "lucide-react";
 import Modal from "./Modal";
 import { formatInteger } from "../utils/numberFormatters";
 
@@ -26,9 +34,54 @@ const alertMeta = {
     cardClass: "border-indigo-200 bg-indigo-50 text-indigo-800",
     buttonClass: "border-indigo-300 text-indigo-700 hover:bg-indigo-100",
   },
+  FLUJO_CERRADO_SIN_BUENA_PRO: {
+    label: "Flujo sin Buena Pro",
+    description: "Flujos cerrados que aun no registran Buena Pro activa.",
+    icon: Award,
+    cardClass: "border-orange-200 bg-orange-50 text-orange-800",
+    buttonClass: "border-orange-300 text-orange-700 hover:bg-orange-100",
+  },
+  BUENA_PRO_SIN_OC: {
+    label: "Buena Pro sin O/C",
+    description: "Buenas Pro activas pendientes de generar Orden de Compra.",
+    icon: ShoppingCart,
+    cardClass: "border-teal-200 bg-teal-50 text-teal-800",
+    buttonClass: "border-teal-300 text-teal-700 hover:bg-teal-100",
+  },
+  OC_PENDIENTE_APROBACION: {
+    label: "O/C por aprobar",
+    description: "Órdenes de Compra pendientes de aprobación.",
+    icon: FileClock,
+    cardClass: "border-purple-200 bg-purple-50 text-purple-800",
+    buttonClass: "border-purple-300 text-purple-700 hover:bg-purple-100",
+  },
+  OC_APROBADA_PENDIENTE_RECEPCION: {
+    label: "O/C por recibir",
+    description: "Órdenes aprobadas pendientes de recepción.",
+    icon: CheckCircle2,
+    cardClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    buttonClass: "border-emerald-300 text-emerald-700 hover:bg-emerald-100",
+  },
 };
 
-const alertOrder = ["PLAZO_VENCIDO", "PLAZO_POR_VENCER", "COBERTURA_INCOMPLETA"];
+export const alertOrder = [
+  "PLAZO_VENCIDO",
+  "PLAZO_POR_VENCER",
+  "COBERTURA_INCOMPLETA",
+  "FLUJO_CERRADO_SIN_BUENA_PRO",
+  "BUENA_PRO_SIN_OC",
+  "OC_PENDIENTE_APROBACION",
+  "OC_APROBADA_PENDIENTE_RECEPCION",
+];
+
+export const getSeguimientoAlertMeta = (tipo) =>
+  alertMeta[tipo] || {
+    label: "Alerta",
+    description: "Revisa el expediente.",
+    icon: AlertTriangle,
+    cardClass: "border-slate-200 bg-slate-50 text-slate-800",
+    buttonClass: "border-slate-300 text-slate-700 hover:bg-slate-50",
+  };
 
 const getAlertCount = (alertas, tipo) => {
   if (!alertas) return 0;
@@ -36,8 +89,25 @@ const getAlertCount = (alertas, tipo) => {
     return Number(alertas.byTipo[tipo]?.totalExpedientes || 0);
   }
   if (tipo === "PLAZO_VENCIDO") return Number(alertas.solicitudesVencidas || 0);
-  if (tipo === "PLAZO_POR_VENCER") return Number(alertas.solicitudesPorVencer || 0);
-  return Number(alertas.itemsCoberturaIncompleta || 0);
+  if (tipo === "PLAZO_POR_VENCER") {
+    return Number(alertas.solicitudesPorVencer || 0);
+  }
+  if (tipo === "COBERTURA_INCOMPLETA") {
+    return Number(alertas.itemsCoberturaIncompleta || 0);
+  }
+  if (tipo === "FLUJO_CERRADO_SIN_BUENA_PRO") {
+    return Number(alertas.flujosCerradosSinBuenaPro || 0);
+  }
+  if (tipo === "BUENA_PRO_SIN_OC") {
+    return Number(alertas.buenasProSinOrdenCompra || 0);
+  }
+  if (tipo === "OC_PENDIENTE_APROBACION") {
+    return Number(alertas.ordenesCompraPendientesAprobacion || 0);
+  }
+  if (tipo === "OC_APROBADA_PENDIENTE_RECEPCION") {
+    return Number(alertas.ordenesCompraAprobadasPendientesRecepcion || 0);
+  }
+  return 0;
 };
 
 const hasSeguimientoAlerts = (alertas) => {
@@ -54,8 +124,15 @@ export const AlertasSeguimientoCards = ({
   title = "Alertas de seguimiento",
   description = "Prioriza expedientes con plazos vencidos, por vencer o cobertura incompleta.",
   compact = false,
+  showEmptyState = false,
 }) => {
-  if (!hasSeguimientoAlerts(alertas)) return null;
+  if (!hasSeguimientoAlerts(alertas)) {
+    return showEmptyState ? (
+      <p className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+        No hay alertas pendientes.
+      </p>
+    ) : null;
+  }
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -71,12 +148,16 @@ export const AlertasSeguimientoCards = ({
         ) : null}
       </div>
 
-      <div className={`mt-3 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
+      <div
+        className={`mt-3 grid gap-3 ${
+          compact ? "sm:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-4"
+        }`}
+      >
         {alertOrder.map((tipo) => {
           const count = getAlertCount(alertas, tipo);
           if (count <= 0) return null;
 
-          const meta = alertMeta[tipo];
+          const meta = getSeguimientoAlertMeta(tipo);
           const Icon = meta.icon;
 
           return (
@@ -177,11 +258,51 @@ export const AlertasSeguimientoExpediente = ({ alertas, expediente }) => {
   );
 };
 
-const getTipoDetalle = (expediente, tipo) => {
+export const getSeguimientoAlertDetalle = (expediente, tipo) => {
   const detalle = expediente?.alertasSeguimiento?.detalle || {};
   if (tipo === "PLAZO_VENCIDO") return detalle.solicitudesVencidas || [];
   if (tipo === "PLAZO_POR_VENCER") return detalle.solicitudesPorVencer || [];
-  return detalle.itemsCoberturaIncompleta || [];
+  if (tipo === "COBERTURA_INCOMPLETA") {
+    return detalle.itemsCoberturaIncompleta || [];
+  }
+  if (tipo === "FLUJO_CERRADO_SIN_BUENA_PRO") {
+    return detalle.flujosCerradosSinBuenaPro || [];
+  }
+  if (tipo === "BUENA_PRO_SIN_OC") {
+    return detalle.buenasProSinOrdenCompra || [];
+  }
+  if (tipo === "OC_PENDIENTE_APROBACION") {
+    return detalle.ordenesCompraPendientesAprobacion || [];
+  }
+  if (tipo === "OC_APROBADA_PENDIENTE_RECEPCION") {
+    return detalle.ordenesCompraAprobadasPendientesRecepcion || [];
+  }
+  return [];
+};
+
+const formatDetalleAlerta = (detalle, tipo) => {
+  if (tipo === "COBERTURA_INCOMPLETA") {
+    return `${detalle.descripcionVisible} (${formatInteger(
+      detalle.coberturaValida,
+    )}/${formatInteger(detalle.coberturaMinima)})`;
+  }
+
+  if (tipo === "PLAZO_VENCIDO" || tipo === "PLAZO_POR_VENCER") {
+    return `${detalle.codigo} - ${
+      detalle.proveedor?.razonSocial || "Proveedor"
+    } - limite ${
+      detalle.fechaLimiteRecepcion
+        ? new Date(detalle.fechaLimiteRecepcion).toLocaleDateString("es-PE")
+        : "-"
+    }`;
+  }
+
+  if (detalle.titulo || detalle.mensaje) {
+    const suffix = detalle.detalle ? ` - ${detalle.detalle}` : "";
+    return `${detalle.titulo || detalle.mensaje}${suffix}`;
+  }
+
+  return detalle.codigo || detalle.id || "-";
 };
 
 export const AlertasSeguimientoModal = ({
@@ -191,7 +312,7 @@ export const AlertasSeguimientoModal = ({
   buildExpedientePath,
 }) => {
   const isOpen = Boolean(tipo);
-  const meta = tipo ? alertMeta[tipo] : null;
+  const meta = tipo ? getSeguimientoAlertMeta(tipo) : null;
   const expedientes = tipo ? alertas?.byTipo?.[tipo]?.expedientes || [] : [];
 
   return (
@@ -209,7 +330,12 @@ export const AlertasSeguimientoModal = ({
         {expedientes.length > 0 ? (
           <div className="max-h-[65vh] space-y-3 overflow-y-auto pr-1">
             {expedientes.map((expediente) => {
-              const detalles = getTipoDetalle(expediente, tipo);
+              const detalles = getSeguimientoAlertDetalle(expediente, tipo);
+              const hrefDetalle = detalles.find((detalle) => detalle?.href)?.href;
+              const expedienteHref =
+                hrefDetalle ||
+                buildExpedientePath?.(expediente, tipo) ||
+                `/cotizaciones/proceso/${expediente.id}`;
 
               return (
                 <article
@@ -222,14 +348,14 @@ export const AlertasSeguimientoModal = ({
                         {expediente.codigo}
                       </p>
                       <p className="text-sm text-slate-600">
-                        {expediente.area || "-"} · {expediente.solicitante || "-"}
+                        {expediente.area || "-"} - {expediente.solicitante || "-"}
                       </p>
                       <p className="text-xs text-slate-500">
                         Responsable: {expediente.responsableLogistica || "Sin asignar"}
                       </p>
                     </div>
                     <Link
-                      to={buildExpedientePath?.(expediente, tipo) || `/cotizaciones/proceso/${expediente.id}`}
+                      to={expedienteHref}
                       onClick={onClose}
                       className={`inline-flex justify-center rounded border px-3 py-2 text-xs font-semibold ${meta?.buttonClass || "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
                     >
@@ -244,10 +370,16 @@ export const AlertasSeguimientoModal = ({
                       </p>
                       <ul className="mt-1 space-y-1 text-xs text-slate-600">
                         {detalles.slice(0, 5).map((detalle) => (
-                          <li key={detalle.id || detalle.itemRequerimientoId}>
-                            {tipo === "COBERTURA_INCOMPLETA"
-                              ? `${detalle.descripcionVisible} (${formatInteger(detalle.coberturaValida)}/${formatInteger(detalle.coberturaMinima)})`
-                              : `${detalle.codigo} · ${detalle.proveedor?.razonSocial || "Proveedor"} · limite ${detalle.fechaLimiteRecepcion ? new Date(detalle.fechaLimiteRecepcion).toLocaleDateString("es-PE") : "-"}`}
+                          <li
+                            key={
+                              detalle.id ||
+                              detalle.itemRequerimientoId ||
+                              detalle.ordenCompraId ||
+                              detalle.buenaProId ||
+                              detalle.flujoCotizacionId
+                            }
+                          >
+                            {formatDetalleAlerta(detalle, tipo)}
                           </li>
                         ))}
                         {detalles.length > 5 ? (

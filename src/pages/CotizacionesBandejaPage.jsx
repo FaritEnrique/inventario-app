@@ -4,10 +4,6 @@ import { toast } from "react-toastify";
 import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
 import Modal from "../components/Modal";
 import SolicitudCotizacionForm from "../components/SolicitudCotizacionForm";
-import {
-  AlertasSeguimientoCards,
-  AlertasSeguimientoModal,
-} from "../components/AlertasSeguimientoLogistico";
 import SkeletonCard from "../components/ui/skeletons/SkeletonCard";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import {
@@ -32,6 +28,7 @@ import {
   getDefaultLogisticaResponsableSelection,
 } from "../utils/logisticaAssignment";
 import { buildFlujoTipoCompraWarning } from "../utils/flujoCotizacionUi";
+import { getAlertasSeguimientoCount } from "../utils/logisticaAlertasUi";
 import {
   formatCurrency,
   formatInteger,
@@ -228,8 +225,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const [pagination, setPagination] = useState(null);
   const [serverCounters, setServerCounters] = useState(null);
   const [seguimientoAlertas, setSeguimientoAlertas] = useState(null);
-  const [seguimientoAlertModalTipo, setSeguimientoAlertModalTipo] =
-    useState(null);
   const [seleccionOperadores, setSeleccionOperadores] = useState({});
   const [flowDrafts, setFlowDrafts] = useState({});
   const [expandedFlowId, setExpandedFlowId] = useState(null);
@@ -255,7 +250,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     setPagination(null);
     setServerCounters(null);
     setSeguimientoAlertas(null);
-    setSeguimientoAlertModalTipo(null);
   }, [tipo]);
   const hasJefaturaContext = hasLogisticaJefaturaContext(availableContexts);
   const hasOperadorContext = hasLogisticaOperadorContext(availableContexts);
@@ -490,6 +484,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
   const hasLoadedSummary =
     tipo === "jefatura" ? Boolean(serverCounters || pagination) : summaryItems.length > 0;
   const isInitialLoading = cargando && !hasLoadedSummary && !contextError;
+  const seguimientoAlertasCount = getAlertasSeguimientoCount(seguimientoAlertas);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -755,6 +750,30 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         </Link>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">
+            {tipo === "operador"
+              ? "Mis alertas operativas"
+              : "Alertas logísticas"}
+          </p>
+          <p className="text-xs text-slate-500">
+            Revisa pendientes de cotizaciones, Buena Pro y Órdenes de Compra.
+          </p>
+        </div>
+        <Link
+          to="/cotizaciones/alertas"
+          className="inline-flex items-center gap-2 rounded border border-indigo-300 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+        >
+          Ver alertas logísticas
+          {seguimientoAlertasCount > 0 ? (
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+              {seguimientoAlertasCount}
+            </span>
+          ) : null}
+        </Link>
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -832,11 +851,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
           })}
         </div>
       )}
-
-      <AlertasSeguimientoCards
-        alertas={seguimientoAlertas}
-        onSelectTipo={setSeguimientoAlertModalTipo}
-      />
 
       <div className="grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-3">
         <input
@@ -1607,16 +1621,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       </form>
     </Modal>
 
-    <AlertasSeguimientoModal
-      alertas={seguimientoAlertas}
-      tipo={seguimientoAlertModalTipo}
-      onClose={() => setSeguimientoAlertModalTipo(null)}
-      buildExpedientePath={(expediente, tipoAlerta) =>
-        tipoAlerta === "COBERTURA_INCOMPLETA"
-          ? `/cotizaciones/proceso/${expediente.id}/cotizaciones`
-          : `/cotizaciones/proceso/${expediente.id}`
-      }
-    />
     </>
   );
 };
