@@ -68,12 +68,22 @@ export const resolveProductionApiOrigin = (env) => {
 
 export const buildFrontendCsp = ({ mode, env, runtime = "production" }) => {
   const isDevelopment = runtime === "development";
+  const configuredApiOrigin = parseApiOrigin(env?.VITE_API_URL);
+
   const connectSources = isDevelopment
-    ? [...DEV_CONNECT_SOURCES]
+    ? [
+        ...DEV_CONNECT_SOURCES,
+        ...(configuredApiOrigin ? [configuredApiOrigin] : []),
+      ]
     : ["'self'", resolveProductionApiOrigin(env)];
+
   const imageSources = isDevelopment
-    ? [...DEV_IMAGE_SOURCES]
+    ? [
+        ...DEV_IMAGE_SOURCES,
+        ...(configuredApiOrigin ? [configuredApiOrigin] : []),
+      ]
     : ["'self'", "data:", "blob:", resolveProductionApiOrigin(env)];
+
   const scriptSources = isDevelopment
     ? ["'self'", "'unsafe-inline'"]
     : ["'self'"];

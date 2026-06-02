@@ -1,7 +1,7 @@
-import React from "react";
+import InventarioRecepcionesPage from "./InventarioRecepcionesPage";
 
 function RecepcionOrdenCompraPage() {
-  return <div>RecepcionOrdenCompraPage</div>;
+  return <InventarioRecepcionesPage />;
 }
 
 export default RecepcionOrdenCompraPage;

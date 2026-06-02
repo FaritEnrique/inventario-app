@@ -8,6 +8,15 @@ import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
+import {
+  buildRecepcionDraftFromOrdenCompra,
+  findLineaOrdenCompra,
+  getLineaProductoReal,
+  getLineaProductoTemporal,
+  getRecepcionPayloadItems,
+  isLineaProductoTemporalPendiente,
+  validateRecepcionDraft,
+} from "../utils/recepcionOrdenCompraUi";
 
 const simpleInitialState = {
   almacenDestinoId: "",
@@ -32,17 +41,6 @@ const createEmptyOcForm = () => ({
   codigoNotaIngreso: "",
   observaciones: "",
   items: [],
-});
-
-const createOcItemDraft = (linea) => ({
-  itemOrdenCompraId: String(linea.id),
-  cantidadAceptada: String(Number(linea.cantidadPendiente || 0)),
-  cantidadRechazada: "0",
-  motivoRechazo: "",
-  motivoIncidencia: "",
-  fechaReposicionComprometida: "",
-  decisionSaldoPendiente: "",
-  selected: true,
 });
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
@@ -104,7 +102,7 @@ const InventarioRecepcionesPage = () => {
   const pendingOrdenesCompra = useMemo(() => {
     const search = normalizeText(ordenesSearch);
 
-    return recepcionablesOrdenesCompra.filter((ordenCompra) => {
+    const filtered = recepcionablesOrdenesCompra.filter((ordenCompra) => {
       if (!search) {
         return true;
       }
@@ -118,6 +116,16 @@ const InventarioRecepcionesPage = () => {
         ruc.includes(search)
       );
     });
+
+    if (!search) {
+      return filtered;
+    }
+
+    const exactMatches = filtered.filter(
+      (ordenCompra) => normalizeText(ordenCompra.codigo) === search
+    );
+
+    return exactMatches.length > 0 ? exactMatches : filtered;
   }, [recepcionablesOrdenesCompra, ordenesSearch]);
 
   useEffect(() => {
@@ -233,6 +241,50 @@ const InventarioRecepcionesPage = () => {
     }));
   };
 
+  const handleOcItemSelectedChange = (index, checked) => {
+    setOcForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, itemIndex) => {
+        if (itemIndex !== index) {
+          return item;
+        }
+
+        const linea = findLineaOrdenCompra(
+          selectedOrdenCompra,
+          item.itemOrdenCompraId
+        );
+
+        if (isLineaProductoTemporalPendiente(linea)) {
+          return {
+            ...item,
+            selected: false,
+            cantidadAceptada: "0",
+            cantidadRechazada: "0",
+          };
+        }
+
+        if (!checked) {
+          return {
+            ...item,
+            selected: false,
+            cantidadAceptada: "0",
+            cantidadRechazada: "0",
+          };
+        }
+
+        return {
+          ...item,
+          selected: true,
+          cantidadAceptada:
+            Number(item.cantidadAceptada || 0) > 0
+              ? item.cantidadAceptada
+              : String(Number(linea?.cantidadPendiente || 0)),
+          cantidadRechazada: "0",
+        };
+      }),
+    }));
+  };
+
   const handleSelectOrdenCompra = async (ordenCompraId) => {
     if (!ordenCompraId) {
       resetOcSelection();
@@ -263,7 +315,10 @@ const InventarioRecepcionesPage = () => {
       setOcForm((prev) => ({
         ...prev,
         ordenCompraId: String(ordenCompra.id),
-        items: pendingLines.map(createOcItemDraft),
+        items: buildRecepcionDraftFromOrdenCompra({
+          ...ordenCompra,
+          items: pendingLines,
+        }),
       }));
     } catch (error) {
       toast.error(
@@ -280,34 +335,21 @@ const InventarioRecepcionesPage = () => {
       return;
     }
 
-    const selectedItems = ocForm.items.filter((item) => item.selected !== false);
+    const validationMessage = validateRecepcionDraft(
+      ocForm.items,
+      selectedOrdenCompra
+    );
 
-    if (!selectedItems.length) {
-      toast.error("Debes seleccionar al menos una linea para recepcionar.");
-      return;
-    }
-
-    const invalidItem = selectedItems.find((item) => {
-      const pendingCurrent = getPendingCurrentForItem(item.itemOrdenCompraId);
-      const cantidadAceptada = Number(item.cantidadAceptada || 0);
-      const cantidadRechazada = Number(item.cantidadRechazada || 0);
-
-      return (
-        cantidadAceptada < 0 ||
-        cantidadRechazada < 0 ||
-        cantidadAceptada + cantidadRechazada <= 0 ||
-        cantidadAceptada + cantidadRechazada > pendingCurrent
-      );
-    });
-
-    if (invalidItem) {
-      toast.error(
-        "Cada linea seleccionada debe registrar una cantidad valida sin exceder el saldo pendiente."
-      );
+    if (validationMessage) {
+      toast.error(validationMessage);
       return;
     }
 
     try {
+      const payloadItems = getRecepcionPayloadItems(
+        ocForm.items,
+        selectedOrdenCompra
+      );
       const payload = {
         ordenCompraId: Number(ocForm.ordenCompraId),
         almacenDestinoId: ocForm.almacenDestinoId || undefined,
@@ -316,17 +358,7 @@ const InventarioRecepcionesPage = () => {
         fechaDocumento: ocForm.fechaDocumento || undefined,
         codigoNotaIngreso: ocForm.codigoNotaIngreso || undefined,
         observaciones: ocForm.observaciones || undefined,
-        items: selectedItems.map((item) => ({
-          itemOrdenCompraId: Number(item.itemOrdenCompraId),
-          cantidadAceptada: Number(item.cantidadAceptada || 0),
-          cantidadRechazada: Number(item.cantidadRechazada || 0),
-          cantidadPendiente: getPendingResultForDraft(item),
-          motivoRechazo: item.motivoRechazo || undefined,
-          motivoIncidencia: item.motivoIncidencia || undefined,
-          fechaReposicionComprometida:
-            item.fechaReposicionComprometida || undefined,
-          decisionSaldoPendiente: item.decisionSaldoPendiente || undefined,
-        })),
+        items: payloadItems,
       };
 
       const response = await registrarIngresoPorNota(payload);
@@ -787,37 +819,74 @@ const InventarioRecepcionesPage = () => {
                         String(currentItem.id) === String(item.itemOrdenCompraId)
                     );
                     const pendingResult = getPendingResultForDraft(item);
+                    const producto = getLineaProductoReal(linea);
+                    const productoTemporal = getLineaProductoTemporal(linea);
+                    const temporalPendiente =
+                      isLineaProductoTemporalPendiente(linea);
 
                     return (
                       <div
                         key={item.itemOrdenCompraId}
-                        className="space-y-3 rounded border border-gray-200 p-3"
+                        className={`space-y-3 rounded border p-3 ${
+                          temporalPendiente
+                            ? "border-amber-200 bg-amber-50"
+                            : "border-gray-200"
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="font-medium text-gray-900">
-                              {linea?.producto?.nombre || "Linea de orden"}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium text-gray-900">
+                                {producto?.nombre ||
+                                  productoTemporal?.nombre ||
+                                  "Linea de orden"}
+                              </p>
+                              {temporalPendiente ? (
+                                <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                                  Temporal
+                                </span>
+                              ) : null}
+                            </div>
                             <p className="text-sm text-gray-600">
                               {linea?.producto?.codigo || "Sin codigo"} ·
-                              pendiente actual:{" "}
+                              {producto?.unidadMedida ||
+                                productoTemporal?.unidadMedida ||
+                                "Sin unidad"}{" "}
+                              · pendiente actual:{" "}
                               {Number(linea?.cantidadPendiente || 0)}
                             </p>
+                            <p className="text-xs text-gray-500">
+                              Precio O/C:{" "}
+                              {Number(linea?.precioUnidad || 0).toLocaleString(
+                                "es-PE",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                },
+                              )}
+                            </p>
+                            {temporalPendiente ? (
+                              <div className="mt-2 rounded border border-amber-300 bg-white px-3 py-2 text-sm text-amber-900">
+                                Producto pendiente de validacion. Debe
+                                vincularse o crearse en catalogo antes de
+                                recepcionarse.
+                              </div>
+                            ) : null}
                           </div>
                           <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input
                               type="checkbox"
-                              checked={item.selected !== false}
+                              checked={item.selected === true}
                               name="inventario-recepciones-page-input-728"
+                              disabled={temporalPendiente}
                               onChange={(event) =>
-                                handleOcItemChange(
+                                handleOcItemSelectedChange(
                                   index,
-                                  "selected",
-                                  event.target.checked
+                                  event.target.checked,
                                 )
                               }
                             />
-                            Incluir en esta recepcion
+                            Recibir
                           </label>
                         </div>
 
@@ -836,8 +905,8 @@ const InventarioRecepcionesPage = () => {
                               )
                             }
                             className="rounded border border-gray-300 px-3 py-2"
-                            placeholder="Cantidad aceptada"
-                            disabled={item.selected === false}
+                            placeholder="Cantidad recibida"
+                            disabled={item.selected === false || temporalPendiente}
                           />
                           <input
                             type="number"
@@ -854,7 +923,7 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2"
                             placeholder="Cantidad rechazada"
-                            disabled={item.selected === false}
+                            disabled
                           />
                           <input
                             type="text"
@@ -883,7 +952,7 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
                             placeholder="Motivo de rechazo"
-                            disabled={item.selected === false}
+                            disabled
                           />
                           <input
                             type="text"
@@ -898,7 +967,7 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
                             placeholder="Motivo de incidencia"
-                            disabled={item.selected === false}
+                            disabled={item.selected === false || temporalPendiente}
                           />
                           <input
                             type="date"
@@ -912,7 +981,7 @@ const InventarioRecepcionesPage = () => {
                               )
                             }
                             className="rounded border border-gray-300 px-3 py-2"
-                            disabled={item.selected === false}
+                            disabled={item.selected === false || temporalPendiente}
                           />
                           <input
                             type="text"
@@ -927,8 +996,18 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2 md:col-span-3"
                             placeholder="Decision sobre el saldo pendiente"
-                            disabled={item.selected === false}
+                            disabled={item.selected === false || temporalPendiente}
                           />
+                          {temporalPendiente ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="rounded border border-amber-300 px-3 py-2 text-sm font-medium text-amber-700 opacity-70"
+                              title="Pendiente de implementacion I2"
+                            >
+                              Validar producto
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     );
