@@ -98,7 +98,7 @@ const OrdenCompraDetallePage = () => {
     loading,
     error,
     obtenerOrdenCompraPorId,
-    obtenerOrdenCompraPdfUrl,
+    obtenerOrdenCompraPdfBlob,
     actualizarAprobacionOrdenCompra,
     cerrarOrdenCompra,
     cancelarOrdenCompra,
@@ -230,7 +230,7 @@ const OrdenCompraDetallePage = () => {
     }
   };
 
-  const handleOpenPdf = () => {
+  const handleOpenPdf = async () => {
     if (!canViewOrdenCompraPdf(ordenCompra)) {
       toast.error(
         "No se pudo obtener el PDF formal. Verifique que la Orden de Compra esté aprobada.",
@@ -238,17 +238,35 @@ const OrdenCompraDetallePage = () => {
       return;
     }
 
-    const pdfWindow = window.open(
-      obtenerOrdenCompraPdfUrl(ordenCompra.id),
-      "_blank",
-    );
+    setSubmittingAction(true);
 
-    if (!pdfWindow) {
-      toast.error("No se pudo abrir el PDF formal de la Orden de Compra.");
-      return;
+    try {
+      const pdfBlob = await obtenerOrdenCompraPdfBlob(ordenCompra.id);
+      const safeBlob =
+        pdfBlob?.type === "application/pdf"
+          ? pdfBlob
+          : new Blob([pdfBlob], { type: "application/pdf" });
+
+      const blobUrl = URL.createObjectURL(safeBlob);
+      const pdfWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+      if (!pdfWindow) {
+        URL.revokeObjectURL(blobUrl);
+        toast.error("No se pudo abrir el PDF formal de la Orden de Compra.");
+        return;
+      }
+
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 60000);
+    } catch (pdfError) {
+      toast.error(
+        pdfError?.message ||
+          "No se pudo obtener el PDF formal de la Orden de Compra.",
+      );
+    } finally {
+      setSubmittingAction(false);
     }
-
-    pdfWindow.opener = null;
   };
 
   const handleApproval = async () => {
@@ -403,8 +421,9 @@ const OrdenCompraDetallePage = () => {
             <button
               type="button"
               onClick={handleOpenPdf}
+              disabled={submittingAction}
               title="Disponible solo para Órdenes de Compra aprobadas."
-              className="rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+              className="rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
             >
               Ver PDF formal
             </button>
@@ -738,11 +757,9 @@ const OrdenCompraDetallePage = () => {
               className={`rounded-lg border p-4 text-sm ${
                 step.esPendienteActual
                   ? "border-indigo-300 bg-indigo-50"
-                  : step.rechazado
-                    ? "border-rose-300 bg-rose-50"
-                    : step.satisfecho
-                      ? "border-emerald-300 bg-emerald-50"
-                      : "border-gray-200 bg-white"
+                  : step.satisfecho
+                    ? "border-emerald-300 bg-emerald-50"
+                    : "border-gray-200 bg-white"
               }`}
             >
               <p className="font-semibold text-gray-900">

@@ -11,7 +11,6 @@ export const canViewOrdenCompraPdf = (ordenCompra) => {
 
   return (
     estadoAprobacion === "APROBADA" &&
-    estadoAprobacion !== "ANULADA" &&
     !ordenCompra.fechaAnulacion &&
     estadoRecepcion !== "CANCELADA"
   );

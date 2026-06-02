@@ -54,4 +54,10 @@ describe("ordenCompraPdfUi", () => {
     expect(canViewOrdenCompraPdf(null)).toBe(false);
     expect(canViewOrdenCompraPdf(undefined)).toBe(false);
   });
+
+  it("bloquea PDF para cualquier estado distinto a APROBADA", () => {
+    expect(
+      canViewOrdenCompraPdf(orden({ estadoAprobacion: "EN_REVISION" })),
+    ).toBe(false);
+  });
 });

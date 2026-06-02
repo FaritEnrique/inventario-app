@@ -1,4 +1,4 @@
-import apiFetch, { buildApiUrl } from "./apiFetch";
+import apiFetch from "./apiFetch";
 
 const logisticaCotizacionesApi = {
   obtenerBandejaJefatura: async (params = {}) => {
@@ -56,19 +56,6 @@ const logisticaCotizacionesApi = {
       body: JSON.stringify(payload),
     });
   },
-  obtenerComparativo: async (requerimientoId) => {
-    try {
-      return await apiFetch(`logistica/requerimientos/${requerimientoId}/comparativo`);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
-  obtenerComparativoPdfUrl: (comparativoId) => {
-    return buildApiUrl(`logistica/comparativos/${comparativoId}/pdf`);
-  },
   obtenerOperadores: async () => {
     return apiFetch("logistica/operadores");
   },
@@ -83,18 +70,6 @@ const logisticaCotizacionesApi = {
       method: "POST",
     });
   },
-  cerrarCotizaciones: async (requerimientoId, payload = {}) => {
-    return apiFetch(`logistica/requerimientos/${requerimientoId}/cerrar-cotizaciones`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-  },
-  reabrirCotizaciones: async (requerimientoId, payload = {}) => {
-    return apiFetch(`logistica/requerimientos/${requerimientoId}/reabrir-cotizaciones`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-  },
   formalizarDecisionExcepcional: async (requerimientoId, payload) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/decision-excepcional`, {
       method: "POST",
@@ -104,18 +79,6 @@ const logisticaCotizacionesApi = {
   marcarListoAdjudicacion: async (requerimientoId) => {
     return apiFetch(`logistica/requerimientos/${requerimientoId}/listo-adjudicacion`, {
       method: "POST",
-    });
-  },
-  crearComparativo: async (requerimientoId, payload) => {
-    return apiFetch(`logistica/requerimientos/${requerimientoId}/comparativo`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  },
-  actualizarComparativo: async (comparativoId, payload) => {
-    return apiFetch(`logistica/comparativos/${comparativoId}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
     });
   },
   adjudicarCotizacionDirectaExcepcional: async (cotizacionId, payload) => {

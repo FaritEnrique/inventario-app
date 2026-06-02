@@ -127,9 +127,6 @@ const CotizacionesBandejaPage = lazy(
   () => import("./pages/CotizacionesBandejaPage"),
 );
 const ProcesoLogisticoPage = lazy(() => import("./pages/ProcesoLogisticoPage"));
-const ProcesoLogisticoDetallePage = lazy(
-  () => import("./pages/ProcesoLogisticoDetallePage"),
-);
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
 const SolicitudCotizacionDetallePage = lazy(
   () => import("./pages/SolicitudCotizacionDetallePage"),
@@ -351,14 +348,6 @@ const AppRoutes = () => {
                 element={<ComparativosProcesoLogisticoPage />}
               />
             </Route>
-            <Route
-              path="cotizaciones/proceso/:id/prueba"
-              element={
-                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
-                  <ProcesoLogisticoDetallePage />
-                </RoutePermissionGuard>
-              }
-            />
             <Route
               path="cotizaciones/requerimientos/:id/solicitudes"
               element={

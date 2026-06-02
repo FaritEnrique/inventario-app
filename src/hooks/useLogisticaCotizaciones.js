@@ -138,21 +138,6 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
-  const obtenerComparativo = useCallback(
-    async (requerimientoId) =>
-      run(
-        () => logisticaCotizacionesApi.obtenerComparativo(requerimientoId),
-        "No se pudo cargar el comparativo formal.",
-      ),
-    [run],
-  );
-
-  const obtenerComparativoPdfUrl = useCallback(
-    (comparativoId) =>
-      logisticaCotizacionesApi.obtenerComparativoPdfUrl(comparativoId),
-    [],
-  );
-
   const asignar = useCallback(
     async (requerimientoId, payload) =>
       run(
@@ -167,24 +152,6 @@ const useLogisticaCotizaciones = () => {
       run(
         () => logisticaCotizacionesApi.iniciar(requerimientoId),
         "No se pudo iniciar el expediente logistico.",
-      ),
-    [run],
-  );
-
-  const cerrarCotizaciones = useCallback(
-    async (requerimientoId, payload = {}) =>
-      run(
-        () => logisticaCotizacionesApi.cerrarCotizaciones(requerimientoId, payload),
-        "No se pudo cerrar la etapa de cotizacion.",
-      ),
-    [run],
-  );
-
-  const reabrirCotizaciones = useCallback(
-    async (requerimientoId, payload = {}) =>
-      run(
-        () => logisticaCotizacionesApi.reabrirCotizaciones(requerimientoId, payload),
-        "No se pudo reabrir la etapa de cotizacion.",
       ),
     [run],
   );
@@ -207,29 +174,6 @@ const useLogisticaCotizaciones = () => {
       run(
         () => logisticaCotizacionesApi.marcarListoAdjudicacion(requerimientoId),
         "No se pudo dejar listo el expediente para adjudicacion.",
-      ),
-    [run],
-  );
-
-  const crearComparativo = useCallback(
-    async (requerimientoId, payload) =>
-      run(
-        () =>
-          logisticaCotizacionesApi.crearComparativo(requerimientoId, payload),
-        "No se pudo crear el comparativo formal.",
-      ),
-    [run],
-  );
-
-  const actualizarComparativo = useCallback(
-    async (comparativoId, payload) =>
-      run(
-        () =>
-          logisticaCotizacionesApi.actualizarComparativo(
-            comparativoId,
-            payload,
-          ),
-        "No se pudo actualizar el comparativo formal.",
       ),
     [run],
   );
@@ -261,17 +205,11 @@ const useLogisticaCotizaciones = () => {
     anularBuenaPro,
     generarOrdenesCompraDesdeBuenaPro,
     definirFlujo,
-    obtenerComparativo,
-    obtenerComparativoPdfUrl,
     obtenerOperadores,
     asignar,
     iniciar,
-    cerrarCotizaciones,
-    reabrirCotizaciones,
     formalizarDecisionExcepcional,
     marcarListoAdjudicacion,
-    crearComparativo,
-    actualizarComparativo,
     adjudicarCotizacionDirectaExcepcional,
   };
 };

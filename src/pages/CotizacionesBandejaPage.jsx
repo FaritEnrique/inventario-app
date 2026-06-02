@@ -664,7 +664,6 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
     setSubmittingFlowId(item.id);
     try {
-      const wasCotizacionesClosed = item.cotizacionesCerradas === true;
       await definirFlujo(item.id, {
         modalidadFlujoLogistico: modalidad,
         causalFlujoExcepcional:
@@ -676,11 +675,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
       });
       await load();
       setExpandedFlowId(null);
-      toast.success(
-        wasCotizacionesClosed
-          ? "Flujo logístico actualizado. Si la cobertura invitada quedó insuficiente, la etapa de cotizacion se reabrio automaticamente."
-          : "Flujo logístico actualizado.",
-      );
+      toast.success("Flujo logístico actualizado.");
     } finally {
       setSubmittingFlowId(null);
     }

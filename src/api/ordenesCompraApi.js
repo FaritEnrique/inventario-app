@@ -29,8 +29,35 @@ const ordenesCompraApi = {
   obtenerOrdenCompraPorId: (id) =>
     apiFetch(`ordenes-compra/${id}`, { sessionActivity: "interactive" }),
 
-  obtenerOrdenCompraPdfUrl: (id) =>
-    buildApiUrl(`ordenes-compra/${id}/pdf`),
+  obtenerOrdenCompraPdfBlob: async (id) => {
+    const response = await fetch(buildApiUrl(`ordenes-compra/${id}/pdf`), {
+      method: "GET",
+      headers: {
+        Accept: "application/pdf",
+        "X-Session-Activity": "interactive",
+      },
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type") || "";
+      let message = "No se pudo obtener el PDF de la Orden de Compra.";
+
+      if (contentType.includes("application/json")) {
+        const data = await response.json().catch(() => null);
+        message =
+          data?.error?.message ||
+          data?.mensaje ||
+          data?.message ||
+          message;
+      }
+
+      throw new Error(message);
+    }
+
+    return response.blob();
+  },
 
   actualizarAprobacionOrdenCompra: (id, payload) =>
     apiFetch(`ordenes-compra/${id}/aprobacion`, {
