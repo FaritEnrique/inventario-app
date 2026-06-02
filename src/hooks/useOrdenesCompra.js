@@ -35,6 +35,10 @@ const useOrdenesCompra = () => {
       (id) => execute(() => ordenesCompraApi.obtenerOrdenCompraPorId(id)),
       [execute]
     ),
+    obtenerOrdenCompraPdfUrl: useCallback(
+      (id) => ordenesCompraApi.obtenerOrdenCompraPdfUrl(id),
+      []
+    ),
     actualizarAprobacionOrdenCompra: useCallback(
       (id, payload) =>
         execute(() =>

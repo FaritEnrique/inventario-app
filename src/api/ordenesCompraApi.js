@@ -1,4 +1,4 @@
-import apiFetch from "./apiFetch";
+import apiFetch, { buildApiUrl } from "./apiFetch";
 
 const buildQuery = (params = {}) => {
   const query = new URLSearchParams();
@@ -28,6 +28,9 @@ const ordenesCompraApi = {
 
   obtenerOrdenCompraPorId: (id) =>
     apiFetch(`ordenes-compra/${id}`, { sessionActivity: "interactive" }),
+
+  obtenerOrdenCompraPdfUrl: (id) =>
+    buildApiUrl(`ordenes-compra/${id}/pdf`),
 
   actualizarAprobacionOrdenCompra: (id, payload) =>
     apiFetch(`ordenes-compra/${id}/aprobacion`, {

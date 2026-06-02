@@ -234,36 +234,6 @@ const useLogisticaCotizaciones = () => {
     [run],
   );
 
-  const aprobarComparativo = useCallback(
-    async (comparativoId, payload = {}) =>
-      run(
-        () =>
-          logisticaCotizacionesApi.aprobarComparativo(comparativoId, payload),
-        "No se pudo aprobar el comparativo formal.",
-      ),
-    [run],
-  );
-
-  const observarComparativo = useCallback(
-    async (comparativoId, payload = {}) =>
-      run(
-        () =>
-          logisticaCotizacionesApi.observarComparativo(comparativoId, payload),
-        "No se pudo observar el comparativo formal.",
-      ),
-    [run],
-  );
-
-  const rechazarComparativo = useCallback(
-    async (comparativoId, payload = {}) =>
-      run(
-        () =>
-          logisticaCotizacionesApi.rechazarComparativo(comparativoId, payload),
-        "No se pudo rechazar el comparativo formal.",
-      ),
-    [run],
-  );
-
   const adjudicarCotizacionDirectaExcepcional = useCallback(
     async (cotizacionId, payload) =>
       run(
@@ -273,15 +243,6 @@ const useLogisticaCotizaciones = () => {
             payload,
           ),
         "No se pudo registrar la adjudicacion directa excepcional.",
-      ),
-    [run],
-  );
-
-  const generarOrdenCompra = useCallback(
-    async (requerimientoId) =>
-      run(
-        () => logisticaCotizacionesApi.generarOrdenCompra(requerimientoId),
-        "No se pudo generar la orden de compra.",
       ),
     [run],
   );
@@ -311,11 +272,7 @@ const useLogisticaCotizaciones = () => {
     marcarListoAdjudicacion,
     crearComparativo,
     actualizarComparativo,
-    aprobarComparativo,
-    observarComparativo,
-    rechazarComparativo,
     adjudicarCotizacionDirectaExcepcional,
-    generarOrdenCompra,
   };
 };
 

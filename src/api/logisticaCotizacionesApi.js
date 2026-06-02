@@ -118,33 +118,10 @@ const logisticaCotizacionesApi = {
       body: JSON.stringify(payload),
     });
   },
-  aprobarComparativo: async (comparativoId, payload = {}) => {
-    return apiFetch(`logistica/comparativos/${comparativoId}/aprobar`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-  },
-  observarComparativo: async (comparativoId, payload = {}) => {
-    return apiFetch(`logistica/comparativos/${comparativoId}/observar`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-  },
-  rechazarComparativo: async (comparativoId, payload = {}) => {
-    return apiFetch(`logistica/comparativos/${comparativoId}/rechazar`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-  },
   adjudicarCotizacionDirectaExcepcional: async (cotizacionId, payload) => {
     return apiFetch(`logistica/cotizaciones/${cotizacionId}/adjudicacion-directa`, {
       method: "POST",
       body: JSON.stringify(payload),
-    });
-  },
-  generarOrdenCompra: async (requerimientoId) => {
-    return apiFetch(`logistica/requerimientos/${requerimientoId}/generar-orden-compra`, {
-      method: "POST",
     });
   },
 };

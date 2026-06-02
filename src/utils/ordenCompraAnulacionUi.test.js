@@ -50,9 +50,9 @@ describe("ordenCompraAnulacionUi", () => {
     expect(canAnularOrdenCompra(orden())).toBe(true);
   });
 
-  it("permite estado RECHAZADA", () => {
-    expect(canAnularOrdenCompra(orden({ estadoAprobacion: "RECHAZADA" }))).toBe(
-      true,
+  it("bloquea estado de aprobacion no anulable", () => {
+    expect(canAnularOrdenCompra(orden({ estadoAprobacion: "EN_REVISION" }))).toBe(
+      false,
     );
   });
 

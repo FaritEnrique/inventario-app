@@ -32,7 +32,6 @@ const CAUSALES_VALIDAS = new Set(
 const ESTADOS_ANULABLES = new Set([
   "BORRADOR",
   "PENDIENTE_APROBACION",
-  "RECHAZADA",
 ]);
 
 export const normalizeOrdenCompraValue = (value) =>

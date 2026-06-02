@@ -16,6 +16,7 @@ import {
   canAnularOrdenCompra,
   getCausalAnulacionOrdenCompraLabel,
 } from "../utils/ordenCompraAnulacionUi";
+import { canViewOrdenCompraPdf } from "../utils/ordenCompraPdfUi";
 
 const formatCurrency = (value, currency = "PEN") => {
   const normalizedCurrency = String(currency || "PEN").toUpperCase();
@@ -76,8 +77,8 @@ const buildOrigenDocumental = (ordenCompra) => {
     origen.tipo === "COMPARATIVO"
   ) {
     return {
-      label: "Comparativo",
-      detailLabel: "Comparativo base",
+      label: "Origen no vigente",
+      detailLabel: "Comparativo referencial",
       detailValue: comparativo?.codigo || "-",
     };
   }
@@ -97,6 +98,7 @@ const OrdenCompraDetallePage = () => {
     loading,
     error,
     obtenerOrdenCompraPorId,
+    obtenerOrdenCompraPdfUrl,
     actualizarAprobacionOrdenCompra,
     cerrarOrdenCompra,
     cancelarOrdenCompra,
@@ -135,6 +137,11 @@ const OrdenCompraDetallePage = () => {
   const canManageLifecycle = canManageOrdenCompraLifecycleEffective(user);
   const isOrdenCompraActiva = ordenCompra?.activo !== false;
   const isOrdenCompraAnulada = ordenCompra?.estadoAprobacion === "ANULADA";
+  const isOrdenCompraDesdeBuenaPro = Boolean(
+    ordenCompra?.buenaProId ||
+      ordenCompra?.buenaPro ||
+      ordenCompra?.origenDocumental?.tipo === "BUENA_PRO",
+  );
   const isReceptionFinal = finalReceptionStates.has(
     ordenCompra?.estadoRecepcion,
   );
@@ -163,6 +170,7 @@ const OrdenCompraDetallePage = () => {
     ordenCompra?.estadoRecepcion !== "COMPLETAMENTE_RECIBIDA";
   const allowAnnulAction =
     canManageLifecycle && canAnularOrdenCompra(ordenCompra);
+  const allowPdfAction = canViewOrdenCompraPdf(ordenCompra);
   const hasAnulacionInfo =
     isOrdenCompraAnulada ||
     Boolean(
@@ -222,20 +230,38 @@ const OrdenCompraDetallePage = () => {
     }
   };
 
-  const handleApproval = async (estadoAprobacion) => {
+  const handleOpenPdf = () => {
+    if (!canViewOrdenCompraPdf(ordenCompra)) {
+      toast.error(
+        "No se pudo obtener el PDF formal. Verifique que la Orden de Compra esté aprobada.",
+      );
+      return;
+    }
+
+    const pdfWindow = window.open(
+      obtenerOrdenCompraPdfUrl(ordenCompra.id),
+      "_blank",
+    );
+
+    if (!pdfWindow) {
+      toast.error("No se pudo abrir el PDF formal de la Orden de Compra.");
+      return;
+    }
+
+    pdfWindow.opener = null;
+  };
+
+  const handleApproval = async () => {
     const currentLevelLabel =
       approvalLabels[ordenCompra?.nivelPendienteActual] ||
       ordenCompra?.nivelPendienteActual ||
       "el nivel pendiente";
 
     const confirmed = await confirm({
-      title:
-        estadoAprobacion === "APROBADA"
-          ? "Aprobar orden de compra"
-          : "Rechazar orden de compra",
-      message: `Se ${estadoAprobacion === "APROBADA" ? "aprobara" : "rechazara"} la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`,
-      confirmText: estadoAprobacion === "APROBADA" ? "Aprobar" : "Rechazar",
-      variant: estadoAprobacion === "APROBADA" ? "default" : "danger",
+      title: "Aprobar orden de compra",
+      message: `Se aprobara la orden de compra ${ordenCompra.codigo} en ${currentLevelLabel}. Deseas continuar?`,
+      confirmText: "Aprobar",
+      variant: "default",
     });
 
     if (!confirmed) {
@@ -245,9 +271,9 @@ const OrdenCompraDetallePage = () => {
     await runAction(
       () =>
         actualizarAprobacionOrdenCompra(ordenCompra.id, {
-          estadoAprobacion,
+          estadoAprobacion: "APROBADA",
         }),
-      `Orden de compra ${estadoAprobacion.toLowerCase()} correctamente.`,
+      "Orden de compra aprobada correctamente.",
     );
   };
 
@@ -373,6 +399,16 @@ const OrdenCompraDetallePage = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {allowPdfAction ? (
+            <button
+              type="button"
+              onClick={handleOpenPdf}
+              title="Disponible solo para Órdenes de Compra aprobadas."
+              className="rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+            >
+              Ver PDF formal
+            </button>
+          ) : null}
           <Link
             to="/ordenes-compra"
             className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -589,22 +625,20 @@ const OrdenCompraDetallePage = () => {
                     ordenCompra.nivelPendienteActual}
                   .
                 </p>
+                {isOrdenCompraDesdeBuenaPro ? (
+                  <p className="mt-2 text-sm text-indigo-800">
+                    Si la orden no debe continuar, use anulacion logica con
+                    motivo y causal.
+                  </p>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => handleApproval("APROBADA")}
+                    onClick={handleApproval}
                     disabled={submittingAction}
                     className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
                   >
                     Aprobar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleApproval("RECHAZADA")}
-                    disabled={submittingAction}
-                    className="rounded border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-                  >
-                    Rechazar
                   </button>
                 </div>
               </div>

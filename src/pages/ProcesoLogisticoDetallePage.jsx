@@ -508,10 +508,6 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     marcarListoAdjudicacion,
     crearComparativo,
     actualizarComparativo,
-    aprobarComparativo,
-    observarComparativo,
-    rechazarComparativo,
-    generarOrdenCompra,
   } = useLogisticaCotizaciones();
   const {
     crearSolicitud,
@@ -826,38 +822,6 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     try {
       const result = await marcarListoAdjudicacion(detalle.id);
       setDetalle(result);
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  const handleGenerarOrdenCompra = async () => {
-    const confirmed = await confirm({
-      title: "Generar orden de compra",
-      message:
-        "Se generaran las ordenes de compra a partir de la buena pro vigente del expediente. Deseas continuar?",
-      confirmText: "Generar",
-      variant: "default",
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    setSubmittingAction(true);
-    try {
-      const result = await generarOrdenCompra(detalle.id);
-      setDetalle(result.requerimiento);
-      const totalGeneradas = Array.isArray(result.ordenesCompra)
-        ? result.ordenesCompra.length
-        : result.ordenCompra
-          ? 1
-          : 0;
-      toast.success(
-        totalGeneradas > 1
-          ? `${totalGeneradas} ordenes de compra generadas correctamente.`
-          : `Orden de compra ${result.ordenCompra?.codigo || "generada"} correctamente.`,
-      );
     } finally {
       setSubmittingAction(false);
     }
@@ -1295,31 +1259,6 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     }
   };
 
-  const runComparativoDecision = async (actionLabel, executor) => {
-    const comentario = await prompt({
-      title: `${actionLabel} comparativo`,
-      message: `Comentario para ${actionLabel.toLowerCase()} el comparativo (opcional).`,
-      defaultValue: "",
-      placeholder: "Comentario opcional",
-      variant: "neutral",
-    });
-
-    if (comentario === null) return;
-
-    setSubmittingComparativo(true);
-    try {
-      const saved = await executor({
-        comentario: comentario.trim() || null,
-      });
-      setComparativo(saved);
-      setComparativoDraft(buildComparativoDraft(saved));
-      toast.success(`Comparativo ${actionLabel.toLowerCase()} correctamente.`);
-      await load();
-    } finally {
-      setSubmittingComparativo(false);
-    }
-  };
-
   if (cargando && !detalle) return <ProcesoLogisticoDetalleSkeleton />;
 
   if (!detalle) {
@@ -1372,11 +1311,6 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
     canManageDrafts && isFlujoRegular && comparativoCanEdit(comparativo);
   const canPrepareExceptionalDecision =
     canAdjudicate && !expedienteBloqueado && isFlujoExcepcional;
-  const canApproveComparativo =
-    canAdjudicate &&
-    isFlujoRegular &&
-    Boolean(comparativo?.id) &&
-    !bloqueadoPorAprobacionFinal;
   const regularWorkflowStep = getRegularWorkflowStep({
     detalle,
     comparativo,
@@ -1988,17 +1922,6 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
                     : "Formalizar decision excepcional"}
                 </button>
               </div>
-            ) : null}
-
-            {canAdjudicate && detalle.puedeGenerarOrdenCompra ? (
-              <button
-                type="button"
-                onClick={handleGenerarOrdenCompra}
-                disabled={submittingAction}
-                className="px-4 py-2 font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Generar ordenes de compra
-              </button>
             ) : null}
 
             {ordenesCompraRelacionadas.length > 0 && (
@@ -3049,50 +2972,9 @@ const ProcesoLogisticoDetallePage = ({ fase = "resumen" }) => {
 
           {canAdjudicate && isFlujoRegular && comparativo?.id ? (
             <div className="pt-4 mt-5 border-t border-gray-200">
-              {bloqueadoPorAprobacionFinal ? (
-                <div className="p-3 mb-3 text-xs border rounded-lg border-amber-200 bg-amber-50 text-amber-800">
-                  El comparativo puede revisarse y seguir ajustandose, pero su
-                  aprobacion final queda bloqueada hasta completar la aprobacion
-                  documental final del requerimiento.
-                </div>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    runComparativoDecision("Aprobar", (payload) =>
-                      aprobarComparativo(comparativo.id, payload),
-                    )
-                  }
-                  disabled={submittingComparativo || !canApproveComparativo}
-                  className="px-4 py-2 text-sm font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  Aprobar comparativo
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    runComparativoDecision("Observar", (payload) =>
-                      observarComparativo(comparativo.id, payload),
-                    )
-                  }
-                  disabled={submittingComparativo}
-                  className="px-4 py-2 text-sm font-medium border rounded border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                >
-                  Observar
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    runComparativoDecision("Rechazar", (payload) =>
-                      rechazarComparativo(comparativo.id, payload),
-                    )
-                  }
-                  disabled={submittingComparativo}
-                  className="px-4 py-2 text-sm font-medium border rounded border-rose-300 text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-                >
-                  Rechazar
-                </button>
+              <div className="p-3 text-xs border rounded-lg border-indigo-200 bg-indigo-50 text-indigo-800">
+                El comparativo es una vista derivada. La decision formal se
+                registra mediante Buena Pro.
               </div>
             </div>
           ) : null}
