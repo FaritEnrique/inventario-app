@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canOperateInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
+import ValidarProductoTemporalModal from "../components/ValidarProductoTemporalModal";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
@@ -88,6 +89,7 @@ const InventarioRecepcionesPage = () => {
   const [ordenesCompraDisponibles, setOrdenesCompraDisponibles] = useState([]);
   const [selectedOrdenCompra, setSelectedOrdenCompra] = useState(null);
   const [ordenesSearch, setOrdenesSearch] = useState("");
+  const [temporalLineToValidate, setTemporalLineToValidate] = useState(null);
 
   const canOperate = canOperateInventoryEffective(user);
 
@@ -196,6 +198,41 @@ const InventarioRecepcionesPage = () => {
     });
 
     setOrdenesCompraDisponibles(Array.isArray(response?.data) ? response.data : []);
+  };
+
+  const reloadSelectedOrdenCompra = async (ordenCompraId = selectedOrdenCompra?.id) => {
+    if (!ordenCompraId) {
+      return null;
+    }
+
+    const ordenCompra = await obtenerOrdenCompraPorId(ordenCompraId);
+    const pendingLines = (ordenCompra.items || []).filter(
+      (item) => Number(item.cantidadPendiente || 0) > 0
+    );
+
+    setSelectedOrdenCompra(ordenCompra);
+    setOcForm((prev) => ({
+      ...prev,
+      ordenCompraId: String(ordenCompra.id),
+      items: buildRecepcionDraftFromOrdenCompra({
+        ...ordenCompra,
+        items: pendingLines,
+      }),
+    }));
+    return ordenCompra;
+  };
+
+  const handleTemporalResolved = async () => {
+    try {
+      setTemporalLineToValidate(null);
+      await reloadSelectedOrdenCompra();
+      await refreshOrdenesCompra();
+    } catch (error) {
+      toast.error(
+        error.message ||
+          "Producto validado, pero no se pudo refrescar la orden de compra.",
+      );
+    }
   };
 
   const handleSimpleSubmit = async (event) => {
@@ -1001,9 +1038,8 @@ const InventarioRecepcionesPage = () => {
                           {temporalPendiente ? (
                             <button
                               type="button"
-                              disabled
-                              className="rounded border border-amber-300 px-3 py-2 text-sm font-medium text-amber-700 opacity-70"
-                              title="Pendiente de implementacion I2"
+                              onClick={() => setTemporalLineToValidate(linea)}
+                              className="rounded border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
                             >
                               Validar producto
                             </button>
@@ -1035,6 +1071,13 @@ const InventarioRecepcionesPage = () => {
           )}
         </>
       )}
+
+      <ValidarProductoTemporalModal
+        open={Boolean(temporalLineToValidate)}
+        productoTemporal={getLineaProductoTemporal(temporalLineToValidate)}
+        onClose={() => setTemporalLineToValidate(null)}
+        onResolved={handleTemporalResolved}
+      />
 
       {resultado && (
         <div className="mt-6 rounded-lg bg-white p-4 shadow">

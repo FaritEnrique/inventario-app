@@ -39,21 +39,21 @@ const cards = [
     description:
       "Organiza, crea y administra las categorías y clasificaciones de tus productos.",
     icon: <MdCategory />,
-    path: "/gestion-tipo-producto",
+    path: "/modulo-almacen/productos/tipos",
   },
   {
     title: "Solicitudes de Tipos",
     description:
       "Valida, homologa, crea o rechaza tipos propuestos desde proveedores.",
     icon: <FaClipboardList />,
-    path: "/solicitudes-tipo-producto",
+    path: "/modulo-almacen/productos/validacion-tipos",
     visible: ({ user }) => canAdjustInventoryEffective(user),
   },
   {
     title: "Marcas",
     description: "Gestionar marcas asociadas a productos.",
     icon: <FaRegistered />,
-    path: "/gestion-marcas",
+    path: "/modulo-almacen/productos/marcas",
   },
 ];
 
@@ -176,14 +176,16 @@ const GestionProductosPage = () => {
     async (e) => {
       e.preventDefault();
       if (enviandoFormulario) return;
-  
+
       const { nombre, unidadMedida, tipoProductoId } = productoActual;
-  
+
       if (!nombre.trim() || !unidadMedida.trim() || !tipoProductoId) {
-        toast.error("❌ Los campos obligatorios deben completarse correctamente");
+        toast.error(
+          "❌ Los campos obligatorios deben completarse correctamente",
+        );
         return;
       }
-  
+
       if (
         !modoEdicion &&
         incluirStockInicial &&
@@ -196,9 +198,9 @@ const GestionProductosPage = () => {
         );
         return;
       }
-  
+
       setEnviandoFormulario(true);
-  
+
       try {
         const formData = new FormData();
         formData.append("nombre", nombre.trim());
@@ -208,56 +210,53 @@ const GestionProductosPage = () => {
           "valorReferencial",
           String(Number(productoActual.valorReferencial || 0)),
         );
-  
+
         if (productoActual.descripcion?.trim()) {
           formData.append("descripcion", productoActual.descripcion.trim());
         }
-  
+
         if (productoActual.marcaId) {
           formData.append("marcaId", String(productoActual.marcaId));
         }
-  
+
         if (productoActual.imagenFile) {
           formData.append("imagen", productoActual.imagenFile);
         }
-  
+
         if (modoEdicion) {
           await actualizarProducto(productoActual.id, formData);
         } else if (incluirStockInicial) {
           formData.append("stockInicial", String(Number(stockInicialInput)));
-  
+
           if (fechaMovimientoCreacion.trim()) {
             const d = new Date(fechaMovimientoCreacion);
             if (!Number.isNaN(d.getTime())) {
               formData.append("fechaMovimiento", d.toISOString());
             }
           }
-  
+
           if (observacionesStockCreacion.trim()) {
-            formData.append(
-              "observaciones",
-              observacionesStockCreacion.trim(),
-            );
+            formData.append("observaciones", observacionesStockCreacion.trim());
           }
-  
+
           await crearProductoConStockInicial(formData);
         } else {
           await crearProducto(formData);
         }
-  
+
         revokeIfBlobUrl(productoActual.imagenUrl);
-  
+
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-  
+
         setProductoActual({ ...initialProducto, imagenFile: null });
         setModoEdicion(false);
         setIncluirStockInicial(false);
         setStockInicialInput("");
         setFechaMovimientoCreacion("");
         setObservacionesStockCreacion("");
-  
+
         fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
       } catch (err) {
         console.error("Error al guardar producto:", err);
@@ -415,14 +414,14 @@ const GestionProductosPage = () => {
 
   const handleClearForm = useCallback(() => {
     revokeIfBlobUrl(productoActual.imagenUrl);
-  
+
     setProductoActual({ ...initialProducto });
     setModoEdicion(false);
     setIncluirStockInicial(false);
     setStockInicialInput("");
     setFechaMovimientoCreacion("");
     setObservacionesStockCreacion("");
-  
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -490,7 +489,9 @@ const GestionProductosPage = () => {
 
   const marcaSeleccionada =
     productoActual.marca ||
-    marcas.find((marca) => String(marca.id) === String(productoActual.marcaId)) ||
+    marcas.find(
+      (marca) => String(marca.id) === String(productoActual.marcaId),
+    ) ||
     null;
 
   const tipoProductoSeleccionado =
@@ -518,7 +519,7 @@ const GestionProductosPage = () => {
       >
         <div className="flex items-center justify-end w-full mb-2">
           <Link
-            to="/dashboard"
+            to="/modulo-almacen"
             className="flex items-center space-x-2 hover:underline text-sky-500 hover:text-indigo-500"
           >
             <TbArrowBackUpDouble size={22} />
@@ -711,7 +712,7 @@ const GestionProductosPage = () => {
               className="block w-full p-2 mt-1 border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Se usa como base para requerimientos cuando aun no hay historial
+              Se usa como base para requerimientos cuando aún no hay historial
               de compra.
             </p>
           </div>
@@ -780,10 +781,10 @@ const GestionProductosPage = () => {
                       maxWidthOrHeight: 800,
                       useWebWorker: true,
                     });
-              
+
                     setProductoActual((prev) => {
                       revokeIfBlobUrl(prev.imagenUrl);
-              
+
                       return {
                         ...prev,
                         imagenFile: compressedFile,
@@ -848,8 +849,9 @@ const GestionProductosPage = () => {
                     Registrar stock inicial al crear
                   </span>
                   <span className="block mt-0.5 text-xs text-gray-600">
-                    Si lo activa, el producto se crea y se registra carga inicial
-                    en inventario (almacén principal si no indica otro en backend).
+                    Si lo activa, el producto se crea y se registra carga
+                    inicial en inventario (almacén principal si no indica otro
+                    en backend).
                   </span>
                 </span>
               </label>
@@ -860,7 +862,8 @@ const GestionProductosPage = () => {
                       htmlFor="stockInicialCreacion"
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Cantidad stock inicial <span className="text-red-600">*</span>
+                      Cantidad stock inicial{" "}
+                      <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="number"
@@ -969,103 +972,103 @@ const GestionProductosPage = () => {
       {cargandoGeneral && productos.length === 0 ? (
         <SkeletonTable columns={9} rows={6} className="rounded-lg shadow-lg" />
       ) : (
-      <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-        {productos.length === 0 ? (
-          <p className="p-6 text-center text-gray-500">
-            No hay productos registrados para el filtro actual.
-          </p>
-        ) : (
-          <table className="w-full border-collapse table-auto">
-            <thead>
-              <tr className="bg-indigo-100">
-                <th className="px-4 py-2 border">Item</th>
-                <th className="px-4 py-2 border">Código</th>
-                <th className="px-4 py-2 text-left border">Nombre</th>
-                <th className="px-4 py-2 border">Tipo</th>
-                <th className="px-4 py-2 border">Marca</th>
-                <th className="px-4 py-2 border">Valor referencial</th>
-                <th className="px-4 py-2 border">Stock</th>
-                <th className="px-4 py-2 border">Estado</th>
-                <th className="px-4 py-2 border">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productos.map((producto, index) => (
-                <tr
-                  key={producto.id}
-                  className={`text-center ${
-                    producto.activo === false
-                      ? "bg-slate-50 text-slate-500"
-                      : ""
-                  }`}
-                >
-                  <td className="px-4 py-2 border">{desde + index}</td>
-                  <td className="px-4 py-2 border">{producto.codigo}</td>
-                  <td className="px-4 py-2 text-left border">
-                    {producto.nombre}
-                  </td>
-                  <td className="px-4 py-2 border">
-                    {producto.tipoProducto?.nombre}
-                  </td>
-                  <td className="px-4 py-2 border">
-                    {producto.marca?.nombre || "-"}
-                  </td>
-                  <td className="px-4 py-2 border">
-                    S/ {Number(producto.valorReferencial || 0).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2 border">{producto.stock}</td>
-                  <td className="px-4 py-2 border">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        producto.activo === false
-                          ? "bg-slate-200 text-slate-700"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
-                    >
-                      {producto.activo === false ? "Inactivo" : "Activo"}
-                    </span>
-                  </td>
-                  <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
-                    <button
-                      type="button"
-                      onClick={() => handleVerDetalles(producto)}
-                      className="px-2 py-1 text-sm font-semibold text-white bg-green-500 rounded hover:bg-green-600"
-                    >
-                      <FaSearch className="w-4 h-5" />
-                    </button>
-                    {producto.activo === false ? (
+        <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+          {productos.length === 0 ? (
+            <p className="p-6 text-center text-gray-500">
+              No hay productos registrados para el filtro actual.
+            </p>
+          ) : (
+            <table className="w-full border-collapse table-auto">
+              <thead>
+                <tr className="bg-indigo-100">
+                  <th className="px-4 py-2 border">Item</th>
+                  <th className="px-4 py-2 border">Código</th>
+                  <th className="px-4 py-2 text-left border">Nombre</th>
+                  <th className="px-4 py-2 border">Tipo</th>
+                  <th className="px-4 py-2 border">Marca</th>
+                  <th className="px-4 py-2 border">Valor referencial</th>
+                  <th className="px-4 py-2 border">Stock</th>
+                  <th className="px-4 py-2 border">Estado</th>
+                  <th className="px-4 py-2 border">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productos.map((producto, index) => (
+                  <tr
+                    key={producto.id}
+                    className={`text-center ${
+                      producto.activo === false
+                        ? "bg-slate-50 text-slate-500"
+                        : ""
+                    }`}
+                  >
+                    <td className="px-4 py-2 border">{desde + index}</td>
+                    <td className="px-4 py-2 border">{producto.codigo}</td>
+                    <td className="px-4 py-2 text-left border">
+                      {producto.nombre}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      {producto.tipoProducto?.nombre}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      {producto.marca?.nombre || "-"}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      S/ {Number(producto.valorReferencial || 0).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-2 border">{producto.stock}</td>
+                    <td className="px-4 py-2 border">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                          producto.activo === false
+                            ? "bg-slate-200 text-slate-700"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {producto.activo === false ? "Inactivo" : "Activo"}
+                      </span>
+                    </td>
+                    <td className="flex items-center justify-center px-4 py-2 space-x-2 border">
                       <button
                         type="button"
-                        onClick={() => handleReactivar(producto.id)}
-                        className="px-2 py-1 text-sm font-semibold text-white rounded bg-sky-600 hover:bg-sky-700"
+                        onClick={() => handleVerDetalles(producto)}
+                        className="px-2 py-1 text-sm font-semibold text-white bg-green-500 rounded hover:bg-green-600"
                       >
-                        Reactivar
+                        <FaSearch className="w-4 h-5" />
                       </button>
-                    ) : (
-                      <>
+                      {producto.activo === false ? (
                         <button
                           type="button"
-                          onClick={() => handleEditar(producto)}
-                          className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                          onClick={() => handleReactivar(producto.id)}
+                          className="px-2 py-1 text-sm font-semibold text-white rounded bg-sky-600 hover:bg-sky-700"
                         >
-                          Editar
+                          Reactivar
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDesactivar(producto.id)}
-                          className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
-                        >
-                          Desactivar
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleEditar(producto)}
+                            className="px-2 py-1 text-sm font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDesactivar(producto.id)}
+                            className="px-2 py-1 text-sm font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                          >
+                            Desactivar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       )}
 
       {/* Paginación */}
@@ -1192,7 +1195,7 @@ const GestionProductosPage = () => {
         title="Seleccionar tipo de producto"
         searchValue={tipoSearch}
         onSearchChange={setTipoSearch}
-        searchLabel="Buscar dentro del catalogo de tipos"
+        searchLabel="Buscar dentro del catálogo de tipos"
         searchPlaceholder="Buscar por nombre o prefijo..."
         items={tiposProducto}
         loading={cargandoTipos}
@@ -1204,7 +1207,7 @@ const GestionProductosPage = () => {
         emptyMessage="No se encontraron tipos de producto para la búsqueda actual."
         emptyStateHint="Puedes ajustar la búsqueda o ir a la gestión de tipos para registrar uno nuevo."
         emptyStateActionLabel="Ir a Gestión de Tipos"
-        emptyStateActionTo="/gestion-tipo-producto"
+        emptyStateActionTo="/modulo-almacen/productos/tipos"
       />
 
       <CatalogoSelectorModal
@@ -1213,7 +1216,7 @@ const GestionProductosPage = () => {
         title="Seleccionar marca"
         searchValue={marcaSearch}
         onSearchChange={setMarcaSearch}
-        searchLabel="Buscar dentro del catalogo de marcas"
+        searchLabel="Buscar dentro del catálogo de marcas"
         searchPlaceholder="Buscar por nombre de marca..."
         items={marcas}
         loading={cargandoMarcas}
@@ -1227,7 +1230,7 @@ const GestionProductosPage = () => {
         emptyMessage="No se encontraron marcas para la búsqueda actual."
         emptyStateHint="Puedes ajustar la búsqueda o ir a la gestión de marcas para registrar una nueva."
         emptyStateActionLabel="Ir a Gestión de Marcas"
-        emptyStateActionTo="/gestion-marcas"
+        emptyStateActionTo="/modulo-almacen/productos/marcas"
       />
 
       <ToastContainer position="top-center" autoClose={3000} />

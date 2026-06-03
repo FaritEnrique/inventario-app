@@ -45,6 +45,23 @@ describe("recepcionOrdenCompraUi", () => {
     expect(draft[1].disabledReason).toContain("Producto temporal");
   });
 
+  it("permite recepcionar una linea temporal cuando ya tiene producto real", () => {
+    const ordenCompra = buildOrdenCompra();
+    ordenCompra.items[1] = {
+      ...ordenCompra.items[1],
+      producto: { id: 101, codigo: "P-101", nombre: "Equipo catalogado" },
+    };
+
+    const draft = buildRecepcionDraftFromOrdenCompra(ordenCompra);
+
+    expect(draft[1]).toMatchObject({
+      selected: false,
+      cantidadAceptada: "0",
+      disabled: false,
+      disabledReason: "",
+    });
+  });
+
   it("genera payload solo con lineas seleccionadas y aceptadas", () => {
     const ordenCompra = buildOrdenCompra();
     const draft = buildRecepcionDraftFromOrdenCompra(ordenCompra).map((item) =>

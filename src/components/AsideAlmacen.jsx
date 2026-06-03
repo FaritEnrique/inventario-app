@@ -28,8 +28,16 @@ function AsideAlmacen() {
       icon: PackageOpen,
       subItems: [
         { name: "Administración de Productos", to: `${baseUrl}/productos` },
-        { name: "Tipos de Productos", to: `${baseUrl}/tipo-productos` },
-        { name: "Gestión de Marcas", to: `${baseUrl}/gestion-marcas` },
+        { name: "Tipos de Productos", to: `${baseUrl}/productos/tipos` },
+        { name: "Gestión de Marcas", to: `${baseUrl}/productos/marcas` },
+        {
+          name: "Validar Tipos de Producto",
+          to: `${baseUrl}/productos/validacion-tipos`,
+        },
+        {
+          name: "Validar Productos Temporales",
+          to: `${baseUrl}/productos/temporales`,
+        },
       ],
     },
     {

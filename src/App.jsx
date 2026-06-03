@@ -161,9 +161,10 @@ const AlertasProcesoLogisticoPage = lazy(
 const SeleccionContextoPage = lazy(
   () => import("./pages/SeleccionContextoPage"),
 );
-const ModuloAlmacenPage = lazy(() => import("./pages/ModuloAlmacenPage"));
 const DashboardAlmacenPage = lazy(() => import("./pages/DashboardAlmacenPage"));
-const ProductosAlmacenPage = lazy(() => import("./pages/ProductosAlmacenPage"));
+const ProductosTemporalesAlmacenPage = lazy(
+  () => import("./pages/ProductosTemporalesAlmacenPage"),
+);
 const MovimientosAlmacenPage = lazy(
   () => import("./pages/MovimientosAlmacenPage"),
 );
@@ -397,10 +398,39 @@ const AppRoutes = () => {
               }
             >
               <Route index element={<DashboardAlmacenPage />} />
-              <Route path="productos" element={<ProductosAlmacenPage />} />
+              <Route path="productos" element={<GestionProductosPage />} />
+              <Route
+                path="productos/tipos"
+                element={<GestionTipoProductosPage />}
+              />
+              <Route path="productos/marcas" element={<GestionMarcasPage />} />
+              <Route
+                path="productos/validacion-tipos"
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <BandejaSolicitudesTipoProductoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="productos/temporales"
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <ProductosTemporalesAlmacenPage />
+                  </RoutePermissionGuard>
+                }
+              />
               <Route
                 path="tipo-productos"
-                element={<GestionTipoProductosPage />}
+                element={<Navigate to="/modulo-almacen/productos/tipos" replace />}
+              />
+              <Route
+                path="gestion-marcas"
+                element={<Navigate to="/modulo-almacen/productos/marcas" replace />}
+              />
+              <Route
+                path="productos-temporales"
+                element={<Navigate to="/modulo-almacen/productos/temporales" replace />}
               />
               <Route path="movimientos" element={<MovimientosAlmacenPage />} />
               <Route
@@ -522,11 +552,7 @@ const AppRoutes = () => {
             />
             <Route
               path="inventario-recepciones"
-              element={
-                <RoutePermissionGuard allow={canOperateInventoryEffective}>
-                  <InventarioRecepcionesPage />
-                </RoutePermissionGuard>
-              }
+              element={<Navigate to="/modulo-almacen/recepcion-oc" replace />}
             />
             <Route
               path="inventario-operaciones"

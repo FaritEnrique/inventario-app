@@ -12,7 +12,7 @@ export const getLineaProductoTemporal = (linea) =>
   linea?.productoTemporal || linea?.itemRequerimiento?.productoTemporal || null;
 
 export const isLineaProductoTemporalPendiente = (linea) =>
-  !getLineaProductoReal(linea)?.id;
+  Boolean(getLineaProductoTemporal(linea)?.id) && !getLineaProductoReal(linea)?.id;
 
 export const buildRecepcionDraftFromOrdenCompra = (ordenCompra = {}) =>
   (ordenCompra.items || [])

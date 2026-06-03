@@ -1,3 +1,4 @@
+// src/pages/BandejaSolicitudesTipoProductoPage.jsx
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -46,8 +47,11 @@ const BandejaSolicitudesTipoProductoPage = () => {
     crearTipoDesdeSolicitud,
     rechazarSolicitud,
   } = useSolicitudesTipoProducto();
-  const { tiposProducto, cargando: loadingTiposProducto, fetchTiposProducto } =
-    useTipoProductos();
+  const {
+    tiposProducto,
+    cargando: loadingTiposProducto,
+    fetchTiposProducto,
+  } = useTipoProductos();
 
   const [filters, setFilters] = useState({
     estado: "PENDIENTE",
@@ -57,7 +61,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
   const isInitialLoading = loading && solicitudes.length === 0;
 
   const tiposProductoActivos = tiposProducto.filter(
-    (tipoProducto) => tipoProducto.activo !== false
+    (tipoProducto) => tipoProducto.activo !== false,
   );
 
   const loadData = async (currentFilters = filters) => {
@@ -118,7 +122,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
             </p>
           </div>
           <Link
-            to="/gestion-productos"
+            to="/modulo-almacen/productos"
             className="inline-flex rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
           >
             Volver Gestión Productos
@@ -138,7 +142,10 @@ const BandejaSolicitudesTipoProductoPage = () => {
                 id="filtro-estado-solicitud"
                 value={filters.estado}
                 onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, estado: event.target.value }))
+                  setFilters((prev) => ({
+                    ...prev,
+                    estado: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -162,7 +169,10 @@ const BandejaSolicitudesTipoProductoPage = () => {
                 type="text"
                 value={filters.search}
                 onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, search: event.target.value }))
+                  setFilters((prev) => ({
+                    ...prev,
+                    search: event.target.value,
+                  }))
                 }
                 placeholder="Buscar por nombre propuesto o proveedor..."
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -280,10 +290,12 @@ const BandejaSolicitudesTipoProductoPage = () => {
                               handleResolver(() =>
                                 observarSolicitud(solicitud.id, {
                                   comentarioRevision: accion.comentarioRevision,
-                                })
+                                }),
                               )
                             }
-                            disabled={loading || !accion.comentarioRevision.trim()}
+                            disabled={
+                              loading || !accion.comentarioRevision.trim()
+                            }
                             className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Observar
@@ -294,10 +306,12 @@ const BandejaSolicitudesTipoProductoPage = () => {
                               handleResolver(() =>
                                 rechazarSolicitud(solicitud.id, {
                                   comentarioRevision: accion.comentarioRevision,
-                                })
+                                }),
                               )
                             }
-                            disabled={loading || !accion.comentarioRevision.trim()}
+                            disabled={
+                              loading || !accion.comentarioRevision.trim()
+                            }
                             className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Rechazar
@@ -322,7 +336,10 @@ const BandejaSolicitudesTipoProductoPage = () => {
                           >
                             <option value="">Selecciona un tipo oficial</option>
                             {tiposProductoActivos.map((tipoProducto) => (
-                              <option key={tipoProducto.id} value={tipoProducto.id}>
+                              <option
+                                key={tipoProducto.id}
+                                value={tipoProducto.id}
+                              >
                                 {tipoProducto.nombre} ({tipoProducto.prefijo})
                               </option>
                             ))}
@@ -336,7 +353,7 @@ const BandejaSolicitudesTipoProductoPage = () => {
                                   tipoProductoId: Number(accion.tipoProductoId),
                                   comentarioRevision:
                                     accion.comentarioRevision || undefined,
-                                })
+                                }),
                               )
                             }
                             disabled={loading || !accion.tipoProductoId}
@@ -392,7 +409,10 @@ const BandejaSolicitudesTipoProductoPage = () => {
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                               >
                                 {FRECUENCIA_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
                                     {option.label}
                                   </option>
                                 ))}
@@ -406,13 +426,16 @@ const BandejaSolicitudesTipoProductoPage = () => {
                               handleResolver(() =>
                                 crearTipoDesdeSolicitud(solicitud.id, {
                                   prefijo: accion.prefijo,
-                                  frecuenciaReposicion: accion.frecuenciaReposicion,
+                                  frecuenciaReposicion:
+                                    accion.frecuenciaReposicion,
                                   comentarioRevision:
                                     accion.comentarioRevision || undefined,
-                                })
+                                }),
                               )
                             }
-                            disabled={loading || accion.prefijo.trim().length !== 2}
+                            disabled={
+                              loading || accion.prefijo.trim().length !== 2
+                            }
                             className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Crear tipo oficial

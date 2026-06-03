@@ -185,7 +185,7 @@ const GestionMarcasPage = () => {
       </h1>
       <div className="flex items-center justify-end w-full px-6">
         <Link
-          to="/gestion-productos"
+          to="/modulo-almacen/productos"
           className="flex items-center space-x-2 hover:underline text-sky-500 hover:text-indigo-500"
         >
           <TbArrowBackUpDouble size={22} />
