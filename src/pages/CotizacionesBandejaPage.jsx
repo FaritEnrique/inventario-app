@@ -924,50 +924,70 @@ const CotizacionesBandejaPage = ({ tipo }) => {
               item.responsableLogisticaId ||
               item.responsableLogistica?.id ||
               null;
+
             const assignedToCurrentUser =
               Number(responsableActualId || 0) === Number(user?.id || 0);
-            const assignedToOtherResponsable =
-              Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
+
             const blocked = ["ADJUDICADO", "OC_GENERADA"].includes(
               item.estadoLogistica,
             );
+
+            const hasModalidadFlujoLogistico = ["REGULAR", "EXCEPCIONAL"].includes(
+              item.modalidadFlujoLogistico,
+            );
+
+            const isLogisticaAuthority = canAssign || isAdminUser;
+
             const canQuickDefineFlow =
-              canAssign && !blocked && item.puedeCambiarFlujoLogistico === true;
+              isLogisticaAuthority &&
+              !blocked &&
+              item.puedeCambiarFlujoLogistico === true;
+
             const totalSolicitudes = Number(
               item.resumenComparativo?.totalSolicitudes || 0,
             );
+
+            const totalCotizaciones = Number(
+              item.resumenComparativo?.totalCotizaciones || 0,
+            );
+
             const canQuickCreateSolicitud =
-              canAssign &&
+              isLogisticaAuthority &&
               !blocked &&
-              ["REGULAR", "EXCEPCIONAL"].includes(
-                item.modalidadFlujoLogistico,
-              ) &&
-              !assignedToOtherResponsable;
+              hasModalidadFlujoLogistico;
+
             const canOperatorContinueExpediente =
               tipo === "operador" && assignedToCurrentUser && !blocked;
+
             const canOperatorManageSolicitud =
-              canOperatorContinueExpediente &&
-              ["REGULAR", "EXCEPCIONAL"].includes(item.modalidadFlujoLogistico);
+              canOperatorContinueExpediente && hasModalidadFlujoLogistico;
+
             const hasFlujosCotizacion =
               Array.isArray(item.flujosCotizacion) &&
               item.flujosCotizacion.length > 0;
+
             const canManageItemFlujos =
               !blocked &&
               (canQuickDefineFlow ||
                 canQuickCreateSolicitud ||
                 canOperatorManageSolicitud ||
                 isAdminUser);
+
             const expedientePrimaryPath = canOperatorManageSolicitud
-              ? `/cotizaciones/proceso/${item.id}#solicitudes`
+              ? `/cotizaciones/proceso/${item.id}/solicitudes`
               : `/cotizaciones/proceso/${item.id}`;
+
             const expedientePrimaryLabel = canOperatorManageSolicitud
               ? "Gestionar solicitud"
               : canOperatorContinueExpediente
                 ? "Continuar expediente"
                 : "Abrir expediente";
+
             const canOpenComparativo =
-              item.modalidadFlujoLogistico === "REGULAR" &&
-              Number(item.resumenComparativo?.totalCotizaciones || 0) > 0;
+              totalCotizaciones > 0 ||
+              ["COMPARATIVO_GENERADO", "BUENA_PRO_OTORGADA", "CON_ORDEN_COMPRA"].includes(
+                item.estadoBandeja,
+              );
             const trayStatus = getTrayStatusMeta(item.estadoBandeja);
             const isRecentlyUpdated =
               Number(highlightedRequerimientoId || 0) === Number(item.id);
@@ -1158,13 +1178,17 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                     </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {item.modalidadFlujoLogistico === "REGULAR"
-                        ? assignedToOtherResponsable
-                          ? "La etapa de cotizacion queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
-                          : "Puedes emitir solicitudes de cotización desde esta bandeja."
+                        ? canQuickCreateSolicitud
+                          ? "La jefatura logística o administración puede emitir solicitudes desde esta bandeja. El responsable asignado también puede gestionarlas desde el expediente."
+                          : canOperatorManageSolicitud
+                            ? "Puedes gestionar solicitudes de cotización desde el expediente asignado."
+                            : "Solo la jefatura logística, administración o el responsable asignado pueden gestionar solicitudes."
                         : item.modalidadFlujoLogistico === "EXCEPCIONAL"
-                          ? assignedToOtherResponsable
-                            ? "La etapa de cotizacion queda deshabilitada mientras el expediente esté asignado a otro responsable logístico."
-                            : "Puedes emitir solicitudes de cotización desde esta bandeja incluso en flujo excepcional."
+                          ? canQuickCreateSolicitud
+                            ? "La jefatura logística o administración puede emitir solicitudes desde esta bandeja incluso en flujo excepcional."
+                            : canOperatorManageSolicitud
+                              ? "Puedes gestionar solicitudes de cotización del flujo excepcional desde el expediente asignado."
+                              : "Solo la jefatura logística, administración o el responsable asignado pueden gestionar solicitudes excepcionales."
                           : "Primero debes definir el flujo logístico."}
                     </p>
                     {totalSolicitudes > 0 ? (
@@ -1197,13 +1221,13 @@ const CotizacionesBandejaPage = ({ tipo }) => {
                       {expedientePrimaryLabel}
                     </Link>
                     {canOpenComparativo ? (
-                      <Link
-                        to={`/cotizaciones/proceso/${item.id}#comparativo`}
-                        className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
-                      >
-                        Ir a comparativo
-                      </Link>
-                    ) : null}
+                        <Link
+                          to={`/cotizaciones/proceso/${item.id}/comparativos`}
+                          className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
+                        >
+                          Ir a comparativo
+                        </Link>
+                      ) : null}
                     {tipo === "operador" &&
                     item.estadoLogistica === "ASIGNADO" ? (
                       <button
