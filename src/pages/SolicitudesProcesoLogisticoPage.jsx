@@ -118,26 +118,28 @@ const SolicitudesProcesoLogisticoPage = () => {
   const canAssign = canAssignCotizacionesLogisticaEffective(user);
   const canOperate = canOperateCotizacionesLogisticaEffective(user);
   const isAdminUser = hasAdminOverrideEffective(user);
+
   const responsableActualId =
     detalleGlobal?.responsableLogisticaId ||
     detalleGlobal?.responsableLogistica?.id ||
     null;
+
   const assignedToCurrentUser =
     Number(responsableActualId || 0) === Number(user?.id || 0);
-  const assignedToOtherResponsable =
-    Number(responsableActualId || 0) > 0 && !assignedToCurrentUser;
+
+  const isLogisticaAuthority = canAssign || isAdminUser;
+
   const expedienteBloqueado = ["ADJUDICADO", "OC_GENERADA"].includes(
     detalleGlobal?.estadoLogistica,
   );
+
   const flujoDefinido = Boolean(detalleGlobal?.modalidadFlujoLogistico);
+
   const canManageSolicitudes =
     canOperate &&
     !expedienteBloqueado &&
     flujoDefinido &&
-    (!assignedToOtherResponsable ||
-      !canAssign ||
-      assignedToCurrentUser ||
-      isAdminUser);
+    (isLogisticaAuthority || assignedToCurrentUser);
 
   const activeSolicitudesCount = useMemo(
     () =>
