@@ -303,9 +303,8 @@ export const canAccessGerenciaModuleEffective = (user = {}) =>
   isAdminOverride(user) ||
   hasAnyRole(user, ["GERENTE_ADMINISTRACION", "GERENTE_GENERAL"]);
 
-export const canViewProcesoLogisticoEffective = (user = {}) =>
-  canAccessGerenciaModuleEffective(user) ||
-  canAccessCotizacionesEffective(user);
+export const canViewGerenciaExpedienteLogisticoEffective = (user = {}) =>
+  canAccessGerenciaModuleEffective(user);
 
 export const canViewRequerimientosModuleEffective = (user = {}) =>
   hasOperationalSession(user);

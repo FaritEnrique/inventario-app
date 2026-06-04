@@ -34,7 +34,7 @@ import {
   canViewWarehouseTrayEffective,
   isLogisticaOperadorEffective,
   canAccessGerenciaModuleEffective,
-  canViewProcesoLogisticoEffective,
+  canViewGerenciaExpedienteLogisticoEffective,
 } from "./accessRules";
 import { canAccessTrayLevelEffective } from "./accessRules";
 import { hasRole } from "./utils/userRoles";
@@ -178,6 +178,25 @@ const LayoutGerencia = lazy(() => import("./components/LayoutGerencia"));
 const DashboardGerenciaPage = lazy(
   () => import("./pages/DashboardGerenciaPage"),
 );
+
+const RequerimientosGerenciaPage = lazy(
+  () => import("./pages/gerencia/RequerimientosGerenciaPage"),
+);
+const AprobacionesRequerimientosGerenciaPage = lazy(
+  () => import("./pages/gerencia/AprobacionesRequerimientosGerenciaPage"),
+);
+const ExpedientesGerenciaPage = lazy(
+  () => import("./pages/gerencia/ExpedientesGerenciaPage"),
+);
+const OrdenesCompraGerenciaPage = lazy(
+  () => import("./pages/gerencia/OrdenesCompraGerenciaPage"),
+);
+const AprobacionesOrdenesCompraGerenciaPage = lazy(
+  () => import("./pages/gerencia/AprobacionesOrdenesCompraGerenciaPage"),
+);
+const AprobacionesNotasPedidoGerenciaPage = lazy(
+  () => import("./pages/gerencia/AprobacionesNotasPedidoGerenciaPage"),
+);
 const MovimientosAlmacenPage = lazy(
   () => import("./pages/MovimientosAlmacenPage"),
 );
@@ -191,26 +210,6 @@ const SolicitudesRequerimientoRedirect = () => {
   return (
     <Navigate
       to={`/cotizaciones/proceso/${id}/solicitudes`}
-      replace
-    />
-  );
-};
-
-const GerenciaRequerimientosAprobacionesRedirect = () => {
-  const { user } = useAuth();
-
-  if (hasRole(user, "GERENTE_GENERAL")) {
-    return (
-      <Navigate
-        to="/requerimientos/bandeja/gerencia-general"
-        replace
-      />
-    );
-  }
-
-  return (
-    <Navigate
-      to="/requerimientos/bandeja/gerencia-administracion"
       replace
     />
   );
@@ -422,7 +421,7 @@ const AppRoutes = () => {
               path="cotizaciones/requerimientos/:id/solicitudes"
               element={
                 <RoutePermissionGuard
-                  allow={canViewProcesoLogisticoEffective}
+                  allow={canAccessCotizacionesEffective}
                   contextGate="logistica-access"
                 >
                   <SolicitudesRequerimientoRedirect />
@@ -640,36 +639,35 @@ const AppRoutes = () => {
               <Route index element={<DashboardGerenciaPage />} />
               <Route
                 path="requerimientos"
-                element={<Navigate to="/requerimientos" replace />}
+                element={<RequerimientosGerenciaPage />}
               />
               <Route
                 path="requerimientos/aprobaciones"
-                element={
-                  <Navigate
-                    to="/requerimientos/bandeja/gerencia-administracion"
-                    replace
-                  />
-                }
+                element={<AprobacionesRequerimientosGerenciaPage />}
               />
               <Route
                 path="expedientes"
-                element={<Navigate to="/cotizaciones/alertas" replace />}
+                element={<ExpedientesGerenciaPage />}
               />
               <Route
                 path="expedientes/:id"
-                element={<ExpedienteLogisticoConsultaPage />}
+                element={
+                  <RoutePermissionGuard allow={canViewGerenciaExpedienteLogisticoEffective}>
+                    <ExpedienteLogisticoConsultaPage />
+                  </RoutePermissionGuard>
+                }
               />
               <Route
                 path="ordenes-compra"
-                element={<Navigate to="/ordenes-compra" replace />}
+                element={<OrdenesCompraGerenciaPage />}
               />
               <Route
                 path="ordenes-compra/aprobaciones"
-                element={<Navigate to="/ordenes-compra?view=aprobacion" replace />}
+                element={<AprobacionesOrdenesCompraGerenciaPage />}
               />
               <Route
                 path="notas-pedido/aprobaciones"
-                element={<Navigate to="/notas-pedido/aprobaciones" replace />}
+                element={<AprobacionesNotasPedidoGerenciaPage />}
               />
             </Route>
             <Route path="requerimientos" element={<RequerimientosPage />} />
