@@ -5,6 +5,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { ToastContainer } from "react-toastify";
@@ -149,6 +150,9 @@ const ResumenProcesoLogisticoPage = lazy(
 const ComparativosProcesoLogisticoPage = lazy(
   () => import("./pages/ComparativosProcesoLogisticoPage"),
 );
+const OrdenesCompraProcesoLogisticoPage = lazy(
+  () => import("./pages/OrdenesCompraProcesoLogisticoPage"),
+);
 const SolicitudesProcesoLogisticoPage = lazy(
   () => import("./pages/SolicitudesProcesoLogisticoPage"),
 );
@@ -171,6 +175,22 @@ const MovimientosAlmacenPage = lazy(
 const RecepcionOrdenCompraPage = lazy(
   () => import("./pages/RecepcionOrdenCompraPage"),
 );
+
+const canAccessProcesoLogisticoEffective = (user) =>
+  hasRole(user, "ADMINISTRADOR_SISTEMA") ||
+  canViewAllCotizacionesLogisticaEffective(user) ||
+  isLogisticaOperadorEffective(user);
+
+const SolicitudesRequerimientoRedirect = () => {
+  const { id } = useParams();
+
+  return (
+    <Navigate
+      to={`/cotizaciones/proceso/${id}/solicitudes`}
+      replace
+    />
+  );
+};
 
 const AppRoutes = () => {
   const { loading, needsInitialSetup } = useAuth();
@@ -347,7 +367,10 @@ const AppRoutes = () => {
             <Route
               path="cotizaciones/proceso/:id"
               element={
-                <RoutePermissionGuard allow={canAccessCotizacionesEffective}>
+                <RoutePermissionGuard
+                  allow={canAccessProcesoLogisticoEffective}
+                  contextGate="logistica-access"
+                >
                   <ProcesoLogisticoPage />
                 </RoutePermissionGuard>
               }
@@ -365,16 +388,20 @@ const AppRoutes = () => {
                 path="comparativos"
                 element={<ComparativosProcesoLogisticoPage />}
               />
+              <Route
+                path="orden-compra"
+                element={<OrdenesCompraProcesoLogisticoPage />}
+              />
               <Route path="alertas" element={<AlertasProcesoLogisticoPage />} />
             </Route>
             <Route
               path="cotizaciones/requerimientos/:id/solicitudes"
               element={
                 <RoutePermissionGuard
-                  allow={canAccessCotizacionesEffective}
+                  allow={canAccessProcesoLogisticoEffective}
                   contextGate="logistica-access"
                 >
-                  <SolicitudesRequerimientoPage />
+                  <SolicitudesRequerimientoRedirect />
                 </RoutePermissionGuard>
               }
             />
