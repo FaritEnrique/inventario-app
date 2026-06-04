@@ -164,6 +164,9 @@ const CotizacionesProcesoLogisticoPage = lazy(
 const AlertasProcesoLogisticoPage = lazy(
   () => import("./pages/AlertasProcesoLogisticoPage"),
 );
+const ExpedienteLogisticoConsultaPage = lazy(
+  () => import("./pages/gerencia/ExpedienteLogisticoConsultaPage"),
+);
 const SeleccionContextoPage = lazy(
   () => import("./pages/SeleccionContextoPage"),
 );
@@ -188,6 +191,26 @@ const SolicitudesRequerimientoRedirect = () => {
   return (
     <Navigate
       to={`/cotizaciones/proceso/${id}/solicitudes`}
+      replace
+    />
+  );
+};
+
+const GerenciaRequerimientosAprobacionesRedirect = () => {
+  const { user } = useAuth();
+
+  if (hasRole(user, "GERENTE_GENERAL")) {
+    return (
+      <Navigate
+        to="/requerimientos/bandeja/gerencia-general"
+        replace
+      />
+    );
+  }
+
+  return (
+    <Navigate
+      to="/requerimientos/bandeja/gerencia-administracion"
       replace
     />
   );
@@ -369,7 +392,7 @@ const AppRoutes = () => {
               path="cotizaciones/proceso/:id"
               element={
                 <RoutePermissionGuard
-                  allow={canViewProcesoLogisticoEffective}
+                  allow={canAccessCotizacionesEffective}
                   contextGate="logistica-access"
                 >
                   <ProcesoLogisticoPage />
@@ -631,6 +654,10 @@ const AppRoutes = () => {
               <Route
                 path="expedientes"
                 element={<Navigate to="/cotizaciones/alertas" replace />}
+              />
+              <Route
+                path="expedientes/:id"
+                element={<ExpedienteLogisticoConsultaPage />}
               />
               <Route
                 path="ordenes-compra"
