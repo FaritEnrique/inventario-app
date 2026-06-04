@@ -18,6 +18,7 @@ import {
   getOrdenesCompraFromBuenaPro,
   normalizeOrdenesGeneradasResponse,
 } from "../utils/ordenCompraDesdeBuenaProViewModel";
+import ComparativosProcesoLogisticoSkeleton from "../components/ui/skeletons/ComparativosProcesoLogisticoSkeleton";
 
 const TIPO_COMPRA_LABELS = {
   LOCAL: "LOCAL",
@@ -461,12 +462,7 @@ const ComparativosProcesoLogisticoPage = () => {
   };
 
   if (loading && !detalleGlobal) {
-    return (
-      <div className="space-y-3">
-        <div className="h-8 w-64 animate-pulse rounded bg-slate-200" />
-        <div className="h-28 animate-pulse rounded-xl bg-slate-100" />
-      </div>
-    );
+    return <ComparativosProcesoLogisticoSkeleton />;
   }
 
   return (

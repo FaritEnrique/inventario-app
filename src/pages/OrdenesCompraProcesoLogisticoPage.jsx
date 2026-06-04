@@ -6,6 +6,7 @@ import {
   getAlertasByCategoryCount,
   getAlertasSeguimientoSource,
 } from "../utils/logisticaAlertasUi";
+import OrdenesCompraProcesoLogisticoSkeleton from "../components/ui/skeletons/OrdenesCompraProcesoLogisticoSkeleton";
 
 const estadosRecepcionFinal = new Set([
   "CANCELADA",
@@ -163,23 +164,7 @@ const OrdenesCompraProcesoLogisticoPage = () => {
   const estadoLogistica = detalleGlobal?.estadoLogistica || "-";
 
   if (loading && !detalleGlobal) {
-    return (
-      <section className="space-y-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-          <div className="mt-3 h-8 w-72 animate-pulse rounded bg-slate-200" />
-          <div className="mt-3 h-4 w-full max-w-xl animate-pulse rounded bg-slate-200" />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div
-              key={item}
-              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-white"
-            />
-          ))}
-        </div>
-      </section>
-    );
+    return <OrdenesCompraProcesoLogisticoSkeleton />;
   }
 
   return (

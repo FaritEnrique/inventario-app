@@ -5,11 +5,16 @@ import {
   getAlertasSeguimientoSource,
   hasAlertasSeguimiento,
 } from "../utils/logisticaAlertasUi";
+import AlertasProcesoLogisticoSkeleton from "../components/ui/skeletons/AlertasProcesoLogisticoSkeleton";
 
 const AlertasProcesoLogisticoPage = () => {
-  const { id, detalleGlobal } = useOutletContext();
+  const { id, detalleGlobal, loading } = useOutletContext();
   const alertas = getAlertasSeguimientoSource(detalleGlobal);
   const hasAlertas = hasAlertasSeguimiento(alertas);
+
+  if (loading && !detalleGlobal) {
+    return <AlertasProcesoLogisticoSkeleton />;
+  }
 
   return (
     <section className="space-y-4">

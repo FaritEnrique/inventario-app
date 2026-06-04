@@ -22,6 +22,7 @@ import {
   formatInteger,
   formatQuantity,
 } from "../utils/numberFormatters";
+import CotizacionesProcesoLogisticoSkeleton from "../components/ui/skeletons/CotizacionesProcesoLogisticoSkeleton";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
@@ -416,16 +417,7 @@ const CotizacionesProcesoLogisticoPage = () => {
   };
 
   if (loading && !detalleGlobal) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-64 animate-pulse rounded bg-slate-200" />
-        <div className="grid gap-3 md:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="h-24 animate-pulse rounded-xl bg-slate-100" />
-          ))}
-        </div>
-      </div>
-    );
+    return <CotizacionesProcesoLogisticoSkeleton />;
   }
 
   return (
