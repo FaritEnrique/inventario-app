@@ -33,6 +33,8 @@ import {
   canViewAllCotizacionesLogisticaEffective,
   canViewWarehouseTrayEffective,
   isLogisticaOperadorEffective,
+  canAccessGerenciaModuleEffective,
+  canViewProcesoLogisticoEffective,
 } from "./accessRules";
 import { canAccessTrayLevelEffective } from "./accessRules";
 import { hasRole } from "./utils/userRoles";
@@ -138,9 +140,9 @@ const SolicitudCotizacionDetallePage = lazy(
 const SolicitudCotizacionDocumentoPage = lazy(
   () => import("./pages/SolicitudCotizacionDocumentoPage"),
 );
-const SolicitudesRequerimientoPage = lazy(
+/* const SolicitudesRequerimientoPage = lazy(
   () => import("./pages/SolicitudesRequerimientoPage"),
-);
+); */
 const ProveedorCotizacionPublicPage = lazy(
   () => import("./pages/public/ProveedorCotizacionPublicPage"),
 );
@@ -169,17 +171,16 @@ const DashboardAlmacenPage = lazy(() => import("./pages/DashboardAlmacenPage"));
 const ProductosTemporalesAlmacenPage = lazy(
   () => import("./pages/ProductosTemporalesAlmacenPage"),
 );
+const LayoutGerencia = lazy(() => import("./components/LayoutGerencia"));
+const DashboardGerenciaPage = lazy(
+  () => import("./pages/DashboardGerenciaPage"),
+);
 const MovimientosAlmacenPage = lazy(
   () => import("./pages/MovimientosAlmacenPage"),
 );
 const RecepcionOrdenCompraPage = lazy(
   () => import("./pages/RecepcionOrdenCompraPage"),
 );
-
-const canAccessProcesoLogisticoEffective = (user) =>
-  hasRole(user, "ADMINISTRADOR_SISTEMA") ||
-  canViewAllCotizacionesLogisticaEffective(user) ||
-  isLogisticaOperadorEffective(user);
 
 const SolicitudesRequerimientoRedirect = () => {
   const { id } = useParams();
@@ -368,7 +369,7 @@ const AppRoutes = () => {
               path="cotizaciones/proceso/:id"
               element={
                 <RoutePermissionGuard
-                  allow={canAccessProcesoLogisticoEffective}
+                  allow={canViewProcesoLogisticoEffective}
                   contextGate="logistica-access"
                 >
                   <ProcesoLogisticoPage />
@@ -398,7 +399,7 @@ const AppRoutes = () => {
               path="cotizaciones/requerimientos/:id/solicitudes"
               element={
                 <RoutePermissionGuard
-                  allow={canAccessProcesoLogisticoEffective}
+                  allow={canViewProcesoLogisticoEffective}
                   contextGate="logistica-access"
                 >
                   <SolicitudesRequerimientoRedirect />
@@ -605,6 +606,45 @@ const AppRoutes = () => {
                 </RoutePermissionGuard>
               }
             />
+            <Route
+              path="modulo-gerencia"
+              element={
+                <RoutePermissionGuard allow={canAccessGerenciaModuleEffective}>
+                  <LayoutGerencia />
+                </RoutePermissionGuard>
+              }
+            >
+              <Route index element={<DashboardGerenciaPage />} />
+              <Route
+                path="requerimientos"
+                element={<Navigate to="/requerimientos" replace />}
+              />
+              <Route
+                path="requerimientos/aprobaciones"
+                element={
+                  <Navigate
+                    to="/requerimientos/bandeja/gerencia-administracion"
+                    replace
+                  />
+                }
+              />
+              <Route
+                path="expedientes"
+                element={<Navigate to="/cotizaciones/alertas" replace />}
+              />
+              <Route
+                path="ordenes-compra"
+                element={<Navigate to="/ordenes-compra" replace />}
+              />
+              <Route
+                path="ordenes-compra/aprobaciones"
+                element={<Navigate to="/ordenes-compra?view=aprobacion" replace />}
+              />
+              <Route
+                path="notas-pedido/aprobaciones"
+                element={<Navigate to="/notas-pedido/aprobaciones" replace />}
+              />
+            </Route>
             <Route path="requerimientos" element={<RequerimientosPage />} />
             <Route
               path="requerimientos/nuevo"

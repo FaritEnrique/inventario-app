@@ -12,6 +12,7 @@ import {
   FaShoppingCart,
   FaSitemap,
   FaUserCog,
+  FaUserTie,
 } from "react-icons/fa";
 import {
   canAccessAreasManagementEffective,
@@ -31,6 +32,7 @@ import {
   getCotizacionesHomePathEffective,
   getPedidosInternosHomePathEffective,
   canAccessCompanySettingsEffective,
+  canAccessGerenciaModuleEffective,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
@@ -45,6 +47,14 @@ const baseCards = [
     icon: <FaShoppingCart />,
     path: "/requerimientos",
     visible: ({ user }) => canViewRequerimientosModuleEffective(user),
+  },
+  {
+    title: "Módulo Gerencia",
+    description:
+      "Consultar requerimientos, expedientes logísticos, Órdenes de Compra y bandejas de aprobación gerencial.",
+    icon: <FaUserTie />,
+    path: "/modulo-gerencia",
+    visible: ({ user }) => canAccessGerenciaModuleEffective(user),
   },
   {
     title: "Notas de Pedido",
