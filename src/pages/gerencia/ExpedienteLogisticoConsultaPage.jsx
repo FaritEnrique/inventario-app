@@ -8,7 +8,7 @@ import {
   ListChecks,
   ShoppingCart,
 } from "lucide-react";
-import logisticaCotizacionesApi from "../../api/logisticaCotizacionesApi";
+import gerenciaApi from "../../api/gerenciaApi";
 import CotizacionEstadoBadge from "../../components/CotizacionEstadoBadge";
 import OrdenCompraEstadoBadge from "../../components/OrdenCompraEstadoBadge";
 import { AlertasSeguimientoExpediente } from "../../components/AlertasSeguimientoLogistico";
@@ -141,27 +141,9 @@ const ExpedienteLogisticoConsultaPage = () => {
     setError("");
 
     try {
-      const data = await logisticaCotizacionesApi.obtenerDetalle(id);
+      const data = await gerenciaApi.obtenerExpedienteLogistico(id);
       setDetalle(data);
-
-      const flujosActivos = getActiveList(data?.flujosCotizacion);
-      const buenasProPorFlujo = await Promise.all(
-        flujosActivos.map(async (flujo) => {
-          try {
-            return await logisticaCotizacionesApi.obtenerBuenaProPorFlujo(
-              flujo.id,
-            );
-          } catch {
-            return null;
-          }
-        }),
-      );
-
-      setBuenasPro(
-        buenasProPorFlujo.filter(
-          (buenaPro) => buenaPro && buenaPro.activo !== false,
-        ),
-      );
+      setBuenasPro(getActiveList(data?.buenasPro));
     } catch (err) {
       setError(
         err?.message ||
