@@ -132,6 +132,9 @@ const CotizacionesBandejaPage = lazy(
 const AlertasLogisticasPage = lazy(
   () => import("./pages/AlertasLogisticasPage"),
 );
+const AlertasExpedientesGerenciaPage = lazy(
+  () => import("./pages/gerencia/AlertasExpedientesGerenciaPage"),
+);
 const ProcesoLogisticoPage = lazy(() => import("./pages/ProcesoLogisticoPage"));
 const CotizacionesPage = lazy(() => import("./pages/CotizacionesPage"));
 const SolicitudCotizacionDetallePage = lazy(
@@ -648,6 +651,10 @@ const AppRoutes = () => {
               <Route
                 path="expedientes"
                 element={<ExpedientesGerenciaPage />}
+              />
+              <Route
+                path="expedientes/alertas"
+                element={<AlertasExpedientesGerenciaPage />}
               />
               <Route
                 path="expedientes/:id"

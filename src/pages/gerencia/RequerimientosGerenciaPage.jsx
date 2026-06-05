@@ -1,3 +1,4 @@
+// src/pages/gerencia/RequerimientosGerenciaPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, FileText, Eye, FolderSearch } from "lucide-react";
@@ -42,7 +43,8 @@ const RequerimientosGerenciaPage = () => {
       setRequerimientos(normalizeListResponse(response));
     } catch (err) {
       setError(
-        err?.message || "No se pudo cargar la consulta gerencial de requerimientos.",
+        err?.message ||
+          "No se pudo cargar la consulta gerencial de requerimientos.",
       );
     } finally {
       setLoading(false);
@@ -89,8 +91,8 @@ const RequerimientosGerenciaPage = () => {
         onSubmit={handleSubmit}
         className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
       >
-        <div className="grid gap-3 md:grid-cols-5">
-          <label className="md:col-span-2">
+        <div className="grid gap-4 lg:grid-cols-12">
+          <label className="min-w-0 lg:col-span-5">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Código o texto
             </span>
@@ -99,11 +101,11 @@ const RequerimientosGerenciaPage = () => {
               value={filters.search}
               onChange={handleChange}
               placeholder="REQ-..., finalidad, área..."
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-indigo-500 focus:outline-none"
             />
           </label>
 
-          <label>
+          <label className="min-w-0 lg:col-span-3">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Estado
             </span>
@@ -111,11 +113,13 @@ const RequerimientosGerenciaPage = () => {
               name="estadoDocumento"
               value={filters.estadoDocumento}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="mt-1 h-10 w-full min-w-0 rounded-lg border border-slate-300 px-3 text-sm focus:border-indigo-500 focus:outline-none"
             >
               <option value="">Todos</option>
               <option value="GENERADO">Generado</option>
-              <option value="PENDIENTE_APROBACION">Pendiente aprobación</option>
+              <option value="PENDIENTE_APROBACION">
+                Pendiente de aprobación
+              </option>
               <option value="APROBADO_SIN_MODIFICACIONES">Aprobado</option>
               <option value="APROBADO_CON_MODIFICACIONES">
                 Aprobado con modificaciones
@@ -124,7 +128,7 @@ const RequerimientosGerenciaPage = () => {
             </select>
           </label>
 
-          <label>
+          <label className="min-w-0 lg:col-span-2">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Prioridad
             </span>
@@ -132,7 +136,7 @@ const RequerimientosGerenciaPage = () => {
               name="prioridad"
               value={filters.prioridad}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="mt-1 h-10 w-full min-w-0 rounded-lg border border-slate-300 px-3 text-sm focus:border-indigo-500 focus:outline-none"
             >
               <option value="">Todas</option>
               <option value="NORMAL">Normal</option>
@@ -141,26 +145,25 @@ const RequerimientosGerenciaPage = () => {
             </select>
           </label>
 
-          <div className="flex items-end gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row lg:col-span-2 lg:items-end">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto lg:flex-1"
             >
               <Search className="h-4 w-4" />
               Buscar
             </button>
+
             <button
               type="button"
               onClick={limpiarFiltros}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="h-10 w-full rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto lg:flex-1"
             >
               Limpiar
             </button>
           </div>
-        </div>
 
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label>
+          <label className="min-w-0 lg:col-span-6">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Desde
             </span>
@@ -169,11 +172,11 @@ const RequerimientosGerenciaPage = () => {
               name="fechaInicio"
               value={filters.fechaInicio}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-indigo-500 focus:outline-none"
             />
           </label>
 
-          <label>
+          <label className="min-w-0 lg:col-span-6">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Hasta
             </span>
@@ -182,7 +185,7 @@ const RequerimientosGerenciaPage = () => {
               name="fechaFin"
               value={filters.fechaFin}
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-indigo-500 focus:outline-none"
             />
           </label>
         </div>
@@ -191,11 +194,11 @@ const RequerimientosGerenciaPage = () => {
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 p-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Resultados
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900">Resultados</h2>
             <p className="text-sm text-slate-500">
-              {loading ? "Cargando..." : `${total} requerimiento(s) encontrado(s).`}
+              {loading
+                ? "Cargando..."
+                : `${total} requerimiento(s) encontrado(s).`}
             </p>
           </div>
           <FileText className="h-5 w-5 text-indigo-600" />
@@ -223,7 +226,10 @@ const RequerimientosGerenciaPage = () => {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-3 py-8 text-center text-slate-500">
+                  <td
+                    colSpan="7"
+                    className="px-3 py-8 text-center text-slate-500"
+                  >
                     Cargando requerimientos...
                   </td>
                 </tr>
@@ -237,7 +243,9 @@ const RequerimientosGerenciaPage = () => {
                       {formatText(item.area?.nombre || item.areaNombreSnapshot)}
                     </td>
                     <td className="px-3 py-3">
-                      {formatText(item.solicitante?.nombre || item.solicitanteNombre)}
+                      {formatText(
+                        item.solicitante?.nombre || item.solicitanteNombre,
+                      )}
                     </td>
                     <td className="px-3 py-3 text-center">
                       {formatDate(item.fechaCreacion)}
@@ -246,7 +254,12 @@ const RequerimientosGerenciaPage = () => {
                       {formatText(item.prioridad)}
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <RequerimientoEstadoBadge estado={item.estadoDocumento || item.estado} />
+                      <RequerimientoEstadoBadge
+                        estadoFlujo={item.estadoFlujo}
+                        estadoDocumento={item.estadoDocumento}
+                        nivelPendiente={item.nivelPendiente}
+                        compact
+                      />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap justify-center gap-2">
@@ -270,7 +283,10 @@ const RequerimientosGerenciaPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-3 py-8 text-center text-slate-500">
+                  <td
+                    colSpan="7"
+                    className="px-3 py-8 text-center text-slate-500"
+                  >
                     No hay requerimientos para los filtros seleccionados.
                   </td>
                 </tr>
