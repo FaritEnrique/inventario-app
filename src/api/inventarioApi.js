@@ -1,4 +1,4 @@
-import apiFetch from "./apiFetch";
+import apiFetch, { apiFetchBlob, buildApiUrl } from "./apiFetch";
 
 const buildQuery = (params = {}) => {
   const query = new URLSearchParams();
@@ -13,6 +13,58 @@ const buildQuery = (params = {}) => {
 
   const serialized = query.toString();
   return serialized ? `?${serialized}` : "";
+};
+
+const normalizeDocumentosEntrega = (payload = {}) =>
+  Array.isArray(payload.documentosEntrega)
+    ? payload.documentosEntrega.filter((documento) => documento?.file)
+    : [];
+
+const buildNotaIngresoFormData = (payload = {}) => {
+  const documentosEntrega = normalizeDocumentosEntrega(payload);
+
+  if (!documentosEntrega.length) {
+    return null;
+  }
+
+  const { documentosEntrega: _documentosEntrega, ...payloadSinArchivos } =
+    payload;
+
+  const formData = new FormData();
+
+  formData.append("payload", JSON.stringify(payloadSinArchivos));
+  formData.append(
+    "documentosMetadata",
+    JSON.stringify(
+      documentosEntrega.map((documento) => ({
+        tipoDocumento: documento.tipoDocumento,
+        numeroDocumento: documento.numeroDocumento || null,
+        fechaDocumento: documento.fechaDocumento,
+        observaciones: documento.observaciones || null,
+      })),
+    ),
+  );
+
+  documentosEntrega.forEach((documento) => {
+    formData.append("documentos", documento.file);
+  });
+
+  return formData;
+};
+
+const buildDocumentoNotaIngresoFormData = (payload = {}) => {
+  const formData = new FormData();
+
+  formData.append("tipoDocumento", payload.tipoDocumento || "");
+  formData.append("numeroDocumento", payload.numeroDocumento || "");
+  formData.append("fechaDocumento", payload.fechaDocumento || "");
+  formData.append("observaciones", payload.observaciones || "");
+
+  if (payload.file) {
+    formData.append("documento", payload.file);
+  }
+
+  return formData;
 };
 
 const inventarioApi = {
@@ -35,6 +87,51 @@ const inventarioApi = {
     apiFetch(`inventario/notas-ingreso/${id}`, {
       sessionActivity: "interactive",
     }),
+
+  listarDocumentosNotaIngreso: (notaIngresoId) =>
+    apiFetch(`inventario/notas-ingreso/${notaIngresoId}/documentos`, {
+      sessionActivity: "interactive",
+    }),
+
+  subirDocumentoNotaIngreso: (notaIngresoId, payload) =>
+    apiFetch(`inventario/notas-ingreso/${notaIngresoId}/documentos`, {
+      method: "POST",
+      body: buildDocumentoNotaIngresoFormData(payload),
+      sessionActivity: "interactive",
+    }),
+
+  actualizarDocumentoNotaIngreso: (notaIngresoId, documentoId, payload) =>
+    apiFetch(
+      `inventario/notas-ingreso/${notaIngresoId}/documentos/${documentoId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        sessionActivity: "interactive",
+      },
+    ),
+
+  eliminarDocumentoNotaIngreso: (notaIngresoId, documentoId, payload = {}) =>
+    apiFetch(
+      `inventario/notas-ingreso/${notaIngresoId}/documentos/${documentoId}`,
+      {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+        sessionActivity: "interactive",
+      },
+    ),
+
+  getDocumentoNotaIngresoUrl: (notaIngresoId, documentoId) =>
+    buildApiUrl(
+      `inventario/notas-ingreso/${notaIngresoId}/documentos/${documentoId}/descargar`,
+    ),
+
+  obtenerDocumentoNotaIngresoBlob: (notaIngresoId, documentoId) =>
+    apiFetchBlob(
+      `inventario/notas-ingreso/${notaIngresoId}/documentos/${documentoId}/descargar`,
+      {
+        sessionActivity: "interactive",
+      },
+    ),
 
   actualizarAprobacionDocumentalNotaIngreso: (id, payload) =>
     apiFetch(`inventario/notas-ingreso/${id}/aprobacion-documental`, {
@@ -92,12 +189,15 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarIngresoPorNota: (payload) =>
-    apiFetch("inventario/notas-ingreso", {
+  registrarIngresoPorNota: (payload) => {
+    const formData = buildNotaIngresoFormData(payload);
+
+    return apiFetch("inventario/notas-ingreso", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: formData || JSON.stringify(payload),
       sessionActivity: "interactive",
-    }),
+    });
+  },
 
   registrarSalida: (payload) =>
     apiFetch("inventario/salidas", {

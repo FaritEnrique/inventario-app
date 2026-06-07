@@ -1,3 +1,4 @@
+// src/api/apiFetch.js
 import {
   AUTH_SESSION_INVALIDATION_CODES,
   CONTEXT_INVALIDATION_CODES,
@@ -243,6 +244,87 @@ const dispatchAuthSessionActivityEvent = () => {
 export const buildApiUrl = (endpoint) => {
   const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
   return `${baseURL}/${normalizedEndpoint}`;
+};
+
+export const apiFetchBlob = async (endpoint, options = {}) => {
+  try {
+    const { sessionActivity, ...fetchOptions } = options;
+    const normalizedEndpoint = String(endpoint || "").replace(/^\/+/, "");
+    const isPassiveAuthValidationRequest =
+      normalizedEndpoint === "auth/validate-token";
+    const isInteractiveSessionRequest =
+      !isPassiveAuthValidationRequest &&
+      String(sessionActivity || "").toLowerCase() === "interactive";
+
+    const headers = {
+      ...(fetchOptions.headers || {}),
+    };
+
+    if (isInteractiveSessionRequest) {
+      headers["X-Session-Activity"] = "interactive";
+    }
+
+    const res = await fetch(buildApiUrl(endpoint), {
+      headers,
+      ...fetchOptions,
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type") || "";
+      let data = null;
+
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      }
+
+      const normalizedError = data?.error || null;
+      const errorMessage = translateValidationMessage(
+        normalizedError?.message ||
+          data?.mensaje ||
+          data?.message ||
+          "Error al obtener el documento.",
+      );
+
+      const fullError = new Error(errorMessage);
+      fullError.response = { data, status: res.status };
+      fullError.code = normalizedError?.code || data?.code || null;
+      fullError.details = normalizedError?.details || data?.detalles || null;
+
+      if (
+        isInteractiveSessionRequest &&
+        !AUTH_SESSION_INVALIDATION_CODES.includes(fullError.code)
+      ) {
+        dispatchAuthSessionActivityEvent();
+      }
+
+      dispatchOperationalContextEvent(fullError.code, fullError);
+      dispatchAuthSessionInvalidationEvent(fullError.code, fullError);
+      throw fullError;
+    }
+
+    const blob = await res.blob();
+
+    if (isInteractiveSessionRequest) {
+      dispatchAuthSessionActivityEvent();
+    }
+
+    return {
+      blob,
+      contentType:
+        res.headers.get("content-type") ||
+        blob.type ||
+        "application/octet-stream",
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      error.message = translateValidationMessage(error.message);
+    }
+
+    console.error("Error en apiFetchBlob:", error.message);
+    throw error;
+  }
 };
 
 const apiFetch = async (endpoint, options = {}) => {

@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+// src/pages/InventarioNotaIngresoDetallePage.jsx
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canActOnNoteDocument } from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
+import DocumentosNotaIngresoModal from "../components/inventario/DocumentosNotaIngresoModal";
 import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useInventario from "../hooks/useInventario";
+import useDocumentosNotaIngresoStore from "../stores/useDocumentosNotaIngresoStore";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -17,10 +20,18 @@ const formalLevelLabels = {
   CONFORMIDAD_GERENCIA: "Conformidad de gerencia",
 };
 
+const documentacionEntregaLabels = {
+  CON_DOCUMENTO: "Con documentación sustentatoria",
+  SIN_DOCUMENTO_JUSTIFICADO: "Sin documentación justificada",
+};
+
 const InventarioNotaIngresoDetallePage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { prompt, dialogNode } = useAppDialog();
+  const openDocumentosNotaIngresoModal = useDocumentosNotaIngresoStore(
+    (state) => state.openModal,
+  );
   const {
     loading,
     error,
@@ -30,22 +41,21 @@ const InventarioNotaIngresoDetallePage = () => {
   const [nota, setNota] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const data = await obtenerNotaIngresoPorId(id);
-        setNota(data);
-      } catch (loadError) {
-        toast.error(loadError.message || "No se pudo cargar la nota de ingreso.");
-        setNota(null);
-      }
-    };
-
-    cargar();
+  const cargarNota = useCallback(async () => {
+    try {
+      const data = await obtenerNotaIngresoPorId(id);
+      setNota(data);
+      return data;
+    } catch (loadError) {
+      toast.error(loadError.message || "No se pudo cargar la nota de ingreso.");
+      setNota(null);
+      return null;
+    }
   }, [id, obtenerNotaIngresoPorId]);
 
-  const documentoFormal = nota.documentoFormal || {};
-  const canAct = canActOnNoteDocument(user, documentoFormal);
+  useEffect(() => {
+    cargarNota();
+  }, [cargarNota]);
 
   const handleDecision = async (accion) => {
     const comentario = await prompt({
@@ -71,15 +81,40 @@ const InventarioNotaIngresoDetallePage = () => {
       toast.success(
         accion === "APROBAR"
           ? "Aprobacion documental registrada."
-          : "Rechazo documental registrado."
+          : "Rechazo documental registrado.",
       );
     } catch (actionError) {
       toast.error(
-        actionError.message || "No se pudo actualizar la aprobacion documental."
+        actionError.message ||
+          "No se pudo actualizar la aprobacion documental.",
       );
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleOpenDocumentos = () => {
+    if (!nota) return;
+
+    openDocumentosNotaIngresoModal(nota).catch((modalError) => {
+      toast.error(
+        modalError.message ||
+          "No se pudo abrir la documentación sustentatoria.",
+      );
+    });
+  };
+
+  const handleDocumentosChange = async (documentosActualizados = []) => {
+    setNota((current) =>
+      current
+        ? {
+            ...current,
+            documentosEntrega: documentosActualizados,
+          }
+        : current,
+    );
+
+    await cargarNota();
   };
 
   if (loading && !nota) return <InventarioDocumentoDetalleSkeleton />;
@@ -94,9 +129,22 @@ const InventarioNotaIngresoDetallePage = () => {
     );
   }
 
+  const documentoFormal = nota.documentoFormal || {};
+  const canAct = canActOnNoteDocument(user, documentoFormal);
+  const documentosEntrega = Array.isArray(nota.documentosEntrega)
+    ? nota.documentosEntrega
+    : [];
+  const cantidadDocumentosEntrega = documentosEntrega.length;
+  const estadoDocumentacionEntrega =
+    nota.estadoDocumentacionEntrega ||
+    (cantidadDocumentosEntrega > 0 ? "CON_DOCUMENTO" : null);
+  const estadoDocumentacionEntregaLabel =
+    documentacionEntregaLabels[estadoDocumentacionEntrega] || "No registrado";
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       {dialogNode}
+      <DocumentosNotaIngresoModal onDocumentosChange={handleDocumentosChange} />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">
@@ -158,6 +206,40 @@ const InventarioNotaIngresoDetallePage = () => {
               documentoFormal.nivelPendienteActual ||
               "Sin pendiente"}
           </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+              Documentación sustentatoria de entrega
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              {estadoDocumentacionEntregaLabel}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Documentos activos adjuntos:{" "}
+              <span className="font-semibold text-slate-900">
+                {cantidadDocumentosEntrega}
+              </span>
+            </p>
+
+            {cantidadDocumentosEntrega === 0 ? (
+              <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Motivo sin documentación:{" "}
+                {nota.motivoSinDocumentacionEntrega || "No registrado"}
+              </p>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenDocumentos}
+            className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
+          >
+            Gestionar documentos sustentatorios
+          </button>
         </div>
       </div>
 
@@ -224,32 +306,32 @@ const InventarioNotaIngresoDetallePage = () => {
           </div>
 
           <div className="mt-4 space-y-3">
-            {(documentoFormal.rutaAprobacionSnapshot || []).length > 0 ? (
-              documentoFormal.rutaAprobacionSnapshot.map((step) => (
-                <div
-                  key={`${step.orden}-${step.nivel}`}
-                  className={`rounded-lg border p-4 text-sm ${
-                    step.esPendienteActual
-                      ? "border-indigo-300 bg-indigo-50"
-                      : step.rechazado
-                        ? "border-rose-300 bg-rose-50"
-                        : step.aprobado
-                          ? "border-emerald-300 bg-emerald-50"
-                          : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <p className="font-semibold text-slate-900">
-                    {formalLevelLabels[step.nivel] || step.nivel}
-                  </p>
-                  <p className="mt-1 text-slate-700">
-                    {step.aprobadorNombre || "-"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {step.estado || "PENDIENTE"}
-                  </p>
-                </div>
-              ))
-            ) : null}
+            {(documentoFormal.rutaAprobacionSnapshot || []).length > 0
+              ? documentoFormal.rutaAprobacionSnapshot.map((step) => (
+                  <div
+                    key={`${step.orden}-${step.nivel}`}
+                    className={`rounded-lg border p-4 text-sm ${
+                      step.esPendienteActual
+                        ? "border-indigo-300 bg-indigo-50"
+                        : step.rechazado
+                          ? "border-rose-300 bg-rose-50"
+                          : step.aprobado
+                            ? "border-emerald-300 bg-emerald-50"
+                            : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <p className="font-semibold text-slate-900">
+                      {formalLevelLabels[step.nivel] || step.nivel}
+                    </p>
+                    <p className="mt-1 text-slate-700">
+                      {step.aprobadorNombre || "-"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {step.estado || "PENDIENTE"}
+                    </p>
+                  </div>
+                ))
+              : null}
 
             {canAct ? (
               <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
@@ -257,7 +339,8 @@ const InventarioNotaIngresoDetallePage = () => {
                   Accion documental disponible
                 </p>
                 <p className="mt-1 text-sm text-indigo-800">
-                  Tu usuario coincide con el aprobador snapshot del nivel pendiente.
+                  Tu usuario coincide con el aprobador snapshot del nivel
+                  pendiente.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -286,12 +369,16 @@ const InventarioNotaIngresoDetallePage = () => {
       <div className="space-y-3 md:hidden">
         {(nota.detalles || []).length > 0 ? (
           nota.detalles.map((detalle) => (
-            <div key={detalle.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div
+              key={detalle.id}
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
               <p className="font-semibold text-slate-900">
                 {detalle.producto?.nombre || "-"}
               </p>
               <p className="text-xs text-slate-500">
-                {detalle.producto?.codigo || "-"} · {detalle.producto?.unidadMedida || "-"}
+                {detalle.producto?.codigo || "-"} ·{" "}
+                {detalle.producto?.unidadMedida || "-"}
               </p>
               <div className="mt-3 grid gap-1 text-sm text-slate-700">
                 <p>Ordenada: {detalle.cantidadOrdenada}</p>
@@ -310,7 +397,9 @@ const InventarioNotaIngresoDetallePage = () => {
 
       <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">Lineas recibidas</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Lineas recibidas
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -325,19 +414,26 @@ const InventarioNotaIngresoDetallePage = () => {
             <tbody>
               {(nota.detalles || []).length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-4 py-8 text-center text-slate-500">
+                  <td
+                    colSpan="4"
+                    className="px-4 py-8 text-center text-slate-500"
+                  >
                     Esta nota no tiene lineas visibles.
                   </td>
                 </tr>
               ) : (
                 nota.detalles.map((detalle) => (
-                  <tr key={detalle.id} className="border-t border-slate-200 align-top">
+                  <tr
+                    key={detalle.id}
+                    className="border-t border-slate-200 align-top"
+                  >
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">
                         {detalle.producto?.nombre || "-"}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {detalle.producto?.codigo || "-"} · {detalle.producto?.unidadMedida || "-"}
+                        {detalle.producto?.codigo || "-"} ·{" "}
+                        {detalle.producto?.unidadMedida || "-"}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -376,12 +472,17 @@ const InventarioNotaIngresoDetallePage = () => {
         <div className="mt-4 space-y-3">
           {(documentoFormal.historial || []).length > 0 ? (
             documentoFormal.historial.map((entry) => (
-              <div key={entry.id} className="rounded-lg border border-slate-200 p-4 text-sm">
+              <div
+                key={entry.id}
+                className="rounded-lg border border-slate-200 p-4 text-sm"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-slate-900">
                     {entry.tipoEvento}
                   </p>
-                  <p className="text-slate-500">{formatDateTime(entry.fechaAccion)}</p>
+                  <p className="text-slate-500">
+                    {formatDateTime(entry.fechaAccion)}
+                  </p>
                 </div>
                 <p className="mt-1 text-slate-700">
                   Actor: {entry.actor?.nombre || "-"}

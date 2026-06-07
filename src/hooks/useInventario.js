@@ -24,97 +24,144 @@ const useInventario = () => {
     error,
     obtenerStock: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerStock(params)),
-      [execute]
+      [execute],
     ),
     obtenerStockPorProducto: useCallback(
       (productoId) =>
         execute(() => inventarioApi.obtenerStockPorProducto(productoId)),
-      [execute]
+      [execute],
     ),
     obtenerNotasIngreso: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasIngreso(params)),
-      [execute]
+      [execute],
     ),
     obtenerNotaIngresoPorId: useCallback(
       (id) => execute(() => inventarioApi.obtenerNotaIngresoPorId(id)),
-      [execute]
+      [execute],
+    ),
+    listarDocumentosNotaIngreso: useCallback(
+      (notaIngresoId) =>
+        execute(() => inventarioApi.listarDocumentosNotaIngreso(notaIngresoId)),
+      [execute],
+    ),
+
+    subirDocumentoNotaIngreso: useCallback(
+      (notaIngresoId, payload) =>
+        execute(() =>
+          inventarioApi.subirDocumentoNotaIngreso(notaIngresoId, payload),
+        ),
+      [execute],
+    ),
+
+    actualizarDocumentoNotaIngreso: useCallback(
+      (notaIngresoId, documentoId, payload) =>
+        execute(() =>
+          inventarioApi.actualizarDocumentoNotaIngreso(
+            notaIngresoId,
+            documentoId,
+            payload,
+          ),
+        ),
+      [execute],
+    ),
+
+    eliminarDocumentoNotaIngreso: useCallback(
+      (notaIngresoId, documentoId, payload = {}) =>
+        execute(() =>
+          inventarioApi.eliminarDocumentoNotaIngreso(
+            notaIngresoId,
+            documentoId,
+            payload,
+          ),
+        ),
+      [execute],
+    ),
+
+    getDocumentoNotaIngresoUrl: useCallback(
+      (notaIngresoId, documentoId) =>
+        inventarioApi.getDocumentoNotaIngresoUrl(notaIngresoId, documentoId),
+      [],
     ),
     actualizarAprobacionDocumentalNotaIngreso: useCallback(
       (id, payload) =>
-        execute(() => inventarioApi.actualizarAprobacionDocumentalNotaIngreso(id, payload)),
-      [execute]
+        execute(() =>
+          inventarioApi.actualizarAprobacionDocumentalNotaIngreso(id, payload),
+        ),
+      [execute],
     ),
     obtenerNotasSalida: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasSalida(params)),
-      [execute]
+      [execute],
     ),
     obtenerNotaSalidaPorId: useCallback(
       (id) => execute(() => inventarioApi.obtenerNotaSalidaPorId(id)),
-      [execute]
+      [execute],
     ),
     actualizarAprobacionDocumentalNotaSalida: useCallback(
       (id, payload) =>
-        execute(() => inventarioApi.actualizarAprobacionDocumentalNotaSalida(id, payload)),
-      [execute]
+        execute(() =>
+          inventarioApi.actualizarAprobacionDocumentalNotaSalida(id, payload),
+        ),
+      [execute],
     ),
     obtenerReservas: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerReservas(params)),
-      [execute]
+      [execute],
     ),
     obtenerReservaPorId: useCallback(
       (id) => execute(() => inventarioApi.obtenerReservaPorId(id)),
-      [execute]
+      [execute],
     ),
     obtenerMovimientos: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerMovimientos(params)),
-      [execute]
+      [execute],
     ),
     obtenerMovimientoPorId: useCallback(
       (id) => execute(() => inventarioApi.obtenerMovimientoPorId(id)),
-      [execute]
+      [execute],
     ),
     obtenerKardex: useCallback(
       (productoId, params = {}) =>
         execute(() => inventarioApi.obtenerKardex(productoId, params)),
-      [execute]
+      [execute],
     ),
     registrarEntrada: useCallback(
       (payload) => execute(() => inventarioApi.registrarEntrada(payload)),
-      [execute]
+      [execute],
     ),
     registrarIngresoPorNota: useCallback(
       (payload) =>
         execute(() => inventarioApi.registrarIngresoPorNota(payload)),
-      [execute]
+      [execute],
     ),
     registrarSalida: useCallback(
       (payload) => execute(() => inventarioApi.registrarSalida(payload)),
-      [execute]
+      [execute],
     ),
     registrarAjuste: useCallback(
       (payload) => execute(() => inventarioApi.registrarAjuste(payload)),
-      [execute]
+      [execute],
     ),
     registrarCargaInicial: useCallback(
       (payload) => execute(() => inventarioApi.registrarCargaInicial(payload)),
-      [execute]
+      [execute],
     ),
     registrarTransferencia: useCallback(
       (payload) => execute(() => inventarioApi.registrarTransferencia(payload)),
-      [execute]
+      [execute],
     ),
     registrarReserva: useCallback(
       (payload) => execute(() => inventarioApi.registrarReserva(payload)),
-      [execute]
+      [execute],
     ),
     liberarReserva: useCallback(
       (id, payload) => execute(() => inventarioApi.liberarReserva(id, payload)),
-      [execute]
+      [execute],
     ),
     despacharReserva: useCallback(
       (id, payload) =>
         execute(() => inventarioApi.despacharReserva(id, payload)),
-      [execute]
+      [execute],
     ),
   };
 };
