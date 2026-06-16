@@ -210,12 +210,7 @@ const RecepcionOrdenCompraPage = lazy(
 const SolicitudesRequerimientoRedirect = () => {
   const { id } = useParams();
 
-  return (
-    <Navigate
-      to={`/cotizaciones/proceso/${id}/solicitudes`}
-      replace
-    />
-  );
+  return <Navigate to={`/cotizaciones/proceso/${id}/solicitudes`} replace />;
 };
 
 const AppRoutes = () => {
@@ -445,18 +440,44 @@ const AppRoutes = () => {
             <Route
               path="modulo-almacen"
               element={
-                <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                <RoutePermissionGuard
+                  allow={(user) =>
+                    canOperateInventoryEffective(user) ||
+                    canAdjustInventoryEffective(user) ||
+                    canManageCatalogMasterEffective(user) ||
+                    canViewWarehouseTrayEffective(user)
+                  }
+                >
                   <LayoutAlmacen />
                 </RoutePermissionGuard>
               }
             >
               <Route index element={<DashboardAlmacenPage />} />
-              <Route path="productos" element={<GestionProductosPage />} />
+
+              <Route
+                path="productos"
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <GestionProductosPage />
+                  </RoutePermissionGuard>
+                }
+              />
               <Route
                 path="productos/tipos"
-                element={<GestionTipoProductosPage />}
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <GestionTipoProductosPage />
+                  </RoutePermissionGuard>
+                }
               />
-              <Route path="productos/marcas" element={<GestionMarcasPage />} />
+              <Route
+                path="productos/marcas"
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <GestionMarcasPage />
+                  </RoutePermissionGuard>
+                }
+              />
               <Route
                 path="productos/validacion-tipos"
                 element={
@@ -473,22 +494,122 @@ const AppRoutes = () => {
                   </RoutePermissionGuard>
                 }
               />
+
               <Route
                 path="tipo-productos"
-                element={<Navigate to="/modulo-almacen/productos/tipos" replace />}
+                element={
+                  <Navigate to="/modulo-almacen/productos/tipos" replace />
+                }
               />
               <Route
                 path="gestion-marcas"
-                element={<Navigate to="/modulo-almacen/productos/marcas" replace />}
+                element={
+                  <Navigate to="/modulo-almacen/productos/marcas" replace />
+                }
               />
               <Route
                 path="productos-temporales"
-                element={<Navigate to="/modulo-almacen/productos/temporales" replace />}
+                element={
+                  <Navigate to="/modulo-almacen/productos/temporales" replace />
+                }
               />
-              <Route path="movimientos" element={<MovimientosAlmacenPage />} />
+
               <Route
                 path="recepcion-oc"
-                element={<RecepcionOrdenCompraPage />}
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <RecepcionOrdenCompraPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-pedido/almacen"
+                element={
+                  <RoutePermissionGuard allow={canViewWarehouseTrayEffective}>
+                    <BandejaAlmacenNotasPedidoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+
+              <Route
+                path="stock"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioStockPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="kardex"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioKardexPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="movimientos"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioMovimientosPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-ingreso"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioNotasIngresoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-ingreso/:id"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioNotaIngresoDetallePage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-salida"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioNotasSalidaPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-salida/:id"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioNotaSalidaDetallePage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="reservas"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioReservasPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="reservas/:id"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioReservaDetallePage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="operaciones"
+                element={
+                  <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                    <InventarioOperacionesPage />
+                  </RoutePermissionGuard>
+                }
               />
             </Route>
             <Route
@@ -648,10 +769,7 @@ const AppRoutes = () => {
                 path="requerimientos/aprobaciones"
                 element={<AprobacionesRequerimientosGerenciaPage />}
               />
-              <Route
-                path="expedientes"
-                element={<ExpedientesGerenciaPage />}
-              />
+              <Route path="expedientes" element={<ExpedientesGerenciaPage />} />
               <Route
                 path="expedientes/alertas"
                 element={<AlertasExpedientesGerenciaPage />}
@@ -659,7 +777,9 @@ const AppRoutes = () => {
               <Route
                 path="expedientes/:id"
                 element={
-                  <RoutePermissionGuard allow={canViewGerenciaExpedienteLogisticoEffective}>
+                  <RoutePermissionGuard
+                    allow={canViewGerenciaExpedienteLogisticoEffective}
+                  >
                     <ExpedienteLogisticoConsultaPage />
                   </RoutePermissionGuard>
                 }
