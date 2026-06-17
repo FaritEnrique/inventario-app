@@ -174,6 +174,27 @@ const SeleccionContextoPage = lazy(
   () => import("./pages/SeleccionContextoPage"),
 );
 const DashboardAlmacenPage = lazy(() => import("./pages/DashboardAlmacenPage"));
+const DashboardProductosActivosPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardProductosActivosPage"),
+);
+const DashboardStockDisponiblePage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardStockDisponiblePage"),
+);
+const DashboardRecepcionesPendientesPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardRecepcionesPendientesPage"),
+);
+const DashboardReservasPendientesPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardReservasPendientesPage"),
+);
+const DashboardNotasIngresoPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardNotasIngresoPage"),
+);
+const DashboardNotasSalidaPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardNotasSalidaPage"),
+);
+const DashboardAlmacenesStockPage = lazy(
+  () => import("./pages/almacen/dashboard/DashboardAlmacenesStockPage"),
+);
 const ProductosTemporalesAlmacenPage = lazy(
   () => import("./pages/ProductosTemporalesAlmacenPage"),
 );
@@ -453,6 +474,68 @@ const AppRoutes = () => {
               }
             >
               <Route index element={<DashboardAlmacenPage />} />
+
+              <Route
+                path="dashboard/productos-activos"
+                element={
+                  <RoutePermissionGuard
+                    allow={(user) =>
+                      canOperateInventoryEffective(user) ||
+                      canManageCatalogMasterEffective(user)
+                    }
+                  >
+                    <DashboardProductosActivosPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/stock-disponible"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardStockDisponiblePage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/recepciones-pendientes"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardRecepcionesPendientesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/reservas-pendientes"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardReservasPendientesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/notas-ingreso"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardNotasIngresoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/notas-salida"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardNotasSalidaPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="dashboard/almacenes-stock"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <DashboardAlmacenesStockPage />
+                  </RoutePermissionGuard>
+                }
+              />
 
               <Route
                 path="productos"
