@@ -72,6 +72,12 @@ function AsideAlmacen({ onNavigate }) {
     [user],
   );
 
+  const puedeAccederModuloAlmacen =
+    puedeOperarInventario ||
+    puedeAjustarInventario ||
+    puedeGestionarCatalogos ||
+    puedeVerBandejaAlmacen;
+
   const menuItems = useMemo(
     () =>
       filtrarItemsVisibles([
@@ -80,7 +86,57 @@ function AsideAlmacen({ onNavigate }) {
           to: baseUrl,
           icon: LayoutDashboard,
           exact: true,
-          visible: puedeOperarInventario,
+          visible: puedeAccederModuloAlmacen,
+        },
+        {
+          name: "Consultas Dashboard",
+          icon: ClipboardList,
+          submenuLabel: "Consultas Dashboard",
+          visible: puedeOperarInventario || puedeGestionarCatalogos,
+          subItems: [
+            {
+              name: "Productos activos",
+              to: `${baseUrl}/dashboard/productos-activos`,
+              exact: true,
+              visible: puedeOperarInventario || puedeGestionarCatalogos,
+            },
+            {
+              name: "Stock disponible",
+              to: `${baseUrl}/dashboard/stock-disponible`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
+              name: "Recepciones pendientes",
+              to: `${baseUrl}/dashboard/recepciones-pendientes`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
+              name: "Reservas pendientes",
+              to: `${baseUrl}/dashboard/reservas-pendientes`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
+              name: "Notas de ingreso",
+              to: `${baseUrl}/dashboard/notas-ingreso`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
+              name: "Notas de salida",
+              to: `${baseUrl}/dashboard/notas-salida`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
+              name: "Almacenes con stock",
+              to: `${baseUrl}/dashboard/almacenes-stock`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+          ],
         },
         {
           name: "Productos",
@@ -195,6 +251,7 @@ function AsideAlmacen({ onNavigate }) {
         },
       ]),
     [
+      puedeAccederModuloAlmacen,
       puedeAjustarInventario,
       puedeGestionarCatalogos,
       puedeOperarInventario,
@@ -336,7 +393,7 @@ function AsideAlmacen({ onNavigate }) {
 
                       <div className="relative z-10 bg-indigo-600 flex items-center justify-center min-w-[38px] py-4 shadow-md select-none">
                         <span className="text-[11px] font-extrabold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 whitespace-nowrap text-center">
-                          Gestión {item.name}
+                          {item.submenuLabel ?? `Gestión ${item.name}`}
                         </span>
                       </div>
 
