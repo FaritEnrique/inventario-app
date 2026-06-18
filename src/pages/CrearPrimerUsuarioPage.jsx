@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { Eye, EyeOff } from "lucide-react";
 import apiFetch from "../api/apiFetch";
 import { useAuth } from "../context/authContext";
 import {
@@ -135,15 +136,25 @@ const CrearPrimerUsuarioPage = () => {
                 autoComplete="new-password"
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">{PASSWORD_POLICY_MESSAGE}</p>
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 px-3 text-sm text-gray-500"
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
-                {showPassword ? "Ocultar" : "Ver"}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
               </button>
             </div>
+            <p className="mt-1 text-xs text-gray-500">
+              {PASSWORD_POLICY_MESSAGE}
+            </p>
           </div>
 
           <button
