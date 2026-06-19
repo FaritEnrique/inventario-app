@@ -1,7 +1,7 @@
 import InventarioRecepcionesPage from "./InventarioRecepcionesPage";
 
-function RecepcionOrdenCompraPage() {
+const RecepcionOrdenCompraPage = () => {
   return <InventarioRecepcionesPage />;
-}
+};
 
 export default RecepcionOrdenCompraPage;

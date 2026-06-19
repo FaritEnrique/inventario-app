@@ -46,7 +46,7 @@ const isPathActive = (pathname, to, exact = true) => {
   return pathname === to || pathname.startsWith(`${to}/`);
 };
 
-function AsideAlmacen({ onNavigate }) {
+const AsideAlmacen = ({ onNavigate }) => {
   const { user } = useAuth();
   const location = useLocation();
   const asideRef = useRef(null);
@@ -144,7 +144,7 @@ function AsideAlmacen({ onNavigate }) {
           visible: puedeGestionarCatalogos,
           subItems: [
             {
-              name: "Administración de Productos",
+              name: "AdministraciÃ³n de Productos",
               to: `${baseUrl}/productos`,
               exact: true,
               visible: puedeGestionarCatalogos,
@@ -156,7 +156,7 @@ function AsideAlmacen({ onNavigate }) {
               visible: puedeGestionarCatalogos,
             },
             {
-              name: "Gestión de Marcas",
+              name: "GestiÃ³n de Marcas",
               to: `${baseUrl}/productos/marcas`,
               exact: true,
               visible: puedeGestionarCatalogos,
@@ -176,17 +176,17 @@ function AsideAlmacen({ onNavigate }) {
           ],
         },
         {
-          name: "Recepción y atención",
+          name: "RecepciÃ³n y atenciÃ³n",
           icon: FileCheck,
           subItems: [
             {
-              name: "Recepción O/C",
+              name: "RecepciÃ³n O/C",
               to: `${baseUrl}/recepcion-oc`,
               exact: true,
               visible: puedeOperarInventario,
             },
             {
-              name: "Bandeja Almacén N/P",
+              name: "Bandeja AlmacÃ©n N/P",
               to: `${baseUrl}/notas-pedido/almacen`,
               exact: true,
               visible: puedeVerBandejaAlmacen,
@@ -199,7 +199,7 @@ function AsideAlmacen({ onNavigate }) {
           visible: puedeOperarInventario,
           subItems: [
             {
-              name: "Stock por Almacén",
+              name: "Stock por AlmacÃ©n",
               to: `${baseUrl}/stock`,
               exact: true,
               visible: puedeOperarInventario,
@@ -309,7 +309,7 @@ function AsideAlmacen({ onNavigate }) {
           <Box className="w-5 h-5" />
         </div>
         <h1 className="fuente-poppins text-white font-extrabold text-xl tracking-wide">
-          Módulo Almacén
+          MÃ³dulo AlmacÃ©n
         </h1>
       </div>
 
@@ -393,7 +393,7 @@ function AsideAlmacen({ onNavigate }) {
 
                       <div className="relative z-10 bg-indigo-600 flex items-center justify-center min-w-[38px] py-4 shadow-md select-none">
                         <span className="text-[11px] font-extrabold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 whitespace-nowrap text-center">
-                          {item.submenuLabel ?? `Gestión ${item.name}`}
+                          {item.submenuLabel ?? `GestiÃ³n ${item.name}`}
                         </span>
                       </div>
 
@@ -447,7 +447,7 @@ function AsideAlmacen({ onNavigate }) {
 
         {menuItems.length === 0 && (
           <div className="rounded-xl border border-indigo-700/60 bg-indigo-950/40 p-4 text-xs leading-relaxed text-indigo-100">
-            No tienes opciones disponibles para el contexto activo de almacén.
+            No tienes opciones disponibles para el contexto activo de almacÃ©n.
           </div>
         )}
       </nav>

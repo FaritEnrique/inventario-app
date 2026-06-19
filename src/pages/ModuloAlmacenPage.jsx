@@ -2,8 +2,8 @@
 import React from "react";
 import LayoutAlmacen from "../components/LayoutAlmacen";
 
-function ModuloAlmacenPage() {
+const ModuloAlmacenPage = () => {
   return <LayoutAlmacen />;
-}
+};
 
 export default ModuloAlmacenPage;

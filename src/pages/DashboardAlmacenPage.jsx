@@ -65,7 +65,7 @@ const emptyDashboardData = {
   bandejaAlmacen: { data: [], totalItems: 0, totalPages: 1, currentPage: 1 },
 };
 
-function QuickActionCard({ title, description, to, icon: Icon }) {
+const QuickActionCard = ({ title, description, to, icon: Icon }) => {
   return (
     <Link
       to={to}
@@ -87,7 +87,7 @@ function QuickActionCard({ title, description, to, icon: Icon }) {
   );
 }
 
-function SectionCard({ title, description, actionTo, actionLabel, children }) {
+const SectionCard = ({ title, description, actionTo, actionLabel, children }) => {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -113,7 +113,7 @@ function SectionCard({ title, description, actionTo, actionLabel, children }) {
   );
 }
 
-function DashboardAlmacenPage() {
+const DashboardAlmacenPage = () => {
   const { user, activeContext } = useAuth();
   const [dashboardData, setDashboardData] = useState(emptyDashboardData);
   const [loading, setLoading] = useState(true);
@@ -362,16 +362,16 @@ function DashboardAlmacenPage() {
   const hasFailed = (key) => failedKeys.includes(key);
   const metricValue = (key, value) => {
     if (loading) return "...";
-    if (hasFailed(key)) return "—";
+    if (hasFailed(key)) return "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â";
     return formatNumber(value);
   };
 
   const estadoOperativo = useMemo(() => {
     if (!puedeOperarInventario) {
       return {
-        title: "Acceso limitado al módulo",
+        title: "Acceso limitado al mÃƒÆ’Ã‚Â³dulo",
         description:
-          "Tu contexto actual tiene acceso parcial al módulo. Las métricas operativas se muestran solo para contextos con operación de inventario.",
+          "Tu contexto actual tiene acceso parcial al mÃƒÆ’Ã‚Â³dulo. Las mÃƒÆ’Ã‚Â©tricas operativas se muestran solo para contextos con operaciÃƒÆ’Ã‚Â³n de inventario.",
         icon: ShieldCheck,
         className: "border-slate-200 bg-slate-50 text-slate-700",
       };
@@ -379,7 +379,7 @@ function DashboardAlmacenPage() {
 
     if (resumen.productosCriticos.length > 0) {
       return {
-        title: "Atención requerida",
+        title: "AtenciÃƒÆ’Ã‚Â³n requerida",
         description:
           "Existen productos sin disponibilidad. Revisa el stock antes de atender salidas o reservas.",
         icon: AlertTriangle,
@@ -392,18 +392,18 @@ function DashboardAlmacenPage() {
       resumen.notasPedidoPendientes > 0
     ) {
       return {
-        title: "Operación activa",
+        title: "OperaciÃƒÆ’Ã‚Â³n activa",
         description:
-          "Hay recepciones o notas de pedido pendientes de atención. Prioriza la actualización documental y física del almacén.",
+          "Hay recepciones o notas de pedido pendientes de atenciÃƒÆ’Ã‚Â³n. Prioriza la actualizaciÃƒÆ’Ã‚Â³n documental y fÃƒÆ’Ã‚Â­sica del almacÃƒÆ’Ã‚Â©n.",
         icon: Activity,
         className: "border-amber-200 bg-amber-50 text-amber-800",
       };
     }
 
     return {
-      title: "Operación estable",
+      title: "OperaciÃƒÆ’Ã‚Â³n estable",
       description:
-        "No se detectan alertas críticas con los datos disponibles del tablero.",
+        "No se detectan alertas crÃƒÆ’Ã‚Â­ticas con los datos disponibles del tablero.",
       icon: CheckCircle2,
       className: "border-emerald-200 bg-emerald-50 text-emerald-800",
     };
@@ -420,14 +420,14 @@ function DashboardAlmacenPage() {
         {
           title: "Consulta de Stock",
           description:
-            "Detalle propio del dashboard por producto, código y almacén.",
+            "Detalle propio del dashboard por producto, cÃƒÆ’Ã‚Â³digo y almacÃƒÆ’Ã‚Â©n.",
           to: "/modulo-almacen/dashboard/stock-disponible?soloConStock=1",
           icon: Boxes,
           visible: puedeOperarInventario,
         },
         {
           title: "Recepciones pendientes",
-          description: "O/C aprobadas pendientes o parciales de recepción.",
+          description: "O/C aprobadas pendientes o parciales de recepciÃƒÆ’Ã‚Â³n.",
           to: "/modulo-almacen/dashboard/recepciones-pendientes",
           icon: FileCheck,
           visible: puedeOperarInventario,
@@ -447,14 +447,14 @@ function DashboardAlmacenPage() {
           visible: puedeCrearNotaPedido,
         },
         {
-          title: "Operación de inventario",
+          title: "OperaciÃƒÆ’Ã‚Â³n de inventario",
           description: "Ajustes, transferencias y cargas iniciales.",
           to: "/modulo-almacen/operaciones",
           icon: Warehouse,
           visible: puedeAjustarInventario,
         },
         {
-          title: "Catálogo de Productos",
+          title: "CatÃƒÆ’Ã‚Â¡logo de Productos",
           description: "Administra productos, tipos, marcas y validaciones.",
           to: "/modulo-almacen/productos",
           icon: PackageCheck,
@@ -483,7 +483,7 @@ function DashboardAlmacenPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-indigo-100">
               <Sparkles className="h-4 w-4" />
-              Panel operativo de almacén
+              Panel operativo de almacÃƒÆ’Ã‚Â©n
             </div>
 
             <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
@@ -492,14 +492,14 @@ function DashboardAlmacenPage() {
 
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-indigo-100 sm:text-base">
               Monitorea disponibilidad por producto, reservas, documentos de
-              ingreso/salida, recepción de Órdenes de Compra y movimientos
+              ingreso/salida, recepciÃƒÆ’Ã‚Â³n de ÃƒÆ’Ã¢â‚¬Å“rdenes de Compra y movimientos
               recientes desde un solo punto de control.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold text-indigo-100">
               <span className="rounded-full bg-white/10 px-3 py-1">
-                Área:{" "}
-                {activeContext?.area?.nombre || user?.areaNombre || "Almacén"}
+                ÃƒÆ’Ã‚Ârea:{" "}
+                {activeContext?.area?.nombre || user?.areaNombre || "AlmacÃƒÆ’Ã‚Â©n"}
               </span>
               <span className="rounded-full bg-white/10 px-3 py-1">
                 Rol:{" "}
@@ -562,7 +562,7 @@ function DashboardAlmacenPage() {
         <DashboardMetricCard
           title="Productos activos"
           value={metricValue("productos", dashboardData.productosTotal)}
-          description="Catálogo activo disponible para operaciones de almacén."
+          description="CatÃƒÆ’Ã‚Â¡logo activo disponible para operaciones de almacÃƒÆ’Ã‚Â©n."
           icon={PackageCheck}
           tone="indigo"
           to="/modulo-almacen/dashboard/productos-activos"
@@ -570,7 +570,7 @@ function DashboardAlmacenPage() {
         <DashboardMetricCard
           title="Productos con stock disponible"
           value={metricValue("stock", resumen.productosConStockDisponible)}
-          description={`Unidades disponibles: ${formatNumber(resumen.unidadesDisponibles)} · reservadas: ${formatNumber(resumen.unidadesReservadas)}.`}
+          description={`Unidades disponibles: ${formatNumber(resumen.unidadesDisponibles)} Ãƒâ€šÃ‚Â· reservadas: ${formatNumber(resumen.unidadesReservadas)}.`}
           icon={Boxes}
           tone="emerald"
           to="/modulo-almacen/dashboard/stock-disponible?soloConStock=1"
@@ -581,7 +581,7 @@ function DashboardAlmacenPage() {
             "ordenesPendientes",
             resumen.recepcionesPendientes,
           )}
-          description="Órdenes de Compra aprobadas pendientes o parciales de recepción."
+          description="ÃƒÆ’Ã¢â‚¬Å“rdenes de Compra aprobadas pendientes o parciales de recepciÃƒÆ’Ã‚Â³n."
           icon={ArrowDownCircle}
           tone="amber"
           to="/modulo-almacen/dashboard/recepciones-pendientes"
@@ -589,7 +589,7 @@ function DashboardAlmacenPage() {
         <DashboardMetricCard
           title="Reservas pendientes"
           value={metricValue("reservasActivas", resumen.reservasPendientes)}
-          description="Reservas activas o parciales pendientes de despacho/liberación."
+          description="Reservas activas o parciales pendientes de despacho/liberaciÃƒÆ’Ã‚Â³n."
           icon={ClipboardList}
           tone="sky"
           to="/modulo-almacen/dashboard/reservas-pendientes"
@@ -603,7 +603,7 @@ function DashboardAlmacenPage() {
             "notasIngreso",
             dashboardData.notasIngreso.totalItems,
           )}
-          description="Documentos de ingreso registrados por recepción o regularización."
+          description="Documentos de ingreso registrados por recepciÃƒÆ’Ã‚Â³n o regularizaciÃƒÆ’Ã‚Â³n."
           icon={ArrowDownCircle}
           tone="emerald"
           to="/modulo-almacen/dashboard/notas-ingreso"
@@ -614,7 +614,7 @@ function DashboardAlmacenPage() {
             "notasSalida",
             dashboardData.notasSalida.totalItems,
           )}
-          description="Documentos de salida emitidos por atención o despacho."
+          description="Documentos de salida emitidos por atenciÃƒÆ’Ã‚Â³n o despacho."
           icon={ArrowUpCircle}
           tone="rose"
           to="/modulo-almacen/dashboard/notas-salida"
@@ -633,14 +633,14 @@ function DashboardAlmacenPage() {
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-indigo-600">
-              Accesos rápidos
+              Accesos rÃƒÆ’Ã‚Â¡pidos
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-900">
-              Operación diaria del almacén
+              OperaciÃƒÆ’Ã‚Â³n diaria del almacÃƒÆ’Ã‚Â©n
             </h2>
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-            Acciones principales según el contexto activo y los permisos del
+            Acciones principales segÃƒÆ’Ã‚Âºn el contexto activo y los permisos del
             usuario.
           </p>
         </div>
@@ -662,15 +662,15 @@ function DashboardAlmacenPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <SectionCard
           title="Alertas de disponibilidad"
-          description="Productos con baja disponibilidad para priorizar revisión física o reposición."
+          description="Productos con baja disponibilidad para priorizar revisiÃƒÆ’Ã‚Â³n fÃƒÆ’Ã‚Â­sica o reposiciÃƒÆ’Ã‚Â³n."
           actionTo="/modulo-almacen/dashboard/stock-disponible?soloSinDisponibilidad=1"
           actionLabel="Ver consulta"
         >
           {resumen.productosCriticos.length === 0 &&
           resumen.productosBajoStock.length === 0 ? (
             <DashboardEmptyState
-              title="Sin alertas críticas"
-              description="No se detectan productos críticos con el stock actual."
+              title="Sin alertas crÃƒÆ’Ã‚Â­ticas"
+              description="No se detectan productos crÃƒÆ’Ã‚Â­ticos con el stock actual."
             />
           ) : (
             <div className="space-y-3">
@@ -690,7 +690,7 @@ function DashboardAlmacenPage() {
                           {getProductoLabel(row.producto)}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          Actual: {formatNumber(row.totalActual)} · Reservado:{" "}
+                          Actual: {formatNumber(row.totalActual)} Ãƒâ€šÃ‚Â· Reservado:{" "}
                           {formatNumber(row.totalReservada)}
                         </p>
                       </div>
@@ -712,8 +712,8 @@ function DashboardAlmacenPage() {
         </SectionCard>
 
         <SectionCard
-          title="Productos más reservados"
-          description="Resumen de presión operativa por reservas activas en almacén."
+          title="Productos mÃƒÆ’Ã‚Â¡s reservados"
+          description="Resumen de presiÃƒÆ’Ã‚Â³n operativa por reservas activas en almacÃƒÆ’Ã‚Â©n."
           actionTo="/modulo-almacen/dashboard/reservas-pendientes"
           actionLabel="Ver reservas"
         >
@@ -757,7 +757,7 @@ function DashboardAlmacenPage() {
               Resumen documental
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Vista rápida de documentos de ingreso, salida y reservas para
+              Vista rÃƒÆ’Ã‚Â¡pida de documentos de ingreso, salida y reservas para
               seguimiento operativo.
             </p>
           </div>
@@ -812,6 +812,6 @@ function DashboardAlmacenPage() {
       </section>
     </section>
   );
-}
+};
 
 export default DashboardAlmacenPage;

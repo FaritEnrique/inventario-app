@@ -1,7 +1,7 @@
 import React from "react";
 
-function MovimientosAlmacenPage() {
+const MovimientosAlmacenPage = () => {
   return <div>MovimientosAlmacenPage</div>;
-}
+};
 
 export default MovimientosAlmacenPage;
