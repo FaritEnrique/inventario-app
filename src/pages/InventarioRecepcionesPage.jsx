@@ -1,6 +1,6 @@
 // src/pages/InventarioRecepcionesPage.jsx
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canOperateInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
@@ -310,6 +310,16 @@ const DocumentosEntregaSection = ({
   );
 };
 
+const getOrdenCompraIdFromSearchParams = (searchParams) =>
+  searchParams.get("ordenCompraId") || searchParams.get("ocId") || "";
+
+const getOrdenCompraSearchFromSearchParams = (searchParams) =>
+  searchParams.get("ordenCompraCodigo") ||
+  searchParams.get("codigo") ||
+  searchParams.get("search") ||
+  searchParams.get("proveedor") ||
+  "";
+
 const getBlockingReasonForRecepcion = (ordenCompra) => {
   if (!ordenCompra) {
     return "No se pudo validar la orden de compra seleccionada.";
@@ -332,6 +342,12 @@ const getBlockingReasonForRecepcion = (ordenCompra) => {
 
 const InventarioRecepcionesPage = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const ordenCompraIdParam = getOrdenCompraIdFromSearchParams(searchParams);
+  const ordenCompraSearchParam = getOrdenCompraSearchFromSearchParams(searchParams);
+  const hasOrdenCompraQueryParam = Boolean(
+    ordenCompraIdParam || ordenCompraSearchParam,
+  );
   const { areas } = useAreas();
   const { loading, registrarIngresoPorNota } = useInventario();
   const {
@@ -340,14 +356,18 @@ const InventarioRecepcionesPage = () => {
     obtenerOrdenCompraPorId,
   } = useOrdenesCompra();
 
-  const [mode, setMode] = useState("simple");
+  const [mode, setMode] = useState(() =>
+    hasOrdenCompraQueryParam ? "ordenCompra" : "simple",
+  );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [simpleForm, setSimpleForm] = useState(createEmptySimpleForm);
   const [ocForm, setOcForm] = useState(createEmptyOcForm());
   const [resultado, setResultado] = useState(null);
   const [ordenesCompraDisponibles, setOrdenesCompraDisponibles] = useState([]);
   const [selectedOrdenCompra, setSelectedOrdenCompra] = useState(null);
-  const [ordenesSearch, setOrdenesSearch] = useState("");
+  const [ordenesSearch, setOrdenesSearch] = useState(
+    ordenCompraSearchParam || ordenCompraIdParam,
+  );
   const [temporalLineToValidate, setTemporalLineToValidate] = useState(null);
 
   const canOperate = canOperateInventoryEffective(user);
@@ -483,10 +503,10 @@ const InventarioRecepcionesPage = () => {
     };
   }, [canOperate, mode, obtenerOrdenesCompra]);
 
-  const resetOcSelection = () => {
+  const resetOcSelection = useCallback(() => {
     setSelectedOrdenCompra(null);
     setOcForm(createEmptyOcForm());
-  };
+  }, []);
 
   const getPendingCurrentForItem = (itemOrdenCompraId) => {
     const line = selectedOrdenCompra?.items?.find(
@@ -654,7 +674,7 @@ const InventarioRecepcionesPage = () => {
     }));
   };
 
-  const handleSelectOrdenCompra = async (ordenCompraId) => {
+  const handleSelectOrdenCompra = useCallback(async (ordenCompraId) => {
     if (!ordenCompraId) {
       resetOcSelection();
       return;
@@ -694,7 +714,30 @@ const InventarioRecepcionesPage = () => {
         error.message || "No se pudo cargar el detalle de la orden de compra.",
       );
     }
-  };
+  }, [obtenerOrdenCompraPorId, resetOcSelection]);
+
+  useEffect(() => {
+    const nextOrdenCompraId = getOrdenCompraIdFromSearchParams(searchParams);
+    const nextOrdenCompraSearch = getOrdenCompraSearchFromSearchParams(searchParams);
+
+    if (!nextOrdenCompraId && !nextOrdenCompraSearch) {
+      return;
+    }
+
+    setMode("ordenCompra");
+    setResultado(null);
+    setOrdenesSearch(nextOrdenCompraSearch || nextOrdenCompraId);
+
+    if (!nextOrdenCompraId) {
+      return;
+    }
+
+    if (String(selectedOrdenCompra?.id || "") === String(nextOrdenCompraId)) {
+      return;
+    }
+
+    handleSelectOrdenCompra(nextOrdenCompraId);
+  }, [handleSelectOrdenCompra, searchParams, selectedOrdenCompra?.id]);
 
   const handleOcSubmit = async (event) => {
     event.preventDefault();

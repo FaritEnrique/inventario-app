@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   canApprovePedidoInternoEffective,
@@ -21,11 +21,23 @@ const formatDisplayDateTime = (value) => {
   return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : "-";
 };
 
+const getBuscarFromSearchParams = (searchParams) =>
+  searchParams.get("buscar") ||
+  searchParams.get("producto") ||
+  searchParams.get("codigo") ||
+  "";
+
+const getAlmacenIdFromSearchParams = (searchParams) =>
+  searchParams.get("almacenId") || "";
+
 const InventarioStockPage = () => {
   const { user } = useAuth();
   const { loading, obtenerStock } = useInventario();
-  const [buscar, setBuscar] = useState("");
-  const [almacenId, setAlmacenId] = useState("");
+  const [searchParams] = useSearchParams();
+  const [buscar, setBuscar] = useState(() => getBuscarFromSearchParams(searchParams));
+  const [almacenId, setAlmacenId] = useState(() =>
+    getAlmacenIdFromSearchParams(searchParams),
+  );
   const [rows, setRows] = useState([]);
 
   const canCreate = canCreatePedidoInternoEffective(user);
@@ -33,7 +45,7 @@ const InventarioStockPage = () => {
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
   const isInitialLoading = loading && rows.length === 0;
 
-  const cargarStock = async (filters = {}) => {
+  const cargarStock = useCallback(async (filters = {}) => {
     try {
       const data = await obtenerStock(filters);
       setRows(Array.isArray(data) ? data : []);
@@ -41,11 +53,19 @@ const InventarioStockPage = () => {
       toast.error(error.message || "No se pudo obtener el stock.");
       setRows([]);
     }
-  };
+  }, [obtenerStock]);
 
   useEffect(() => {
-    cargarStock();
-  }, []);
+    const nextBuscar = getBuscarFromSearchParams(searchParams);
+    const nextAlmacenId = getAlmacenIdFromSearchParams(searchParams);
+
+    setBuscar(nextBuscar);
+    setAlmacenId(nextAlmacenId);
+    cargarStock({
+      buscar: nextBuscar.trim() || undefined,
+      almacenId: nextAlmacenId || undefined,
+    });
+  }, [cargarStock, searchParams]);
 
   const almacenesDisponibles = useMemo(() => {
     const map = new Map();
@@ -289,7 +309,7 @@ const InventarioStockPage = () => {
                         </td>
                         <td className="px-4 py-3">
                           <Link
-                            to={`/inventario-kardex?productoId=${row.producto.id}&almacenId=${almacen.id}`}
+                            to={`/modulo-almacen/kardex?productoId=${row.producto.id}&almacenId=${almacen.id}`}
                             className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                           >
                             Ver kardex

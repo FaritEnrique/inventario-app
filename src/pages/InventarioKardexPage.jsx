@@ -16,23 +16,30 @@ const formatDisplayDateTime = (value) => {
   return Number.isFinite(timestamp) ? dateTimeFormatter.format(timestamp) : "-";
 };
 
+const buildInitialProducto = (searchParams) =>
+  searchParams.get("productoId")
+    ? {
+        id: Number(searchParams.get("productoId")),
+        nombre: searchParams.get("productoNombre") || "Producto seleccionado",
+        codigo: searchParams.get("productoCodigo") || `ID ${searchParams.get("productoId")}`,
+      }
+    : null;
+
+const buildInitialFilters = (searchParams) => ({
+  almacenId: searchParams.get("almacenId") || "",
+  fechaDesde: searchParams.get("fechaDesde") || "",
+  fechaHasta: searchParams.get("fechaHasta") || "",
+});
+
 const InventarioKardexPage = () => {
   const { loading, obtenerKardex } = useInventario();
   const [searchParams] = useSearchParams();
-  const [producto, setProducto] = useState(
-    searchParams.get("productoId")
-      ? {
-          id: Number(searchParams.get("productoId")),
-          nombre: "Producto seleccionado",
-          codigo: `ID ${searchParams.get("productoId")}`,
-        }
-      : null
+  const [producto, setProducto] = useState(() =>
+    buildInitialProducto(searchParams),
   );
-  const [filters, setFilters] = useState({
-    almacenId: searchParams.get("almacenId") || "",
-    fechaDesde: "",
-    fechaHasta: "",
-  });
+  const [filters, setFilters] = useState(() =>
+    buildInitialFilters(searchParams),
+  );
   const [kardex, setKardex] = useState(null);
   const isInitialLoading = loading && !kardex && Boolean(producto?.id);
 
@@ -58,10 +65,33 @@ const InventarioKardexPage = () => {
   };
 
   useEffect(() => {
-    if (producto?.id) {
-      consultarKardex();
+    const nextProducto = buildInitialProducto(searchParams);
+    const nextFilters = buildInitialFilters(searchParams);
+
+    setProducto(nextProducto);
+    setFilters(nextFilters);
+
+    if (!nextProducto?.id) {
+      setKardex(null);
+      return;
     }
-  }, []);
+
+    const cargarKardexInicial = async () => {
+      try {
+        const data = await obtenerKardex(nextProducto.id, {
+          almacenId: nextFilters.almacenId || undefined,
+          fechaDesde: nextFilters.fechaDesde || undefined,
+          fechaHasta: nextFilters.fechaHasta || undefined,
+        });
+        setKardex(data);
+      } catch (error) {
+        toast.error(error.message || "No se pudo consultar el kardex.");
+        setKardex(null);
+      }
+    };
+
+    cargarKardexInicial();
+  }, [obtenerKardex, searchParams]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -73,7 +103,7 @@ const InventarioKardexPage = () => {
           </p>
         </div>
         <Link
-          to="/dashboard"
+          to="/modulo-almacen"
           className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           Dashboard

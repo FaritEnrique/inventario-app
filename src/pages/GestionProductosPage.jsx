@@ -1,5 +1,5 @@
 // src/pages/GestionProductosPage.jsx
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useProductos from "../hooks/useProductos";
 import useMarcas from "../hooks/useMarcas";
 import useTipoProductos from "../hooks/useTipoProductos";
@@ -13,7 +13,7 @@ import { FaClipboardList, FaSearch, FaRegistered } from "react-icons/fa";
 import { TbArrowBackUpDouble } from "react-icons/tb";
 import { MdCategory } from "react-icons/md";
 import useDebounce from "../hooks/useDebounce";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { canAdjustInventoryEffective } from "../accessRules";
 import { useAuth } from "../context/authContext";
 import imageCompression from "browser-image-compression";
@@ -31,6 +31,24 @@ const dateFormatter = new Intl.DateTimeFormat();
 const formatDisplayDate = (value) => {
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? dateFormatter.format(timestamp) : "-";
+};
+
+const PRODUCTOS_ESTADOS_FILTRO = new Set(["activos", "inactivos", "todos"]);
+
+const getBusquedaFromSearchParams = (searchParams) =>
+  searchParams.get("buscar") ||
+  searchParams.get("codigo") ||
+  searchParams.get("producto") ||
+  "";
+
+const getEstadoFiltroFromSearchParams = (searchParams) => {
+  const estado = searchParams.get("estado") || "activos";
+  return PRODUCTOS_ESTADOS_FILTRO.has(estado) ? estado : "activos";
+};
+
+const getPageFromSearchParams = (searchParams) => {
+  const page = Number(searchParams.get("page"));
+  return Number.isInteger(page) && page > 0 ? page : 1;
 };
 
 const cards = [
@@ -74,12 +92,17 @@ const initialProducto = {
 
 const GestionProductosPage = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
   const formCardRef = useRef(null);
   const [productoActual, setProductoActual] = useState(initialProducto);
   const [modoEdicion, setModoEdicion] = useState(false);
-  const [busqueda, setBusqueda] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState("activos");
+  const [busqueda, setBusqueda] = useState(() =>
+    getBusquedaFromSearchParams(searchParams),
+  );
+  const [estadoFiltro, setEstadoFiltro] = useState(() =>
+    getEstadoFiltroFromSearchParams(searchParams),
+  );
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [productoEnDetalle, setProductoEnDetalle] = useState(null);
   const [incluirStockInicial, setIncluirStockInicial] = useState(false);
@@ -119,6 +142,40 @@ const GestionProductosPage = () => {
   const debouncedBusqueda = useDebounce(busqueda, 2000);
   const debouncedMarcaSearch = useDebounce(marcaSearch, 300);
   const debouncedTipoSearch = useDebounce(tipoSearch, 300);
+
+  const syncProductosQueryParams = useCallback(
+    ({ busqueda: nextBusqueda = busqueda, estado = estadoFiltro, page: nextPage = page } = {}) => {
+      const params = new URLSearchParams();
+      const cleanBusqueda = String(nextBusqueda || "").trim();
+
+      if (cleanBusqueda) {
+        params.set("buscar", cleanBusqueda);
+      }
+
+      if (estado && estado !== "activos") {
+        params.set("estado", estado);
+      }
+
+      if (Number(nextPage) > 1) {
+        params.set("page", String(nextPage));
+      }
+
+      setSearchParams(params, { replace: true });
+    },
+    [busqueda, estadoFiltro, page, setSearchParams],
+  );
+
+  useEffect(() => {
+    const nextBusqueda = getBusquedaFromSearchParams(searchParams);
+    const nextEstadoFiltro = getEstadoFiltroFromSearchParams(searchParams);
+    const nextPage = getPageFromSearchParams(searchParams);
+
+    setBusqueda((current) => (current === nextBusqueda ? current : nextBusqueda));
+    setEstadoFiltro((current) =>
+      current === nextEstadoFiltro ? current : nextEstadoFiltro,
+    );
+    setPage(nextPage);
+  }, [searchParams, setPage]);
 
   useEffect(() => {
     fetchProductos(debouncedBusqueda, page, limit, estadoFiltro);
@@ -505,6 +562,25 @@ const GestionProductosPage = () => {
   const visibleCards = cards.filter((card) =>
     typeof card.visible === "function" ? card.visible({ user }) : true,
   );
+
+  const handleBusquedaChange = (event) => {
+    const nextBusqueda = event.target.value;
+    setBusqueda(nextBusqueda);
+    setPage(1);
+  };
+
+  const handleEstadoFiltroChange = (event) => {
+    const nextEstado = event.target.value;
+    setEstadoFiltro(nextEstado);
+    setPage(1);
+    syncProductosQueryParams({ estado: nextEstado, page: 1 });
+  };
+
+  const handlePageChange = (nextPage) => {
+    const safePage = Math.max(Number(nextPage) || 1, 1);
+    setPage(safePage);
+    syncProductosQueryParams({ page: safePage });
+  };
 
   return (
     <div className="max-w-5xl p-6 mx-auto">
@@ -948,7 +1024,7 @@ const GestionProductosPage = () => {
             name="gestionProductosBusqueda"
             placeholder="Buscar producto..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={handleBusquedaChange}
             className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
@@ -956,10 +1032,7 @@ const GestionProductosPage = () => {
           id="gestionProductosEstadoFiltro"
           name="gestionProductosEstadoFiltro"
           value={estadoFiltro}
-          onChange={(e) => {
-            setEstadoFiltro(e.target.value);
-            setPage(1);
-          }}
+          onChange={handleEstadoFiltroChange}
           className="w-full p-2 text-sm border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
         >
           <option value="activos">Solo activos</option>
@@ -1082,14 +1155,14 @@ const GestionProductosPage = () => {
           <div className="flex space-x-2">
             <button
               disabled={page <= 1}
-              onClick={() => setPage((prev) => prev - 1)}
+              onClick={() => handlePageChange(page - 1)}
               className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
             >
               Anterior
             </button>
             <button
               disabled={hasta >= total}
-              onClick={() => setPage((prev) => prev + 1)}
+              onClick={() => handlePageChange(page + 1)}
               className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
             >
               Siguiente

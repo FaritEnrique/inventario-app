@@ -15,6 +15,16 @@ import {
   paginateRows,
 } from "./dashboardDetalleUtils";
 
+const buildProductosOperativoTo = (buscar = "") => {
+  const params = buildSearchParams({
+    buscar: String(buscar || "").trim(),
+    estado: "activos",
+  });
+  const query = params.toString();
+
+  return `/modulo-almacen/productos${query ? `?${query}` : ""}`;
+};
+
 function DashboardProductosActivosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
@@ -126,7 +136,7 @@ function DashboardProductosActivosPage() {
           description="Acceso a la administración completa del catálogo."
           icon={PackageCheck}
           tone="emerald"
-          to="/modulo-almacen/productos"
+          to={buildProductosOperativoTo(producto || codigo)}
         />
       </div>
 
@@ -218,7 +228,9 @@ function DashboardProductosActivosPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        to={`/modulo-almacen/productos?buscar=${encodeURIComponent(productoItem.codigo || productoItem.nombre || "")}`}
+                        to={buildProductosOperativoTo(
+                          productoItem.codigo || productoItem.nombre || "",
+                        )}
                         className="font-bold text-indigo-600 hover:text-indigo-700"
                       >
                         Ver operativo
