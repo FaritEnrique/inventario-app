@@ -1,3 +1,4 @@
+// src/pages/almacen/dashboard/DashboardStockDisponiblePage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -7,15 +8,66 @@ import DashboardDetalleHeader from "../../../components/almacen/dashboard/Dashbo
 import DashboardEmptyState from "../../../components/almacen/dashboard/DashboardEmptyState";
 import DashboardMetricCard from "../../../components/almacen/dashboard/DashboardMetricCard";
 import DashboardPagination from "../../../components/almacen/dashboard/DashboardPagination";
+import DashboardReportActions from "../../../components/almacen/dashboard/DashboardReportActions";
 import {
   PAGE_SIZE,
   buildSearchParams,
   formatDateTime,
   formatNumber,
-  getProductoLabel,
   normalizeText,
   paginateRows,
 } from "./dashboardDetalleUtils";
+
+const stockReportColumns = [
+  {
+    header: "Código",
+    value: (row) => row.codigo || "-",
+    width: 14,
+  },
+  {
+    header: "Producto",
+    value: (row) => row.producto || "-",
+    width: 34,
+  },
+  {
+    header: "Unidad",
+    value: (row) => row.unidad || "-",
+    width: 16,
+  },
+  {
+    header: "Almacén",
+    value: (row) => row.almacen || "-",
+    width: 32,
+  },
+  {
+    header: "Stock actual",
+    value: (row) => formatNumber(row.stockActual || 0),
+    align: "center",
+    headerAlign: "center",
+    width: 16,
+  },
+  {
+    header: "Reservado",
+    value: (row) => formatNumber(row.stockReservado || 0),
+    align: "center",
+    headerAlign: "center",
+    width: 16,
+  },
+  {
+    header: "Disponible",
+    value: (row) => formatNumber(row.stockDisponible || 0),
+    align: "center",
+    headerAlign: "center",
+    width: 16,
+  },
+  {
+    header: "Actualizado",
+    value: (row) => row.actualizado || "-",
+    align: "center",
+    headerAlign: "center",
+    width: 22,
+  },
+];
 
 const DashboardStockDisponiblePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -109,6 +161,42 @@ const DashboardStockDisponiblePage = () => {
     };
   }, [filteredRows]);
 
+  const reportRows = useMemo(
+    () =>
+      filteredRows.flatMap((row) => {
+        const almacenesProducto = Array.isArray(row.almacenes)
+          ? row.almacenes
+          : [];
+
+        if (almacenesProducto.length === 0) {
+          return [
+            {
+              codigo: row.producto?.codigo || "-",
+              producto: row.producto?.nombre || "-",
+              unidad: row.producto?.unidadMedida || "-",
+              almacen: "-",
+              stockActual: Number(row.totalActual || 0),
+              stockReservado: Number(row.totalReservada || 0),
+              stockDisponible: Number(row.totalDisponible || 0),
+              actualizado: "-",
+            },
+          ];
+        }
+
+        return almacenesProducto.map((almacen) => ({
+          codigo: row.producto?.codigo || "-",
+          producto: row.producto?.nombre || "-",
+          unidad: row.producto?.unidadMedida || "-",
+          almacen: `${almacen.codigo || "-"} - ${almacen.nombre || "-"}`,
+          stockActual: Number(almacen.cantidadActual || 0),
+          stockReservado: Number(almacen.cantidadReservada || 0),
+          stockDisponible: Number(almacen.cantidadDisponible || 0),
+          actualizado: formatDateTime(almacen.updatedAt),
+        }));
+      }),
+    [filteredRows],
+  );
+
   const {
     rows: paginatedRows,
     totalPages,
@@ -160,11 +248,21 @@ const DashboardStockDisponiblePage = () => {
       <DashboardDetalleHeader
         badge="Detalle del dashboard"
         title="Productos con stock disponible"
-        description="Consulta propia del dashboard para revisar disponibilidad por producto, código y almacén. Esta pantalla es de lectura y deriva al Kardex o a la vista operativa solo cuando corresponde."
+        description="Consulta propia del dashboard para revisar disponibilidad por producto, código y almacén. Esta pantalla es de lectura y deriva al Kardex solo cuando corresponde."
         icon={Boxes}
         loading={loading}
         onRefresh={cargarStock}
-      />
+      >
+        <DashboardReportActions
+          title="Productos con stock disponible"
+          subtitle={`Stock filtrado por producto y almacén. Registros: ${reportRows.length}`}
+          rows={reportRows}
+          columns={stockReportColumns}
+          fileName="dashboard-stock-disponible"
+          sheetName="Stock disponible"
+          disabled={loading}
+        />
+      </DashboardDetalleHeader>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardMetricCard
@@ -375,12 +473,12 @@ const DashboardStockDisponiblePage = () => {
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-4 py-3 text-left">Almacén</th>
-                      <th className="px-4 py-3 text-right">Actual</th>
-                      <th className="px-4 py-3 text-right">Reservada</th>
-                      <th className="px-4 py-3 text-right">Disponible</th>
-                      <th className="px-4 py-3 text-left">Actualizado</th>
-                      <th className="px-4 py-3 text-left">Acciones</th>
+                      <th className="px-4 py-3 text-center">Almacén</th>
+                      <th className="px-4 py-3 text-center">Actual</th>
+                      <th className="px-4 py-3 text-center">Reservada</th>
+                      <th className="px-4 py-3 text-center">Disponible</th>
+                      <th className="px-4 py-3 text-center">Actualizado</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -392,19 +490,19 @@ const DashboardStockDisponiblePage = () => {
                         <td className="px-4 py-3 font-semibold text-slate-800">
                           {almacen.codigo} - {almacen.nombre}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-center">
                           {formatNumber(almacen.cantidadActual)}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-center">
                           {formatNumber(almacen.cantidadReservada)}
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-emerald-700">
+                        <td className="px-4 py-3 text-center font-bold text-emerald-700">
                           {formatNumber(almacen.cantidadDisponible)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           {formatDateTime(almacen.updatedAt)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <Link
                             to={`/modulo-almacen/kardex?productoId=${row.producto.id}&almacenId=${almacen.id}`}
                             className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
