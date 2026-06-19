@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowLeft, RefreshCcw } from "lucide-react";
 
-function DashboardDetalleHeader({
+const DashboardDetalleHeader = ({
   badge,
   title,
   description,
@@ -9,7 +9,7 @@ function DashboardDetalleHeader({
   loading = false,
   onRefresh,
   children,
-}) {
+}) => {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
       <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-full bg-indigo-50" />
@@ -53,6 +53,6 @@ function DashboardDetalleHeader({
       </div>
     </section>
   );
-}
+};
 
 export default DashboardDetalleHeader;

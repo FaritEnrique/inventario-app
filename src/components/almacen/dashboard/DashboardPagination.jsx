@@ -1,12 +1,12 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
+﻿import { ArrowLeft, ArrowRight } from "lucide-react";
 
-function DashboardPagination({
+const DashboardPagination = ({
   currentPage,
   totalPages,
   totalItems,
   pageSize,
   onPageChange,
-}) {
+}) => {
   const from = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const to = Math.min(currentPage * pageSize, totalItems);
 
@@ -46,6 +46,6 @@ function DashboardPagination({
       </div>
     </div>
   );
-}
+};
 
 export default DashboardPagination;

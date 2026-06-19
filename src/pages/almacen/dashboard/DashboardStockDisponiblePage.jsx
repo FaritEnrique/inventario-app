@@ -17,7 +17,7 @@ import {
   paginateRows,
 } from "./dashboardDetalleUtils";
 
-function DashboardStockDisponiblePage() {
+const DashboardStockDisponiblePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -423,6 +423,6 @@ function DashboardStockDisponiblePage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardStockDisponiblePage;

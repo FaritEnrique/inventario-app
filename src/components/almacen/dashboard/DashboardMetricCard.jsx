@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 
 const toneClasses = {
   indigo: "bg-indigo-50 text-indigo-700 ring-indigo-100",
@@ -9,14 +9,14 @@ const toneClasses = {
   slate: "bg-slate-50 text-slate-700 ring-slate-100",
 };
 
-function DashboardMetricCard({
+const DashboardMetricCard = ({
   title,
   value,
   description,
   icon: Icon,
   tone = "indigo",
   to,
-}) {
+}) => {
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -56,6 +56,6 @@ function DashboardMetricCard({
   }
 
   return <article className={className}>{content}</article>;
-}
+};
 
 export default DashboardMetricCard;

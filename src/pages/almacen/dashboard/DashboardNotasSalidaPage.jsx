@@ -24,7 +24,7 @@ const buildPreviewProductos = (detalles = []) =>
     .map((detalle) => getProductoLabel(detalle.producto))
     .join("; ");
 
-function DashboardNotasSalidaPage() {
+const DashboardNotasSalidaPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -257,6 +257,6 @@ function DashboardNotasSalidaPage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardNotasSalidaPage;

@@ -26,7 +26,7 @@ import {
 
 const ESTADOS_RECEPCION = ["PENDIENTE_RECEPCION", "PARCIALMENTE_RECIBIDA"];
 
-function DashboardRecepcionesPendientesPage() {
+const DashboardRecepcionesPendientesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -294,6 +294,6 @@ function DashboardRecepcionesPendientesPage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardRecepcionesPendientesPage;

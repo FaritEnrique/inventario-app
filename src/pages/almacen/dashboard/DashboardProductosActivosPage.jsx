@@ -25,7 +25,7 @@ const buildProductosOperativoTo = (buscar = "") => {
   return `/modulo-almacen/productos${query ? `?${query}` : ""}`;
 };
 
-function DashboardProductosActivosPage() {
+const DashboardProductosActivosPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -245,6 +245,6 @@ function DashboardProductosActivosPage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardProductosActivosPage;

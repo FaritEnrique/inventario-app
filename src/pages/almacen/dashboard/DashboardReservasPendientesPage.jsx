@@ -21,7 +21,7 @@ import {
 
 const ESTADOS_RESERVA = ["ACTIVA", "PARCIAL"];
 
-function DashboardReservasPendientesPage() {
+const DashboardReservasPendientesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -280,6 +280,6 @@ function DashboardReservasPendientesPage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardReservasPendientesPage;

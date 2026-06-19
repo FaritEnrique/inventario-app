@@ -16,7 +16,7 @@ import {
   paginateRows,
 } from "./dashboardDetalleUtils";
 
-function DashboardAlmacenesStockPage() {
+const DashboardAlmacenesStockPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [stockRows, setStockRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -271,6 +271,6 @@ function DashboardAlmacenesStockPage() {
       )}
     </section>
   );
-}
+};
 
 export default DashboardAlmacenesStockPage;
