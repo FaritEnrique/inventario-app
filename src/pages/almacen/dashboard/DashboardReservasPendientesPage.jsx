@@ -1,3 +1,4 @@
+// src/pages/almacen/dashboard/DashboardReservasPendientesPage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -7,6 +8,7 @@ import DashboardDetalleHeader from "../../../components/almacen/dashboard/Dashbo
 import DashboardEmptyState from "../../../components/almacen/dashboard/DashboardEmptyState";
 import DashboardMetricCard from "../../../components/almacen/dashboard/DashboardMetricCard";
 import DashboardPagination from "../../../components/almacen/dashboard/DashboardPagination";
+import DashboardReportActions from "../../../components/almacen/dashboard/DashboardReportActions";
 import {
   PAGE_SIZE,
   buildSearchParams,
@@ -21,6 +23,56 @@ import {
 
 const ESTADOS_RESERVA = ["ACTIVA", "PARCIAL"];
 
+const ESTADOS_RESERVA_LABELS = {
+  ACTIVA: "Activa",
+  PARCIAL: "Parcial",
+};
+
+const getEstadoReservaLabel = (estado) =>
+  ESTADOS_RESERVA_LABELS[estado] || estado || "-";
+
+const getReservaCodigo = (reserva) =>
+  reserva.codigo || reserva.pedidoInterno?.codigo || "Reserva #" + reserva.id;
+
+const reservasReportColumns = [
+  {
+    header: "Reserva",
+    value: (row) => row.codigo || "-",
+    width: 20,
+  },
+  {
+    header: "Producto",
+    value: (row) => row.producto || "-",
+    width: 42,
+  },
+  {
+    header: "Área",
+    value: (row) => row.area || "-",
+    width: 28,
+  },
+  {
+    header: "Cantidad",
+    value: (row) => row.cantidad || "-",
+    align: "right",
+    headerAlign: "center",
+    width: 16,
+  },
+  {
+    header: "Estado",
+    value: (row) => row.estado || "-",
+    align: "center",
+    headerAlign: "center",
+    width: 18,
+  },
+  {
+    header: "Vence",
+    value: (row) => row.vence || "-",
+    align: "center",
+    headerAlign: "center",
+    width: 22,
+  },
+];
+
 const DashboardReservasPendientesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
@@ -32,6 +84,7 @@ const DashboardReservasPendientesPage = () => {
 
   const cargarReservas = useCallback(async () => {
     setLoading(true);
+
     try {
       const responses = await Promise.all(
         ESTADOS_RESERVA.map((estadoReserva) =>
@@ -42,12 +95,15 @@ const DashboardReservasPendientesPage = () => {
           }),
         ),
       );
+
       const merged = responses.flatMap(
         (response) => normalizePagedResponse(response).data,
       );
+
       const unique = Array.from(
         new Map(merged.map((row) => [row.id, row])).values(),
       );
+
       setRows(unique);
     } catch (error) {
       toast.error(
@@ -68,14 +124,17 @@ const DashboardReservasPendientesPage = () => {
     const productoFilter = normalizeText(producto);
 
     return rows.filter((row) => {
+      const reservaCodigo = normalizeText(getReservaCodigo(row));
       const productoLabel = normalizeText(getProductoLabel(row.producto));
       const pedido = normalizeText(row.pedidoInterno?.codigo);
       const area = normalizeText(getAreaLabel(row.area));
+      const searchText = reservaCodigo + " " + pedido + " " + area;
 
-      if (searchFilter && !`${pedido} ${area}`.includes(searchFilter))
+      if (searchFilter && !searchText.includes(searchFilter)) return false;
+      if (productoFilter && !productoLabel.includes(productoFilter)) {
         return false;
-      if (productoFilter && !productoLabel.includes(productoFilter))
-        return false;
+      }
+
       if (estado && row.estado !== estado) return false;
 
       return true;
@@ -91,6 +150,19 @@ const DashboardReservasPendientesPage = () => {
         0,
       ),
     }),
+    [filteredRows],
+  );
+
+  const reportRows = useMemo(
+    () =>
+      filteredRows.map((reserva) => ({
+        codigo: getReservaCodigo(reserva),
+        producto: getProductoLabel(reserva.producto),
+        area: getAreaLabel(reserva.area),
+        cantidad: formatNumber(reserva.cantidadReservada),
+        estado: getEstadoReservaLabel(reserva.estado),
+        vence: formatDateTime(reserva.expiresAt || reserva.fechaVencimiento),
+      })),
     [filteredRows],
   );
 
@@ -141,7 +213,20 @@ const DashboardReservasPendientesPage = () => {
         icon={ClipboardList}
         loading={loading}
         onRefresh={cargarReservas}
-      />
+      >
+        <DashboardReportActions
+          title="Reservas pendientes"
+          subtitle={
+            "Reservas activas o parciales filtradas. Registros: " +
+            reportRows.length
+          }
+          rows={reportRows}
+          columns={reservasReportColumns}
+          fileName="dashboard-reservas-pendientes"
+          sheetName="Reservas pendientes"
+          disabled={loading}
+        />
+      </DashboardDetalleHeader>
 
       <div className="grid gap-4 md:grid-cols-3">
         <DashboardMetricCard
@@ -151,6 +236,7 @@ const DashboardReservasPendientesPage = () => {
           icon={ClipboardList}
           tone="indigo"
         />
+
         <DashboardMetricCard
           title="Activas"
           value={formatNumber(resumen.activas)}
@@ -158,6 +244,7 @@ const DashboardReservasPendientesPage = () => {
           icon={ClipboardList}
           tone="sky"
         />
+
         <DashboardMetricCard
           title="Cantidad reservada"
           value={formatNumber(resumen.cantidadReservada)}
@@ -177,12 +264,14 @@ const DashboardReservasPendientesPage = () => {
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
           placeholder="Nota de pedido o área"
         />
+
         <input
           value={producto}
           onChange={(event) => setProducto(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
           placeholder="Producto"
         />
+
         <select
           value={estado}
           onChange={(event) => setEstado(event.target.value)}
@@ -192,6 +281,7 @@ const DashboardReservasPendientesPage = () => {
           <option value="ACTIVA">Activa</option>
           <option value="PARCIAL">Parcial</option>
         </select>
+
         <div className="flex gap-2">
           <button
             type="submit"
@@ -200,6 +290,7 @@ const DashboardReservasPendientesPage = () => {
             <Search className="h-4 w-4" />
             Buscar
           </button>
+
           <button
             type="button"
             onClick={handleReset}
@@ -225,47 +316,53 @@ const DashboardReservasPendientesPage = () => {
             pageSize={PAGE_SIZE}
             onPageChange={handlePageChange}
           />
+
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 text-left">Reserva</th>
-                  <th className="px-4 py-3 text-left">Producto</th>
-                  <th className="px-4 py-3 text-left">Área</th>
-                  <th className="px-4 py-3 text-right">Cantidad</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Vence</th>
-                  <th className="px-4 py-3 text-left">Acción</th>
+                  <th className="px-4 py-3 text-center">Reserva</th>
+                  <th className="px-4 py-3 text-center">Producto</th>
+                  <th className="px-4 py-3 text-center">Área</th>
+                  <th className="px-4 py-3 text-center">Cantidad</th>
+                  <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3 text-center">Vence</th>
+                  <th className="px-4 py-3 text-center">Acción</th>
                 </tr>
               </thead>
+
               <tbody>
                 {paginatedRows.map((reserva) => (
                   <tr key={reserva.id} className="border-t border-slate-100">
                     <td className="px-4 py-3 font-black text-slate-800">
-                      {reserva.codigo ||
-                        reserva.pedidoInterno?.codigo ||
-                        `Reserva #${reserva.id}`}
+                      {getReservaCodigo(reserva)}
                     </td>
+
                     <td className="px-4 py-3">
                       {getProductoLabel(reserva.producto)}
                     </td>
+
                     <td className="px-4 py-3">{getAreaLabel(reserva.area)}</td>
+
                     <td className="px-4 py-3 text-right font-semibold">
                       {formatNumber(reserva.cantidadReservada)}
                     </td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-4 py-3 text-center">
                       <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-black text-sky-700">
-                        {reserva.estado || "-"}
+                        {getEstadoReservaLabel(reserva.estado)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-4 py-3 text-center">
                       {formatDateTime(
                         reserva.expiresAt || reserva.fechaVencimiento,
                       )}
                     </td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-4 py-3 text-center">
                       <Link
-                        to={`/modulo-almacen/reservas/${reserva.id}`}
+                        to={"/modulo-almacen/reservas/" + reserva.id}
                         className="font-bold text-indigo-600 hover:text-indigo-700"
                       >
                         Ver detalle
