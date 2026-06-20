@@ -116,12 +116,12 @@ const reducer = (state, action) => {
   }
 };
 
-const formatDate = (value) =>
-  value ? new Date(value).toLocaleString() : "-";
+const formatDate = (value) => (value ? new Date(value).toLocaleString() : "-");
 
 const BandejaAlmacenNotasPedidoPage = () => {
   const { user } = useAuth();
-  const { loading, obtenerBandejaAlmacen, atenderPedido } = usePedidosInternos();
+  const { loading, obtenerBandejaAlmacen, atenderPedido } =
+    usePedidosInternos();
   const [pedidos, setPedidos] = useState([]);
   const [draft, dispatch] = useReducer(reducer, initialDraft);
   const [ultimoResultado, setUltimoResultado] = useState(null);
@@ -161,7 +161,9 @@ const BandejaAlmacenNotasPedidoPage = () => {
         : draft.receptorSeleccion;
 
     if (!receptorIdValue) {
-      toast.error("Selecciona el receptor del area antes de registrar la salida.");
+      toast.error(
+        "Selecciona el receptor del area antes de registrar la salida.",
+      );
       return;
     }
 
@@ -172,7 +174,8 @@ const BandejaAlmacenNotasPedidoPage = () => {
       }))
       .filter(
         (detalle) =>
-          Number.isFinite(detalle.cantidadEntregada) && detalle.cantidadEntregada > 0
+          Number.isFinite(detalle.cantidadEntregada) &&
+          detalle.cantidadEntregada > 0,
       );
 
     if (items.length === 0) {
@@ -182,10 +185,12 @@ const BandejaAlmacenNotasPedidoPage = () => {
 
     for (const item of items) {
       const detalle = pedido.detalles.find(
-        (linea) => linea.id === item.pedidoInternoDetalleId
+        (linea) => linea.id === item.pedidoInternoDetalleId,
       );
       if (item.cantidadEntregada > Number(detalle?.cantidadPendiente || 0)) {
-        toast.error("No puedes entregar mas que el saldo pendiente de una linea.");
+        toast.error(
+          "No puedes entregar mas que el saldo pendiente de una linea.",
+        );
         return;
       }
     }
@@ -199,7 +204,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
       });
       setUltimoResultado(response);
       toast.success(
-        `La nota de pedido ${pedido.codigo} fue atendida y genero su nota de salida.`
+        `La nota de pedido ${pedido.codigo} fue atendida y genero su nota de salida.`,
       );
       dispatch({ type: "reset" });
       await cargarBandeja();
@@ -219,7 +224,8 @@ const BandejaAlmacenNotasPedidoPage = () => {
           </h1>
           <p className="mt-2 text-sm text-emerald-800">
             Esta vista esta reservada para usuarios de almacen o inventario.
-            Desde aqui se registran las entregas reales y se genera la nota de salida.
+            Desde aqui se registran las entregas reales y se genera la nota de
+            salida.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
@@ -304,11 +310,15 @@ const BandejaAlmacenNotasPedidoPage = () => {
                       <h2 className="text-lg font-semibold text-slate-900">
                         {pedido.codigo}
                       </h2>
-                      <PedidoInternoEstadoBadge estadoFlujo={pedido.estadoFlujo} />
+                      <PedidoInternoEstadoBadge
+                        estadoFlujo={pedido.estadoFlujo}
+                      />
                     </div>
                     <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                       <p>
-                        <span className="font-medium text-slate-800">Area:</span>{" "}
+                        <span className="font-medium text-slate-800">
+                          Area:
+                        </span>{" "}
                         {pedido.areaSolicitante?.nombre || "-"}
                       </p>
                       <p>
@@ -318,11 +328,15 @@ const BandejaAlmacenNotasPedidoPage = () => {
                         {pedido.solicitante?.nombre || "-"}
                       </p>
                       <p>
-                        <span className="font-medium text-slate-800">Fecha:</span>{" "}
+                        <span className="font-medium text-slate-800">
+                          Fecha:
+                        </span>{" "}
                         {formatDate(pedido.fechaPedido)}
                       </p>
                       <p>
-                        <span className="font-medium text-slate-800">Almacen:</span>{" "}
+                        <span className="font-medium text-slate-800">
+                          Almacen:
+                        </span>{" "}
                         {pedido.almacen?.codigo || "-"}
                       </p>
                     </div>
@@ -338,7 +352,9 @@ const BandejaAlmacenNotasPedidoPage = () => {
                     <button
                       type="button"
                       onClick={() =>
-                        abierta ? dispatch({ type: "reset" }) : handleOpenAtencion(pedido)
+                        abierta
+                          ? dispatch({ type: "reset" })
+                          : handleOpenAtencion(pedido)
                       }
                       className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
@@ -360,16 +376,28 @@ const BandejaAlmacenNotasPedidoPage = () => {
                     </thead>
                     <tbody>
                       {(pedido.detalles || []).map((detalle) => (
-                        <tr key={detalle.id} className="border-t border-slate-200">
+                        <tr
+                          key={detalle.id}
+                          className="border-t border-slate-200"
+                        >
                           <td className="px-3 py-2">
-                            {detalle.producto?.codigo} - {detalle.producto?.nombre}
+                            {detalle.producto?.codigo} -{" "}
+                            {detalle.producto?.nombre}
                           </td>
-                          <td className="px-3 py-2">{detalle.cantidadSolicitada}</td>
-                          <td className="px-3 py-2">{detalle.cantidadAtendida}</td>
-                          <td className="px-3 py-2">{detalle.cantidadPendiente}</td>
+                          <td className="px-3 py-2">
+                            {detalle.cantidadSolicitada}
+                          </td>
+                          <td className="px-3 py-2">
+                            {detalle.cantidadAtendida}
+                          </td>
+                          <td className="px-3 py-2">
+                            {detalle.cantidadPendiente}
+                          </td>
                           <td className="px-3 py-2">
                             {(detalle.reservasActivas || []).length === 0 ? (
-                              <span className="text-slate-500">Sin reserva visible</span>
+                              <span className="text-slate-500">
+                                Sin reserva visible
+                              </span>
                             ) : (
                               <div className="space-y-1 text-xs">
                                 {detalle.reservasActivas.map((reserva) => (
@@ -377,7 +405,8 @@ const BandejaAlmacenNotasPedidoPage = () => {
                                     key={reserva.id}
                                     className="rounded bg-blue-50 px-2 py-1 text-blue-900"
                                   >
-                                    Reservado: {reserva.cantidadPendiente} � vence {formatDate(reserva.expiresAt)}
+                                    Reservado: {reserva.cantidadPendiente} ·
+                                    vence {formatDate(reserva.expiresAt)}
                                   </div>
                                 ))}
                               </div>
@@ -392,12 +421,17 @@ const BandejaAlmacenNotasPedidoPage = () => {
                 {abierta && (
                   <div className="mt-4 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-                      La salida real se registrara solo por las cantidades entregadas ahora. La reserva vigente se consumira con esta atencion.
+                      La salida real se registrara solo por las cantidades
+                      entregadas ahora. La reserva vigente se consumira con esta
+                      atencion.
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label htmlFor={`pedido-receptor-${pedido.id}`} className="mb-1 block text-sm font-medium text-slate-700">
+                        <label
+                          htmlFor={`pedido-receptor-${pedido.id}`}
+                          className="mb-1 block text-sm font-medium text-slate-700"
+                        >
                           Receptor del area solicitante
                         </label>
                         <select
@@ -414,13 +448,17 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           className="w-full rounded border border-slate-300 px-3 py-2"
                         >
                           {receptorCandidates.length > 0 && (
-                            <option value="">Selecciona un receptor sugerido</option>
+                            <option value="">
+                              Selecciona un receptor sugerido
+                            </option>
                           )}
                           {receptorCandidates.map((candidate) => (
                             <option key={candidate.id} value={candidate.id}>
                               {candidate.nombre}
-                              {candidate.cargo ? ` � ${candidate.cargo}` : ""}
-                              {candidate.sourceLabel ? ` � ${candidate.sourceLabel}` : ""}
+                              {candidate.cargo ? ` · ${candidate.cargo}` : ""}
+                              {candidate.sourceLabel
+                                ? ` · ${candidate.sourceLabel}`
+                                : ""}
                             </option>
                           ))}
                           <option value={MANUAL_RECEPTOR_OPTION}>
@@ -428,12 +466,16 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           </option>
                         </select>
                         <p className="mt-1 text-xs text-slate-500">
-                          Se sugieren usuarios ya visibles en el documento y pertenecientes al area solicitante.
+                          Se sugieren usuarios ya visibles en el documento y
+                          pertenecientes al area solicitante.
                         </p>
                       </div>
 
                       <div>
-                        <label htmlFor={`pedido-observaciones-entrega-${pedido.id}`} className="mb-1 block text-sm font-medium text-slate-700">
+                        <label
+                          htmlFor={`pedido-observaciones-entrega-${pedido.id}`}
+                          className="mb-1 block text-sm font-medium text-slate-700"
+                        >
                           Observaciones de la entrega
                         </label>
                         <input
@@ -456,7 +498,10 @@ const BandejaAlmacenNotasPedidoPage = () => {
 
                     {usarIngresoManual && (
                       <div>
-                        <label htmlFor={`pedido-receptor-manual-${pedido.id}`} className="mb-1 block text-sm font-medium text-slate-700">
+                        <label
+                          htmlFor={`pedido-receptor-manual-${pedido.id}`}
+                          className="mb-1 block text-sm font-medium text-slate-700"
+                        >
                           ID manual del receptor
                         </label>
                         <input
@@ -476,7 +521,9 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           placeholder="ID del receptor"
                         />
                         <p className="mt-1 text-xs text-slate-500">
-                          Usa este campo solo si el receptor no aparece en las sugerencias. El backend validara que pertenezca al area solicitante.
+                          Usa este campo solo si el receptor no aparece en las
+                          sugerencias. El backend validara que pertenezca al
+                          area solicitante.
                         </p>
                       </div>
                     )}
@@ -487,7 +534,9 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           <tr>
                             <th className="px-3 py-2 text-left">Producto</th>
                             <th className="px-3 py-2 text-left">Pendiente</th>
-                            <th className="px-3 py-2 text-left">Entregar ahora</th>
+                            <th className="px-3 py-2 text-left">
+                              Entregar ahora
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -497,9 +546,12 @@ const BandejaAlmacenNotasPedidoPage = () => {
                               className="border-t border-slate-200"
                             >
                               <td className="px-3 py-2">
-                                {detalle.producto?.codigo} - {detalle.producto?.nombre}
+                                {detalle.producto?.codigo} -{" "}
+                                {detalle.producto?.nombre}
                               </td>
-                              <td className="px-3 py-2">{detalle.cantidadPendiente}</td>
+                              <td className="px-3 py-2">
+                                {detalle.cantidadPendiente}
+                              </td>
                               <td className="px-3 py-2">
                                 <input
                                   type="number"
@@ -604,5 +656,3 @@ const BandejaAlmacenNotasPedidoPage = () => {
 };
 
 export default BandejaAlmacenNotasPedidoPage;
-
-

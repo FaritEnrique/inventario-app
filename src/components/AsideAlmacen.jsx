@@ -144,7 +144,7 @@ const AsideAlmacen = ({ onNavigate }) => {
           visible: puedeGestionarCatalogos,
           subItems: [
             {
-              name: "AdministraciÃ³n de Productos",
+              name: "Administración de Productos",
               to: `${baseUrl}/productos`,
               exact: true,
               visible: puedeGestionarCatalogos,
@@ -156,7 +156,7 @@ const AsideAlmacen = ({ onNavigate }) => {
               visible: puedeGestionarCatalogos,
             },
             {
-              name: "GestiÃ³n de Marcas",
+              name: "Gestión de Marcas",
               to: `${baseUrl}/productos/marcas`,
               exact: true,
               visible: puedeGestionarCatalogos,
@@ -176,17 +176,17 @@ const AsideAlmacen = ({ onNavigate }) => {
           ],
         },
         {
-          name: "RecepciÃ³n y atenciÃ³n",
+          name: "Recepción y atención",
           icon: FileCheck,
           subItems: [
             {
-              name: "RecepciÃ³n O/C",
+              name: "Recepción O/C",
               to: `${baseUrl}/recepcion-oc`,
               exact: true,
               visible: puedeOperarInventario,
             },
             {
-              name: "Bandeja AlmacÃ©n N/P",
+              name: "Bandeja Almacén N/P",
               to: `${baseUrl}/notas-pedido/almacen`,
               exact: true,
               visible: puedeVerBandejaAlmacen,
@@ -199,7 +199,7 @@ const AsideAlmacen = ({ onNavigate }) => {
           visible: puedeOperarInventario,
           subItems: [
             {
-              name: "Stock por AlmacÃ©n",
+              name: "Stock por Almacén",
               to: `${baseUrl}/stock`,
               exact: true,
               visible: puedeOperarInventario,
@@ -309,7 +309,7 @@ const AsideAlmacen = ({ onNavigate }) => {
           <Box className="w-5 h-5" />
         </div>
         <h1 className="fuente-poppins text-white font-extrabold text-xl tracking-wide">
-          MÃ³dulo AlmacÃ©n
+          Módulo de Almacén
         </h1>
       </div>
 
@@ -393,7 +393,7 @@ const AsideAlmacen = ({ onNavigate }) => {
 
                       <div className="relative z-10 bg-indigo-600 flex items-center justify-center min-w-[38px] py-4 shadow-md select-none">
                         <span className="text-[11px] font-extrabold text-white uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 whitespace-nowrap text-center">
-                          {item.submenuLabel ?? `GestiÃ³n ${item.name}`}
+                          {item.submenuLabel ?? `Gestión ${item.name}`}
                         </span>
                       </div>
 
@@ -447,12 +447,12 @@ const AsideAlmacen = ({ onNavigate }) => {
 
         {menuItems.length === 0 && (
           <div className="rounded-xl border border-indigo-700/60 bg-indigo-950/40 p-4 text-xs leading-relaxed text-indigo-100">
-            No tienes opciones disponibles para el contexto activo de almacÃ©n.
+            No tienes opciones disponibles para el contexto activo de almacén.
           </div>
         )}
       </nav>
     </div>
   );
-}
+};
 
 export default memo(AsideAlmacen);

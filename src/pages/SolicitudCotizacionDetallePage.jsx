@@ -136,9 +136,7 @@ const formatTraceDetail = (detalle = {}) => {
 
   if (!entries.length) return "-";
 
-  return entries
-    .map(([key, value]) => `${key}: ${String(value)}`)
-    .join(" | ");
+  return entries.map(([key, value]) => `${key}: ${String(value)}`).join(" | ");
 };
 
 const getEventPhone = (event, access) =>
@@ -262,8 +260,7 @@ const SolicitudCotizacionDetallePage = () => {
     configuracionEmpresaError,
     documentData,
     reload,
-  } =
-    useSolicitudCotizacionDetalleData(id);
+  } = useSolicitudCotizacionDetalleData(id);
   const {
     obtenerSolicitudPdfUrl,
     obtenerHistorialEnvios,
@@ -456,8 +453,7 @@ const SolicitudCotizacionDetallePage = () => {
                   {
                     label: "Carga/descarga asumida por",
                     value:
-                      documentContract.condiciones
-                        .cargaDescargaAsumidaPorLabel,
+                      documentContract.condiciones.cargaDescargaAsumidaPorLabel,
                   },
                 ]
               : []),
@@ -478,8 +474,7 @@ const SolicitudCotizacionDetallePage = () => {
                   {
                     label: "Condiciones logisticas locales",
                     value:
-                      documentContract.condiciones
-                        .condicionesLogisticasLocales,
+                      documentContract.condiciones.condicionesLogisticasLocales,
                   },
                 ]
               : []),
@@ -1222,7 +1217,7 @@ const SolicitudCotizacionDetallePage = () => {
         <div className="space-y-5">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
             Con WhatsApp manual el sistema no puede confirmar la entrega del
-            mensaje; solo registra que se preparÃ³, copiÃ³ o abriÃ³ WhatsApp.
+            mensaje; solo registra que se preparó, copió o abrió WhatsApp.
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -1248,7 +1243,10 @@ const SolicitudCotizacionDetallePage = () => {
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
                 {PHONE_COUNTRY_OPTIONS.map((option) => (
-                  <option key={`${option.codigo}-${option.pais}`} value={option.codigo}>
+                  <option
+                    key={`${option.codigo}-${option.pais}`}
+                    value={option.codigo}
+                  >
                     {option.codigo} {option.pais}
                   </option>
                 ))}
@@ -1293,7 +1291,9 @@ const SolicitudCotizacionDetallePage = () => {
               {systemAccessData?.status === "EXISTENTE" ? (
                 <button
                   type="button"
-                  onClick={() => handleGenerateSystemAccess({ regenerar: true })}
+                  onClick={() =>
+                    handleGenerateSystemAccess({ regenerar: true })
+                  }
                   disabled={systemAccessLoading}
                   className="inline-flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -1317,7 +1317,10 @@ const SolicitudCotizacionDetallePage = () => {
           {systemAccessData?.accessUrl ? (
             <>
               <div className="grid gap-4 md:grid-cols-2">
-                <SummaryField label="Enlace externo" value={systemAccessData.accessUrl} />
+                <SummaryField
+                  label="Enlace externo"
+                  value={systemAccessData.accessUrl}
+                />
                 <SummaryField
                   label="Clave temporal"
                   value={systemAccessData.claveTemporal || "-"}
@@ -1443,7 +1446,9 @@ const SolicitudCotizacionDetallePage = () => {
                 />
                 <SummaryField
                   label="Ultimo actor interno"
-                  value={readValue(accessTraceSummary.ultimoCompartidoPor?.nombre)}
+                  value={readValue(
+                    accessTraceSummary.ultimoCompartidoPor?.nombre,
+                  )}
                 />
                 <SummaryField
                   label="Requiere regeneracion"

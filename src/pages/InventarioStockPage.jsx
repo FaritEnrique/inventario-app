@@ -34,7 +34,9 @@ const InventarioStockPage = () => {
   const { user } = useAuth();
   const { loading, obtenerStock } = useInventario();
   const [searchParams] = useSearchParams();
-  const [buscar, setBuscar] = useState(() => getBuscarFromSearchParams(searchParams));
+  const [buscar, setBuscar] = useState(() =>
+    getBuscarFromSearchParams(searchParams),
+  );
   const [almacenId, setAlmacenId] = useState(() =>
     getAlmacenIdFromSearchParams(searchParams),
   );
@@ -45,15 +47,18 @@ const InventarioStockPage = () => {
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
   const isInitialLoading = loading && rows.length === 0;
 
-  const cargarStock = useCallback(async (filters = {}) => {
-    try {
-      const data = await obtenerStock(filters);
-      setRows(Array.isArray(data) ? data : []);
-    } catch (error) {
-      toast.error(error.message || "No se pudo obtener el stock.");
-      setRows([]);
-    }
-  }, [obtenerStock]);
+  const cargarStock = useCallback(
+    async (filters = {}) => {
+      try {
+        const data = await obtenerStock(filters);
+        setRows(Array.isArray(data) ? data : []);
+      } catch (error) {
+        toast.error(error.message || "No se pudo obtener el stock.");
+        setRows([]);
+      }
+    },
+    [obtenerStock],
+  );
 
   useEffect(() => {
     const nextBuscar = getBuscarFromSearchParams(searchParams);
@@ -93,7 +98,8 @@ const InventarioStockPage = () => {
             Stock de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Consulta stock actual, reservado y disponible por producto y almacen.
+            Consulta stock actual, reservado y disponible por producto y
+            almacen.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -145,7 +151,9 @@ const InventarioStockPage = () => {
       </div>
 
       <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        El stock disponible ya descuenta las reservas activas de notas de pedido aprobadas. La salida real ocurre solo cuando almacen genera la nota de salida.
+        El stock disponible ya descuenta las reservas activas de notas de pedido
+        aprobadas. La salida real ocurre solo cuando almacen genera la nota de
+        salida.
       </div>
 
       <form
@@ -153,26 +161,34 @@ const InventarioStockPage = () => {
         className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-3"
       >
         <div>
-          <label htmlFor="inventario-stock-buscar" className="mb-1 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="inventario-stock-buscar"
+            className="mb-1 block text-sm font-medium text-gray-700"
+          >
             Buscar producto
           </label>
           <input
             id="inventario-stock-buscar"
             type="text"
             value={buscar}
-            name="inventario-stock-page-input-126" onChange={(event) => setBuscar(event.target.value)}
+            name="inventario-stock-page-input-126"
+            onChange={(event) => setBuscar(event.target.value)}
             className="w-full rounded border border-gray-300 px-3 py-2"
             placeholder="Nombre o codigo"
           />
         </div>
         <div>
-          <label htmlFor="inventario-stock-almacen" className="mb-1 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="inventario-stock-almacen"
+            className="mb-1 block text-sm font-medium text-gray-700"
+          >
             Filtrar por almacen
           </label>
           <select
             id="inventario-stock-almacen"
             value={almacenId}
-            name="inventario-stock-page-select-138" onChange={(event) => setAlmacenId(event.target.value)}
+            name="inventario-stock-page-select-138"
+            onChange={(event) => setAlmacenId(event.target.value)}
             className="w-full rounded border border-gray-300 px-3 py-2"
           >
             <option value="">Todos</option>
@@ -216,7 +232,7 @@ const InventarioStockPage = () => {
                       {row.producto.nombre}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {row.producto.codigo} � {row.producto.unidadMedida}
+                      {row.producto.codigo} · {row.producto.unidadMedida}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
@@ -250,8 +266,12 @@ const InventarioStockPage = () => {
                         <div className="font-semibold text-slate-900">
                           Nota de pedido: {reserva.pedidoInterno?.codigo || "-"}
                         </div>
-                        <div>Area reservante: {reserva.area?.nombre || "-"}</div>
-                        <div>Cantidad reservada: {reserva.cantidadReservada}</div>
+                        <div>
+                          Area reservante: {reserva.area?.nombre || "-"}
+                        </div>
+                        <div>
+                          Cantidad reservada: {reserva.cantidadReservada}
+                        </div>
                         <div>
                           Vence: {formatDisplayDateTime(reserva.expiresAt)}
                         </div>
@@ -281,8 +301,12 @@ const InventarioStockPage = () => {
                           {almacen.codigo} - {almacen.nombre}
                         </td>
                         <td className="px-4 py-3">{almacen.cantidadActual}</td>
-                        <td className="px-4 py-3">{almacen.cantidadReservada}</td>
-                        <td className="px-4 py-3">{almacen.cantidadDisponible}</td>
+                        <td className="px-4 py-3">
+                          {almacen.cantidadReservada}
+                        </td>
+                        <td className="px-4 py-3">
+                          {almacen.cantidadDisponible}
+                        </td>
                         <td className="px-4 py-3">
                           {(almacen.reservasActivas || []).length === 0 ? (
                             <span className="text-gray-500">Sin reservas</span>
@@ -294,10 +318,17 @@ const InventarioStockPage = () => {
                                   className="rounded bg-blue-50 px-2 py-1 text-blue-900"
                                 >
                                   <div>
-                                    {reserva.pedidoInterno?.codigo || "Sin pedido"} � {reserva.area?.abreviatura || reserva.area?.nombre || "-"}
+                                    {reserva.pedidoInterno?.codigo ||
+                                      "Sin pedido"}{" "}
+                                    ·{" "}
+                                    {reserva.area?.abreviatura ||
+                                      reserva.area?.nombre ||
+                                      "-"}
                                   </div>
                                   <div>
-                                    {reserva.cantidadReservada} reservadas � vence {formatDisplayDateTime(reserva.expiresAt)}
+                                    {reserva.cantidadReservada} reservadas ·
+                                    vence{" "}
+                                    {formatDisplayDateTime(reserva.expiresAt)}
                                   </div>
                                 </div>
                               ))}
@@ -329,5 +360,3 @@ const InventarioStockPage = () => {
 };
 
 export default InventarioStockPage;
-
-
