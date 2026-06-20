@@ -1,3 +1,4 @@
+// src/pages/almacen/dashboard/DashboardNotasIngresoPage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -7,6 +8,7 @@ import DashboardDetalleHeader from "../../../components/almacen/dashboard/Dashbo
 import DashboardEmptyState from "../../../components/almacen/dashboard/DashboardEmptyState";
 import DashboardMetricCard from "../../../components/almacen/dashboard/DashboardMetricCard";
 import DashboardPagination from "../../../components/almacen/dashboard/DashboardPagination";
+import DashboardReportActions from "../../../components/almacen/dashboard/DashboardReportActions";
 import {
   PAGE_SIZE,
   buildSearchParams,
@@ -24,6 +26,49 @@ const buildPreviewProductos = (detalles = []) =>
     .map((detalle) => getProductoLabel(detalle.producto))
     .join("; ");
 
+const getNotaCodigo = (nota) =>
+  nota.codigo || nota.codigoNotaIngreso || "Ingreso #" + nota.id;
+
+const getNotaFecha = (nota) =>
+  nota.fechaMovimiento || nota.fechaDocumento || nota.createdAt;
+
+const getNotaReferencia = (nota) =>
+  nota.ordenCompra?.codigo || nota.referenciaCodigo || "-";
+
+const getNotaEstado = (nota) => nota.estado || nota.estadoDocumento || "-";
+
+const notasIngresoReportColumns = [
+  {
+    header: "Nota",
+    value: (row) => row.codigo || "-",
+    width: 20,
+  },
+  {
+    header: "Fecha",
+    value: (row) => row.fecha || "-",
+    align: "center",
+    headerAlign: "center",
+    width: 16,
+  },
+  {
+    header: "Referencia",
+    value: (row) => row.referencia || "-",
+    width: 24,
+  },
+  {
+    header: "Productos",
+    value: (row) => row.productos || "-",
+    width: 46,
+  },
+  {
+    header: "Estado",
+    value: (row) => row.estado || "-",
+    align: "center",
+    headerAlign: "center",
+    width: 18,
+  },
+];
+
 const DashboardNotasIngresoPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
@@ -39,11 +84,13 @@ const DashboardNotasIngresoPage = () => {
 
   const cargarNotas = useCallback(async () => {
     setLoading(true);
+
     try {
       const response = await inventarioApi.obtenerNotasIngreso({
         page: 1,
         limit: 100,
       });
+
       setRows(normalizePagedResponse(response).data);
     } catch (error) {
       toast.error(
@@ -65,21 +112,42 @@ const DashboardNotasIngresoPage = () => {
     const hasta = fechaHasta ? Date.parse(fechaHasta) : null;
 
     return rows.filter((nota) => {
-      const fecha = Date.parse(
-        nota.fechaMovimiento || nota.fechaDocumento || nota.createdAt,
+      const fecha = Date.parse(getNotaFecha(nota));
+      const productosPreview = buildPreviewProductos(
+        nota.detalles || nota.items || [],
       );
+
       const text = normalizeText(
-        `${nota.codigo || ""} ${nota.codigoNotaIngreso || ""} ${nota.referenciaCodigo || ""} ${nota.ordenCompra?.codigo || ""} ${buildPreviewProductos(nota.detalles || nota.items || [])}`,
+        [
+          nota.codigo || "",
+          nota.codigoNotaIngreso || "",
+          nota.referenciaCodigo || "",
+          nota.ordenCompra?.codigo || "",
+          productosPreview,
+        ].join(" "),
       );
 
       if (searchFilter && !text.includes(searchFilter)) return false;
       if (desde && Number.isFinite(fecha) && fecha < desde) return false;
-      if (hasta && Number.isFinite(fecha) && fecha > hasta + 86_399_999)
+      if (hasta && Number.isFinite(fecha) && fecha > hasta + 86_399_999) {
         return false;
+      }
 
       return true;
     });
   }, [fechaDesde, fechaHasta, rows, search]);
+
+  const reportRows = useMemo(
+    () =>
+      filteredRows.map((nota) => ({
+        codigo: getNotaCodigo(nota),
+        fecha: formatDate(getNotaFecha(nota)),
+        referencia: getNotaReferencia(nota),
+        productos: buildPreviewProductos(nota.detalles || nota.items || []),
+        estado: getNotaEstado(nota),
+      })),
+    [filteredRows],
+  );
 
   const {
     rows: paginatedRows,
@@ -128,7 +196,19 @@ const DashboardNotasIngresoPage = () => {
         icon={ArrowDownCircle}
         loading={loading}
         onRefresh={cargarNotas}
-      />
+      >
+        <DashboardReportActions
+          title="Notas de ingreso"
+          subtitle={
+            "Documentos de ingreso filtrados. Registros: " + reportRows.length
+          }
+          rows={reportRows}
+          columns={notasIngresoReportColumns}
+          fileName="dashboard-notas-ingreso"
+          sheetName="Notas de ingreso"
+          disabled={loading}
+        />
+      </DashboardDetalleHeader>
 
       <div className="grid gap-4 md:grid-cols-2">
         <DashboardMetricCard
@@ -138,6 +218,7 @@ const DashboardNotasIngresoPage = () => {
           icon={ArrowDownCircle}
           tone="emerald"
         />
+
         <DashboardMetricCard
           title="Resultado filtrado"
           value={formatNumber(filteredRows.length)}
@@ -154,36 +235,40 @@ const DashboardNotasIngresoPage = () => {
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+          className="px-3 py-2 text-sm border outline-none rounded-xl border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
           placeholder="Código, O/C, referencia o producto"
         />
+
         <input
           type="date"
           value={fechaDesde}
           onChange={(event) => setFechaDesde(event.target.value)}
-          className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+          className="px-3 py-2 text-sm border outline-none rounded-xl border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
         />
+
         <input
           type="date"
           value={fechaHasta}
           onChange={(event) => setFechaHasta(event.target.value)}
-          className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+          className="px-3 py-2 text-sm border outline-none rounded-xl border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
         />
+
         <div className="flex gap-2">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700"
           >
-            <Search className="h-4 w-4" />
+            <Search className="w-4 h-4" />
             Buscar
           </button>
+
           <button
             type="button"
             onClick={handleReset}
-            className="rounded-xl border border-slate-300 px-3 text-slate-600 hover:bg-slate-50"
+            className="px-3 border rounded-xl border-slate-300 text-slate-600 hover:bg-slate-50"
             aria-label="Limpiar"
           >
-            <X className="h-4 w-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </form>
@@ -202,47 +287,48 @@ const DashboardNotasIngresoPage = () => {
             pageSize={PAGE_SIZE}
             onPageChange={handlePageChange}
           />
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+          <div className="overflow-x-auto bg-white border shadow-sm rounded-2xl border-slate-200">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="text-xs tracking-wide uppercase bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 text-left">Nota</th>
-                  <th className="px-4 py-3 text-left">Fecha</th>
-                  <th className="px-4 py-3 text-left">Referencia</th>
-                  <th className="px-4 py-3 text-left">Productos</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Acción</th>
+                  <th className="px-4 py-3 text-center">Nota</th>
+                  <th className="px-4 py-3 text-center">Fecha</th>
+                  <th className="px-4 py-3 text-center">Referencia</th>
+                  <th className="px-4 py-3 text-center">Productos</th>
+                  <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3 text-center">Acción</th>
                 </tr>
               </thead>
+
               <tbody>
                 {paginatedRows.map((nota) => (
                   <tr key={nota.id} className="border-t border-slate-100">
                     <td className="px-4 py-3 font-black text-slate-800">
-                      {nota.codigo ||
-                        nota.codigoNotaIngreso ||
-                        `Ingreso #${nota.id}`}
+                      {getNotaCodigo(nota)}
                     </td>
-                    <td className="px-4 py-3">
-                      {formatDate(
-                        nota.fechaMovimiento ||
-                          nota.fechaDocumento ||
-                          nota.createdAt,
-                      )}
+
+                    <td className="px-4 py-3 text-center">
+                      {formatDate(getNotaFecha(nota))}
                     </td>
-                    <td className="px-4 py-3">
-                      {nota.ordenCompra?.codigo || nota.referenciaCodigo || "-"}
-                    </td>
+
+                    <td className="px-4 py-3">{getNotaReferencia(nota)}</td>
+
                     <td className="px-4 py-3">
                       {buildPreviewProductos(
                         nota.detalles || nota.items || [],
                       ) || "-"}
                     </td>
-                    <td className="px-4 py-3">
-                      {nota.estado || nota.estadoDocumento || "-"}
+
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 text-xs font-black rounded-full bg-emerald-100 text-emerald-700">
+                        {getNotaEstado(nota)}
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
+
+                    <td className="px-4 py-3 text-center">
                       <Link
-                        to={`/modulo-almacen/notas-ingreso/${nota.id}`}
+                        to={"/modulo-almacen/notas-ingreso/" + nota.id}
                         className="font-bold text-indigo-600 hover:text-indigo-700"
                       >
                         Ver detalle
