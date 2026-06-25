@@ -66,6 +66,7 @@ const createEmptyOcForm = () => ({
   fechaDocumento: "",
   codigoNotaIngreso: "",
   observaciones: "",
+  motivoSinDocumentacionEntrega: "",
   documentosEntrega: [createEmptyDocumentoEntrega()],
   items: [],
 });
@@ -87,8 +88,7 @@ const hasDocumentoPartialData = (documento) =>
     documento?.file ||
     documento?.numeroDocumento ||
     documento?.fechaDocumento ||
-    documento?.observaciones ||
-    documento?.tipoDocumento,
+    documento?.observaciones,
   );
 
 const getDocumentosEntregaConArchivo = (documentos = []) =>
@@ -105,25 +105,24 @@ const validateDocumentosEntrega = ({
     (documento) =>
       !hasDocumentoFile(documento) && hasDocumentoPartialData(documento),
   );
+  const motivo = String(motivoSinDocumentacionEntrega || "").trim();
 
   if (documentosEntrega.length > MAX_DOCUMENTOS_ENTREGA) {
     return `Solo puedes adjuntar hasta ${MAX_DOCUMENTOS_ENTREGA} documentos sustentatorios.`;
   }
 
-  if (required && documentosConArchivo.length === 0) {
-    return "La recepción vinculada a Orden de Compra requiere al menos un documento sustentatorio.";
-  }
-
-  if (
-    !required &&
-    documentosConArchivo.length === 0 &&
-    !String(motivoSinDocumentacionEntrega || "").trim()
-  ) {
-    return "Si no adjuntas documentación sustentatoria, debes indicar el motivo.";
-  }
-
   if (documentosParcialesSinArchivo.length > 0) {
     return "Hay documentos con metadata registrada pero sin archivo adjunto. Adjunta el archivo o elimina la fila.";
+  }
+
+  if (documentosConArchivo.length === 0) {
+    if (!motivo) {
+      return required
+        ? "Adjunta al menos un documento sustentatorio o registra el motivo excepcional por el cual no se cuenta con documentación de entrega."
+        : "Si no adjuntas documentación sustentatoria, debes indicar el motivo.";
+    }
+
+    return "";
   }
 
   for (const [index, documento] of documentosConArchivo.entries()) {
@@ -148,7 +147,7 @@ const DocumentosEntregaSection = ({
   onDocumentoChange,
   onAddDocumento,
   onRemoveDocumento,
-  onMotivoChange,
+  onMotivoChange = () => {},
 }) => {
   const canAddDocumento = documentos.length < MAX_DOCUMENTOS_ENTREGA;
   const documentosConArchivo = getDocumentosEntregaConArchivo(documentos);
@@ -177,29 +176,38 @@ const DocumentosEntregaSection = ({
         </button>
       </div>
 
-      {!required ? (
-        <div className="mt-4">
-          <label
-            htmlFor="recepcion-motivo-sin-documentacion"
-            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600"
-          >
-            Motivo si no cuenta con documentación sustentatoria
-          </label>
-          <textarea
-            id="recepcion-motivo-sin-documentacion"
-            value={motivoSinDocumentacionEntrega}
-            onChange={(event) => onMotivoChange(event.target.value)}
-            rows="2"
-            className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"
-            placeholder="Ejemplo: carga inicial de stock, regularización autorizada u otro motivo sustentado."
-          />
-        </div>
-      ) : (
-        <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          Para una recepción vinculada a Orden de Compra, la documentación
-          sustentatoria es obligatoria.
-        </div>
-      )}
+      <div
+        className={`mt-4 rounded border p-3 ${
+          required
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-slate-200 bg-white text-slate-700"
+        }`}
+      >
+        <p className="text-xs leading-relaxed">
+          {required
+            ? "Para una recepción vinculada a Orden de Compra, adjunta al menos un documento sustentatorio. Si excepcionalmente no se cuenta con el archivo al momento de registrar la recepción, deja constancia del motivo."
+            : "Si no adjuntas documento sustentatorio, el motivo es obligatorio."}
+        </p>
+
+        <label
+          htmlFor={`recepcion-motivo-sin-documentacion-${
+            required ? "oc" : "simple"
+          }`}
+          className="mt-3 mb-1 block text-xs font-semibold uppercase tracking-wide"
+        >
+          Motivo si no cuenta con documentación sustentatoria
+        </label>
+        <textarea
+          id={`recepcion-motivo-sin-documentacion-${
+            required ? "oc" : "simple"
+          }`}
+          value={motivoSinDocumentacionEntrega}
+          onChange={(event) => onMotivoChange(event.target.value)}
+          rows="2"
+          className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+          placeholder="Ejemplo: guía pendiente de entrega física, regularización autorizada, carga inicial de stock u otro motivo sustentado."
+        />
+      </div>
 
       <div className="mt-4 space-y-3">
         {documentos.length === 0 ? (
@@ -344,7 +352,8 @@ const InventarioRecepcionesPage = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const ordenCompraIdParam = getOrdenCompraIdFromSearchParams(searchParams);
-  const ordenCompraSearchParam = getOrdenCompraSearchFromSearchParams(searchParams);
+  const ordenCompraSearchParam =
+    getOrdenCompraSearchFromSearchParams(searchParams);
   const hasOrdenCompraQueryParam = Boolean(
     ordenCompraIdParam || ordenCompraSearchParam,
   );
@@ -674,51 +683,56 @@ const InventarioRecepcionesPage = () => {
     }));
   };
 
-  const handleSelectOrdenCompra = useCallback(async (ordenCompraId) => {
-    if (!ordenCompraId) {
-      resetOcSelection();
-      return;
-    }
-
-    try {
-      const ordenCompra = await obtenerOrdenCompraPorId(ordenCompraId);
-      const blockingReason = getBlockingReasonForRecepcion(ordenCompra);
-
-      if (blockingReason) {
+  const handleSelectOrdenCompra = useCallback(
+    async (ordenCompraId) => {
+      if (!ordenCompraId) {
         resetOcSelection();
-        toast.info(blockingReason);
         return;
       }
 
-      const pendingLines = (ordenCompra.items || []).filter(
-        (item) => Number(item.cantidadPendiente || 0) > 0,
-      );
+      try {
+        const ordenCompra = await obtenerOrdenCompraPorId(ordenCompraId);
+        const blockingReason = getBlockingReasonForRecepcion(ordenCompra);
 
-      if (!pendingLines.length) {
-        resetOcSelection();
-        toast.info("La orden seleccionada ya no tiene lineas pendientes.");
-        return;
+        if (blockingReason) {
+          resetOcSelection();
+          toast.info(blockingReason);
+          return;
+        }
+
+        const pendingLines = (ordenCompra.items || []).filter(
+          (item) => Number(item.cantidadPendiente || 0) > 0,
+        );
+
+        if (!pendingLines.length) {
+          resetOcSelection();
+          toast.info("La orden seleccionada ya no tiene lineas pendientes.");
+          return;
+        }
+
+        setSelectedOrdenCompra(ordenCompra);
+        setOcForm((prev) => ({
+          ...prev,
+          ordenCompraId: String(ordenCompra.id),
+          items: buildRecepcionDraftFromOrdenCompra({
+            ...ordenCompra,
+            items: pendingLines,
+          }),
+        }));
+      } catch (error) {
+        toast.error(
+          error.message ||
+            "No se pudo cargar el detalle de la orden de compra.",
+        );
       }
-
-      setSelectedOrdenCompra(ordenCompra);
-      setOcForm((prev) => ({
-        ...prev,
-        ordenCompraId: String(ordenCompra.id),
-        items: buildRecepcionDraftFromOrdenCompra({
-          ...ordenCompra,
-          items: pendingLines,
-        }),
-      }));
-    } catch (error) {
-      toast.error(
-        error.message || "No se pudo cargar el detalle de la orden de compra.",
-      );
-    }
-  }, [obtenerOrdenCompraPorId, resetOcSelection]);
+    },
+    [obtenerOrdenCompraPorId, resetOcSelection],
+  );
 
   useEffect(() => {
     const nextOrdenCompraId = getOrdenCompraIdFromSearchParams(searchParams);
-    const nextOrdenCompraSearch = getOrdenCompraSearchFromSearchParams(searchParams);
+    const nextOrdenCompraSearch =
+      getOrdenCompraSearchFromSearchParams(searchParams);
 
     if (!nextOrdenCompraId && !nextOrdenCompraSearch) {
       return;
@@ -760,6 +774,7 @@ const InventarioRecepcionesPage = () => {
     const documentosValidationMessage = validateDocumentosEntrega({
       documentosEntrega: ocForm.documentosEntrega,
       required: true,
+      motivoSinDocumentacionEntrega: ocForm.motivoSinDocumentacionEntrega,
     });
 
     if (documentosValidationMessage) {
@@ -780,6 +795,8 @@ const InventarioRecepcionesPage = () => {
         fechaDocumento: ocForm.fechaDocumento || undefined,
         codigoNotaIngreso: ocForm.codigoNotaIngreso || undefined,
         observaciones: ocForm.observaciones || undefined,
+        motivoSinDocumentacionEntrega:
+          ocForm.motivoSinDocumentacionEntrega || undefined,
         documentosEntrega: getDocumentosEntregaConArchivo(
           ocForm.documentosEntrega,
         ),
@@ -1267,14 +1284,23 @@ const InventarioRecepcionesPage = () => {
               />
               <DocumentosEntregaSection
                 title="Documentación sustentatoria obligatoria"
-                description="Adjunta como mínimo una guía de remisión, factura, boleta u otro documento sustentatorio de la entrega."
+                description="Adjunta como mínimo una guía de remisión, factura, boleta u otro documento sustentatorio de la entrega. Si no cuentas con el archivo al momento de registrar, consigna el motivo excepcional."
                 documentos={ocForm.documentosEntrega}
+                motivoSinDocumentacionEntrega={
+                  ocForm.motivoSinDocumentacionEntrega
+                }
                 required
                 onDocumentoChange={updateDocumentosEntrega(setOcForm)}
                 onAddDocumento={() => addDocumentoEntrega(setOcForm)}
                 onRemoveDocumento={removeDocumentoEntrega(setOcForm, {
                   required: true,
                 })}
+                onMotivoChange={(value) =>
+                  setOcForm((prev) => ({
+                    ...prev,
+                    motivoSinDocumentacionEntrega: value,
+                  }))
+                }
               />
               <div className="space-y-4">
                 {!selectedOrdenCompra ? null : ocForm.items.length === 0 ? (
