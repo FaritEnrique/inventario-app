@@ -9,6 +9,15 @@ import useDocumentosNotaIngresoStore, {
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
+const formatDateOnly = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("es-PE", { timeZone: "UTC" });
+};
+
 const getTipoDocumentoLabel = (value) =>
   DOCUMENTO_ENTREGA_TIPOS.find((tipo) => tipo.value === value)?.label ||
   value ||
@@ -125,7 +134,7 @@ const DocumentoMobileCard = ({
       <div>
         <dt className="font-semibold text-slate-500">Fecha documento</dt>
         <dd className="mt-0.5 text-slate-800">
-          {formatDateTime(documento.fechaDocumento)}
+          {formatDateOnly(documento.fechaDocumento)}
         </dd>
       </div>
 
@@ -373,9 +382,9 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
           </button>
         </div>
 
-        {!tieneOrdenCompra && documentos.length === 0 ? (
+        {documentos.length === 0 ? (
           <div className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Motivo sin documentación:{" "}
+            Motivo sin documentación sustentatoria:{" "}
             {nota?.motivoSinDocumentacionEntrega || "No registrado"}
           </div>
         ) : null}
@@ -530,7 +539,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
                         </td>
 
                         <td className="px-4 py-3 text-slate-700">
-                          {formatDateTime(documento.fechaDocumento)}
+                          {formatDateOnly(documento.fechaDocumento)}
                         </td>
 
                         <td className="px-4 py-3 text-slate-700">
