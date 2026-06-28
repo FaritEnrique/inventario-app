@@ -35,6 +35,7 @@ import {
   isLogisticaOperadorEffective,
   canAccessGerenciaModuleEffective,
   canViewGerenciaExpedienteLogisticoEffective,
+  canViewNotaIngresoGerenciaConformidadEffective,
 } from "./accessRules";
 import { canAccessTrayLevelEffective } from "./accessRules";
 import { hasRole } from "./utils/userRoles";
@@ -200,6 +201,9 @@ const ProductosTemporalesAlmacenPage = lazy(
 );
 const BandejaConformidadNotasIngresoPage = lazy(
   () => import("./pages/almacen/BandejaConformidadNotasIngresoPage"),
+);
+const BandejaConformidadNotasIngresoGerenciaPage = lazy(
+  () => import("./pages/gerencia/BandejaConformidadNotasIngresoGerenciaPage"),
 );
 const LayoutGerencia = lazy(() => import("./components/LayoutGerencia"));
 const DashboardGerenciaPage = lazy(
@@ -782,6 +786,26 @@ const AppRoutes = () => {
               path="inventario-notas-ingreso/:id"
               element={
                 <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                  <InventarioNotaIngresoDetallePage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="notas-ingreso/conformidad-gerencia"
+              element={
+                <RoutePermissionGuard
+                  allow={canViewNotaIngresoGerenciaConformidadEffective}
+                >
+                  <BandejaConformidadNotasIngresoGerenciaPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="notas-ingreso/conformidad-gerencia/:id"
+              element={
+                <RoutePermissionGuard
+                  allow={canViewNotaIngresoGerenciaConformidadEffective}
+                >
                   <InventarioNotaIngresoDetallePage />
                 </RoutePermissionGuard>
               }

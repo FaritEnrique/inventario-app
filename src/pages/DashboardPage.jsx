@@ -33,6 +33,7 @@ import {
   getPedidosInternosHomePathEffective,
   canAccessCompanySettingsEffective,
   canAccessGerenciaModuleEffective,
+  canViewNotaIngresoGerenciaConformidadEffective,
 } from "../accessRules";
 import { useAuth } from "../context/authContext";
 
@@ -55,6 +56,15 @@ const baseCards = [
     icon: <FaUserTie />,
     path: "/modulo-gerencia",
     visible: ({ user }) => canAccessGerenciaModuleEffective(user),
+  },
+  {
+    title: "Conformidad N/I Área Usuaria",
+    description:
+      "Revisar notas de ingreso que requieren conformidad del gerente del área usuaria antes de impactar stock.",
+    icon: <FaFileImport />,
+    path: "/notas-ingreso/conformidad-gerencia",
+    visible: ({ user }) =>
+      canViewNotaIngresoGerenciaConformidadEffective(user),
   },
   {
     title: "Notas de Pedido",

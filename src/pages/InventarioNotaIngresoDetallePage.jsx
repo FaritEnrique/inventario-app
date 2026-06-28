@@ -1,8 +1,8 @@
 // src/pages/InventarioNotaIngresoDetallePage.jsx
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { canActOnNoteDocument } from "../accessRules";
+import { canActOnNoteDocument, canOperateInventoryEffective } from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
 import DocumentosNotaIngresoModal from "../components/inventario/DocumentosNotaIngresoModal";
@@ -27,6 +27,7 @@ const documentacionEntregaLabels = {
 
 const InventarioNotaIngresoDetallePage = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { user } = useAuth();
   const { prompt, dialogNode } = useAppDialog();
   const openDocumentosNotaIngresoModal = useDocumentosNotaIngresoStore(
@@ -131,6 +132,10 @@ const InventarioNotaIngresoDetallePage = () => {
 
   const documentoFormal = nota.documentoFormal || {};
   const canAct = canActOnNoteDocument(user, documentoFormal);
+  const canManageInventory = canOperateInventoryEffective(user);
+  const isGerenciaConformidadView = location.pathname.includes(
+    "/notas-ingreso/conformidad-gerencia",
+  );
   const documentosEntrega = Array.isArray(nota.documentosEntrega)
     ? nota.documentosEntrega
     : [];
@@ -155,18 +160,29 @@ const InventarioNotaIngresoDetallePage = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link
-            to="/inventario-notas-ingreso"
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Listado
-          </Link>
-          <Link
-            to="/inventario-recepciones"
-            className="rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
-          >
-            Recepciones
-          </Link>
+          {isGerenciaConformidadView ? (
+            <Link
+              to="/notas-ingreso/conformidad-gerencia"
+              className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Volver a bandeja
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/inventario-notas-ingreso"
+                className="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Listado
+              </Link>
+              <Link
+                to="/inventario-recepciones"
+                className="rounded border border-sky-300 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50"
+              >
+                Recepciones
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -233,13 +249,15 @@ const InventarioNotaIngresoDetallePage = () => {
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenDocumentos}
-            className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
-          >
-            Gestionar documentos sustentatorios
-          </button>
+          {canManageInventory ? (
+            <button
+              type="button"
+              onClick={handleOpenDocumentos}
+              className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
+            >
+              Gestionar documentos sustentatorios
+            </button>
+          ) : null}
         </div>
       </div>
 

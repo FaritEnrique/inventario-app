@@ -268,6 +268,9 @@ export const canApproveOrdenCompraStageEffective = (user, ordenCompra) => {
   return false;
 };
 
+export const canViewNotaIngresoGerenciaConformidadEffective = (user = {}) =>
+  isAdminOverride(user) || hasAnyRole(user, ["GERENTE_FUNCIONAL"]);
+
 export const canActOnNoteDocument = (user, documentoFormal) => {
   if (!user || !documentoFormal) return false;
   if (isAdminOverride(user)) return true;
