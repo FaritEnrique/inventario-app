@@ -190,7 +190,7 @@ const BandejaConformidadNotasIngresoGerenciaPage = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-[1120px] text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-left">Nota</th>
@@ -312,12 +312,12 @@ const BandejaConformidadNotasIngresoGerenciaPage = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           disabled={loading || result.currentPage <= 1}
           onClick={() => handlePage(result.currentPage - 1)}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-300"
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-300 sm:w-auto"
         >
           Anterior
         </button>
@@ -328,7 +328,7 @@ const BandejaConformidadNotasIngresoGerenciaPage = () => {
           type="button"
           disabled={loading || result.currentPage >= result.totalPages}
           onClick={() => handlePage(result.currentPage + 1)}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-300"
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-indigo-300 sm:w-auto"
         >
           Siguiente
         </button>

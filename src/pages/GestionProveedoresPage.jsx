@@ -793,10 +793,10 @@ const GestionProveedoresPage = () => {
                     setRegisteredFilterQuery(event.target.value)
                   }
                 />
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="rounded-md bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    className="w-full rounded-md bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 sm:w-auto"
                     disabled={proveedoresLoading}
                   >
                     Filtrar
@@ -804,7 +804,7 @@ const GestionProveedoresPage = () => {
                   <button
                     type="button"
                     onClick={handleClearRegisteredFilter}
-                    className="rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                    className="w-full rounded-md border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
                     disabled={proveedoresLoading && !registeredFilterQuery}
                   >
                     Limpiar
@@ -820,7 +820,7 @@ const GestionProveedoresPage = () => {
               className="rounded-none border-0 shadow-none"
             />
           ) : (
-          <table className="min-w-full leading-normal">
+          <table className="min-w-[1120px] leading-normal">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border-b-2 px-5 py-3 text-left text-xs font-semibold uppercase text-gray-600">

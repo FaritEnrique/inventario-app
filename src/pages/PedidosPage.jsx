@@ -12,34 +12,36 @@ const PedidosPage = () => {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4 text-indigo-700">Gestión de Pedidos</h1>
+    <div className="p-4 sm:p-6">
+      <h1 className="mb-4 text-2xl font-semibold text-indigo-700">Gestión de Pedidos</h1>
 
       {cargando && <p>Cargando pedidos…</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
 
-      <table className="w-full table-auto border mt-4">
+      <div className="mt-4 overflow-x-auto rounded-lg border bg-white shadow-sm">
+        <table className="min-w-[760px] w-full table-auto text-sm">
         <thead className="bg-gray-200">
           <tr>
-            <th className="px-4 py-2">Código</th>
-            <th className="px-4 py-2">Producto</th>
-            <th className="px-4 py-2">Cantidad</th>
-            <th className="px-4 py-2">Área</th>
-            <th className="px-4 py-2">Fecha</th>
+            <th className="whitespace-nowrap px-4 py-2">Código</th>
+            <th className="whitespace-nowrap px-4 py-2">Producto</th>
+            <th className="whitespace-nowrap px-4 py-2">Cantidad</th>
+            <th className="whitespace-nowrap px-4 py-2">Área</th>
+            <th className="whitespace-nowrap px-4 py-2">Fecha</th>
           </tr>
         </thead>
         <tbody>
           {pedidos.map((pedido) => (
             <tr key={pedido.id} className="border-t">
-              <td className="px-4 py-2">{pedido.codigo}</td>
-              <td className="px-4 py-2">{pedido.producto?.nombre || '—'}</td>
-              <td className="px-4 py-2">{pedido.cantidad}</td>
-              <td className="px-4 py-2">{pedido.area?.nombre || '—'}</td>
-              <td className="px-4 py-2">{formatPedidoDate(pedido.fecha)}</td>
+              <td className="whitespace-nowrap px-4 py-2">{pedido.codigo}</td>
+              <td className="whitespace-nowrap px-4 py-2">{pedido.producto?.nombre || '—'}</td>
+              <td className="whitespace-nowrap px-4 py-2">{pedido.cantidad}</td>
+              <td className="whitespace-nowrap px-4 py-2">{pedido.area?.nombre || '—'}</td>
+              <td className="whitespace-nowrap px-4 py-2">{formatPedidoDate(pedido.fecha)}</td>
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 };

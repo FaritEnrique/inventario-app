@@ -56,7 +56,7 @@ const RequerimientosPage = () => {
   const trays = useMemo(() => getAvailableApprovalTraysEffective(user), [user]);
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Requerimientos</h1>
@@ -91,7 +91,7 @@ const RequerimientosPage = () => {
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 rounded-xl bg-white p-4 shadow md:grid-cols-6">
+      <div className="mb-4 grid gap-3 rounded-xl bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-6">
         <input
           value={filters.search}
           name="requerimientos-page-input-71"
@@ -99,7 +99,7 @@ const RequerimientosPage = () => {
             setFilters((prev) => ({ ...prev, search: event.target.value }))
           }
           placeholder="Buscar por codigo, item o solicitante"
-          className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
+          className="rounded border border-gray-300 px-3 py-2 sm:col-span-2 xl:col-span-2"
         />
         {canSelectArea ? (
           <select
@@ -187,11 +187,11 @@ const RequerimientosPage = () => {
           className="rounded border border-gray-300 px-3 py-2"
         />
         {filtersApplied ? (
-          <div className="md:col-span-6 flex justify-end">
+          <div className="flex justify-stretch sm:col-span-2 sm:justify-end xl:col-span-6">
             <button
               type="button"
               onClick={() => setFilters(initialFilters)}
-              className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
             >
               Limpiar filtros
             </button>
@@ -204,8 +204,8 @@ const RequerimientosPage = () => {
       {isInitialLoading ? (
         <SkeletonTable columns={7} rows={6} />
       ) : (
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow">
+        <table className="min-w-[920px] divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">Codigo</th>
@@ -239,7 +239,7 @@ const RequerimientosPage = () => {
                     {formatRequerimientoDate(req.fechaCreacion)}
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       <Link to={`/requerimientos/${req.id}`} className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50">
                         Ver
                       </Link>

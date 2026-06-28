@@ -1051,7 +1051,7 @@ const GestionProductosPage = () => {
               No hay productos registrados para el filtro actual.
             </p>
           ) : (
-            <table className="w-full border-collapse table-auto">
+            <table className="min-w-[980px] w-full border-collapse table-auto">
               <thead>
                 <tr className="bg-indigo-100">
                   <th className="px-4 py-2 border">Item</th>
@@ -1146,24 +1146,24 @@ const GestionProductosPage = () => {
 
       {/* Paginación */}
       {total > limit && (
-        <div className="flex items-center justify-between p-4 mt-4 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="flex flex-col gap-3 p-4 mt-4 bg-white border border-gray-200 rounded-lg shadow-lg sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p>
               Mostrando {desde} a {hasta} de {total} productos
             </p>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex w-full gap-2 sm:w-auto">
             <button
               disabled={page <= 1}
               onClick={() => handlePageChange(page - 1)}
-              className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
+              className="flex-1 px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300 sm:flex-none"
             >
               Anterior
             </button>
             <button
               disabled={hasta >= total}
               onClick={() => handlePageChange(page + 1)}
-              className="px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300"
+              className="flex-1 px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300 sm:flex-none"
             >
               Siguiente
             </button>

@@ -115,8 +115,8 @@ const RequerimientosBandejaPage = ({ nivel }) => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">{title}</h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -131,8 +131,8 @@ const RequerimientosBandejaPage = ({ nivel }) => {
         </Link>
       </div>
 
-      <div className="mb-4 grid gap-3 rounded-xl bg-white p-4 shadow md:grid-cols-4">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-4">
+      <div className="mb-4 grid gap-3 rounded-xl bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2 xl:col-span-4">
           {trayGuidance}
         </div>
         <input
@@ -141,7 +141,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, search: event.target.value }))
           }
-          className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
+          className="rounded border border-gray-300 px-3 py-2 sm:col-span-2 xl:col-span-2"
           placeholder="Buscar por codigo, solicitante o item"
         />
         {canFilterArea ? (
@@ -228,8 +228,8 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                 </div>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
+              <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-[720px] divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-600">
@@ -276,7 +276,7 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                                   },
                                 }))
                               }
-                              className="rounded border border-gray-300 px-2 py-1"
+                              className="w-full rounded border border-gray-300 px-2 py-1"
                             >
                               <option value="MANTENER">Mantener</option>
                               <option value="APROBAR">Aprobar</option>
@@ -323,18 +323,18 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                     </Link>
                   ) : null}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   <button
                     type="button"
                     onClick={() => handleDecision(req.id, "RECHAZAR")}
-                    className="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                    className="w-full rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 sm:w-auto"
                   >
                     Rechazar
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDecision(req.id, "APROBAR")}
-                    className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 sm:w-auto"
                   >
                     Aprobar
                   </button>

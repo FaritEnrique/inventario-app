@@ -180,7 +180,7 @@ const BandejaSubsanacionNotasIngresoPage = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-[980px] text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-left">Nota</th>
@@ -283,12 +283,12 @@ const BandejaSubsanacionNotasIngresoPage = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           disabled={loading || result.currentPage <= 1}
           onClick={() => handlePage(result.currentPage - 1)}
-          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300"
+          className="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300 sm:w-auto"
         >
           Anterior
         </button>
@@ -299,7 +299,7 @@ const BandejaSubsanacionNotasIngresoPage = () => {
           type="button"
           disabled={loading || result.currentPage >= result.totalPages}
           onClick={() => handlePage(result.currentPage + 1)}
-          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300"
+          className="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300 sm:w-auto"
         >
           Siguiente
         </button>
