@@ -140,6 +140,13 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  subsanarNotaIngresoDocumental: (id, payload) =>
+    apiFetch(`inventario/notas-ingreso/${id}/subsanacion-documental`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
   obtenerNotasSalida: (params = {}) =>
     apiFetch(`inventario/notas-salida${buildQuery(params)}`, {
       sessionActivity: "interactive",

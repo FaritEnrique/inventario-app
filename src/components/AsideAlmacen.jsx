@@ -197,6 +197,12 @@ const AsideAlmacen = ({ onNavigate }) => {
               exact: true,
               visible: puedeOperarInventario,
             },
+            {
+              name: "Subsanación N/I",
+              to: `${baseUrl}/notas-ingreso/subsanacion`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
           ],
         },
         {

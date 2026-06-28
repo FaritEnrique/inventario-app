@@ -2,7 +2,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { canActOnNoteDocument, canOperateInventoryEffective } from "../accessRules";
+import {
+  canActOnNoteDocument,
+  canOperateInventoryEffective,
+  canSubsanarNotaIngresoEffective,
+} from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
 import DocumentosNotaIngresoModal from "../components/inventario/DocumentosNotaIngresoModal";
@@ -38,6 +42,7 @@ const InventarioNotaIngresoDetallePage = () => {
     error,
     obtenerNotaIngresoPorId,
     actualizarAprobacionDocumentalNotaIngreso,
+    subsanarNotaIngresoDocumental,
   } = useInventario();
   const [nota, setNota] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -63,14 +68,27 @@ const InventarioNotaIngresoDetallePage = () => {
       title:
         accion === "APROBAR"
           ? "Aprobar nota de ingreso"
-          : "Rechazar nota de ingreso",
-      message: `Comentario para ${accion.toLowerCase()} la nota de ingreso (opcional).`,
+          : accion === "OBSERVAR"
+            ? "Observar nota de ingreso"
+            : "Rechazar nota de ingreso",
+      message:
+        accion === "OBSERVAR"
+          ? "Indica la observación que debe subsanar el responsable de la recepción."
+          : `Comentario para ${accion.toLowerCase()} la nota de ingreso (opcional).`,
       defaultValue: "",
-      placeholder: "Comentario opcional",
-      variant: accion === "APROBAR" ? "default" : "danger",
+      placeholder:
+        accion === "OBSERVAR"
+          ? "Describe qué debe corregirse o complementarse"
+          : "Comentario opcional",
+      variant: accion === "APROBAR" ? "default" : "warning",
     });
 
     if (comentario === null) return;
+
+    if (accion === "OBSERVAR" && !comentario.trim()) {
+      toast.error("Debes indicar el motivo de la observación.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -82,12 +100,47 @@ const InventarioNotaIngresoDetallePage = () => {
       toast.success(
         accion === "APROBAR"
           ? "Aprobacion documental registrada."
-          : "Rechazo documental registrado.",
+          : accion === "OBSERVAR"
+            ? "Observación registrada. La nota vuelve a subsanación."
+            : "Rechazo documental registrado.",
       );
     } catch (actionError) {
       toast.error(
         actionError.message ||
           "No se pudo actualizar la aprobacion documental.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubsanar = async () => {
+    const comentario = await prompt({
+      title: "Reenviar nota subsanada",
+      message:
+        "Indica qué se subsanó antes de devolver la nota a la bandeja de conformidad.",
+      defaultValue: "",
+      placeholder: "Ejemplo: se adjuntó guía complementaria y se corrigió la observación del ítem 2",
+      variant: "default",
+    });
+
+    if (comentario === null) return;
+
+    if (!comentario.trim()) {
+      toast.error("Debes indicar qué se subsanó.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const updated = await subsanarNotaIngresoDocumental(id, {
+        comentario: comentario.trim(),
+      });
+      setNota(updated);
+      toast.success("Nota de ingreso reenviada a conformidad.");
+    } catch (actionError) {
+      toast.error(
+        actionError.message || "No se pudo registrar la subsanación.",
       );
     } finally {
       setSubmitting(false);
@@ -132,6 +185,7 @@ const InventarioNotaIngresoDetallePage = () => {
 
   const documentoFormal = nota.documentoFormal || {};
   const canAct = canActOnNoteDocument(user, documentoFormal);
+  const canSubsanar = canSubsanarNotaIngresoEffective(user, nota);
   const canManageInventory = canOperateInventoryEffective(user);
   const isGerenciaConformidadView = location.pathname.includes(
     "/notas-ingreso/conformidad-gerencia",
@@ -333,7 +387,9 @@ const InventarioNotaIngresoDetallePage = () => {
                         ? "border-indigo-300 bg-indigo-50"
                         : step.rechazado
                           ? "border-rose-300 bg-rose-50"
-                          : step.aprobado
+                          : step.observado
+                            ? "border-amber-300 bg-amber-50"
+                            : step.aprobado
                             ? "border-emerald-300 bg-emerald-50"
                             : "border-slate-200 bg-white"
                     }`}
@@ -371,13 +427,34 @@ const InventarioNotaIngresoDetallePage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDecision("RECHAZAR")}
+                    onClick={() => handleDecision("OBSERVAR")}
                     disabled={submitting}
-                    className="rounded border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                    className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-60"
                   >
-                    Rechazar
+                    Observar
                   </button>
                 </div>
+              </div>
+            ) : null}
+
+            {canSubsanar ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-medium text-amber-900">
+                  Nota observada pendiente de subsanación
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Revisa la observación del historial, realiza la corrección o
+                  adjunta documentación complementaria y reenvía la nota a la
+                  bandeja de conformidad.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSubsanar}
+                  disabled={submitting}
+                  className="mt-3 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                >
+                  Reenviar subsanada
+                </button>
               </div>
             ) : null}
           </div>

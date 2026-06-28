@@ -202,6 +202,9 @@ const ProductosTemporalesAlmacenPage = lazy(
 const BandejaConformidadNotasIngresoPage = lazy(
   () => import("./pages/almacen/BandejaConformidadNotasIngresoPage"),
 );
+const BandejaSubsanacionNotasIngresoPage = lazy(
+  () => import("./pages/almacen/BandejaSubsanacionNotasIngresoPage"),
+);
 const BandejaConformidadNotasIngresoGerenciaPage = lazy(
   () => import("./pages/gerencia/BandejaConformidadNotasIngresoGerenciaPage"),
 );
@@ -658,6 +661,14 @@ const AppRoutes = () => {
                 element={
                   <RoutePermissionGuard allow={canOperateInventoryEffective}>
                     <BandejaConformidadNotasIngresoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-ingreso/subsanacion"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <BandejaSubsanacionNotasIngresoPage />
                   </RoutePermissionGuard>
                 }
               />

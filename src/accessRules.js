@@ -295,6 +295,25 @@ export const canActOnNoteDocument = (user, documentoFormal) => {
   return false;
 };
 
+export const canSubsanarNotaIngresoEffective = (user, notaIngreso = {}) => {
+  if (!user || !notaIngreso) return false;
+  if (isAdminOverride(user)) return true;
+
+  const estado =
+    notaIngreso?.documentoFormal?.estadoDocumentalFormal ||
+    notaIngreso?.estadoDocumentalFormal;
+
+  if (estado !== "PENDIENTE_SUBSANACION") return false;
+
+  return (
+    Number(notaIngreso?.responsable?.id || notaIngreso?.responsableId || 0) ===
+      Number(user?.id || 0) ||
+    Number(
+      notaIngreso?.documentoFormal?.responsableAlmacenIdSnapshot || 0,
+    ) === Number(user?.id || 0)
+  );
+};
+
 export const canViewAllRequerimientosEffective = (user = {}) =>
   hasAnyRole(user, [
     "ADMINISTRADOR_SISTEMA",

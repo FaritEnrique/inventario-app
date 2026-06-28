@@ -89,6 +89,11 @@ const useInventario = () => {
         ),
       [execute],
     ),
+    subsanarNotaIngresoDocumental: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.subsanarNotaIngresoDocumental(id, payload)),
+      [execute],
+    ),
     obtenerNotasSalida: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasSalida(params)),
       [execute],
