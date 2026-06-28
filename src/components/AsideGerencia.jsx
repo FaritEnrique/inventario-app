@@ -156,7 +156,7 @@ const AsideGerencia = ({ onNavigate }) => {
         </h1>
       </div>
 
-      <nav className="relative z-[100] flex flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-4 lg:overflow-visible">
+      <nav className="relative z-[100] flex flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-4 xl:overflow-visible">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const hasSubItems =
@@ -200,7 +200,7 @@ const AsideGerencia = ({ onNavigate }) => {
                   <>
                     <div
                       id={submenuId}
-                      className="mt-2 rounded-xl bg-indigo-950/35 p-2 lg:hidden"
+                      className="mt-2 rounded-xl bg-indigo-950/35 p-2 xl:hidden"
                     >
                       {item.subItems.map((subItem) => (
                         <NavLink
@@ -224,7 +224,7 @@ const AsideGerencia = ({ onNavigate }) => {
 
                     <div
                       id={`${submenuId}-desktop`}
-                      className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-cover bg-center bg-no-repeat shadow-2xl duration-150 animate-in fade-in slide-in-from-left-2 lg:absolute lg:left-full lg:top-0 lg:z-[120] lg:ml-3 lg:flex lg:w-96"
+                      className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-cover bg-center bg-no-repeat shadow-2xl duration-150 animate-in fade-in slide-in-from-left-2 xl:absolute xl:left-full xl:top-0 xl:z-[120] xl:ml-3 xl:flex xl:w-80 2xl:w-96"
                       style={{
                         backgroundImage: "url('/images/sub_menu.webp')",
                         aspectRatio: "3 / 2",

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
+import { Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 
@@ -148,14 +149,14 @@ const Header = () => {
                 </div>
               </Link>
               {summaryText && (
-                <p className="mt-1 hidden max-w-2xl text-sm text-indigo-100 md:block">
+                <p className="mt-1 hidden max-w-2xl text-sm text-indigo-100 lg:block">
                   {summaryText}
                 </p>
               )}
             </div>
 
             <div className="flex items-center gap-3">
-              <nav className="hidden items-center gap-2 md:flex">
+              <nav className="hidden items-center gap-2 lg:flex">
                 <Link to="/" className={commonLinkClasses}>
                   Inicio
                 </Link>
@@ -201,15 +202,17 @@ const Header = () => {
 
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-white/20 p-2 text-white transition hover:bg-white/10 md:hidden"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/10 lg:hidden"
                 aria-label={isMobileMenuOpen ? "Cerrar menu" : "Abrir menu"}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-navigation"
                 onClick={() => setIsMobileMenuOpen((current) => !current)}
               >
-                <span className="text-xl leading-none">
-                  {isMobileMenuOpen ? "x" : "Menu"}
-                </span>
+                {isMobileMenuOpen ? (
+                  <X className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-5 w-5" aria-hidden="true" />
+                )}
               </button>
             </div>
           </div>
@@ -217,7 +220,7 @@ const Header = () => {
           {isMobileMenuOpen && (
             <div
               id="mobile-navigation"
-              className="mt-4 rounded-xl border border-white/15 bg-indigo-800/80 p-3 md:hidden"
+              className="mt-4 rounded-xl border border-white/15 bg-indigo-800/80 p-3 lg:hidden"
             >
               {summaryText && (
                 <p className="border-b border-white/10 pb-3 text-sm text-indigo-100">

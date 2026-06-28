@@ -6,10 +6,10 @@ import Footer from "./Footer";
 
 const LayoutInventario = () => {
   return (
-    <div className="flex flex-col min-w-0 min-h-screen overflow-x-hidden">
+    <div className="flex min-h-screen min-w-0 flex-col">
       <Header />
       <main
-        className="px-4 min-w-0 flex-1"
+        className="min-w-0 flex-1 px-4"
         style={{ paddingTop: "var(--app-header-height, 96px)" }}
       >
         <Outlet />

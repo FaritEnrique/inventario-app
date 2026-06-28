@@ -35,7 +35,7 @@ const LayoutProcesoCotizacion = () => {
   }, [cargarDetalle]);
 
   return (
-    <div className="w-full min-w-0 p-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:px-6 lg:px-8">
       <HeaderProcesoLogistico
         id={id}
         location={location}
@@ -43,7 +43,7 @@ const LayoutProcesoCotizacion = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
-      <main className="min-w-0 mt-4 overflow-x-hidden">
+      <main className="mt-4 min-w-0">
         {cargando ? (
           isSolicitudesRoute ? (
             <SolicitudesProcesoLogisticoSkeleton />
