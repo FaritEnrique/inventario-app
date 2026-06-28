@@ -82,6 +82,10 @@ const useInventario = () => {
         inventarioApi.getDocumentoNotaIngresoUrl(notaIngresoId, documentoId),
       [],
     ),
+    obtenerNotaIngresoPdfBlob: useCallback(
+      (id) => execute(() => inventarioApi.obtenerNotaIngresoPdfBlob(id)),
+      [execute],
+    ),
     actualizarAprobacionDocumentalNotaIngreso: useCallback(
       (id, payload) =>
         execute(() =>

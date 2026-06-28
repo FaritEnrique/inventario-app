@@ -41,11 +41,13 @@ const InventarioNotaIngresoDetallePage = () => {
     loading,
     error,
     obtenerNotaIngresoPorId,
+    obtenerNotaIngresoPdfBlob,
     actualizarAprobacionDocumentalNotaIngreso,
     subsanarNotaIngresoDocumental,
   } = useInventario();
   const [nota, setNota] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const cargarNota = useCallback(async () => {
     try {
@@ -147,6 +149,30 @@ const InventarioNotaIngresoDetallePage = () => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!nota) return;
+
+    setDownloadingPdf(true);
+    try {
+      const { blob } = await obtenerNotaIngresoPdfBlob(id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `NotaIngreso-${nota.codigo || id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      toast.error(
+        downloadError.message ||
+          "No se pudo generar el PDF formal de la nota de ingreso.",
+      );
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const handleOpenDocumentos = () => {
     if (!nota) return;
 
@@ -199,6 +225,9 @@ const InventarioNotaIngresoDetallePage = () => {
     (cantidadDocumentosEntrega > 0 ? "CON_DOCUMENTO" : null);
   const estadoDocumentacionEntregaLabel =
     documentacionEntregaLabels[estadoDocumentacionEntrega] || "No registrado";
+  const canDownloadPdf =
+    documentoFormal.estadoDocumentalFormal === "APROBADA" &&
+    Boolean(nota.inventarioPosteadoAt || nota.inventarioPosteado);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
@@ -237,6 +266,16 @@ const InventarioNotaIngresoDetallePage = () => {
               </Link>
             </>
           )}
+          {canDownloadPdf ? (
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {downloadingPdf ? "Generando PDF..." : "Descargar PDF formal"}
+            </button>
+          ) : null}
         </div>
       </div>
 

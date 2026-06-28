@@ -133,6 +133,11 @@ const inventarioApi = {
       },
     ),
 
+  obtenerNotaIngresoPdfBlob: (id) =>
+    apiFetchBlob(`inventario/notas-ingreso/${id}/pdf`, {
+      sessionActivity: "interactive",
+    }),
+
   actualizarAprobacionDocumentalNotaIngreso: (id, payload) =>
     apiFetch(`inventario/notas-ingreso/${id}/aprobacion-documental`, {
       method: "PATCH",
