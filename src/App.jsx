@@ -198,6 +198,9 @@ const DashboardAlmacenesStockPage = lazy(
 const ProductosTemporalesAlmacenPage = lazy(
   () => import("./pages/ProductosTemporalesAlmacenPage"),
 );
+const BandejaConformidadNotasIngresoPage = lazy(
+  () => import("./pages/almacen/BandejaConformidadNotasIngresoPage"),
+);
 const LayoutGerencia = lazy(() => import("./components/LayoutGerencia"));
 const DashboardGerenciaPage = lazy(
   () => import("./pages/DashboardGerenciaPage"),
@@ -643,6 +646,14 @@ const AppRoutes = () => {
                 element={
                   <RoutePermissionGuard allow={canOperateInventoryEffective}>
                     <InventarioNotasIngresoPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-ingreso/conformidad"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <BandejaConformidadNotasIngresoPage />
                   </RoutePermissionGuard>
                 }
               />

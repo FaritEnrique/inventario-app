@@ -191,6 +191,12 @@ const AsideAlmacen = ({ onNavigate }) => {
               exact: true,
               visible: puedeVerBandejaAlmacen,
             },
+            {
+              name: "Conformidad N/I",
+              to: `${baseUrl}/notas-ingreso/conformidad`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
           ],
         },
         {
