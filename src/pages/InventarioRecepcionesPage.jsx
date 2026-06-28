@@ -236,7 +236,7 @@ const DocumentosEntregaSection = ({
                 </button>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <select
                   value={documento.tipoDocumento}
                   onChange={(event) =>
@@ -843,10 +843,10 @@ const InventarioRecepcionesPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
             Recepciones y notas de ingreso
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -854,16 +854,16 @@ const InventarioRecepcionesPage = () => {
             de compra.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
           <Link
             to="/ordenes-compra"
-            className="rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            className="inline-flex items-center justify-center rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
           >
             Ordenes de compra
           </Link>
           <Link
             to="/dashboard"
-            className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Dashboard
           </Link>
@@ -911,7 +911,7 @@ const InventarioRecepcionesPage = () => {
                 selectedProduct={selectedProduct}
                 onSelect={setSelectedProduct}
               />
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <input
                   type="number"
                   min="0.01"
@@ -924,7 +924,7 @@ const InventarioRecepcionesPage = () => {
                       cantidad: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Cantidad"
                   required
                 />
@@ -939,7 +939,7 @@ const InventarioRecepcionesPage = () => {
                       almacenDestinoId: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Almacén que recepciona ID (opcional)"
                 />
                 <select
@@ -951,7 +951,7 @@ const InventarioRecepcionesPage = () => {
                       areaId: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                 >
                   <option value="">Area (opcional)</option>
                   {areas.map((area) => (
@@ -970,7 +970,7 @@ const InventarioRecepcionesPage = () => {
                       fechaMovimiento: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                 />
                 <input
                   type="date"
@@ -982,7 +982,7 @@ const InventarioRecepcionesPage = () => {
                       fechaDocumento: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                 />
                 <input
                   type="text"
@@ -994,7 +994,7 @@ const InventarioRecepcionesPage = () => {
                       codigoNotaIngreso: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Codigo nota ingreso (opcional)"
                 />
                 <input
@@ -1007,7 +1007,7 @@ const InventarioRecepcionesPage = () => {
                       subtipoMovimiento: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Subtipo movimiento"
                 />
                 <input
@@ -1020,7 +1020,7 @@ const InventarioRecepcionesPage = () => {
                       referenciaTipo: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Referencia tipo"
                 />
                 <input
@@ -1034,7 +1034,7 @@ const InventarioRecepcionesPage = () => {
                       referenciaId: event.target.value,
                     }))
                   }
-                  className="rounded border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Referencia ID"
                 />
               </div>
@@ -1072,7 +1072,7 @@ const InventarioRecepcionesPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
+                className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300 sm:w-auto"
               >
                 {loading ? "Registrando…" : "Registrar ingreso"}
               </button>
@@ -1145,7 +1145,7 @@ const InventarioRecepcionesPage = () => {
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                               <span className="font-medium text-gray-900">
                                 {ordenCompra.codigo}
                               </span>
@@ -1180,7 +1180,7 @@ const InventarioRecepcionesPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <input
                       type="text"
                       value={selectedOrdenCompra?.codigo || ""}
@@ -1200,7 +1200,7 @@ const InventarioRecepcionesPage = () => {
                           almacenDestinoId: event.target.value,
                         }))
                       }
-                      className="rounded border border-gray-300 px-3 py-2"
+                      className="w-full rounded border border-gray-300 px-3 py-2"
                       placeholder="Almacén que recepciona ID"
                     />
                     <select
@@ -1212,7 +1212,7 @@ const InventarioRecepcionesPage = () => {
                           areaId: event.target.value,
                         }))
                       }
-                      className="rounded border border-gray-300 px-3 py-2"
+                      className="w-full rounded border border-gray-300 px-3 py-2"
                     >
                       <option value="">Area (opcional)</option>
                       {areas.map((area) => (
@@ -1231,7 +1231,7 @@ const InventarioRecepcionesPage = () => {
                           fechaMovimiento: event.target.value,
                         }))
                       }
-                      className="rounded border border-gray-300 px-3 py-2"
+                      className="w-full rounded border border-gray-300 px-3 py-2"
                     />
                     <input
                       type="date"
@@ -1243,7 +1243,7 @@ const InventarioRecepcionesPage = () => {
                           fechaDocumento: event.target.value,
                         }))
                       }
-                      className="rounded border border-gray-300 px-3 py-2"
+                      className="w-full rounded border border-gray-300 px-3 py-2"
                     />
                     <input
                       type="text"
@@ -1255,7 +1255,7 @@ const InventarioRecepcionesPage = () => {
                           codigoNotaIngreso: event.target.value,
                         }))
                       }
-                      className="rounded border border-gray-300 px-3 py-2"
+                      className="w-full rounded border border-gray-300 px-3 py-2"
                       placeholder="Codigo nota ingreso"
                     />
                   </div>
@@ -1441,7 +1441,7 @@ const InventarioRecepcionesPage = () => {
                           </label>
                         </div>
 
-                        <div className="grid gap-3 md:grid-cols-4">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                           <input
                             type="number"
                             min="0"
@@ -1455,7 +1455,7 @@ const InventarioRecepcionesPage = () => {
                                 event.target.value,
                               )
                             }
-                            className="rounded border border-gray-300 px-3 py-2"
+                            className="w-full rounded border border-gray-300 px-3 py-2"
                             placeholder="Cantidad aceptada"
                             disabled={
                               item.selected === false || temporalPendiente
@@ -1474,7 +1474,7 @@ const InventarioRecepcionesPage = () => {
                                 event.target.value,
                               )
                             }
-                            className="rounded border border-gray-300 px-3 py-2"
+                            className="w-full rounded border border-gray-300 px-3 py-2"
                             placeholder="Cantidad rechazada"
                             disabled={
                               item.selected === false || temporalPendiente
@@ -1545,7 +1545,7 @@ const InventarioRecepcionesPage = () => {
                                 event.target.value,
                               )
                             }
-                            className="rounded border border-gray-300 px-3 py-2"
+                            className="w-full rounded border border-gray-300 px-3 py-2"
                             disabled={
                               item.selected === false || temporalPendiente
                             }
@@ -1561,7 +1561,7 @@ const InventarioRecepcionesPage = () => {
                                 event.target.value,
                               )
                             }
-                            className="rounded border border-gray-300 px-3 py-2 md:col-span-3"
+                            className="rounded border border-gray-300 px-3 py-2 xl:col-span-3"
                             placeholder="Decision sobre el saldo pendiente"
                             disabled={
                               item.selected === false || temporalPendiente
@@ -1583,11 +1583,11 @@ const InventarioRecepcionesPage = () => {
                 )}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={resetOcSelection}
-                  className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="inline-flex items-center justify-center rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Limpiar seleccion
                 </button>

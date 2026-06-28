@@ -421,7 +421,7 @@ const CotizacionesProcesoLogisticoPage = () => {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       {flujosDialogNode}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -433,7 +433,7 @@ const CotizacionesProcesoLogisticoPage = () => {
             y gestiona los flujos antes de pasar al comparativo.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           {tieneFlujoCerrado ? (
             <Link
               to={`/cotizaciones/proceso/${id}/comparativos`}
@@ -508,8 +508,8 @@ const CotizacionesProcesoLogisticoPage = () => {
             cotizaciones validas para cierre conforme.
           </p>
         </div>
-        <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-full divide-y divide-slate-200">
+        <div className="hidden max-w-full overflow-x-auto md:block">
+          <table className="min-w-[980px] divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600">
@@ -616,7 +616,7 @@ const CotizacionesProcesoLogisticoPage = () => {
             cotizacionesConResumen.map(({ cotizacion, resumenRespuesta }) => (
               <article
                 key={cotizacion.id}
-                className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-900">
@@ -694,7 +694,7 @@ const CotizacionesProcesoLogisticoPage = () => {
             solicitudesPendientes.map((solicitud) => (
               <article
                 key={solicitud.id}
-                className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div>
                   <p className="font-semibold text-slate-900">
@@ -775,7 +775,7 @@ const CotizacionesProcesoLogisticoPage = () => {
             </div>
 
             <div className="max-h-[calc(92vh-98px)] overflow-y-auto p-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="rounded-lg border border-slate-200 p-3">
                   <p className="text-xs font-semibold uppercase text-slate-500">
                     Estado
@@ -803,8 +803,8 @@ const CotizacionesProcesoLogisticoPage = () => {
                 </div>
               </div>
 
-              <div className="mt-4 hidden overflow-x-auto rounded-lg border border-slate-200 md:block">
-                <table className="min-w-full divide-y divide-slate-200">
+              <div className="mt-4 hidden max-w-full overflow-x-auto rounded-lg border border-slate-200 md:block">
+                <table className="min-w-[920px] divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="px-3 py-3 text-center text-xs font-semibold uppercase text-slate-600">
@@ -890,7 +890,7 @@ const CotizacionesProcesoLogisticoPage = () => {
                         {item.cotiza ? "Cotiza" : "No cotiza"}
                       </span>
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
                       <span>Cant. req.</span>
                       <span className="text-right tabular-nums">
                         {item.cantidadRequerida === null

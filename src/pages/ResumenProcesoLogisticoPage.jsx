@@ -86,11 +86,11 @@ const ResumenProcesoLogisticoPage = () => {
     <>
       {dialogNode}
       <section>
-        <h1 className="mb-4 text-3xl font-bold text-indigo-500">
+        <h1 className="mb-4 text-2xl font-bold text-indigo-500 sm:text-3xl">
           Resumen Estado de Requerimiento
         </h1>
-        <div className="flex flex-wrap items-center justify-between gap-2 p-2 mb-4 bg-green-100 border border-green-500 rounded-lg lg:gap-4 lg:p-4">
-          <div className="flex flex-wrap items-center gap-2 lg:gap-4 w-fit">
+        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-green-500 bg-green-100 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:gap-4 lg:p-4">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-fit lg:gap-4">
             <h3 className="text-xl font-bold text-gray-700">
               Requerimiento N°
             </h3>
@@ -98,7 +98,7 @@ const ResumenProcesoLogisticoPage = () => {
               {detalleGlobal?.codigo || `#${id}`}
             </h3>
           </div>
-          <div className="flex flex-wrap items-center gap-2 lg:gap-4">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center lg:gap-4">
             <p className="gap-2 font-semibold lg:gap-4">
               Fecha de Emision Requerimiento:
             </p>
@@ -173,7 +173,7 @@ const ResumenProcesoLogisticoPage = () => {
             </h2>
           </div>
           <div className="w-full overflow-x-auto border-2 border-indigo-500 rounded-lg">
-            <table className="min-w-[720px] w-full border-collapse text-sm">
+            <table className="min-w-[860px] w-full border-collapse text-sm">
               <thead className="bg-indigo-50">
                 <tr>
                   <th className="px-3 py-2 text-center">Item</th>

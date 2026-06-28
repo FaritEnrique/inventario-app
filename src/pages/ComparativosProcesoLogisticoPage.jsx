@@ -466,7 +466,7 @@ const ComparativosProcesoLogisticoPage = () => {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="min-w-0 space-y-4">
       {dialogNode}
       <div>
         <h1 className="text-lg font-semibold leading-snug text-gray-900 sm:text-2xl">
@@ -625,7 +625,7 @@ const ComparativosProcesoLogisticoPage = () => {
                   </p>
                 </div>
                 {viewModel.cotizacionesComparables.length ? (
-                  <div className="overflow-x-auto">
+                  <div className="max-w-full overflow-x-auto">
                     <table
                       className="w-full border-collapse text-sm"
                       style={{ minWidth: matrixMinWidth }}
@@ -927,7 +927,7 @@ const ComparativosProcesoLogisticoPage = () => {
                         <h3 className="text-sm font-semibold text-rose-900">
                           Anulación lógica
                         </h3>
-                        <div className="mt-3 grid gap-3 lg:grid-cols-[240px_1fr_auto] lg:items-end">
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-[240px_1fr_auto] xl:items-end">
                           <label className="block">
                             <span className="text-xs font-semibold uppercase text-rose-800">
                               Causal
@@ -970,7 +970,7 @@ const ComparativosProcesoLogisticoPage = () => {
                             type="button"
                             onClick={handleAnularBuenaPro}
                             disabled={anulandoBuenaPro}
-                            className="rounded bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full rounded bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 xl:col-span-1"
                           >
                             {anulandoBuenaPro ? "Anulando..." : "Anular Buena Pro"}
                           </button>
@@ -1004,7 +1004,7 @@ const ComparativosProcesoLogisticoPage = () => {
                               key={itemId}
                               className="rounded-lg border border-slate-200 p-3"
                             >
-                              <div className="grid gap-2 lg:grid-cols-[1fr_220px_180px] lg:items-start">
+                              <div className="grid gap-2 xl:grid-cols-[1fr_220px_180px] xl:items-start">
                                 <div>
                                   <p className="font-semibold text-slate-900">
                                     Ítem {formatInteger(oferta.itemNumero)} -{" "}
@@ -1015,10 +1015,10 @@ const ComparativosProcesoLogisticoPage = () => {
                                     {formatText(oferta.cotizacionCodigo)}
                                   </p>
                                 </div>
-                                <p className="text-sm text-slate-700 lg:text-right">
+                                <p className="text-sm text-slate-700 xl:text-right">
                                   Cantidad: {formatQuantity(oferta.cantidadOfrecida)}
                                 </p>
-                                <p className="whitespace-nowrap text-sm font-semibold tabular-nums text-slate-900 lg:text-right">
+                                <p className="whitespace-nowrap text-sm font-semibold tabular-nums text-slate-900 xl:text-right">
                                   {formatMoney(oferta.precioTotal, oferta.moneda)}
                                 </p>
                               </div>
@@ -1146,7 +1146,7 @@ const ComparativosProcesoLogisticoPage = () => {
                 </h2>
                 {viewModel.proveedoresSinCotizacionValida.length ? (
                   <div className="mt-3 overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-sm">
+                    <table className="w-full min-w-[820px] text-sm">
                       <thead className="bg-slate-50 text-xs uppercase text-slate-600">
                         <tr>
                           <th className="px-3 py-2 text-center">Proveedor</th>

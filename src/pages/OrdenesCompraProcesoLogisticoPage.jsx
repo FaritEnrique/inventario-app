@@ -201,7 +201,7 @@ const OrdenesCompraProcesoLogisticoPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
           <div>
             <p className="font-semibold text-slate-700">Modalidad</p>
             <p className="text-slate-900">{estadoToLabel(modalidad)}</p>
@@ -239,7 +239,7 @@ const OrdenesCompraProcesoLogisticoPage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard
           label="Total O/C"
           value={resumen.totalOrdenes}
@@ -277,7 +277,7 @@ const OrdenesCompraProcesoLogisticoPage = () => {
             activa. La generación debe realizarse desde la pestaña Comparativo /
             Buena Pro, porque allí se conserva la decisión formal del expediente.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row sm:flex-wrap">
             <Link
               to={`/cotizaciones/proceso/${id}/comparativos`}
               className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
@@ -310,8 +310,8 @@ const OrdenesCompraProcesoLogisticoPage = () => {
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] border-collapse text-sm">
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full min-w-[1040px] border-collapse text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
                   <th className="px-3 py-3 text-left">Código</th>

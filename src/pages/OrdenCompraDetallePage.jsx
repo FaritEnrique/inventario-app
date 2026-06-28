@@ -383,7 +383,7 @@ const OrdenCompraDetallePage = () => {
 
   if (!ordenCompra) {
     return (
-      <div className="mx-auto max-w-5xl p-6">
+      <div className="mx-auto max-w-5xl p-4 sm:p-6">
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
           {error || "No se pudo cargar la orden de compra."}
         </div>
@@ -408,7 +408,7 @@ const OrdenCompraDetallePage = () => {
       />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Detalle de orden de compra
           </h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -416,7 +416,7 @@ const OrdenCompraDetallePage = () => {
             {ordenCompra.proveedor?.razonSocial || "Sin proveedor"}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
           {allowPdfAction ? (
             <button
               type="button"
@@ -454,7 +454,7 @@ const OrdenCompraDetallePage = () => {
           <h2 className="text-lg font-semibold text-slate-900">
             Anulación lógica
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Causal
@@ -498,7 +498,7 @@ const OrdenCompraDetallePage = () => {
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Estado de aprobacion
@@ -556,7 +556,7 @@ const OrdenCompraDetallePage = () => {
           <h2 className="text-lg font-semibold text-gray-900">
             Cabecera documental
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Fecha de emision
@@ -613,7 +613,7 @@ const OrdenCompraDetallePage = () => {
         </div>
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
               Acciones disponibles
             </h2>
@@ -744,13 +744,13 @@ const OrdenCompraDetallePage = () => {
       </div>
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">
             Ruta de aprobacion
           </h2>
           <span className="text-sm text-gray-500"></span>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {snapshotRoute.map((step) => (
             <div
               key={`${step.orden}-${step.nivel}`}
@@ -781,7 +781,7 @@ const OrdenCompraDetallePage = () => {
           <h2 className="text-lg font-semibold text-gray-900">
             Cumplimiento documental
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Total ordenado
@@ -910,7 +910,7 @@ const OrdenCompraDetallePage = () => {
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-[980px] divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
