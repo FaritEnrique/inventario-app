@@ -67,6 +67,7 @@ const createEmptyOcForm = () => ({
   codigoNotaIngreso: "",
   observaciones: "",
   motivoSinDocumentacionEntrega: "",
+  requiereConformidadGerencia: false,
   documentosEntrega: [createEmptyDocumentoEntrega()],
   items: [],
 });
@@ -348,6 +349,32 @@ const getBlockingReasonForRecepcion = (ordenCompra) => {
   return "";
 };
 
+const getNotaIngresoSuccessMessage = (response) => {
+  const notaIngreso = response?.notaIngreso || {};
+  const estadoDocumental =
+    notaIngreso.estadoDocumentalFormal || notaIngreso.documentoFormal?.estado;
+  const inventarioPosteado = Boolean(
+    notaIngreso.inventarioPosteadoAt ||
+      notaIngreso.inventarioPosteado ||
+      response?.movimiento?.id ||
+      (Array.isArray(response?.movimientos) && response.movimientos.length > 0),
+  );
+
+  if (inventarioPosteado) {
+    return "Nota de Ingreso aprobada e ingresada a stock.";
+  }
+
+  if (estadoDocumental === "PENDIENTE_CONFORMIDAD_GERENCIA") {
+    return "Nota de Ingreso registrada y pendiente de conformidad del gerente del área usuaria.";
+  }
+
+  if (estadoDocumental === "PENDIENTE_APROBACION_ALMACEN") {
+    return "Nota de Ingreso registrada y pendiente de conformidad del jefe de almacén.";
+  }
+
+  return "Nota de Ingreso registrada. El stock disponible se actualizará cuando corresponda.";
+};
+
 const InventarioRecepcionesPage = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -527,8 +554,7 @@ const InventarioRecepcionesPage = () => {
   const getPendingResultForDraft = (item) => {
     const pendingCurrent = getPendingCurrentForItem(item.itemOrdenCompraId);
     const cantidadAceptada = Number(item.cantidadAceptada || 0);
-    const cantidadRechazada = Number(item.cantidadRechazada || 0);
-    return pendingCurrent - cantidadAceptada - cantidadRechazada;
+    return pendingCurrent - cantidadAceptada;
   };
 
   const refreshOrdenesCompra = async () => {
@@ -797,6 +823,9 @@ const InventarioRecepcionesPage = () => {
         observaciones: ocForm.observaciones || undefined,
         motivoSinDocumentacionEntrega:
           ocForm.motivoSinDocumentacionEntrega || undefined,
+        requiereConformidadGerencia: Boolean(
+          ocForm.requiereConformidadGerencia,
+        ),
         documentosEntrega: getDocumentosEntregaConArchivo(
           ocForm.documentosEntrega,
         ),
@@ -805,7 +834,7 @@ const InventarioRecepcionesPage = () => {
 
       const response = await registrarIngresoPorNota(payload);
       setResultado(response);
-      toast.success("Recepcion contra orden de compra registrada.");
+      toast.success(getNotaIngresoSuccessMessage(response));
       resetOcSelection();
       await refreshOrdenesCompra();
     } catch (error) {
@@ -911,7 +940,7 @@ const InventarioRecepcionesPage = () => {
                     }))
                   }
                   className="rounded border border-gray-300 px-3 py-2"
-                  placeholder="Almacen destino ID (opcional)"
+                  placeholder="Almacén que recepciona ID (opcional)"
                 />
                 <select
                   value={simpleForm.areaId}
@@ -1054,10 +1083,9 @@ const InventarioRecepcionesPage = () => {
               className="space-y-4 rounded-lg bg-white p-4 shadow"
             >
               <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-                La recepcion contra OC sigue creando NotaIngreso y dejando el
-                stock disponible para el flujo normal de almacen. La salida no
-                nace de la OC: despues del ingreso, el consumo sigue por
-                PedidoInterno, Reserva y NotaSalida.
+                La recepción contra OC registra la recepción física en una Nota
+                de Ingreso. Las cantidades aceptadas no ingresan al stock
+                disponible hasta completar las conformidades requeridas.
               </div>
 
               <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
@@ -1173,7 +1201,7 @@ const InventarioRecepcionesPage = () => {
                         }))
                       }
                       className="rounded border border-gray-300 px-3 py-2"
-                      placeholder="Almacen destino ID"
+                      placeholder="Almacén que recepciona ID"
                     />
                     <select
                       value={ocForm.areaId}
@@ -1267,6 +1295,33 @@ const InventarioRecepcionesPage = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={ocForm.requiereConformidadGerencia}
+                    onChange={(event) =>
+                      setOcForm((prev) => ({
+                        ...prev,
+                        requiereConformidadGerencia: event.target.checked,
+                      }))
+                    }
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block font-semibold">
+                      Requiere conformidad del gerente del área usuaria
+                    </span>
+                    <span className="block text-xs leading-relaxed">
+                      Márcalo para bienes que requieren validación técnica o
+                      conformidad del área que generó el requerimiento. Si no se
+                      marca, la Nota de Ingreso seguirá solo la conformidad de
+                      almacén.
+                    </span>
+                  </span>
+                </label>
               </div>
 
               <textarea
@@ -1401,7 +1456,7 @@ const InventarioRecepcionesPage = () => {
                               )
                             }
                             className="rounded border border-gray-300 px-3 py-2"
-                            placeholder="Cantidad recibida"
+                            placeholder="Cantidad aceptada"
                             disabled={
                               item.selected === false || temporalPendiente
                             }
@@ -1421,7 +1476,9 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2"
                             placeholder="Cantidad rechazada"
-                            disabled
+                            disabled={
+                              item.selected === false || temporalPendiente
+                            }
                           />
                           <input
                             type="text"
@@ -1433,7 +1490,7 @@ const InventarioRecepcionesPage = () => {
                                 : "Excede saldo"
                             }
                             className="rounded border border-gray-300 bg-gray-50 px-3 py-2"
-                            placeholder="Saldo resultante"
+                            placeholder="Saldo pendiente real"
                           />
                           <input
                             type="text"
@@ -1456,7 +1513,9 @@ const InventarioRecepcionesPage = () => {
                             }
                             className="rounded border border-gray-300 px-3 py-2 md:col-span-2"
                             placeholder="Motivo de rechazo"
-                            disabled
+                            disabled={
+                              item.selected === false || temporalPendiente
+                            }
                           />
                           <input
                             type="text"

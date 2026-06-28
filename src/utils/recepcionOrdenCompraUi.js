@@ -40,16 +40,21 @@ export const findLineaOrdenCompra = (ordenCompra, itemOrdenCompraId) =>
 export const getRecepcionPayloadItems = (draftItems = [], ordenCompra = {}) =>
   draftItems
     .filter((item) => item.selected === true && item.disabled !== true)
-    .filter((item) => toNumber(item.cantidadAceptada) > 0)
+    .filter(
+      (item) =>
+        toNumber(item.cantidadAceptada) > 0 ||
+        toNumber(item.cantidadRechazada) > 0,
+    )
     .map((item) => {
       const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
       const cantidadAceptada = toNumber(item.cantidadAceptada);
+      const cantidadRechazada = toNumber(item.cantidadRechazada);
       const cantidadPendienteActual = toNumber(linea?.cantidadPendiente);
 
       return {
         itemOrdenCompraId: Number(item.itemOrdenCompraId),
         cantidadAceptada,
-        cantidadRechazada: 0,
+        cantidadRechazada,
         cantidadPendiente: Math.max(0, cantidadPendienteActual - cantidadAceptada),
         motivoRechazo: normalizeText(item.motivoRechazo) || undefined,
         motivoIncidencia: normalizeText(item.motivoIncidencia) || undefined,
@@ -64,7 +69,7 @@ export const validateRecepcionDraft = (draftItems = [], ordenCompra = {}) => {
   const selectedItems = draftItems.filter((item) => item.selected === true);
 
   if (!selectedItems.length) {
-    return "Debes seleccionar al menos una linea recibida conforme.";
+    return "Debes seleccionar al menos una linea recibida o rechazada.";
   }
 
   const temporalItem = selectedItems.find((item) => {
@@ -79,18 +84,37 @@ export const validateRecepcionDraft = (draftItems = [], ordenCompra = {}) => {
   const invalidItem = selectedItems.find((item) => {
     const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
     const cantidadAceptada = toNumber(item.cantidadAceptada);
+    const cantidadRechazada = toNumber(item.cantidadRechazada);
     const cantidadPendienteActual = toNumber(linea?.cantidadPendiente);
 
-    return cantidadAceptada <= 0 || cantidadAceptada > cantidadPendienteActual;
+    return (
+      cantidadAceptada < 0 ||
+      cantidadRechazada < 0 ||
+      cantidadAceptada + cantidadRechazada <= 0 ||
+      cantidadAceptada + cantidadRechazada > cantidadPendienteActual
+    );
   });
 
   if (invalidItem) {
-    return "Cada linea seleccionada debe registrar una cantidad recibida mayor que cero sin exceder el saldo pendiente.";
+    return "Cada linea seleccionada debe registrar cantidad aceptada o rechazada, sin exceder el saldo pendiente.";
+  }
+
+  const rejectedWithoutReasonItem = selectedItems.find((item) => {
+    const cantidadRechazada = toNumber(item.cantidadRechazada);
+    return (
+      cantidadRechazada > 0 &&
+      !normalizeText(item.motivoRechazo) &&
+      !normalizeText(item.motivoIncidencia)
+    );
+  });
+
+  if (rejectedWithoutReasonItem) {
+    return "Toda cantidad rechazada debe indicar motivo de rechazo o incidencia.";
   }
 
   const payloadItems = getRecepcionPayloadItems(draftItems, ordenCompra);
   if (!payloadItems.length) {
-    return "Debe registrar al menos un item recibido conforme.";
+    return "Debe registrar al menos un item recibido o rechazado.";
   }
 
   return "";
