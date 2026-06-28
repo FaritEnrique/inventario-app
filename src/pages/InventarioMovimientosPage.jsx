@@ -84,8 +84,8 @@ const InventarioMovimientosPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">
             Movimientos de inventario
@@ -104,7 +104,7 @@ const InventarioMovimientosPage = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-4"
+        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-4"
       >
         <input
           type="number"
@@ -114,7 +114,7 @@ const InventarioMovimientosPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, productoId: event.target.value }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Producto ID"
         />
         <input
@@ -125,7 +125,7 @@ const InventarioMovimientosPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, almacenId: event.target.value }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Almacén ID"
         />
         <select
@@ -137,7 +137,7 @@ const InventarioMovimientosPage = () => {
               tipoMovimiento: event.target.value,
             }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
         >
           <option value="">Todos los tipos</option>
           <option value="ENTRADA">ENTRADA</option>
@@ -155,7 +155,7 @@ const InventarioMovimientosPage = () => {
               referenciaTipo: event.target.value,
             }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Referencia tipo"
         />
         <input
@@ -169,7 +169,7 @@ const InventarioMovimientosPage = () => {
               referenciaId: event.target.value,
             }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
           placeholder="Referencia ID"
         />
         <input
@@ -179,7 +179,7 @@ const InventarioMovimientosPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaDesde: event.target.value }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
         />
         <input
           type="date"
@@ -188,7 +188,7 @@ const InventarioMovimientosPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaHasta: event.target.value }))
           }
-          className="rounded border border-gray-300 px-3 py-2"
+          className="w-full rounded border border-gray-300 px-3 py-2"
         />
         <button
           type="submit"
@@ -269,7 +269,7 @@ const InventarioMovimientosPage = () => {
       </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           disabled={result.currentPage <= 1 || loading}

@@ -115,7 +115,7 @@ const SolicitudesRequerimientoPage = () => {
   if (cargando && !detalle) return <SolicitudesRequerimientoSkeleton />;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -143,8 +143,8 @@ const SolicitudesRequerimientoPage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Requerimiento
           </p>

@@ -106,7 +106,7 @@ const InventarioNotasIngresoPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">Notas de ingreso</h1>
@@ -132,7 +132,7 @@ const InventarioNotasIngresoPage = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-4"
+        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-4"
       >
         <input
           type="text"
@@ -141,7 +141,7 @@ const InventarioNotasIngresoPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, search: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2 md:col-span-2"
+          className="w-full rounded border border-slate-300 px-3 py-2 sm:col-span-2"
           placeholder="Buscar por codigo, referencia u OC"
         />
         <input
@@ -152,10 +152,10 @@ const InventarioNotasIngresoPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, ordenCompraId: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
           placeholder="OC ID"
         />
-        <div className="md:col-span-1">
+        <div className="sm:col-span-1">
           <ProductoSearchField
             selectedProduct={producto}
             onSelect={setProducto}
@@ -169,7 +169,7 @@ const InventarioNotasIngresoPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaDesde: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
         />
         <input
           type="date"
@@ -178,9 +178,9 @@ const InventarioNotasIngresoPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaHasta: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
         />
-        <div className="md:col-span-2 flex items-end gap-3">
+        <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-end">
           <button
             type="submit"
             disabled={loading}
@@ -321,7 +321,7 @@ const InventarioNotasIngresoPage = () => {
       </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           disabled={loading || result.currentPage <= 1}

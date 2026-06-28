@@ -252,7 +252,7 @@ const DashboardRecepcionesPendientesPage = () => {
         />
       </DashboardDetalleHeader>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <DashboardMetricCard
           title="Total filtrado"
           value={formatNumber(filteredRows.length)}

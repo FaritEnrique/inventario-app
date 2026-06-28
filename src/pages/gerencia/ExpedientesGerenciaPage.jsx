@@ -84,8 +84,8 @@ const ExpedientesGerenciaPage = () => {
         onSubmit={handleSubmit}
         className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
       >
-        <div className="grid gap-3 md:grid-cols-4">
-          <label className="md:col-span-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="sm:col-span-2">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Buscar
             </span>

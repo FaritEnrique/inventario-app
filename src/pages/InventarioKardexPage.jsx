@@ -94,8 +94,8 @@ const InventarioKardexPage = () => {
   }, [obtenerKardex, searchParams]);
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Kardex por producto</h1>
           <p className="mt-1 text-sm text-gray-600">
@@ -112,9 +112,9 @@ const InventarioKardexPage = () => {
 
       <form
         onSubmit={consultarKardex}
-        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-4"
+        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-4"
       >
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <ProductoSearchField
             selectedProduct={producto}
             onSelect={setProducto}

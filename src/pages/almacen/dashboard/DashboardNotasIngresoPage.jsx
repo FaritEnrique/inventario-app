@@ -210,7 +210,7 @@ const DashboardNotasIngresoPage = () => {
         />
       </DashboardDetalleHeader>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <DashboardMetricCard
           title="Notas cargadas"
           value={formatNumber(rows.length)}

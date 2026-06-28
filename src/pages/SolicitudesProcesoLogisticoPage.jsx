@@ -312,8 +312,8 @@ const SolicitudesProcesoLogisticoPage = () => {
         onReabrirFlujo={handleReabrirFlujo}
       />
 
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-4">
-        <div className="p-3 bg-white border shadow-sm rounded-xl border-slate-200 sm:p-4 md:col-span-2">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+        <div className="p-3 bg-white border shadow-sm rounded-xl border-slate-200 sm:p-4 sm:col-span-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:text-xs">
             Requerimiento
           </p>

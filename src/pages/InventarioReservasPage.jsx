@@ -99,7 +99,7 @@ const InventarioReservasPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">Reservas de stock</h1>
@@ -125,7 +125,7 @@ const InventarioReservasPage = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-4"
+        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow sm:grid-cols-2 xl:grid-cols-4"
       >
         <input
           type="text"
@@ -134,7 +134,7 @@ const InventarioReservasPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, search: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2 md:col-span-2"
+          className="w-full rounded border border-slate-300 px-3 py-2 sm:col-span-2"
           placeholder="Buscar por ID, referencia, pedido o producto"
         />
         <select
@@ -143,7 +143,7 @@ const InventarioReservasPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, estado: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVA">Activa</option>
@@ -163,10 +163,10 @@ const InventarioReservasPage = () => {
               pedidoInternoId: event.target.value,
             }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
           placeholder="Pedido interno ID"
         />
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <ProductoSearchField
             selectedProduct={producto}
             onSelect={setProducto}
@@ -180,7 +180,7 @@ const InventarioReservasPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaDesde: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
         />
         <input
           type="date"
@@ -189,7 +189,7 @@ const InventarioReservasPage = () => {
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaHasta: event.target.value }))
           }
-          className="rounded border border-slate-300 px-3 py-2"
+          className="w-full rounded border border-slate-300 px-3 py-2"
         />
         <div className="md:col-span-4 flex gap-3">
           <button
@@ -323,7 +323,7 @@ const InventarioReservasPage = () => {
       </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           disabled={loading || result.currentPage <= 1}

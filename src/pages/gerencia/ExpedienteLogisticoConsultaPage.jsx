@@ -190,7 +190,7 @@ const ExpedienteLogisticoConsultaPage = () => {
           <div className="mt-3 h-8 w-80 animate-pulse rounded bg-slate-200" />
           <div className="mt-3 h-4 w-full max-w-3xl animate-pulse rounded bg-slate-200" />
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
             <div
               key={item}
@@ -261,7 +261,7 @@ const ExpedienteLogisticoConsultaPage = () => {
           </Link>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <InfoItem
             label="Estado documento"
             value={estadoToLabel(detalle?.estadoDocumento)}
@@ -297,7 +297,7 @@ const ExpedienteLogisticoConsultaPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard
           title="Ítems"
           value={formatInteger(items.length)}
@@ -334,7 +334,7 @@ const ExpedienteLogisticoConsultaPage = () => {
         title="Requerimiento"
         description="Detalle documental del requerimiento que originó el expediente logístico."
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <InfoItem
             label="Uso / finalidad"
             value={formatText(detalle?.usoFinalidad)}
