@@ -7,78 +7,9 @@ import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
 
-const MANUAL_RECEPTOR_OPTION = "__manual__";
-
-const buildReceptorCandidates = (pedido = {}) => {
-  const areaId = pedido.areaSolicitante?.id ?? pedido.areaSolicitanteId ?? null;
-  const candidates = new Map();
-  const snapshotFormal = pedido.snapshotFormal || {};
-  const snapshotApprover =
-    snapshotFormal.aprobadorPendienteActualIdSnapshot ||
-    snapshotFormal.aprobadorEfectivoIdSnapshot
-      ? {
-          id:
-            snapshotFormal.aprobadorPendienteActualIdSnapshot ||
-            snapshotFormal.aprobadorEfectivoIdSnapshot,
-          nombre:
-            snapshotFormal.aprobadorPendienteActualNombreSnapshot ||
-            snapshotFormal.aprobadorEfectivoNombreSnapshot,
-          cargo:
-            snapshotFormal.aprobadorPendienteActualRolSnapshot ||
-            snapshotFormal.aprobadorEfectivoRolSnapshot ||
-            null,
-          rol:
-            snapshotFormal.aprobadorPendienteActualRolSnapshot ||
-            snapshotFormal.aprobadorEfectivoRolSnapshot ||
-            null,
-        }
-      : null;
-
-  const addCandidate = (user, sourceLabel) => {
-    if (!user?.id) return;
-
-    const userAreaId = user.areaId ?? user.area?.id ?? null;
-    if (areaId && userAreaId && String(areaId) !== String(userAreaId)) {
-      return;
-    }
-
-    const key = String(user.id);
-    if (candidates.has(key)) return;
-
-    candidates.set(key, {
-      id: user.id,
-      nombre: user.nombre || user.name || `Usuario ${user.id}`,
-      cargo: user.cargo || user.rol || null,
-      sourceLabel,
-    });
-  };
-
-  addCandidate(pedido.solicitante, "Solicitante");
-  addCandidate(snapshotApprover, "Aprobador snapshot");
-  addCandidate(pedido.areaSolicitante?.jefe, "Jefe del area");
-
-  (pedido.notasSalida || []).forEach((nota) => {
-    addCandidate(nota.receptor, "Receptor previo");
-  });
-
-  return Array.from(candidates.values());
-};
-
-const getInitialReceptorSelection = (pedido) => {
-  const candidatos = buildReceptorCandidates(pedido);
-  if (candidatos.length === 1) {
-    return String(candidatos[0].id);
-  }
-  if (candidatos.length === 0) {
-    return MANUAL_RECEPTOR_OPTION;
-  }
-  return "";
-};
-
 const initialDraft = {
   pedidoId: null,
   receptorSeleccion: "",
-  receptorManualId: "",
   observaciones: "",
   cantidades: {},
 };
@@ -94,7 +25,6 @@ const reducer = (state, action) => {
       return {
         pedidoId: action.pedido?.id || null,
         receptorSeleccion: action.receptorSeleccion || "",
-        receptorManualId: "",
         observaciones: "",
         cantidades,
       };
@@ -120,9 +50,15 @@ const formatDate = (value) => (value ? new Date(value).toLocaleString() : "-");
 
 const BandejaAlmacenNotasPedidoPage = () => {
   const { user } = useAuth();
-  const { loading, obtenerBandejaAlmacen, atenderPedido } =
-    usePedidosInternos();
+  const {
+    loading,
+    obtenerBandejaAlmacen,
+    obtenerReceptoresPedido,
+    atenderPedido,
+  } = usePedidosInternos();
   const [pedidos, setPedidos] = useState([]);
+  const [receptoresByPedido, setReceptoresByPedido] = useState({});
+  const [loadingReceptoresId, setLoadingReceptoresId] = useState(null);
   const [draft, dispatch] = useReducer(reducer, initialDraft);
   const [ultimoResultado, setUltimoResultado] = useState(null);
   const [submittingId, setSubmittingId] = useState(null);
@@ -146,19 +82,51 @@ const BandejaAlmacenNotasPedidoPage = () => {
     }
   }, [canUseWarehouseTray]);
 
-  const handleOpenAtencion = (pedido) => {
+  const handleOpenAtencion = async (pedido) => {
+    const receptoresCargados = receptoresByPedido[pedido.id] || null;
+
     dispatch({
       type: "open",
       pedido,
-      receptorSeleccion: getInitialReceptorSelection(pedido),
+      receptorSeleccion:
+        receptoresCargados?.length === 1 ? String(receptoresCargados[0].id) : "",
     });
+
+    if (receptoresCargados) {
+      return;
+    }
+
+    try {
+      setLoadingReceptoresId(pedido.id);
+      const response = await obtenerReceptoresPedido(pedido.id);
+      const receptores = Array.isArray(response?.data) ? response.data : [];
+      setReceptoresByPedido((current) => ({
+        ...current,
+        [pedido.id]: receptores,
+      }));
+
+      if (receptores.length === 1) {
+        dispatch({
+          type: "setField",
+          field: "receptorSeleccion",
+          value: String(receptores[0].id),
+        });
+      }
+    } catch (error) {
+      toast.error(
+        error.message || "No se pudo cargar la lista de receptores del area.",
+      );
+      setReceptoresByPedido((current) => ({
+        ...current,
+        [pedido.id]: [],
+      }));
+    } finally {
+      setLoadingReceptoresId(null);
+    }
   };
 
   const handleAtender = async (pedido) => {
-    const receptorIdValue =
-      draft.receptorSeleccion === MANUAL_RECEPTOR_OPTION
-        ? draft.receptorManualId
-        : draft.receptorSeleccion;
+    const receptorIdValue = draft.receptorSeleccion;
 
     if (!receptorIdValue) {
       toast.error(
@@ -297,10 +265,13 @@ const BandejaAlmacenNotasPedidoPage = () => {
         <div className="space-y-4">
           {pedidos.map((pedido) => {
             const abierta = draft.pedidoId === pedido.id;
-            const receptorCandidates = buildReceptorCandidates(pedido);
-            const usarIngresoManual =
-              draft.receptorSeleccion === MANUAL_RECEPTOR_OPTION ||
-              receptorCandidates.length === 0;
+            const receptorCandidates = receptoresByPedido[pedido.id] || [];
+            const receptoresCargando = loadingReceptoresId === pedido.id;
+            const tieneReservaVigente =
+              Boolean(pedido.resumen?.tieneReservaVigente) ||
+              (pedido.detalles || []).some(
+                (detalle) => (detalle.reservasActivas || []).length > 0,
+              );
 
             return (
               <div key={pedido.id} className="rounded-lg bg-white p-4 shadow">
@@ -351,11 +322,13 @@ const BandejaAlmacenNotasPedidoPage = () => {
                     </Link>
                     <button
                       type="button"
-                      onClick={() =>
-                        abierta
-                          ? dispatch({ type: "reset" })
-                          : handleOpenAtencion(pedido)
-                      }
+                      onClick={() => {
+                        if (abierta) {
+                          dispatch({ type: "reset" });
+                          return;
+                        }
+                        handleOpenAtencion(pedido);
+                      }}
                       className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       {abierta ? "Cerrar atencion" : "Atender"}
@@ -371,7 +344,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
                         <th className="px-3 py-2 text-left">Solicitada</th>
                         <th className="px-3 py-2 text-left">Atendida</th>
                         <th className="px-3 py-2 text-left">Pendiente</th>
-                        <th className="px-3 py-2 text-left">Reserva activa</th>
+                        <th className="px-3 py-2 text-left">Reserva vigente</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -396,7 +369,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           <td className="px-3 py-2">
                             {(detalle.reservasActivas || []).length === 0 ? (
                               <span className="text-slate-500">
-                                Sin reserva visible
+                                Sin reserva vigente
                               </span>
                             ) : (
                               <div className="space-y-1 text-xs">
@@ -420,10 +393,16 @@ const BandejaAlmacenNotasPedidoPage = () => {
 
                 {abierta && (
                   <div className="mt-4 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-                      La salida real se registrara solo por las cantidades
-                      entregadas ahora. La reserva vigente se consumira con esta
-                      atencion.
+                    <div
+                      className={`rounded border px-3 py-2 text-sm ${
+                        tieneReservaVigente
+                          ? "border-blue-200 bg-blue-50 text-blue-900"
+                          : "border-amber-200 bg-amber-50 text-amber-900"
+                      }`}
+                    >
+                      {tieneReservaVigente
+                        ? "La salida real se registrara solo por las cantidades entregadas ahora. La reserva vigente se consumira con esta atencion."
+                        : "Esta nota no tiene reserva vigente. Puede atenderse si el stock disponible actual alcanza para la entrega."}
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
@@ -438,6 +417,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
                           id={`pedido-receptor-${pedido.id}`}
                           value={draft.receptorSeleccion}
                           name="bandeja-almacen-notas-pedido-page-select-374"
+                          disabled={receptoresCargando || receptorCandidates.length === 0}
                           onChange={(event) =>
                             dispatch({
                               type: "setField",
@@ -445,29 +425,26 @@ const BandejaAlmacenNotasPedidoPage = () => {
                               value: event.target.value,
                             })
                           }
-                          className="w-full rounded border border-slate-300 px-3 py-2"
+                          className="w-full rounded border border-slate-300 px-3 py-2 disabled:bg-slate-100"
                         >
-                          {receptorCandidates.length > 0 && (
-                            <option value="">
-                              Selecciona un receptor sugerido
-                            </option>
-                          )}
+                          <option value="">
+                            {receptoresCargando
+                              ? "Cargando receptores..."
+                              : receptorCandidates.length === 0
+                                ? "Sin receptores activos en el area"
+                                : "Selecciona quien recepcionara"}
+                          </option>
                           {receptorCandidates.map((candidate) => (
                             <option key={candidate.id} value={candidate.id}>
                               {candidate.nombre}
                               {candidate.cargo ? ` · ${candidate.cargo}` : ""}
-                              {candidate.sourceLabel
-                                ? ` · ${candidate.sourceLabel}`
-                                : ""}
+                              {candidate.email ? ` · ${candidate.email}` : ""}
                             </option>
                           ))}
-                          <option value={MANUAL_RECEPTOR_OPTION}>
-                            Ingresar otro receptor manualmente
-                          </option>
                         </select>
                         <p className="mt-1 text-xs text-slate-500">
-                          Se sugieren usuarios ya visibles en el documento y
-                          pertenecientes al area solicitante.
+                          Se listan usuarios activos del area solicitante. Esta
+                          persona quedara como receptor en la nota de salida.
                         </p>
                       </div>
 
@@ -495,38 +472,6 @@ const BandejaAlmacenNotasPedidoPage = () => {
                         />
                       </div>
                     </div>
-
-                    {usarIngresoManual && (
-                      <div>
-                        <label
-                          htmlFor={`pedido-receptor-manual-${pedido.id}`}
-                          className="mb-1 block text-sm font-medium text-slate-700"
-                        >
-                          ID manual del receptor
-                        </label>
-                        <input
-                          id={`pedido-receptor-manual-${pedido.id}`}
-                          type="number"
-                          min="1"
-                          value={draft.receptorManualId}
-                          name="bandeja-almacen-notas-pedido-page-input-429"
-                          onChange={(event) =>
-                            dispatch({
-                              type: "setField",
-                              field: "receptorManualId",
-                              value: event.target.value,
-                            })
-                          }
-                          className="w-full rounded border border-slate-300 px-3 py-2 md:w-64"
-                          placeholder="ID del receptor"
-                        />
-                        <p className="mt-1 text-xs text-slate-500">
-                          Usa este campo solo si el receptor no aparece en las
-                          sugerencias. El backend validara que pertenezca al
-                          area solicitante.
-                        </p>
-                      </div>
-                    )}
 
                     <div className="overflow-x-auto rounded-lg bg-white">
                       <table className="min-w-full text-sm">
@@ -578,7 +523,12 @@ const BandejaAlmacenNotasPedidoPage = () => {
 
                     <button
                       type="button"
-                      disabled={loading || submittingId === pedido.id}
+                      disabled={
+                        loading ||
+                        submittingId === pedido.id ||
+                        receptoresCargando ||
+                        receptorCandidates.length === 0
+                      }
                       onClick={() => handleAtender(pedido)}
                       className="rounded bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:bg-emerald-300"
                     >

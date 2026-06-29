@@ -24,6 +24,11 @@ const pedidosInternosApi = {
   obtenerPedidoPorId: (id) =>
     apiFetch(`pedidos-internos/${id}`, { sessionActivity: "interactive" }),
 
+  obtenerReceptoresPedido: (id) =>
+    apiFetch(`pedidos-internos/${id}/receptores`, {
+      sessionActivity: "interactive",
+    }),
+
   obtenerBandejaAprobacion: () =>
     apiFetch("pedidos-internos/bandeja/aprobacion", {
       sessionActivity: "interactive",
