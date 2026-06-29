@@ -1,10 +1,11 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import ProductoSearchField from "../components/ProductoSearchField";
 import ReservaEstadoBadge from "../components/ReservaEstadoBadge";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
+import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 
 const buildInitialProducto = (searchParams) =>
@@ -20,7 +21,8 @@ const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
 const InventarioReservasPage = () => {
-  const { loading, obtenerReservas } = useInventario();
+  const { loading, obtenerReservas, obtenerStock } = useInventario();
+  const { areas } = useAreas();
   const [searchParams] = useSearchParams();
   const [producto, setProducto] = useState(() =>
     buildInitialProducto(searchParams)
@@ -28,12 +30,17 @@ const InventarioReservasPage = () => {
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     estado: searchParams.get("estado") || "",
+    almacenId: searchParams.get("almacenId") || "",
+    areaId: searchParams.get("areaId") || "",
+    soloVigentes: searchParams.get("soloVigentes") || "",
+    vencenEnHoras: searchParams.get("vencenEnHoras") || "",
     pedidoInternoId: searchParams.get("pedidoInternoId") || "",
     fechaDesde: searchParams.get("fechaDesde") || "",
     fechaHasta: searchParams.get("fechaHasta") || "",
     page: 1,
     limit: 12,
   });
+  const [stockRows, setStockRows] = useState([]);
   const [result, setResult] = useState({
     data: [],
     totalItems: 0,
@@ -43,12 +50,26 @@ const InventarioReservasPage = () => {
   const hasActiveFilters = Boolean(
     filters.search ||
       filters.estado ||
+      filters.almacenId ||
+      filters.areaId ||
+      filters.soloVigentes ||
+      filters.vencenEnHoras ||
       filters.pedidoInternoId ||
       filters.fechaDesde ||
       filters.fechaHasta ||
       producto?.id
   );
   const isInitialLoading = loading && result.data.length === 0;
+
+  const almacenes = useMemo(() => {
+    const map = new Map();
+    stockRows.forEach((row) => {
+      (row.almacenes || []).forEach((almacen) => {
+        map.set(String(almacen.id), almacen);
+      });
+    });
+    return Array.from(map.values());
+  }, [stockRows]);
 
   const cargarReservas = async (params = filters, selectedProducto = producto) => {
     try {
@@ -83,6 +104,10 @@ const InventarioReservasPage = () => {
       },
       producto
     );
+
+    obtenerStock()
+      .then((data) => setStockRows(Array.isArray(data) ? data : []))
+      .catch(() => setStockRows([]));
   }, []);
 
   const handleSubmit = async (event) => {
@@ -130,7 +155,7 @@ const InventarioReservasPage = () => {
         <input
           type="text"
           value={filters.search}
-          name="inventario-reservas-page-input-126"
+          name="inventario-reservas-search"
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, search: event.target.value }))
           }
@@ -138,12 +163,69 @@ const InventarioReservasPage = () => {
           placeholder="Buscar por ID, referencia, pedido o producto"
         />
         <select
+          value={filters.almacenId}
+          name="inventario-reservas-almacen"
+          onChange={(event) =>
+            setFilters((prev) => ({ ...prev, almacenId: event.target.value }))
+          }
+          className="w-full rounded border border-slate-300 px-3 py-2"
+        >
+          <option value="">Todos los almacenes</option>
+          {almacenes.map((almacen) => (
+            <option key={almacen.id} value={almacen.id}>
+              {almacen.codigo ? `${almacen.codigo} - ` : ""}
+              {almacen.nombre}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filters.areaId}
+          name="inventario-reservas-area"
+          onChange={(event) =>
+            setFilters((prev) => ({ ...prev, areaId: event.target.value }))
+          }
+          className="w-full rounded border border-slate-300 px-3 py-2"
+        >
+          <option value="">Todas las areas</option>
+          {areas.map((area) => (
+            <option key={area.id} value={area.id}>
+              {area.nombre}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filters.soloVigentes}
+          name="inventario-reservas-vigentes"
+          onChange={(event) =>
+            setFilters((prev) => ({ ...prev, soloVigentes: event.target.value }))
+          }
+          className="w-full rounded border border-slate-300 px-3 py-2"
+        >
+          <option value="">Todas las reservas</option>
+          <option value="true">Solo vigentes</option>
+        </select>
+        <select
+          value={filters.vencenEnHoras}
+          name="inventario-reservas-vencimiento"
+          onChange={(event) =>
+            setFilters((prev) => ({ ...prev, vencenEnHoras: event.target.value }))
+          }
+          className="w-full rounded border border-slate-300 px-3 py-2"
+        >
+          <option value="">Cualquier vencimiento</option>
+          <option value="4">Vencen en 4 horas</option>
+          <option value="8">Vencen en 8 horas</option>
+          <option value="24">Vencen en 24 horas</option>
+          <option value="48">Vencen en 48 horas</option>
+        </select>
+        <select
           value={filters.estado}
-          name="inventario-reservas-page-select-135"
+          name="inventario-reservas-estado"
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, estado: event.target.value }))
           }
           className="w-full rounded border border-slate-300 px-3 py-2"
+          disabled={filters.soloVigentes === "true"}
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVA">Activa</option>
@@ -156,7 +238,7 @@ const InventarioReservasPage = () => {
           type="number"
           min="1"
           value={filters.pedidoInternoId}
-          name="inventario-reservas-page-input-149"
+          name="inventario-reservas-pedido-id"
           onChange={(event) =>
             setFilters((prev) => ({
               ...prev,
@@ -176,7 +258,7 @@ const InventarioReservasPage = () => {
         <input
           type="date"
           value={filters.fechaDesde}
-          name="inventario-reservas-page-input-169"
+          name="inventario-reservas-fecha-desde"
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaDesde: event.target.value }))
           }
@@ -185,13 +267,13 @@ const InventarioReservasPage = () => {
         <input
           type="date"
           value={filters.fechaHasta}
-          name="inventario-reservas-page-input-177"
+          name="inventario-reservas-fecha-hasta"
           onChange={(event) =>
             setFilters((prev) => ({ ...prev, fechaHasta: event.target.value }))
           }
           className="w-full rounded border border-slate-300 px-3 py-2"
         />
-        <div className="md:col-span-4 flex gap-3">
+        <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row xl:col-span-4">
           <button
             type="submit"
             disabled={loading}
@@ -205,6 +287,10 @@ const InventarioReservasPage = () => {
               const resetFilters = {
                 search: "",
                 estado: "",
+                almacenId: "",
+                areaId: "",
+                soloVigentes: "",
+                vencenEnHoras: "",
                 pedidoInternoId: "",
                 fechaDesde: "",
                 fechaHasta: "",
@@ -225,15 +311,16 @@ const InventarioReservasPage = () => {
       {loading && result.data.length > 0 ? <Loader size="sm" /> : null}
 
       {isInitialLoading ? (
-        <SkeletonTable columns={6} rows={6} className="rounded-lg" />
+        <SkeletonTable columns={7} rows={6} className="rounded-lg" />
       ) : (
       <div className="overflow-x-auto rounded-lg bg-white shadow">
-        <table className="min-w-full text-sm">
+        <table className="min-w-[1060px] text-sm">
           <thead className="bg-slate-50 text-slate-700">
             <tr>
               <th className="px-4 py-3 text-left">Reserva</th>
               <th className="px-4 py-3 text-left">Producto</th>
               <th className="px-4 py-3 text-left">Estado</th>
+              <th className="px-4 py-3 text-left">Almacen</th>
               <th className="px-4 py-3 text-left">Origen</th>
               <th className="px-4 py-3 text-left">Cantidades</th>
               <th className="px-4 py-3 text-left">Acciones</th>
@@ -242,7 +329,7 @@ const InventarioReservasPage = () => {
           <tbody>
             {result.data.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                   {hasActiveFilters
                     ? "No hay reservas para los filtros aplicados."
                     : "No hay reservas registradas por el momento."}
@@ -265,12 +352,19 @@ const InventarioReservasPage = () => {
                       {reserva.producto?.nombre || "-"}
                     </div>
                     <div className="text-xs text-slate-500">
-                      {reserva.producto?.codigo || "-"} ?{" "}
-                      {reserva.almacen?.nombre || "-"}
+                      {reserva.producto?.codigo || "-"}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <ReservaEstadoBadge estado={reserva.estado} />
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    <div className="font-medium text-slate-900">
+                      {reserva.almacen?.nombre || "-"}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {reserva.almacen?.codigo || "-"}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-slate-700">
                     {reserva.pedidoInterno ? (

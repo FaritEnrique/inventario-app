@@ -32,6 +32,17 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
   const requiereAprobacion = Boolean(
     snapshotFormal.requiereAprobacionSnapshot
   );
+  const reservasVigentes = Array.isArray(pedido.reservasVigentes)
+    ? pedido.reservasVigentes
+    : [];
+  const reservasVigentesCount =
+    pedido.resumen?.reservasVigentes ?? reservasVigentes.length;
+  const totalReservadoVigente =
+    pedido.resumen?.totalReservadoVigente ??
+    reservasVigentes.reduce(
+      (acc, reserva) => acc + Number(reserva.cantidadPendiente || 0),
+      0,
+    );
 
   return (
     <div className="space-y-6">
@@ -51,6 +62,13 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
                 Esta nota aun no reserva stock. La reserva nace cuando la nota queda aprobada.
               </p>
             )}
+            {["APROBADO", "PARCIALMENTE_ATENDIDO", "EN_ATENCION"].includes(
+              pedido.estadoFlujo,
+            ) && reservasVigentesCount === 0 ? (
+              <p className="text-sm text-amber-700">
+                Esta nota no tiene reserva vigente. La atencion dependera del stock disponible actual.
+              </p>
+            ) : null}
             <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
               <p>
                 <span className="font-medium text-slate-800">Fecha:</span>{" "}
@@ -107,8 +125,11 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
             <div className="rounded-md bg-blue-50 p-3">
               <span className="block text-blue-700">Reservas vigentes</span>
               <strong className="text-blue-900">
-                {Array.isArray(pedido.reservas) ? pedido.reservas.length : 0}
+                {reservasVigentesCount}
               </strong>
+              <span className="block text-xs text-blue-700">
+                {totalReservadoVigente} pendiente
+              </span>
             </div>
           </div>
         </div>
@@ -188,13 +209,13 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
           <h3 className="mb-3 text-lg font-semibold text-slate-900">
             Reservas asociadas
           </h3>
-          {(pedido.reservas || []).length === 0 ? (
+          {reservasVigentes.length === 0 ? (
             <p className="text-sm text-slate-500">
-              Esta nota de pedido no tiene reservas activas registradas.
+              Esta nota de pedido no tiene reservas vigentes registradas.
             </p>
           ) : (
             <div className="space-y-3">
-              {pedido.reservas.map((reserva) => (
+              {reservasVigentes.map((reserva) => (
                 <div
                   key={reserva.id}
                   className="rounded-md border border-slate-200 p-3 text-sm"
