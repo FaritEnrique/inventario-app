@@ -9,6 +9,7 @@ import {
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
 import { useAuth } from "../context/authContext";
+import useAlmacenes from "../hooks/useAlmacenes";
 import useInventario from "../hooks/useInventario";
 
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -30,15 +31,31 @@ const getBuscarFromSearchParams = (searchParams) =>
 const getAlmacenIdFromSearchParams = (searchParams) =>
   searchParams.get("almacenId") || "";
 
+const getBooleanFromSearchParams = (searchParams, key) =>
+  ["1", "true", "si", "sí"].includes(
+    String(searchParams.get(key) || "").trim().toLowerCase(),
+  );
+
 const InventarioStockPage = () => {
   const { user } = useAuth();
   const { loading, obtenerStock } = useInventario();
+  const {
+    almacenes,
+    loading: loadingAlmacenes,
+    obtenerAlmacenes,
+  } = useAlmacenes();
   const [searchParams] = useSearchParams();
   const [buscar, setBuscar] = useState(() =>
     getBuscarFromSearchParams(searchParams),
   );
   const [almacenId, setAlmacenId] = useState(() =>
     getAlmacenIdFromSearchParams(searchParams),
+  );
+  const [incluirCeros, setIncluirCeros] = useState(() =>
+    getBooleanFromSearchParams(searchParams, "incluirCeros"),
+  );
+  const [soloConStock, setSoloConStock] = useState(() =>
+    getBooleanFromSearchParams(searchParams, "soloConStock"),
   );
   const [rows, setRows] = useState([]);
 
@@ -61,32 +78,61 @@ const InventarioStockPage = () => {
   );
 
   useEffect(() => {
+    obtenerAlmacenes({ estado: "activos" }).catch(() => {});
+  }, [obtenerAlmacenes]);
+
+  useEffect(() => {
     const nextBuscar = getBuscarFromSearchParams(searchParams);
     const nextAlmacenId = getAlmacenIdFromSearchParams(searchParams);
+    const nextIncluirCeros = getBooleanFromSearchParams(
+      searchParams,
+      "incluirCeros",
+    );
+    const nextSoloConStock = getBooleanFromSearchParams(
+      searchParams,
+      "soloConStock",
+    );
 
     setBuscar(nextBuscar);
     setAlmacenId(nextAlmacenId);
+    setIncluirCeros(nextIncluirCeros);
+    setSoloConStock(nextSoloConStock);
     cargarStock({
       buscar: nextBuscar.trim() || undefined,
       almacenId: nextAlmacenId || undefined,
+      incluirCeros: nextIncluirCeros || undefined,
+      soloConStock: nextSoloConStock || undefined,
     });
   }, [cargarStock, searchParams]);
 
-  const almacenesDisponibles = useMemo(() => {
-    const map = new Map();
-    rows.forEach((row) => {
-      (row.almacenes || []).forEach((almacen) => {
-        map.set(almacen.id, almacen);
-      });
-    });
-    return Array.from(map.values());
-  }, [rows]);
+  const resumenGeneral = useMemo(
+    () =>
+      rows.reduce(
+        (acumulado, row) => ({
+          productos: acumulado.productos + 1,
+          totalActual: acumulado.totalActual + Number(row.totalActual || 0),
+          totalReservada:
+            acumulado.totalReservada + Number(row.totalReservada || 0),
+          totalDisponible:
+            acumulado.totalDisponible + Number(row.totalDisponible || 0),
+        }),
+        {
+          productos: 0,
+          totalActual: 0,
+          totalReservada: 0,
+          totalDisponible: 0,
+        },
+      ),
+    [rows],
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     await cargarStock({
       buscar: buscar.trim() || undefined,
       almacenId: almacenId || undefined,
+      incluirCeros: incluirCeros || undefined,
+      soloConStock: soloConStock || undefined,
     });
   };
 
@@ -98,8 +144,8 @@ const InventarioStockPage = () => {
             Stock de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Consulta stock actual, reservado y disponible por producto y
-            almacen.
+            Consulta stock actual, reservado y disponible por producto, almacén
+            y vista consolidada institucional.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -130,7 +176,7 @@ const InventarioStockPage = () => {
               to="/notas-pedido/almacen"
               className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              Bandeja almacen
+              Bandeja almacén
             </Link>
           )}
           {canUseWarehouseTray && (
@@ -152,13 +198,14 @@ const InventarioStockPage = () => {
 
       <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
         El stock disponible ya descuenta las reservas activas de notas de pedido
-        aprobadas. La salida real ocurre solo cuando almacen genera la nota de
+        aprobadas. La reserva solo es garantía temporal de atención; la salida
+        real ocurre cuando almacén atiende la nota de pedido y genera la nota de
         salida.
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-3"
+        className="mb-6 grid gap-4 rounded-lg bg-white p-4 shadow md:grid-cols-4"
       >
         <div>
           <label
@@ -174,7 +221,7 @@ const InventarioStockPage = () => {
             name="inventario-stock-page-input-126"
             onChange={(event) => setBuscar(event.target.value)}
             className="w-full rounded border border-gray-300 px-3 py-2"
-            placeholder="Nombre o codigo"
+            placeholder="Nombre o código"
           />
         </div>
         <div>
@@ -182,22 +229,43 @@ const InventarioStockPage = () => {
             htmlFor="inventario-stock-almacen"
             className="mb-1 block text-sm font-medium text-gray-700"
           >
-            Filtrar por almacen
+            Filtrar por almacén
           </label>
           <select
             id="inventario-stock-almacen"
             value={almacenId}
             name="inventario-stock-page-select-138"
             onChange={(event) => setAlmacenId(event.target.value)}
+            disabled={loadingAlmacenes}
             className="w-full rounded border border-gray-300 px-3 py-2"
           >
-            <option value="">Todos</option>
-            {almacenesDisponibles.map((almacen) => (
+            <option value="">Todos los almacenes</option>
+            {almacenes.map((almacen) => (
               <option key={almacen.id} value={almacen.id}>
                 {almacen.codigo} - {almacen.nombre}
               </option>
             ))}
           </select>
+        </div>
+        <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={incluirCeros}
+              onChange={(event) => setIncluirCeros(event.target.checked)}
+              className="mt-1"
+            />
+            <span>Mostrar almacenes activos sin stock para el producto.</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={soloConStock}
+              onChange={(event) => setSoloConStock(event.target.checked)}
+              className="mt-1"
+            />
+            <span>Mostrar solo registros con stock o reserva.</span>
+          </label>
         </div>
         <div className="flex items-end">
           <button
@@ -209,6 +277,43 @@ const InventarioStockPage = () => {
           </button>
         </div>
       </form>
+
+      {rows.length > 0 && (
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Productos consultados
+            </p>
+            <strong className="mt-1 block text-2xl text-slate-900">
+              {resumenGeneral.productos}
+            </strong>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Stock actual consolidado
+            </p>
+            <strong className="mt-1 block text-2xl text-slate-900">
+              {resumenGeneral.totalActual}
+            </strong>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Reservado vigente
+            </p>
+            <strong className="mt-1 block text-2xl text-slate-900">
+              {resumenGeneral.totalReservada}
+            </strong>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Disponible consolidado
+            </p>
+            <strong className="mt-1 block text-2xl text-slate-900">
+              {resumenGeneral.totalDisponible}
+            </strong>
+          </div>
+        </div>
+      )}
 
       {isInitialLoading ? (
         <div className="space-y-4">
@@ -267,7 +372,7 @@ const InventarioStockPage = () => {
                           Nota de pedido: {reserva.pedidoInterno?.codigo || "-"}
                         </div>
                         <div>
-                          Area reservante: {reserva.area?.nombre || "-"}
+                          Área reservante: {reserva.area?.nombre || "-"}
                         </div>
                         <div>
                           Cantidad reservada: {reserva.cantidadReservada}
@@ -285,7 +390,7 @@ const InventarioStockPage = () => {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left">Almacen</th>
+                      <th className="px-4 py-3 text-left">Almacén</th>
                       <th className="px-4 py-3 text-left">Actual</th>
                       <th className="px-4 py-3 text-left">Reservada</th>
                       <th className="px-4 py-3 text-left">Disponible</th>
