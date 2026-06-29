@@ -21,7 +21,6 @@ const InventarioReservaDetallePage = () => {
     error,
     obtenerReservaPorId,
     liberarReserva,
-    despacharReserva,
   } = useInventario();
   const [reserva, setReserva] = useState(null);
   const [submittingAction, setSubmittingAction] = useState(false);
@@ -33,7 +32,6 @@ const InventarioReservaDetallePage = () => {
     type: "",
     message: "",
   });
-  const [ultimoResultado, setUltimoResultado] = useState(null);
 
   const canOperate = canOperateInventoryEffective(user);
   const pendingAmount = Number(reserva?.cantidadPendiente || 0);
@@ -60,8 +58,7 @@ const InventarioReservaDetallePage = () => {
     setSubmittingAction(true);
     try {
       setActionFeedback({ type: "", message: "" });
-      const response = await operation();
-      setUltimoResultado(response);
+      await operation();
       await cargarReserva();
       setActionForm({ cantidad: "", observaciones: "" });
       setActionFeedback({ type: "success", message: successMessage });
@@ -88,12 +85,7 @@ const InventarioReservaDetallePage = () => {
     );
   };
 
-  const handleDespachar = async () => {
-    await runAction(
-      () => despacharReserva(reserva.id, buildPayload()),
-      "Reserva despachada correctamente."
-    );
-  };
+
 
   if (loading && !reserva) return <InventarioReservaDetalleSkeleton />;
 
@@ -287,7 +279,7 @@ const InventarioReservaDetallePage = () => {
                 Parametros de accion
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                La cantidad es opcional. Si la dejas vacia, el backend aplicara la
+                La cantidad es opcional. Si la dejas vacia, el backend liberara la
                 totalidad del saldo pendiente.
               </p>
               <div className="mt-3 grid gap-3">
@@ -304,7 +296,7 @@ const InventarioReservaDetallePage = () => {
                     }))
                   }
                   className="rounded border border-slate-300 px-3 py-2"
-                  placeholder="Cantidad a liberar o despachar"
+                  placeholder="Cantidad a liberar"
                   disabled={!canMutate || submittingAction}
                 />
                 <textarea
@@ -327,7 +319,7 @@ const InventarioReservaDetallePage = () => {
             {canMutate ? (
               <div className="rounded-lg border border-slate-200 p-4">
                 <p className="text-sm font-medium text-slate-900">
-                  La reserva tiene saldo operativo disponible.
+                  La reserva tiene saldo operativo disponible para liberación administrativa.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -338,14 +330,6 @@ const InventarioReservaDetallePage = () => {
                   >
                     Liberar reserva
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleDespachar}
-                    disabled={submittingAction}
-                    className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
-                  >
-                    Despachar reserva
-                  </button>
                 </div>
               </div>
             ) : (
@@ -355,18 +339,7 @@ const InventarioReservaDetallePage = () => {
               </div>
             )}
 
-            {ultimoResultado?.notaSalida?.id ? (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                El despacho genero una nota de salida.
-                {" "}
-                <Link
-                  to={`/inventario-notas-salida/${ultimoResultado.notaSalida.id}`}
-                  className="font-medium text-emerald-900 underline"
-                >
-                  Abrir nota de salida
-                </Link>
-              </div>
-            ) : null}
+
           </div>
         </div>
       </div>
@@ -394,8 +367,8 @@ const InventarioReservaDetallePage = () => {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-500">
-                  La reserva no esta ligada a un pedido interno. Puede provenir de una
-                  operacion manual de inventario.
+                  La reserva no esta ligada a un pedido interno. Revisa su origen operativo
+                  antes de mantenerla activa.
                 </p>
               )}
             </div>

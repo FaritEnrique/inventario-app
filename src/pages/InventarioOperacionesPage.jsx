@@ -16,9 +16,7 @@ const operationOptions = [
   { value: "entrada", label: "Entrada manual" },
   { value: "salida", label: "Salida manual" },
   { value: "transferencia", label: "Transferencia" },
-  { value: "reserva", label: "Reserva de stock" },
   { value: "liberarReserva", label: "Liberar reserva" },
-  { value: "despacharReserva", label: "Despachar reserva" },
 ];
 
 const initialForm = {
@@ -36,7 +34,6 @@ const initialForm = {
   referenciaCodigo: "",
   observaciones: "",
   reservaId: "",
-  codigoNotaSalida: "",
 };
 
 const operationLabels = {
@@ -45,9 +42,7 @@ const operationLabels = {
   entrada: "entrada",
   salida: "salida",
   transferencia: "transferencia",
-  reserva: "reserva",
   liberarReserva: "liberación de reserva",
-  despacharReserva: "despacho de reserva",
 };
 
 const InventarioOperacionesPage = () => {
@@ -152,30 +147,10 @@ const InventarioOperacionesPage = () => {
             almacenDestinoId: form.almacenDestinoId || undefined,
           });
           break;
-        case "reserva":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarReserva({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenId: form.almacenId || undefined,
-          });
-          break;
         case "liberarReserva":
           if (!form.reservaId) throw new Error("Debes indicar el ID de la reserva.");
           response = await inventario.liberarReserva(form.reservaId, {
             cantidad: form.cantidad ? Number(form.cantidad) : undefined,
-            observaciones: form.observaciones || undefined,
-          });
-          break;
-        case "despacharReserva":
-          if (!form.reservaId) throw new Error("Debes indicar el ID de la reserva.");
-          response = await inventario.despacharReserva(form.reservaId, {
-            cantidad: form.cantidad ? Number(form.cantidad) : undefined,
-            areaId: form.areaId || undefined,
-            fechaMovimiento: form.fechaMovimiento || undefined,
-            fechaDocumento: form.fechaDocumento || undefined,
-            subtipoMovimiento: form.subtipoMovimiento || undefined,
-            codigoNotaSalida: form.codigoNotaSalida || undefined,
             observaciones: form.observaciones || undefined,
           });
           break;
@@ -200,7 +175,7 @@ const InventarioOperacionesPage = () => {
             Operaciones de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Exposición operativa mínima de carga inicial, ajustes, movimientos manuales y reservas.
+            Exposición operativa mínima de carga inicial, ajustes, movimientos manuales y transferencias.
           </p>
         </div>
         <Link
@@ -243,7 +218,7 @@ const InventarioOperacionesPage = () => {
             </div>
           </div>
 
-          {!["liberarReserva", "despacharReserva"].includes(modo) && (
+          {modo !== "liberarReserva" && (
             <ProductoSearchField
               selectedProduct={selectedProduct}
               onSelect={setSelectedProduct}
@@ -251,7 +226,7 @@ const InventarioOperacionesPage = () => {
           )}
 
           <div className="grid gap-4 md:grid-cols-3">
-            {!["liberarReserva", "despacharReserva"].includes(modo) && (
+            {modo !== "liberarReserva" && (
               <input
                 type="number"
                 min="0.01"
@@ -264,7 +239,7 @@ const InventarioOperacionesPage = () => {
               />
             )}
 
-            {["cargaInicial", "ajuste", "reserva"].includes(modo) && (
+            {["cargaInicial", "ajuste"].includes(modo) && (
               <input
                 type="number"
                 min="1"
@@ -310,7 +285,7 @@ const InventarioOperacionesPage = () => {
               </select>
             )}
 
-            {["liberarReserva", "despacharReserva"].includes(modo) && (
+            {modo === "liberarReserva" && (
               <input
                 type="number"
                 min="1"
@@ -322,15 +297,7 @@ const InventarioOperacionesPage = () => {
               />
             )}
 
-            {modo === "despacharReserva" && (
-              <input
-                type="text"
-                value={form.codigoNotaSalida}
-                name="inventario-operaciones-page-input-308" onChange={(event) => setField("codigoNotaSalida", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-                placeholder="Código nota salida (opcional)"
-              />
-            )}
+
 
             <select
               value={form.areaId}

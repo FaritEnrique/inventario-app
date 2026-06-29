@@ -159,17 +159,8 @@ const useInventario = () => {
       (payload) => execute(() => inventarioApi.registrarTransferencia(payload)),
       [execute],
     ),
-    registrarReserva: useCallback(
-      (payload) => execute(() => inventarioApi.registrarReserva(payload)),
-      [execute],
-    ),
     liberarReserva: useCallback(
       (id, payload) => execute(() => inventarioApi.liberarReserva(id, payload)),
-      [execute],
-    ),
-    despacharReserva: useCallback(
-      (id, payload) =>
-        execute(() => inventarioApi.despacharReserva(id, payload)),
       [execute],
     ),
   };

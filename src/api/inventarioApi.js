@@ -239,12 +239,6 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarReserva: (payload) =>
-    apiFetch("inventario/reservas", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
 
   liberarReserva: (id, payload = {}) =>
     apiFetch(`inventario/reservas/${id}/liberar`, {
@@ -253,12 +247,6 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  despacharReserva: (id, payload = {}) =>
-    apiFetch(`inventario/reservas/${id}/despachar`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
 };
 
 export default inventarioApi;

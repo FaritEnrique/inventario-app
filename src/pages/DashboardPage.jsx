@@ -181,7 +181,7 @@ const baseCards = [
   {
     title: "Reservas de Stock",
     description:
-      "Seguir reservas, liberaciones y despachos solo desde inventario.",
+      "Seguir reservas y liberaciones administrativas solo desde inventario.",
     icon: <FaBoxes />,
     path: "/inventario-reservas",
     visible: ({ user }) => canOperateInventoryEffective(user),
@@ -197,7 +197,7 @@ const baseCards = [
   {
     title: "Operaciones de Inventario",
     description:
-      "Carga inicial, ajustes, movimientos manuales y reservas desde inventario.",
+      "Carga inicial, ajustes y movimientos manuales desde inventario.",
     icon: <MdInventory />,
     path: "/inventario-operaciones",
     visible: ({ user }) => canOperateInventoryEffective(user),
