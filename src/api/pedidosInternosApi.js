@@ -1,4 +1,4 @@
-import apiFetch from "./apiFetch";
+import apiFetch, { apiFetchBlob } from "./apiFetch";
 
 const buildQuery = (params = {}) => {
   const query = new URLSearchParams();
@@ -23,6 +23,11 @@ const pedidosInternosApi = {
 
   obtenerPedidoPorId: (id) =>
     apiFetch(`pedidos-internos/${id}`, { sessionActivity: "interactive" }),
+
+  obtenerPedidoPdfBlob: (id) =>
+    apiFetchBlob(`pedidos-internos/${id}/pdf`, {
+      sessionActivity: "interactive",
+    }),
 
   obtenerReceptoresPedido: (id) =>
     apiFetch(`pedidos-internos/${id}/receptores`, {

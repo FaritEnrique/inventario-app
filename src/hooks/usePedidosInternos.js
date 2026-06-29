@@ -30,6 +30,10 @@ const usePedidosInternos = () => {
       (id) => execute(() => pedidosInternosApi.obtenerPedidoPorId(id)),
       [execute]
     ),
+    obtenerPedidoPdfBlob: useCallback(
+      (id) => execute(() => pedidosInternosApi.obtenerPedidoPdfBlob(id)),
+      [execute]
+    ),
     obtenerReceptoresPedido: useCallback(
       (id) => execute(() => pedidosInternosApi.obtenerReceptoresPedido(id)),
       [execute]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -12,8 +12,10 @@ import usePedidosInternos from "../hooks/usePedidosInternos";
 const NotaPedidoDetallePage = () => {
   const { user } = useAuth();
   const { id } = useParams();
-  const { loading, obtenerPedidoPorId } = usePedidosInternos();
+  const { loading, obtenerPedidoPorId, obtenerPedidoPdfBlob } = usePedidosInternos();
   const [pedido, setPedido] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [printingPdf, setPrintingPdf] = useState(false);
 
   const canApprove = canApprovePedidoInternoEffective(user);
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
@@ -31,6 +33,62 @@ const NotaPedidoDetallePage = () => {
 
     cargarPedido();
   }, [id, obtenerPedidoPorId]);
+
+  const getSafePdfBlob = useCallback(async () => {
+    const { blob } = await obtenerPedidoPdfBlob(id);
+
+    return blob?.type === "application/pdf"
+      ? blob
+      : new Blob([blob], { type: "application/pdf" });
+  }, [id, obtenerPedidoPdfBlob]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!pedido) return;
+
+    setDownloadingPdf(true);
+    try {
+      const safeBlob = await getSafePdfBlob();
+      const url = window.URL.createObjectURL(safeBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `NotaPedido-${pedido.codigo || id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      toast.error(
+        downloadError.message || "No se pudo generar el PDF de la nota de pedido.",
+      );
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [getSafePdfBlob, id, pedido]);
+
+  const handlePrintPdf = useCallback(async () => {
+    if (!pedido) return;
+
+    setPrintingPdf(true);
+    try {
+      const safeBlob = await getSafePdfBlob();
+      const blobUrl = window.URL.createObjectURL(safeBlob);
+      const pdfWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+      if (!pdfWindow) {
+        window.URL.revokeObjectURL(blobUrl);
+        toast.info("Se bloqueó la ventana emergente. Usa Descargar PDF.");
+        return;
+      }
+
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (printError) {
+      toast.error(
+        printError.message || "No se pudo abrir el PDF de la nota de pedido.",
+      );
+    } finally {
+      setPrintingPdf(false);
+    }
+  }, [getSafePdfBlob, pedido]);
 
   const quickLinks = useMemo(() => {
     const links = [
@@ -92,6 +150,26 @@ const NotaPedidoDetallePage = () => {
               {link.label}
             </Link>
           ))}
+          {pedido ? (
+            <>
+              <button
+                type="button"
+                onClick={handlePrintPdf}
+                disabled={printingPdf || downloadingPdf}
+                className="rounded border border-violet-300 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {printingPdf ? "Abriendo PDF…" : "Imprimir PDF"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf || printingPdf}
+                className="rounded bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {downloadingPdf ? "Generando PDF…" : "Descargar PDF"}
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
 
