@@ -62,6 +62,7 @@ const EditarRequerimientoPage = lazy(
   () => import("./pages/EditarRequerimientoPage"),
 );
 const GestionAreasPage = lazy(() => import("./pages/GestionAreasPage"));
+const GestionAlmacenesPage = lazy(() => import("./pages/GestionAlmacenesPage"));
 const GestionMarcasPage = lazy(() => import("./pages/GestionMarcasPage"));
 const GestionProductosPage = lazy(() => import("./pages/GestionProductosPage"));
 const GestionProveedoresPage = lazy(
@@ -625,6 +626,14 @@ const AppRoutes = () => {
               />
 
               <Route
+                path="almacenes"
+                element={
+                  <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                    <GestionAlmacenesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
                 path="stock"
                 element={
                   <RoutePermissionGuard allow={canOperateInventoryEffective}>
@@ -737,6 +746,14 @@ const AppRoutes = () => {
               element={
                 <RoutePermissionGuard allow={canOperateInventoryEffective}>
                   <InventarioStockPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="gestion-almacenes"
+              element={
+                <RoutePermissionGuard allow={canManageCatalogMasterEffective}>
+                  <GestionAlmacenesPage />
                 </RoutePermissionGuard>
               }
             />

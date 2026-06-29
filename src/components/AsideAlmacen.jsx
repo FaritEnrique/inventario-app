@@ -144,6 +144,12 @@ const AsideAlmacen = ({ onNavigate }) => {
           visible: puedeGestionarCatalogos,
           subItems: [
             {
+              name: "Almacenes",
+              to: `${baseUrl}/almacenes`,
+              exact: true,
+              visible: puedeGestionarCatalogos,
+            },
+            {
               name: "Administración de Productos",
               to: `${baseUrl}/productos`,
               exact: true,
