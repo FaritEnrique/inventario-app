@@ -2,6 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import productosApi from "../api/productosApi";
 import { toast } from "react-toastify";
+import {
+  normalizarControlInventarioProducto,
+} from "../utils/productoControlInventario";
 
 const normalizarStock = (valor) => {
   const numero = Number(valor);
@@ -10,6 +13,7 @@ const normalizarStock = (valor) => {
 
 const normalizarProducto = (producto) => ({
   ...producto,
+  ...normalizarControlInventarioProducto(producto),
   stock: normalizarStock(producto?.stock),
 });
 

@@ -22,6 +22,14 @@ import {
   revokeIfBlobUrl,
 } from "../utils/productoImage";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
+import {
+  getControlInventarioLabel,
+  getControlInventarioRequisitosLabel,
+  normalizarControlInventarioProducto,
+  normalizarTipoControlInventario,
+  TIPOS_CONTROL_INVENTARIO,
+  validarControlInventarioProducto,
+} from "../utils/productoControlInventario";
 
 const cardClasses =
   "border-2 border-indigo-500 bg-white rounded-lg p-6 shadow transition-transform duration-300 transform hover:scale-105 hover:shadow-xl";
@@ -87,6 +95,9 @@ const initialProducto = {
   imagenUrl: "",
   marcaId: "",
   tipoProductoId: "",
+  tipoControlInventario: TIPOS_CONTROL_INVENTARIO.CANTIDAD,
+  requiereNumeroSerie: false,
+  requiereCodigoPatrimonial: false,
   activo: true,
 };
 
@@ -216,6 +227,32 @@ const GestionProductosPage = () => {
 
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
+
+    if (name === "tipoControlInventario") {
+      const tipoControlInventario = normalizarTipoControlInventario(value);
+
+      setProductoActual((prevProductoActual) => ({
+        ...prevProductoActual,
+        tipoControlInventario,
+        requiereNumeroSerie:
+          tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL
+            ? prevProductoActual.requiereNumeroSerie
+            : false,
+        requiereCodigoPatrimonial:
+          tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL
+            ? prevProductoActual.requiereCodigoPatrimonial
+            : false,
+      }));
+
+      if (tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL) {
+        setIncluirStockInicial(false);
+        setStockInicialInput("");
+        setFechaMovimientoCreacion("");
+        setObservacionesStockCreacion("");
+      }
+      return;
+    }
+
     setProductoActual((prevProductoActual) => ({
       ...prevProductoActual,
       [name]:
@@ -243,6 +280,13 @@ const GestionProductosPage = () => {
         return;
       }
 
+      const controlInventarioError =
+        validarControlInventarioProducto(productoActual);
+      if (controlInventarioError) {
+        toast.error(`❌ ${controlInventarioError}`);
+        return;
+      }
+
       if (
         !modoEdicion &&
         incluirStockInicial &&
@@ -266,6 +310,21 @@ const GestionProductosPage = () => {
         formData.append(
           "valorReferencial",
           String(Number(productoActual.valorReferencial || 0)),
+        );
+
+        const controlInventario =
+          normalizarControlInventarioProducto(productoActual);
+        formData.append(
+          "tipoControlInventario",
+          controlInventario.tipoControlInventario,
+        );
+        formData.append(
+          "requiereNumeroSerie",
+          String(controlInventario.requiereNumeroSerie),
+        );
+        formData.append(
+          "requiereCodigoPatrimonial",
+          String(controlInventario.requiereCodigoPatrimonial),
         );
 
         if (productoActual.descripcion?.trim()) {
@@ -347,6 +406,7 @@ const GestionProductosPage = () => {
 
     setProductoActual({
       ...producto,
+      ...normalizarControlInventarioProducto(producto),
       stock: parseFloat(producto.stock),
       valorReferencial: Number(producto.valorReferencial || 0),
       imagenFile: null,
@@ -816,6 +876,109 @@ const GestionProductosPage = () => {
             </p>
           </div>
 
+          {/* Control de inventario */}
+          <div className="md:col-span-2 rounded-md border border-indigo-200 bg-indigo-50/60 p-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="tipoControlInventario"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Tipo de control de inventario
+                </label>
+                <select
+                  id="tipoControlInventario"
+                  name="tipoControlInventario"
+                  value={productoActual.tipoControlInventario}
+                  onChange={handleChange}
+                  className="block w-full p-2 mt-1 bg-white border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                >
+                  <option value={TIPOS_CONTROL_INVENTARIO.CANTIDAD}>
+                    Por cantidad
+                  </option>
+                  <option value={TIPOS_CONTROL_INVENTARIO.INDIVIDUAL}>
+                    Control individual
+                  </option>
+                </select>
+                <p className="mt-1 text-xs text-gray-600">
+                  Por cantidad controla saldos acumulados. Individual exige
+                  identificar cada unidad durante sus movimientos de almacén.
+                </p>
+              </div>
+
+              <div className="rounded-md border border-indigo-100 bg-white p-3 text-sm text-gray-700">
+                <span className="font-semibold text-gray-900">
+                  Configuración actual
+                </span>
+                <p className="mt-1">
+                  {getControlInventarioLabel(
+                    productoActual.tipoControlInventario,
+                  )}
+                  : {getControlInventarioRequisitosLabel(productoActual)}
+                </p>
+              </div>
+            </div>
+
+            {productoActual.tipoControlInventario ===
+              TIPOS_CONTROL_INVENTARIO.INDIVIDUAL && (
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-medium text-gray-700">
+                  Identificadores obligatorios por unidad
+                </p>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <label
+                    htmlFor="requiereNumeroSerie"
+                    className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 bg-white p-3"
+                  >
+                    <input
+                      type="checkbox"
+                      id="requiereNumeroSerie"
+                      name="requiereNumeroSerie"
+                      checked={productoActual.requiereNumeroSerie}
+                      onChange={handleChange}
+                      className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-800">
+                        Requiere número de serie
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Cada unidad debe registrarse con su serie única.
+                      </span>
+                    </span>
+                  </label>
+
+                  <label
+                    htmlFor="requiereCodigoPatrimonial"
+                    className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 bg-white p-3"
+                  >
+                    <input
+                      type="checkbox"
+                      id="requiereCodigoPatrimonial"
+                      name="requiereCodigoPatrimonial"
+                      checked={productoActual.requiereCodigoPatrimonial}
+                      onChange={handleChange}
+                      className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-800">
+                        Requiere código patrimonial
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Cada unidad debe vincularse con su código patrimonial.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-amber-700">
+                  Debe seleccionar al menos uno de los dos identificadores.
+                  Las unidades se registrarán posteriormente desde una nota de
+                  ingreso.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Descripción */}
           <div className="md:col-span-2">
             <label
@@ -898,7 +1061,9 @@ const GestionProductosPage = () => {
             </div>
           </div>
 
-          {!modoEdicion && (
+          {!modoEdicion &&
+            productoActual.tipoControlInventario ===
+              TIPOS_CONTROL_INVENTARIO.CANTIDAD && (
             <div className="p-4 border rounded-md md:col-span-2 border-amber-200 bg-amber-50/80">
               <label
                 htmlFor="incluirStockInicial"
@@ -994,6 +1159,16 @@ const GestionProductosPage = () => {
             </div>
           )}
 
+          {!modoEdicion &&
+            productoActual.tipoControlInventario ===
+              TIPOS_CONTROL_INVENTARIO.INDIVIDUAL && (
+              <div className="md:col-span-2 rounded-md border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
+                El stock inicial no se registra desde esta creación porque el
+                producto exige detalle por unidad. Primero cree el producto y
+                después registre sus unidades mediante una nota de ingreso.
+              </div>
+            )}
+
           {/* Botones */}
           <div className="flex space-x-2 md:col-span-2">
             <button
@@ -1043,7 +1218,7 @@ const GestionProductosPage = () => {
 
       {/* Tabla de Productos */}
       {cargandoGeneral && productos.length === 0 ? (
-        <SkeletonTable columns={9} rows={6} className="rounded-lg shadow-lg" />
+        <SkeletonTable columns={10} rows={6} className="rounded-lg shadow-lg" />
       ) : (
         <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-lg">
           {productos.length === 0 ? (
@@ -1051,7 +1226,7 @@ const GestionProductosPage = () => {
               No hay productos registrados para el filtro actual.
             </p>
           ) : (
-            <table className="min-w-[980px] w-full border-collapse table-auto">
+            <table className="min-w-[1120px] w-full border-collapse table-auto">
               <thead>
                 <tr className="bg-indigo-100">
                   <th className="px-4 py-2 border">Item</th>
@@ -1061,6 +1236,7 @@ const GestionProductosPage = () => {
                   <th className="px-4 py-2 border">Marca</th>
                   <th className="px-4 py-2 border">Valor referencial</th>
                   <th className="px-4 py-2 border">Stock</th>
+                  <th className="px-4 py-2 border">Control</th>
                   <th className="px-4 py-2 border">Estado</th>
                   <th className="px-4 py-2 border">Acciones</th>
                 </tr>
@@ -1090,6 +1266,23 @@ const GestionProductosPage = () => {
                       S/ {Number(producto.valorReferencial || 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-2 border">{producto.stock}</td>
+                    <td className="px-4 py-2 border">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                          producto.tipoControlInventario ===
+                          TIPOS_CONTROL_INVENTARIO.INDIVIDUAL
+                            ? "bg-violet-100 text-violet-700"
+                            : "bg-sky-100 text-sky-700"
+                        }`}
+                      >
+                        {getControlInventarioLabel(
+                          producto.tipoControlInventario,
+                        )}
+                      </span>
+                      <span className="mt-1 block text-xs text-gray-500">
+                        {getControlInventarioRequisitosLabel(producto)}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 border">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
@@ -1222,6 +1415,16 @@ const GestionProductosPage = () => {
               <p>
                 <strong className="font-semibold">Stock Actual:</strong>{" "}
                 {productoEnDetalle.stock}
+              </p>
+              <p>
+                <strong className="font-semibold">Control de inventario:</strong>{" "}
+                {getControlInventarioLabel(
+                  productoEnDetalle.tipoControlInventario,
+                )}
+              </p>
+              <p>
+                <strong className="font-semibold">Identificación por unidad:</strong>{" "}
+                {getControlInventarioRequisitosLabel(productoEnDetalle)}
               </p>
               <p>
                 <strong className="font-semibold">Marca:</strong>{" "}
