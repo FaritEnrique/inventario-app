@@ -1,3 +1,9 @@
+import {
+  buildUnidadesInventarioPayload,
+  esProductoIndividual,
+  validateUnidadesInventario,
+} from "./bienesInventarioRecepcion";
+
 const normalizeText = (value) => String(value ?? "").trim();
 
 const toNumber = (value) => {
@@ -25,6 +31,7 @@ export const buildRecepcionDraftFromOrdenCompra = (ordenCompra = {}) =>
       motivoIncidencia: "",
       fechaReposicionComprometida: "",
       decisionSaldoPendiente: "",
+      unidades: [],
       selected: false,
       disabled: isLineaProductoTemporalPendiente(linea),
       disabledReason: isLineaProductoTemporalPendiente(linea)
@@ -47,6 +54,7 @@ export const getRecepcionPayloadItems = (draftItems = [], ordenCompra = {}) =>
     )
     .map((item) => {
       const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
+      const producto = getLineaProductoReal(linea);
       const cantidadAceptada = toNumber(item.cantidadAceptada);
       const cantidadRechazada = toNumber(item.cantidadRechazada);
       const cantidadPendienteActual = toNumber(linea?.cantidadPendiente);
@@ -62,6 +70,10 @@ export const getRecepcionPayloadItems = (draftItems = [], ordenCompra = {}) =>
           normalizeText(item.fechaReposicionComprometida) || undefined,
         decisionSaldoPendiente:
           normalizeText(item.decisionSaldoPendiente) || undefined,
+        unidades:
+          esProductoIndividual(producto) && cantidadAceptada > 0
+            ? buildUnidadesInventarioPayload(item.unidades || [])
+            : [],
       };
     });
 
@@ -110,6 +122,20 @@ export const validateRecepcionDraft = (draftItems = [], ordenCompra = {}) => {
 
   if (rejectedWithoutReasonItem) {
     return "Toda cantidad rechazada debe indicar motivo de rechazo o incidencia.";
+  }
+
+  for (const item of selectedItems) {
+    const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
+    const producto = getLineaProductoReal(linea);
+    const unidadesValidation = validateUnidadesInventario({
+      producto,
+      cantidad: toNumber(item.cantidadAceptada),
+      unidades: item.unidades || [],
+    });
+
+    if (unidadesValidation) {
+      return `${producto?.codigo || producto?.nombre || "Producto"}: ${unidadesValidation}`;
+    }
   }
 
   const payloadItems = getRecepcionPayloadItems(draftItems, ordenCompra);

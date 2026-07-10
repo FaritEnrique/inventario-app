@@ -35,6 +35,7 @@ describe("recepcionOrdenCompraUi", () => {
       selected: false,
       cantidadAceptada: "0",
       cantidadRechazada: "0",
+      unidades: [],
     });
   });
 
@@ -80,6 +81,7 @@ describe("recepcionOrdenCompraUi", () => {
         motivoIncidencia: undefined,
         fechaReposicionComprometida: undefined,
         decisionSaldoPendiente: undefined,
+        unidades: [],
       },
     ]);
   });
@@ -108,5 +110,59 @@ describe("recepcionOrdenCompraUi", () => {
     expect(validateRecepcionDraft(draft, ordenCompra)).toContain(
       "productos temporales",
     );
+  });
+
+  it("exige unidades para productos de control individual", () => {
+    const ordenCompra = buildOrdenCompra();
+    ordenCompra.items[0].producto = {
+      ...ordenCompra.items[0].producto,
+      tipoControlInventario: "INDIVIDUAL",
+      requiereNumeroSerie: true,
+      requiereCodigoPatrimonial: true,
+    };
+    const draft = buildRecepcionDraftFromOrdenCompra(ordenCompra).map((item) =>
+      item.itemOrdenCompraId === "1"
+        ? { ...item, selected: true, cantidadAceptada: "2", unidades: [] }
+        : item,
+    );
+
+    expect(validateRecepcionDraft(draft, ordenCompra)).toContain(
+      "exactamente 2 unidad",
+    );
+  });
+
+  it("incluye identificadores de unidades individualizadas en el payload", () => {
+    const ordenCompra = buildOrdenCompra();
+    ordenCompra.items[0].producto = {
+      ...ordenCompra.items[0].producto,
+      tipoControlInventario: "INDIVIDUAL",
+      requiereNumeroSerie: true,
+      requiereCodigoPatrimonial: true,
+    };
+    const draft = buildRecepcionDraftFromOrdenCompra(ordenCompra).map((item) =>
+      item.itemOrdenCompraId === "1"
+        ? {
+            ...item,
+            selected: true,
+            cantidadAceptada: "1",
+            unidades: [
+              {
+                id: "u-1",
+                numeroSerie: " ABC123 ",
+                codigoPatrimonial: " PAT-001 ",
+                observaciones: " Nueva ",
+              },
+            ],
+          }
+        : item,
+    );
+
+    expect(getRecepcionPayloadItems(draft, ordenCompra)[0].unidades).toEqual([
+      {
+        numeroSerie: "ABC123",
+        codigoPatrimonial: "PAT-001",
+        observaciones: "Nueva",
+      },
+    ]);
   });
 });

@@ -15,6 +15,7 @@ import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useInventario from "../hooks/useInventario";
 import useDocumentosNotaIngresoStore from "../stores/useDocumentosNotaIngresoStore";
+import { esProductoIndividual } from "../utils/bienesInventarioRecepcion";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -27,6 +28,49 @@ const formalLevelLabels = {
 const documentacionEntregaLabels = {
   CON_DOCUMENTO: "Con documentación sustentatoria",
   SIN_DOCUMENTO_JUSTIFICADO: "Sin documentación justificada",
+};
+
+const bienInventarioEstadoLabels = {
+  PENDIENTE_POSTEO: "Pendiente de posteo",
+  DISPONIBLE: "Disponible",
+  RESERVADO: "Reservado",
+  ENTREGADO: "Entregado",
+  BAJA: "De baja",
+};
+
+const BienesInventarioList = ({ bienes = [], compact = false }) => {
+  if (!bienes.length) return null;
+
+  return (
+    <div className={compact ? "mt-2 space-y-1" : "space-y-2"}>
+      {bienes.map((bien, index) => (
+        <div
+          key={bien.id || `${bien.numeroSerie}-${bien.codigoPatrimonial}-${index}`}
+          className={`rounded border border-cyan-100 bg-cyan-50 text-cyan-950 ${
+            compact ? "px-2 py-1 text-xs" : "p-2 text-sm"
+          }`}
+        >
+          <div className="font-medium">Unidad {index + 1}</div>
+          <div className="mt-0.5 text-cyan-800">
+            Serie: {bien.numeroSerie || "-"}
+          </div>
+          <div className="text-cyan-800">
+            Patrimonial: {bien.codigoPatrimonial || "-"}
+          </div>
+          {bien.observaciones ? (
+            <div className="mt-1 text-xs text-cyan-800">
+              Observación: {bien.observaciones}
+            </div>
+          ) : null}
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-cyan-700">
+            {bienInventarioEstadoLabels[bien.estado] ||
+              bien.estado ||
+              "Pendiente de posteo"}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const InventarioNotaIngresoDetallePage = () => {
@@ -520,6 +564,9 @@ const InventarioNotaIngresoDetallePage = () => {
                 <p>Rechazada: {detalle.cantidadRechazada}</p>
                 <p>Pendiente: {detalle.cantidadPendiente}</p>
               </div>
+              <BienesInventarioList
+                bienes={detalle.bienesInventario || []}
+              />
             </div>
           ))
         ) : (
@@ -542,6 +589,7 @@ const InventarioNotaIngresoDetallePage = () => {
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-left">Cantidades</th>
                 <th className="px-4 py-3 text-left">Estado recepcion</th>
+                <th className="px-4 py-3 text-left">Unidades</th>
                 <th className="px-4 py-3 text-left">Trazabilidad</th>
               </tr>
             </thead>
@@ -549,7 +597,7 @@ const InventarioNotaIngresoDetallePage = () => {
               {(nota.detalles || []).length === 0 ? (
                 <tr>
                   <td
-                    colSpan="4"
+                    colSpan="5"
                     className="px-4 py-8 text-center text-slate-500"
                   >
                     Esta nota no tiene lineas visibles.
@@ -578,6 +626,20 @@ const InventarioNotaIngresoDetallePage = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {detalle.estadoRecepcion || "-"}
+                    </td>
+                    <td className="min-w-56 px-4 py-3 align-top">
+                      {(detalle.bienesInventario || []).length > 0 ? (
+                        <BienesInventarioList
+                          bienes={detalle.bienesInventario}
+                          compact
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-500">
+                          {esProductoIndividual(detalle.producto)
+                            ? "Sin unidades individualizadas"
+                            : "Control por cantidad"}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {nota.ordenCompra ? (

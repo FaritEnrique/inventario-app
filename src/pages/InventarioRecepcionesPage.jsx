@@ -5,11 +5,18 @@ import { toast } from "react-toastify";
 import { canOperateInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
 import ValidarProductoTemporalModal from "../components/ValidarProductoTemporalModal";
+import UnidadesInventarioEditor from "../components/inventario/UnidadesInventarioEditor";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 import useOrdenesCompra from "../hooks/useOrdenesCompra";
+import {
+  buildUnidadesInventarioPayload,
+  esProductoIndividual,
+  sincronizarUnidadesInventario,
+  validateUnidadesInventario,
+} from "../utils/bienesInventarioRecepcion";
 import {
   buildRecepcionDraftFromOrdenCompra,
   findLineaOrdenCompra,
@@ -56,6 +63,7 @@ const createEmptySimpleForm = () => ({
   referenciaCodigo: "",
   motivoSinDocumentacionEntrega: "",
   documentosEntrega: [],
+  unidades: [],
 });
 
 const createEmptyOcForm = () => ({
@@ -408,6 +416,32 @@ const InventarioRecepcionesPage = () => {
 
   const canOperate = canOperateInventoryEffective(user);
 
+  const handleSelectedProduct = (producto) => {
+    const mantieneProductoActual =
+      Number(selectedProduct?.id || 0) === Number(producto?.id || 0);
+
+    setSelectedProduct(producto);
+    setSimpleForm((prev) => ({
+      ...prev,
+      unidades: esProductoIndividual(producto)
+        ? sincronizarUnidadesInventario(
+            mantieneProductoActual ? prev.unidades : [],
+            prev.cantidad,
+          )
+        : [],
+    }));
+  };
+
+  const handleSimpleCantidadChange = (value) => {
+    setSimpleForm((prev) => ({
+      ...prev,
+      cantidad: value,
+      unidades: esProductoIndividual(selectedProduct)
+        ? sincronizarUnidadesInventario(prev.unidades, value)
+        : [],
+    }));
+  };
+
   const updateDocumentosEntrega = (setForm) => (index, field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -614,6 +648,17 @@ const InventarioRecepcionesPage = () => {
       return;
     }
 
+    const unidadesValidationMessage = validateUnidadesInventario({
+      producto: selectedProduct,
+      cantidad: Number(simpleForm.cantidad),
+      unidades: simpleForm.unidades,
+    });
+
+    if (unidadesValidationMessage) {
+      toast.error(unidadesValidationMessage);
+      return;
+    }
+
     const documentosValidationMessage = validateDocumentosEntrega({
       documentosEntrega: simpleForm.documentosEntrega,
       required: false,
@@ -644,6 +689,9 @@ const InventarioRecepcionesPage = () => {
         referenciaTipo: simpleForm.referenciaTipo || undefined,
         referenciaId: simpleForm.referenciaId || undefined,
         referenciaCodigo: simpleForm.referenciaCodigo || undefined,
+        unidades: esProductoIndividual(selectedProduct)
+          ? buildUnidadesInventarioPayload(simpleForm.unidades)
+          : [],
       };
 
       const response = await registrarIngresoPorNota(payload);
@@ -659,8 +707,35 @@ const InventarioRecepcionesPage = () => {
   const handleOcItemChange = (index, field, value) => {
     setOcForm((prev) => ({
       ...prev,
+      items: prev.items.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+
+        if (field !== "cantidadAceptada") {
+          return { ...item, [field]: value };
+        }
+
+        const linea = findLineaOrdenCompra(
+          selectedOrdenCompra,
+          item.itemOrdenCompraId,
+        );
+        const producto = getLineaProductoReal(linea);
+
+        return {
+          ...item,
+          cantidadAceptada: value,
+          unidades: esProductoIndividual(producto)
+            ? sincronizarUnidadesInventario(item.unidades, value)
+            : [],
+        };
+      }),
+    }));
+  };
+
+  const handleOcUnidadesChange = (index, unidades) => {
+    setOcForm((prev) => ({
+      ...prev,
       items: prev.items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item,
+        itemIndex === index ? { ...item, unidades } : item,
       ),
     }));
   };
@@ -684,6 +759,7 @@ const InventarioRecepcionesPage = () => {
             selected: false,
             cantidadAceptada: "0",
             cantidadRechazada: "0",
+            unidades: [],
           };
         }
 
@@ -693,17 +769,24 @@ const InventarioRecepcionesPage = () => {
             selected: false,
             cantidadAceptada: "0",
             cantidadRechazada: "0",
+            unidades: [],
           };
         }
+
+        const cantidadAceptada =
+          Number(item.cantidadAceptada || 0) > 0
+            ? item.cantidadAceptada
+            : String(Number(linea?.cantidadPendiente || 0));
+        const producto = getLineaProductoReal(linea);
 
         return {
           ...item,
           selected: true,
-          cantidadAceptada:
-            Number(item.cantidadAceptada || 0) > 0
-              ? item.cantidadAceptada
-              : String(Number(linea?.cantidadPendiente || 0)),
+          cantidadAceptada,
           cantidadRechazada: "0",
+          unidades: esProductoIndividual(producto)
+            ? sincronizarUnidadesInventario(item.unidades, cantidadAceptada)
+            : [],
         };
       }),
     }));
@@ -909,20 +992,17 @@ const InventarioRecepcionesPage = () => {
             >
               <ProductoSearchField
                 selectedProduct={selectedProduct}
-                onSelect={setSelectedProduct}
+                onSelect={handleSelectedProduct}
               />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <input
                   type="number"
                   min="0.01"
-                  step="0.01"
+                  step={esProductoIndividual(selectedProduct) ? "1" : "0.01"}
                   value={simpleForm.cantidad}
                   name="inventario-recepciones-page-input-366"
                   onChange={(event) =>
-                    setSimpleForm((prev) => ({
-                      ...prev,
-                      cantidad: event.target.value,
-                    }))
+                    handleSimpleCantidadChange(event.target.value)
                   }
                   className="w-full rounded border border-gray-300 px-3 py-2"
                   placeholder="Cantidad"
@@ -1038,6 +1118,15 @@ const InventarioRecepcionesPage = () => {
                   placeholder="Referencia ID"
                 />
               </div>
+              <UnidadesInventarioEditor
+                producto={selectedProduct}
+                cantidad={simpleForm.cantidad}
+                unidades={simpleForm.unidades}
+                onChange={(unidades) =>
+                  setSimpleForm((prev) => ({ ...prev, unidades }))
+                }
+                disabled={loading}
+              />
               <textarea
                 value={simpleForm.observaciones}
                 name="inventario-recepciones-page-textarea-483"
@@ -1445,7 +1534,7 @@ const InventarioRecepcionesPage = () => {
                           <input
                             type="number"
                             min="0"
-                            step="0.01"
+                            step={esProductoIndividual(producto) ? "1" : "0.01"}
                             value={item.cantidadAceptada}
                             name="inventario-recepciones-page-input-744"
                             onChange={(event) =>
@@ -1577,6 +1666,20 @@ const InventarioRecepcionesPage = () => {
                             </button>
                           ) : null}
                         </div>
+
+                        <UnidadesInventarioEditor
+                          producto={producto}
+                          cantidad={item.cantidadAceptada}
+                          unidades={item.unidades || []}
+                          onChange={(unidades) =>
+                            handleOcUnidadesChange(index, unidades)
+                          }
+                          disabled={
+                            loading ||
+                            item.selected === false ||
+                            temporalPendiente
+                          }
+                        />
                       </div>
                     );
                   })
