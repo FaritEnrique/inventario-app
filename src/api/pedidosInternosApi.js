@@ -34,6 +34,11 @@ const pedidosInternosApi = {
       sessionActivity: "interactive",
     }),
 
+  obtenerBienesDespachoPedido: (id) =>
+    apiFetch(`pedidos-internos/${id}/bienes-despacho`, {
+      sessionActivity: "interactive",
+    }),
+
   obtenerBandejaAprobacion: () =>
     apiFetch("pedidos-internos/bandeja/aprobacion", {
       sessionActivity: "interactive",

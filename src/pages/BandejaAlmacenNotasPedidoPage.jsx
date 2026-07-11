@@ -1,17 +1,27 @@
-import { useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canViewWarehouseTrayEffective } from "../accessRules";
 import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
+import BienesInventarioDespachoSelector from "../components/inventario/BienesInventarioDespachoSelector";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
+import {
+  buildAtencionItem,
+  buildSeleccionInicialBienesDespacho,
+  esProductoControlIndividual,
+  getMaximoSeleccionBienesDespacho,
+  normalizarLineasBienesDespacho,
+  toggleBienDespacho,
+} from "../utils/bienesInventarioDespacho";
 
 const initialDraft = {
   pedidoId: null,
   receptorSeleccion: "",
   observaciones: "",
   cantidades: {},
+  bienesSeleccionados: {},
 };
 
 const reducer = (state, action) => {
@@ -21,12 +31,18 @@ const reducer = (state, action) => {
       (action.pedido?.detalles || []).forEach((detalle) => {
         cantidades[detalle.id] = detalle.cantidadPendiente || 0;
       });
+      Object.entries(action.bienesSeleccionados || {}).forEach(
+        ([detalleId, ids]) => {
+          cantidades[detalleId] = Array.isArray(ids) ? ids.length : 0;
+        },
+      );
 
       return {
         pedidoId: action.pedido?.id || null,
         receptorSeleccion: action.receptorSeleccion || "",
         observaciones: "",
         cantidades,
+        bienesSeleccionados: action.bienesSeleccionados || {},
       };
     }
     case "setField":
@@ -37,6 +53,18 @@ const reducer = (state, action) => {
         cantidades: {
           ...state.cantidades,
           [action.detalleId]: action.value,
+        },
+      };
+    case "setBienes":
+      return {
+        ...state,
+        bienesSeleccionados: {
+          ...state.bienesSeleccionados,
+          [action.detalleId]: action.value,
+        },
+        cantidades: {
+          ...state.cantidades,
+          [action.detalleId]: action.value.length,
         },
       };
     case "reset":
@@ -54,11 +82,14 @@ const BandejaAlmacenNotasPedidoPage = () => {
     loading,
     obtenerBandejaAlmacen,
     obtenerReceptoresPedido,
+    obtenerBienesDespachoPedido,
     atenderPedido,
   } = usePedidosInternos();
   const [pedidos, setPedidos] = useState([]);
   const [receptoresByPedido, setReceptoresByPedido] = useState({});
   const [loadingReceptoresId, setLoadingReceptoresId] = useState(null);
+  const [bienesDespachoByPedido, setBienesDespachoByPedido] = useState({});
+  const [loadingBienesId, setLoadingBienesId] = useState(null);
   const [draft, dispatch] = useReducer(reducer, initialDraft);
   const [ultimoResultado, setUltimoResultado] = useState(null);
   const [submittingId, setSubmittingId] = useState(null);
@@ -66,7 +97,7 @@ const BandejaAlmacenNotasPedidoPage = () => {
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
   const isInitialLoading = loading && pedidos.length === 0;
 
-  const cargarBandeja = async () => {
+  const cargarBandeja = useCallback(async () => {
     try {
       const response = await obtenerBandejaAlmacen();
       setPedidos(Array.isArray(response?.data) ? response.data : []);
@@ -74,55 +105,94 @@ const BandejaAlmacenNotasPedidoPage = () => {
       toast.error(error.message || "No se pudo cargar la bandeja de almacen.");
       setPedidos([]);
     }
-  };
+  }, [obtenerBandejaAlmacen]);
 
   useEffect(() => {
     if (canUseWarehouseTray) {
       cargarBandeja();
     }
-  }, [canUseWarehouseTray]);
+  }, [canUseWarehouseTray, cargarBandeja]);
 
   const handleOpenAtencion = async (pedido) => {
     const receptoresCargados = receptoresByPedido[pedido.id] || null;
+    const bienesCargados = bienesDespachoByPedido[pedido.id] || null;
 
     dispatch({
       type: "open",
       pedido,
       receptorSeleccion:
         receptoresCargados?.length === 1 ? String(receptoresCargados[0].id) : "",
+      bienesSeleccionados: bienesCargados
+        ? buildSeleccionInicialBienesDespacho(bienesCargados)
+        : {},
     });
 
-    if (receptoresCargados) {
-      return;
+    if (!receptoresCargados) {
+      try {
+        setLoadingReceptoresId(pedido.id);
+        const response = await obtenerReceptoresPedido(pedido.id);
+        const receptores = Array.isArray(response?.data) ? response.data : [];
+        setReceptoresByPedido((current) => ({
+          ...current,
+          [pedido.id]: receptores,
+        }));
+        if (receptores.length === 1) {
+          dispatch({
+            type: "setField",
+            field: "receptorSeleccion",
+            value: String(receptores[0].id),
+          });
+        }
+      } catch (error) {
+        toast.error(
+          error.message ||
+            "No se pudo cargar la lista de receptores del area.",
+        );
+        setReceptoresByPedido((current) => ({
+          ...current,
+          [pedido.id]: [],
+        }));
+      } finally {
+        setLoadingReceptoresId(null);
+      }
     }
 
     try {
-      setLoadingReceptoresId(pedido.id);
-      const response = await obtenerReceptoresPedido(pedido.id);
-      const receptores = Array.isArray(response?.data) ? response.data : [];
-      setReceptoresByPedido((current) => ({
+      setLoadingBienesId(pedido.id);
+      const response = await obtenerBienesDespachoPedido(pedido.id);
+      const lineas = normalizarLineasBienesDespacho(response);
+      setBienesDespachoByPedido((current) => ({
         ...current,
-        [pedido.id]: receptores,
+        [pedido.id]: lineas,
       }));
-
-      if (receptores.length === 1) {
-        dispatch({
-          type: "setField",
-          field: "receptorSeleccion",
-          value: String(receptores[0].id),
-        });
-      }
+      const seleccionInicial = buildSeleccionInicialBienesDespacho(lineas);
+      Object.entries(seleccionInicial).forEach(([detalleId, ids]) => {
+        dispatch({ type: "setBienes", detalleId, value: ids });
+      });
     } catch (error) {
       toast.error(
-        error.message || "No se pudo cargar la lista de receptores del area.",
+        error.message || "No se pudieron cargar las unidades para despacho.",
       );
-      setReceptoresByPedido((current) => ({
+      setBienesDespachoByPedido((current) => ({
         ...current,
-        [pedido.id]: [],
+        [pedido.id]: {},
       }));
     } finally {
-      setLoadingReceptoresId(null);
+      setLoadingBienesId(null);
     }
+  };
+
+  const handleToggleBien = (detalle, linea, bienId) => {
+    const current = draft.bienesSeleccionados[detalle.id] || [];
+    const next = toggleBienDespacho({
+      seleccion: current,
+      bienId,
+      maximo: getMaximoSeleccionBienesDespacho({
+        linea,
+        cantidadPendiente: detalle.cantidadPendiente,
+      }),
+    });
+    dispatch({ type: "setBienes", detalleId: detalle.id, value: next });
   };
 
   const handleAtender = async (pedido) => {
@@ -135,16 +205,25 @@ const BandejaAlmacenNotasPedidoPage = () => {
       return;
     }
 
-    const items = (pedido.detalles || [])
-      .map((detalle) => ({
-        pedidoInternoDetalleId: detalle.id,
-        cantidadEntregada: Number(draft.cantidades[detalle.id] || 0),
-      }))
-      .filter(
-        (detalle) =>
-          Number.isFinite(detalle.cantidadEntregada) &&
-          detalle.cantidadEntregada > 0,
-      );
+    let items;
+    try {
+      items = (pedido.detalles || [])
+        .map((detalle) =>
+          buildAtencionItem({
+            detalle,
+            cantidad: draft.cantidades[detalle.id],
+            bienInventarioIds: draft.bienesSeleccionados[detalle.id] || [],
+          }),
+        )
+        .filter(
+          (detalle) =>
+            Number.isFinite(detalle.cantidadEntregada) &&
+            detalle.cantidadEntregada > 0,
+        );
+    } catch (error) {
+      toast.error(error.message);
+      return;
+    }
 
     if (items.length === 0) {
       toast.error("Debes indicar al menos una cantidad a entregar.");
@@ -171,6 +250,11 @@ const BandejaAlmacenNotasPedidoPage = () => {
         items,
       });
       setUltimoResultado(response);
+      setBienesDespachoByPedido((current) => {
+        const next = { ...current };
+        delete next[pedido.id];
+        return next;
+      });
       toast.success(
         `La nota de pedido ${pedido.codigo} fue atendida y genero su nota de salida.`,
       );
@@ -267,6 +351,8 @@ const BandejaAlmacenNotasPedidoPage = () => {
             const abierta = draft.pedidoId === pedido.id;
             const receptorCandidates = receptoresByPedido[pedido.id] || [];
             const receptoresCargando = loadingReceptoresId === pedido.id;
+            const bienesCargando = loadingBienesId === pedido.id;
+            const bienesLineas = bienesDespachoByPedido[pedido.id] || {};
             const tieneReservaVigente =
               Boolean(pedido.resumen?.tieneReservaVigente) ||
               (pedido.detalles || []).some(
@@ -502,9 +588,16 @@ const BandejaAlmacenNotasPedidoPage = () => {
                                   type="number"
                                   min="0"
                                   max={detalle.cantidadPendiente}
-                                  step="0.01"
+                                  step={
+                                    esProductoControlIndividual(detalle.producto)
+                                      ? "1"
+                                      : "0.01"
+                                  }
                                   value={draft.cantidades[detalle.id] ?? ""}
                                   name="bandeja-almacen-notas-pedido-page-input-469"
+                                  readOnly={
+                                    esProductoControlIndividual(detalle.producto)
+                                  }
                                   onChange={(event) =>
                                     dispatch({
                                       type: "setCantidad",
@@ -521,13 +614,59 @@ const BandejaAlmacenNotasPedidoPage = () => {
                       </table>
                     </div>
 
+                    {(pedido.detalles || [])
+                      .filter((detalle) =>
+                        esProductoControlIndividual(detalle.producto),
+                      )
+                      .map((detalle) => (
+                        <div
+                          key={`bienes-${detalle.id}`}
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <h3 className="font-semibold text-slate-900">
+                            Unidades a entregar · {detalle.producto?.codigo} -{" "}
+                            {detalle.producto?.nombre}
+                          </h3>
+                          <p className="mb-3 mt-1 text-xs text-slate-600">
+                            Selecciona las unidades físicas que Almacén entregará.
+                            La reserva solo cubre cantidad y nunca preasigna una
+                            serie.
+                          </p>
+                          {bienesCargando ? (
+                            <p className="text-sm text-slate-500">
+                              Cargando unidades...
+                            </p>
+                          ) : (
+                            <BienesInventarioDespachoSelector
+                              linea={bienesLineas[detalle.id]}
+                              seleccion={
+                                draft.bienesSeleccionados[detalle.id] || []
+                              }
+                              maximo={getMaximoSeleccionBienesDespacho({
+                                linea: bienesLineas[detalle.id],
+                                cantidadPendiente: detalle.cantidadPendiente,
+                              })}
+                              onToggle={(bienId) =>
+                                handleToggleBien(
+                                  detalle,
+                                  bienesLineas[detalle.id],
+                                  bienId,
+                                )
+                              }
+                              disabled={submittingId === pedido.id}
+                            />
+                          )}
+                        </div>
+                      ))}
+
                     <button
                       type="button"
                       disabled={
                         loading ||
                         submittingId === pedido.id ||
                         receptoresCargando ||
-                        receptorCandidates.length === 0
+                        receptorCandidates.length === 0 ||
+                        bienesCargando
                       }
                       onClick={() => handleAtender(pedido)}
                       className="rounded bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:bg-emerald-300"
@@ -591,6 +730,16 @@ const BandejaAlmacenNotasPedidoPage = () => {
                   <tr key={detalle.id} className="border-t border-slate-200">
                     <td className="px-3 py-2">
                       {detalle.producto?.codigo} - {detalle.producto?.nombre}
+                      {(detalle.bienesInventario || []).length > 0 ? (
+                        <div className="mt-1 space-y-1 text-xs text-slate-500">
+                          {detalle.bienesInventario.map((bien) => (
+                            <div key={bien.id}>
+                              {bien.numeroSerie || "Sin serie"} ·{" "}
+                              {bien.codigoPatrimonial || "Sin patrimonial"}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2">{detalle.cantidadEntregada}</td>
                     <td className="px-3 py-2">{detalle.cantidadPendiente}</td>

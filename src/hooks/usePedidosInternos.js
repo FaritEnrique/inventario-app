@@ -38,6 +38,11 @@ const usePedidosInternos = () => {
       (id) => execute(() => pedidosInternosApi.obtenerReceptoresPedido(id)),
       [execute]
     ),
+    obtenerBienesDespachoPedido: useCallback(
+      (id) =>
+        execute(() => pedidosInternosApi.obtenerBienesDespachoPedido(id)),
+      [execute]
+    ),
     obtenerBandejaAprobacion: useCallback(
       () => execute(() => pedidosInternosApi.obtenerBandejaAprobacion()),
       [execute]

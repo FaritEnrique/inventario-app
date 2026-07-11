@@ -8,6 +8,7 @@ import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/Inven
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useInventario from "../hooks/useInventario";
+import { getBienInventarioLabel } from "../utils/bienesInventarioDespacho";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -298,6 +299,18 @@ const InventarioNotaSalidaDetallePage = () => {
                 <p>Entregada: {detalle.cantidadEntregada}</p>
                 <p>Pendiente: {detalle.cantidadPendiente}</p>
               </div>
+              {(detalle.bienesInventario || []).length > 0 ? (
+                <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Unidades entregadas
+                  </p>
+                  <div className="mt-2 space-y-1 text-sm text-slate-700">
+                    {detalle.bienesInventario.map((bien) => (
+                      <div key={bien.id}>{getBienInventarioLabel(bien)}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))
         ) : (
@@ -338,6 +351,13 @@ const InventarioNotaSalidaDetallePage = () => {
                       <div className="text-xs text-slate-500">
                         {detalle.producto?.codigo || "-"} · {detalle.producto?.unidadMedida || "-"}
                       </div>
+                      {(detalle.bienesInventario || []).length > 0 ? (
+                        <div className="mt-2 space-y-1 rounded bg-slate-50 p-2 text-xs text-slate-600">
+                          {detalle.bienesInventario.map((bien) => (
+                            <div key={bien.id}>{getBienInventarioLabel(bien)}</div>
+                          ))}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       <div>Solicitada: {detalle.cantidadSolicitada}</div>
