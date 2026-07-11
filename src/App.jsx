@@ -78,6 +78,12 @@ const GestionTipoProductosPage = lazy(
   () => import("./pages/GestionTipoProductosPage"),
 );
 const GestionUsuariosPage = lazy(() => import("./pages/GestionUsuariosPage"));
+const InventarioBienDetallePage = lazy(
+  () => import("./pages/InventarioBienDetallePage"),
+);
+const InventarioBienesPage = lazy(
+  () => import("./pages/InventarioBienesPage"),
+);
 const InventarioKardexPage = lazy(() => import("./pages/InventarioKardexPage"));
 const InventarioNotaIngresoDetallePage = lazy(
   () => import("./pages/InventarioNotaIngresoDetallePage"),
@@ -638,6 +644,22 @@ const AppRoutes = () => {
                 element={
                   <RoutePermissionGuard allow={canOperateInventoryEffective}>
                     <InventarioStockPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="bienes-individualizados"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioBienesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="bienes-individualizados/:id"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioBienDetallePage />
                   </RoutePermissionGuard>
                 }
               />

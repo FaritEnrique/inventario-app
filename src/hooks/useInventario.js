@@ -31,6 +31,15 @@ const useInventario = () => {
         execute(() => inventarioApi.obtenerStockPorProducto(productoId)),
       [execute],
     ),
+    obtenerBienesInventario: useCallback(
+      (params = {}) =>
+        execute(() => inventarioApi.obtenerBienesInventario(params)),
+      [execute],
+    ),
+    obtenerBienInventarioPorId: useCallback(
+      (id) => execute(() => inventarioApi.obtenerBienInventarioPorId(id)),
+      [execute],
+    ),
     obtenerNotasIngreso: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasIngreso(params)),
       [execute],

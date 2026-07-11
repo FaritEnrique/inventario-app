@@ -223,6 +223,12 @@ const AsideAlmacen = ({ onNavigate }) => {
               visible: puedeOperarInventario,
             },
             {
+              name: "Bienes individualizados",
+              to: `${baseUrl}/bienes-individualizados`,
+              exact: false,
+              visible: puedeOperarInventario,
+            },
+            {
               name: "Kardex General",
               to: `${baseUrl}/kardex`,
               exact: true,

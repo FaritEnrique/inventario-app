@@ -78,6 +78,16 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  obtenerBienesInventario: (params = {}) =>
+    apiFetch(`inventario/bienes-inventario${buildQuery(params)}`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerBienInventarioPorId: (id) =>
+    apiFetch(`inventario/bienes-inventario/${id}`, {
+      sessionActivity: "interactive",
+    }),
+
   obtenerNotasIngreso: (params = {}) =>
     apiFetch(`inventario/notas-ingreso${buildQuery(params)}`, {
       sessionActivity: "interactive",
