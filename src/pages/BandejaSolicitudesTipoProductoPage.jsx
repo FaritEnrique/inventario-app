@@ -1,5 +1,5 @@
 // src/pages/BandejaSolicitudesTipoProductoPage.jsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
@@ -64,13 +64,16 @@ const BandejaSolicitudesTipoProductoPage = () => {
     (tipoProducto) => tipoProducto.activo !== false,
   );
 
-  const loadData = async (currentFilters = filters) => {
-    await fetchSolicitudes(currentFilters);
-  };
+  const loadData = useCallback(
+    async (currentFilters) => {
+      await fetchSolicitudes(currentFilters);
+    },
+    [fetchSolicitudes],
+  );
 
   useEffect(() => {
     loadData(filters);
-  }, [filters.estado, filters.search]);
+  }, [filters, loadData]);
 
   useEffect(() => {
     fetchTiposProducto();

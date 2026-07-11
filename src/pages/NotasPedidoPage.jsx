@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -30,10 +30,26 @@ const initialFilters = {
 
 const formatDate = (value) => (value ? new Date(value).toLocaleString() : "-");
 
+const buildQueryParams = (params) => ({
+  ...params,
+  pendientesAtencion:
+    params.modoAtencion === "PENDIENTES" ? "true" : undefined,
+  parcialmenteAtendidos:
+    params.modoAtencion === "PARCIALES" ? "true" : undefined,
+  conReservaVigente:
+    params.estadoReserva === "CON_RESERVA_VIGENTE"
+      ? "true"
+      : params.estadoReserva === "SIN_RESERVA_VIGENTE"
+        ? "false"
+        : undefined,
+  estadoReserva: undefined,
+  modoAtencion: undefined,
+});
+
 const NotasPedidoPage = () => {
   const { user } = useAuth();
   const { loading, obtenerPedidos } = usePedidosInternos();
-  const inventario = useInventario();
+  const { obtenerStock } = useInventario();
   const { areas } = useAreas();
   const [filters, setFilters] = useState(initialFilters);
   const [stockRows, setStockRows] = useState([]);
@@ -59,23 +75,7 @@ const NotasPedidoPage = () => {
     return Array.from(map.values());
   }, [stockRows]);
 
-  const buildQueryParams = (params = filters) => ({
-    ...params,
-    pendientesAtencion:
-      params.modoAtencion === "PENDIENTES" ? "true" : undefined,
-    parcialmenteAtendidos:
-      params.modoAtencion === "PARCIALES" ? "true" : undefined,
-    conReservaVigente:
-      params.estadoReserva === "CON_RESERVA_VIGENTE"
-        ? "true"
-        : params.estadoReserva === "SIN_RESERVA_VIGENTE"
-          ? "false"
-          : undefined,
-    estadoReserva: undefined,
-    modoAtencion: undefined,
-  });
-
-  const cargarPedidos = async (params = filters) => {
+  const cargarPedidos = useCallback(async (params) => {
     try {
       const response = await obtenerPedidos(buildQueryParams(params));
       setResult(
@@ -97,16 +97,15 @@ const NotasPedidoPage = () => {
         currentPage: 1,
       });
     }
-  };
+  }, [obtenerPedidos]);
 
   useEffect(() => {
     cargarPedidos(initialFilters);
 
-    inventario
-      .obtenerStock()
+    obtenerStock()
       .then((data) => setStockRows(Array.isArray(data) ? data : []))
       .catch(() => setStockRows([]));
-  }, []);
+  }, [cargarPedidos, obtenerStock]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

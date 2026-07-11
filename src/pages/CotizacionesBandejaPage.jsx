@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import FlujosCotizacionPanel from "../components/FlujosCotizacionPanel";
@@ -283,7 +283,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
     });
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const params =
         tipo === "jefatura"
@@ -364,7 +364,15 @@ const CotizacionesBandejaPage = ({ tipo }) => {
         setContextError(null);
       }
     }
-  };
+  }, [
+    directResponsableId,
+    estadoBandeja,
+    obtenerBandeja,
+    obtenerDetalle,
+    page,
+    search,
+    tipo,
+  ]);
 
   const {
     dialogNode: flujosDialogNode,
@@ -375,15 +383,7 @@ const CotizacionesBandejaPage = ({ tipo }) => {
 
   useEffect(() => {
     load().catch(() => {});
-  }, [
-    tipo,
-    search,
-    estadoBandeja,
-    page,
-    directResponsableId,
-    obtenerBandeja,
-    obtenerDetalle,
-  ]);
+  }, [load]);
 
   useEffect(() => {
     if (!canAssign) return;

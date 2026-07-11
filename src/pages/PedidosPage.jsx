@@ -9,7 +9,7 @@ const PedidosPage = () => {
 
   useEffect(() => {
     fetchPedidos();
-  }, []);
+  }, [fetchPedidos]);
 
   return (
     <div className="p-4 sm:p-6">

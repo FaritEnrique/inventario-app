@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FaArrowLeft, FaEye, FaPrint, FaTrashAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -38,17 +38,17 @@ const SolicitudesRequerimientoPage = () => {
 
   const [detalle, setDetalle] = useState(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [detalleResult] = await Promise.all([
       obtenerDetalle(id),
       cargarSolicitudesPorRequerimiento(id),
     ]);
     setDetalle(detalleResult);
-  };
+  }, [cargarSolicitudesPorRequerimiento, id, obtenerDetalle]);
 
   useEffect(() => {
     load().catch(() => {});
-  }, [id]);
+  }, [load]);
 
   const backTarget = buildBackTarget(location.state?.from);
   const canAssign = canAssignCotizacionesLogisticaEffective(user);

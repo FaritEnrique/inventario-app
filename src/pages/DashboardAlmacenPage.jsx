@@ -66,6 +66,8 @@ const emptyDashboardData = {
 };
 
 const QuickActionCard = ({ title, description, to, icon: Icon }) => {
+  const iconNode = Icon ? <Icon className="h-5 w-5" /> : null;
+
   return (
     <Link
       to={to}
@@ -73,7 +75,7 @@ const QuickActionCard = ({ title, description, to, icon: Icon }) => {
     >
       <div className="flex items-start gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 transition group-hover:bg-indigo-600 group-hover:text-white">
-          <Icon className="h-5 w-5" />
+          {iconNode}
         </div>
 
         <div>

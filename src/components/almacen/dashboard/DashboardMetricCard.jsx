@@ -17,6 +17,8 @@ const DashboardMetricCard = ({
   tone = "indigo",
   to,
 }) => {
+  const iconNode = Icon ? <Icon className="h-5 w-5" /> : null;
+
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -28,7 +30,7 @@ const DashboardMetricCard = ({
             toneClasses[tone] || toneClasses.indigo
           }`}
         >
-          <Icon className="h-5 w-5" />
+          {iconNode}
         </div>
       </div>
 

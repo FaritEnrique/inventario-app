@@ -3,7 +3,7 @@ import {
   alertOrder,
   getSeguimientoAlertDetalle,
   getSeguimientoAlertMeta,
-} from "./AlertasSeguimientoLogistico";
+} from "../utils/alertasSeguimientoLogistico";
 
 describe("AlertasSeguimientoLogistico", () => {
   it("registra los tipos nuevos de alertas logisticas", () => {

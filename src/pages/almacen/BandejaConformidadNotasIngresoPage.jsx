@@ -15,6 +15,12 @@ import useInventario from "../../hooks/useInventario";
 const ESTADO_PENDIENTE_ALMACEN = "PENDIENTE_APROBACION_ALMACEN";
 const NIVEL_ALMACEN = "APROBACION_ALMACEN";
 
+const INITIAL_FILTERS = {
+  search: "",
+  page: 1,
+  limit: 12,
+};
+
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
 
@@ -41,17 +47,13 @@ const BandejaConformidadNotasIngresoPage = () => {
     totalPages: 1,
     currentPage: 1,
   });
-  const [filters, setFilters] = useState({
-    search: "",
-    page: 1,
-    limit: 12,
-  });
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const isAdmin = useMemo(() => hasAdminOverrideEffective(user), [user]);
   const isInitialLoading = loading && result.data.length === 0;
 
   const cargarBandeja = useCallback(
-    async (params = filters) => {
+    async (params) => {
       try {
         const response = await obtenerNotasIngreso({
           ...params,
@@ -82,12 +84,12 @@ const BandejaConformidadNotasIngresoPage = () => {
         });
       }
     },
-    [filters, isAdmin, obtenerNotasIngreso],
+    [isAdmin, obtenerNotasIngreso],
   );
 
   useEffect(() => {
-    cargarBandeja({ ...filters, page: 1 });
-  }, []);
+    cargarBandeja(INITIAL_FILTERS);
+  }, [cargarBandeja]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

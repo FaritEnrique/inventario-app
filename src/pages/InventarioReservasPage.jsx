@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
@@ -24,10 +24,8 @@ const InventarioReservasPage = () => {
   const { loading, obtenerReservas, obtenerStock } = useInventario();
   const { areas } = useAreas();
   const [searchParams] = useSearchParams();
-  const [producto, setProducto] = useState(() =>
-    buildInitialProducto(searchParams)
-  );
-  const [filters, setFilters] = useState({
+  const initialProductoRef = useRef(buildInitialProducto(searchParams));
+  const initialFiltersRef = useRef({
     search: searchParams.get("search") || "",
     estado: searchParams.get("estado") || "",
     almacenId: searchParams.get("almacenId") || "",
@@ -40,6 +38,8 @@ const InventarioReservasPage = () => {
     page: 1,
     limit: 12,
   });
+  const [producto, setProducto] = useState(initialProductoRef.current);
+  const [filters, setFilters] = useState(initialFiltersRef.current);
   const [stockRows, setStockRows] = useState([]);
   const [result, setResult] = useState({
     data: [],
@@ -71,7 +71,7 @@ const InventarioReservasPage = () => {
     return Array.from(map.values());
   }, [stockRows]);
 
-  const cargarReservas = async (params = filters, selectedProducto = producto) => {
+  const cargarReservas = useCallback(async (params, selectedProducto) => {
     try {
       const response = await obtenerReservas({
         ...params,
@@ -94,21 +94,21 @@ const InventarioReservasPage = () => {
         currentPage: 1,
       });
     }
-  };
+  }, [obtenerReservas]);
 
   useEffect(() => {
     cargarReservas(
       {
-        ...filters,
+        ...initialFiltersRef.current,
         page: 1,
       },
-      producto
+      initialProductoRef.current,
     );
 
     obtenerStock()
       .then((data) => setStockRows(Array.isArray(data) ? data : []))
       .catch(() => setStockRows([]));
-  }, []);
+  }, [cargarReservas, obtenerStock]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

@@ -25,9 +25,6 @@ import {
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
 
-const formatDateTime = (value) =>
-  value ? new Date(value).toLocaleString("es-PE") : "-";
-
 const formatText = (value, fallback = "-") =>
   String(value ?? "").trim() || fallback;
 

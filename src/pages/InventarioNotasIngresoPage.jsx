@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
@@ -31,10 +31,8 @@ const buildPreviewProductos = (detalles = []) =>
 const InventarioNotasIngresoPage = () => {
   const { loading, obtenerNotasIngreso } = useInventario();
   const [searchParams] = useSearchParams();
-  const [producto, setProducto] = useState(() =>
-    buildInitialProducto(searchParams)
-  );
-  const [filters, setFilters] = useState({
+  const initialProductoRef = useRef(buildInitialProducto(searchParams));
+  const initialFiltersRef = useRef({
     search: searchParams.get("search") || "",
     ordenCompraId: searchParams.get("ordenCompraId") || "",
     fechaDesde: searchParams.get("fechaDesde") || "",
@@ -42,6 +40,8 @@ const InventarioNotasIngresoPage = () => {
     page: 1,
     limit: 12,
   });
+  const [producto, setProducto] = useState(initialProductoRef.current);
+  const [filters, setFilters] = useState(initialFiltersRef.current);
   const [result, setResult] = useState({
     data: [],
     totalItems: 0,
@@ -57,7 +57,7 @@ const InventarioNotasIngresoPage = () => {
   );
   const isInitialLoading = loading && result.data.length === 0;
 
-  const cargarNotas = async (params = filters, selectedProducto = producto) => {
+  const cargarNotas = useCallback(async (params, selectedProducto) => {
     try {
       const response = await obtenerNotasIngreso({
         ...params,
@@ -80,17 +80,17 @@ const InventarioNotasIngresoPage = () => {
         currentPage: 1,
       });
     }
-  };
+  }, [obtenerNotasIngreso]);
 
   useEffect(() => {
     cargarNotas(
       {
-        ...filters,
+        ...initialFiltersRef.current,
         page: 1,
       },
-      producto
+      initialProductoRef.current,
     );
-  }, []);
+  }, [cargarNotas]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

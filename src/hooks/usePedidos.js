@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import pedidosApi from '../api/pedidosApi';
 
 const usePedidos = () => {
@@ -6,7 +6,7 @@ const usePedidos = () => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchPedidos = async (buscar = '') => {
+  const fetchPedidos = useCallback(async (buscar = '') => {
     setCargando(true);
     try {
       const data = await pedidosApi.obtenerTodos(buscar);
@@ -17,17 +17,17 @@ const usePedidos = () => {
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const crearPedido = async (datos) => {
+  const crearPedido = useCallback(async (datos) => {
     const nuevo = await pedidosApi.crear(datos);
     setPedidos((prev) => [...prev, nuevo]);
-  };
+  }, []);
 
-  const eliminarPedido = async (id) => {
+  const eliminarPedido = useCallback(async (id) => {
     await pedidosApi.eliminar(id);
-    setPedidos(pedidos.filter((p) => p.id !== id));
-  };
+    setPedidos((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   return {
     pedidos,

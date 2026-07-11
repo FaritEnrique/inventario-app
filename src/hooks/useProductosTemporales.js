@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import productosTemporalesApi from "../api/productosTemporalesApi";
 
@@ -7,18 +7,25 @@ const normalizeListResponse = (response) =>
     ? response.productosTemporales
     : [];
 
-const useProductosTemporales = (initialParams = { estado: "PENDIENTE" }) => {
+const DEFAULT_PARAMS = { estado: "PENDIENTE" };
+
+const useProductosTemporales = (initialParams = DEFAULT_PARAMS) => {
+  const initialParamsRef = useRef(initialParams);
+  const paramsRef = useRef(initialParams);
   const [productosTemporales, setProductosTemporales] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [params, setParams] = useState(initialParams);
 
-  const listarProductosTemporales = useCallback(async (nextParams = params) => {
+  const listarProductosTemporales = useCallback(async (nextParams) => {
+    const resolvedParams = nextParams ?? paramsRef.current;
+
     try {
       setLoading(true);
       setError(null);
-      setParams(nextParams);
-      const response = await productosTemporalesApi.listar(nextParams);
+      paramsRef.current = resolvedParams;
+      setParams(resolvedParams);
+      const response = await productosTemporalesApi.listar(resolvedParams);
       const items = normalizeListResponse(response);
       setProductosTemporales(items);
       return response;
@@ -29,11 +36,11 @@ const useProductosTemporales = (initialParams = { estado: "PENDIENTE" }) => {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, []);
 
   useEffect(() => {
-    listarProductosTemporales(initialParams).catch(() => {});
-  }, []);
+    listarProductosTemporales(initialParamsRef.current).catch(() => {});
+  }, [listarProductosTemporales]);
 
   const vincularProductoTemporal = useCallback(async (id, payload) => {
     const response = await productosTemporalesApi.vincular(id, payload);

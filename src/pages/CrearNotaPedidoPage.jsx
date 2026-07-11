@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ProductoSearchField from "../components/ProductoSearchField";
@@ -51,8 +51,8 @@ const getAlmacenDisponible = (stockProducto, almacenId) =>
 const CrearNotaPedidoPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const inventario = useInventario();
-  const pedidosInternos = usePedidosInternos();
+  const { obtenerStock, obtenerStockPorProducto } = useInventario();
+  const { crearPedido, loading: loadingPedido } = usePedidosInternos();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [stockRows, setStockRows] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -62,19 +62,19 @@ const CrearNotaPedidoPage = () => {
   const canApprove = canApprovePedidoInternoEffective(user);
   const canUseWarehouseTray = canViewWarehouseTrayEffective(user);
 
-  const cargarStockBase = async () => {
+  const cargarStockBase = useCallback(async () => {
     try {
-      const data = await inventario.obtenerStock();
+      const data = await obtenerStock();
       setStockRows(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(error.message || "No se pudo cargar el stock base.");
       setStockRows([]);
     }
-  };
+  }, [obtenerStock]);
 
   useEffect(() => {
     cargarStockBase();
-  }, []);
+  }, [cargarStockBase]);
 
   useEffect(() => {
     if (!selectedProduct?.id) {
@@ -87,7 +87,7 @@ const CrearNotaPedidoPage = () => {
     const fetchStockProducto = async () => {
       setLoadingProductStock(true);
       try {
-        const data = await inventario.obtenerStockPorProducto(selectedProduct.id);
+        const data = await obtenerStockPorProducto(selectedProduct.id);
         if (!cancelled) {
           setStockProducto(data);
         }
@@ -107,7 +107,7 @@ const CrearNotaPedidoPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedProduct?.id]);
+  }, [obtenerStockPorProducto, selectedProduct?.id]);
 
   const almacenes = useMemo(() => {
     const map = new Map();
@@ -191,7 +191,7 @@ const CrearNotaPedidoPage = () => {
     }
 
     try {
-      const response = await pedidosInternos.crearPedido({
+      const response = await crearPedido({
         almacenId: Number(state.almacenId),
         observaciones: state.observaciones || undefined,
         items: state.lineas.map((linea) => ({
@@ -474,10 +474,10 @@ const CrearNotaPedidoPage = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={pedidosInternos.loading}
+            disabled={loadingPedido}
             className="rounded bg-slate-900 px-5 py-2.5 font-medium text-white hover:bg-slate-800 disabled:bg-slate-400"
           >
-            {pedidosInternos.loading ? "Guardando..." : "Crear nota de pedido"}
+            {loadingPedido ? "Guardando..." : "Crear nota de pedido"}
           </button>
         </div>
       </form>

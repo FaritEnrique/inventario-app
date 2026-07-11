@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import SkeletonTable from "../components/ui/skeletons/SkeletonTable";
@@ -32,7 +32,8 @@ const buildInitialFilters = (searchParams) => ({
 const InventarioMovimientosPage = () => {
   const [searchParams] = useSearchParams();
   const { loading, obtenerMovimientoPorId, obtenerMovimientos } = useInventario();
-  const [filters, setFilters] = useState(() => buildInitialFilters(searchParams));
+  const initialFiltersRef = useRef(buildInitialFilters(searchParams));
+  const [filters, setFilters] = useState(initialFiltersRef.current);
   const [result, setResult] = useState({
     data: [],
     totalItems: 0,
@@ -42,7 +43,7 @@ const InventarioMovimientosPage = () => {
   const [selectedMovimiento, setSelectedMovimiento] = useState(null);
   const isInitialLoading = loading && result.data.length === 0;
 
-  const cargarMovimientos = async (nextFilters = filters) => {
+  const cargarMovimientos = useCallback(async (nextFilters) => {
     try {
       const data = await obtenerMovimientos(nextFilters);
       setResult(
@@ -52,13 +53,13 @@ const InventarioMovimientosPage = () => {
       toast.error(error.message || "No se pudieron obtener los movimientos.");
       setResult({ data: [], totalItems: 0, totalPages: 1, currentPage: 1 });
     }
-  };
+  }, [obtenerMovimientos]);
 
   useEffect(() => {
-    const initialFilters = buildInitialFilters(searchParams);
+    const initialFilters = initialFiltersRef.current;
     setFilters(initialFilters);
     cargarMovimientos(initialFilters);
-  }, []);
+  }, [cargarMovimientos]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

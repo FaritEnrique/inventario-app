@@ -280,7 +280,7 @@ const ComparativosProcesoLogisticoPage = () => {
       motivoAnulacion: "",
       causalAnulacion: "ERROR_MATERIAL",
     });
-  }, [selectedFlujo?.id, buenaProVigente?.id]);
+  }, [selectedFlujo?.id, buenaProVigente]);
 
   const viewModel = useMemo(
     () => buildComparativoFlujoViewModel(comparativoFlujo || {}),

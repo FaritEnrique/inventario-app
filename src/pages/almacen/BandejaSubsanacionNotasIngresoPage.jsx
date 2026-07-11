@@ -10,6 +10,12 @@ import useInventario from "../../hooks/useInventario";
 
 const ESTADO_PENDIENTE_SUBSANACION = "PENDIENTE_SUBSANACION";
 
+const INITIAL_FILTERS = {
+  search: "",
+  page: 1,
+  limit: 12,
+};
+
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("es-PE") : "-";
 
@@ -36,16 +42,12 @@ const BandejaSubsanacionNotasIngresoPage = () => {
     totalPages: 1,
     currentPage: 1,
   });
-  const [filters, setFilters] = useState({
-    search: "",
-    page: 1,
-    limit: 12,
-  });
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const isInitialLoading = loading && result.data.length === 0;
 
   const cargarBandeja = useCallback(
-    async (params = filters) => {
+    async (params) => {
       try {
         const response = await obtenerNotasIngreso({
           ...params,
@@ -75,12 +77,12 @@ const BandejaSubsanacionNotasIngresoPage = () => {
         });
       }
     },
-    [filters, obtenerNotasIngreso, user?.id],
+    [obtenerNotasIngreso, user?.id],
   );
 
   useEffect(() => {
-    cargarBandeja({ ...filters, page: 1 });
-  }, []);
+    cargarBandeja(INITIAL_FILTERS);
+  }, [cargarBandeja]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

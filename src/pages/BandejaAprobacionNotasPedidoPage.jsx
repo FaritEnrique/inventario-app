@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { canApprovePedidoInternoEffective } from "../accessRules";
@@ -21,7 +21,7 @@ const BandejaAprobacionNotasPedidoPage = () => {
   const canApprove = canApprovePedidoInternoEffective(user);
   const isInitialLoading = loading && pedidos.length === 0;
 
-  const cargarBandeja = async () => {
+  const cargarBandeja = useCallback(async () => {
     try {
       const response = await obtenerBandejaAprobacion();
       setPedidos(Array.isArray(response?.data) ? response.data : []);
@@ -29,13 +29,13 @@ const BandejaAprobacionNotasPedidoPage = () => {
       toast.error(error.message || "No se pudo cargar la bandeja de aprobacion.");
       setPedidos([]);
     }
-  };
+  }, [obtenerBandejaAprobacion]);
 
   useEffect(() => {
     if (canApprove) {
       cargarBandeja();
     }
-  }, [canApprove]);
+  }, [canApprove, cargarBandeja]);
 
   const procesar = async (pedidoId, accion) => {
     try {
