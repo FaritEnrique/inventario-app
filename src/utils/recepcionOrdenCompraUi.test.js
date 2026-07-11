@@ -131,6 +131,55 @@ describe("recepcionOrdenCompraUi", () => {
     );
   });
 
+
+  it("detecta una serie repetida entre dos líneas del mismo producto", () => {
+    const ordenCompra = buildOrdenCompra();
+    ordenCompra.items = [
+      {
+        id: 1,
+        cantidadPendiente: 1,
+        producto: {
+          id: 100,
+          codigo: "P-100",
+          nombre: "Televisor",
+          tipoControlInventario: "INDIVIDUAL",
+          requiereNumeroSerie: true,
+          requiereCodigoPatrimonial: true,
+        },
+      },
+      {
+        id: 3,
+        cantidadPendiente: 1,
+        producto: {
+          id: 100,
+          codigo: "P-100",
+          nombre: "Televisor",
+          tipoControlInventario: "INDIVIDUAL",
+          requiereNumeroSerie: true,
+          requiereCodigoPatrimonial: true,
+        },
+      },
+    ];
+
+    const draft = buildRecepcionDraftFromOrdenCompra(ordenCompra).map(
+      (item) => ({
+        ...item,
+        selected: true,
+        cantidadAceptada: "1",
+        unidades: [
+          {
+            numeroSerie: item.itemOrdenCompraId === "1" ? "TV-001" : " tv-001 ",
+            codigoPatrimonial: "",
+          },
+        ],
+      }),
+    );
+
+    expect(validateRecepcionDraft(draft, ordenCompra)).toContain(
+      "entre las líneas de la misma recepción",
+    );
+  });
+
   it("incluye identificadores de unidades individualizadas en el payload", () => {
     const ordenCompra = buildOrdenCompra();
     ordenCompra.items[0].producto = {

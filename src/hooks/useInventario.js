@@ -40,6 +40,25 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerBienInventarioPorId(id)),
       [execute],
     ),
+    registrarDevolucionBienInventario: useCallback(
+      (id, payload) =>
+        execute(() =>
+          inventarioApi.registrarDevolucionBienInventario(id, payload),
+        ),
+      [execute],
+    ),
+    registrarTransferenciaBienInventario: useCallback(
+      (id, payload) =>
+        execute(() =>
+          inventarioApi.registrarTransferenciaBienInventario(id, payload),
+        ),
+      [execute],
+    ),
+    registrarBajaBienInventario: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.registrarBajaBienInventario(id, payload)),
+      [execute],
+    ),
     obtenerNotasIngreso: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasIngreso(params)),
       [execute],

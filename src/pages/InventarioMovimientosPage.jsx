@@ -33,6 +33,7 @@ const InventarioMovimientosPage = () => {
   const [searchParams] = useSearchParams();
   const { loading, obtenerMovimientoPorId, obtenerMovimientos } = useInventario();
   const initialFiltersRef = useRef(buildInitialFilters(searchParams));
+  const initialMovimientoIdRef = useRef(searchParams.get("movimientoId") || "");
   const [filters, setFilters] = useState(initialFiltersRef.current);
   const [result, setResult] = useState({
     data: [],
@@ -68,7 +69,7 @@ const InventarioMovimientosPage = () => {
     await cargarMovimientos(nextFilters);
   };
 
-  const handleDetalle = async (id) => {
+  const handleDetalle = useCallback(async (id) => {
     try {
       const movimiento = await obtenerMovimientoPorId(id);
       setSelectedMovimiento(movimiento);
@@ -76,7 +77,14 @@ const InventarioMovimientosPage = () => {
       toast.error(error.message || "No se pudo cargar el movimiento.");
       setSelectedMovimiento(null);
     }
-  };
+  }, [obtenerMovimientoPorId]);
+
+  useEffect(() => {
+    const movimientoId = initialMovimientoIdRef.current;
+    if (!movimientoId) return;
+    initialMovimientoIdRef.current = "";
+    handleDetalle(movimientoId);
+  }, [handleDetalle]);
 
   const handlePage = async (page) => {
     const nextFilters = { ...filters, page };
@@ -92,7 +100,7 @@ const InventarioMovimientosPage = () => {
             Movimientos de inventario
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Auditoría operativa de entradas, salidas, ajustes y transferencias.
+            Auditoría operativa de entradas, salidas, ajustes, transferencias y novedades.
           </p>
         </div>
         <Link
@@ -145,6 +153,7 @@ const InventarioMovimientosPage = () => {
           <option value="SALIDA">SALIDA</option>
           <option value="AJUSTE">AJUSTE</option>
           <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+          <option value="NOVEDAD">NOVEDAD</option>
         </select>
         <input
           type="text"

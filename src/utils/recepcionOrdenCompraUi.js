@@ -1,6 +1,7 @@
 import {
   buildUnidadesInventarioPayload,
   esProductoIndividual,
+  getUnidadInventarioDuplicateGroups,
   validateUnidadesInventario,
 } from "./bienesInventarioRecepcion";
 
@@ -77,6 +78,57 @@ export const getRecepcionPayloadItems = (draftItems = [], ordenCompra = {}) =>
       };
     });
 
+export const validateRecepcionUnidadesSeleccionadas = (
+  draftItems = [],
+  ordenCompra = {},
+) => {
+  const selectedItems = draftItems.filter((item) => item.selected === true);
+  const unidadesPorProducto = new Map();
+  const unidadesPatrimoniales = [];
+
+  for (const item of selectedItems) {
+    const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
+    const producto = getLineaProductoReal(linea);
+    const unidades = item.unidades || [];
+    const unidadesValidation = validateUnidadesInventario({
+      producto,
+      cantidad: toNumber(item.cantidadAceptada),
+      unidades,
+    });
+
+    if (unidadesValidation) {
+      return `${producto?.codigo || producto?.nombre || "Producto"}: ${unidadesValidation}`;
+    }
+
+    if (!esProductoIndividual(producto)) continue;
+
+    const productoKey = String(producto?.id || producto?.codigo || "producto");
+    const current = unidadesPorProducto.get(productoKey) || {
+      producto,
+      unidades: [],
+    };
+    current.unidades.push(...unidades);
+    unidadesPorProducto.set(productoKey, current);
+    unidadesPatrimoniales.push(...unidades);
+  }
+
+  for (const { producto, unidades } of unidadesPorProducto.values()) {
+    const duplicateGroups = getUnidadInventarioDuplicateGroups(unidades);
+    if (duplicateGroups.numeroSerie.length > 0) {
+      return `${producto?.codigo || producto?.nombre || "Producto"}: no se permiten números de serie repetidos entre las líneas de la misma recepción.`;
+    }
+  }
+
+  const patrimonialDuplicates =
+    getUnidadInventarioDuplicateGroups(unidadesPatrimoniales)
+      .codigoPatrimonial;
+  if (patrimonialDuplicates.length > 0) {
+    return "No se permiten códigos patrimoniales repetidos entre las líneas de la misma recepción.";
+  }
+
+  return "";
+};
+
 export const validateRecepcionDraft = (draftItems = [], ordenCompra = {}) => {
   const selectedItems = draftItems.filter((item) => item.selected === true);
 
@@ -124,19 +176,11 @@ export const validateRecepcionDraft = (draftItems = [], ordenCompra = {}) => {
     return "Toda cantidad rechazada debe indicar motivo de rechazo o incidencia.";
   }
 
-  for (const item of selectedItems) {
-    const linea = findLineaOrdenCompra(ordenCompra, item.itemOrdenCompraId);
-    const producto = getLineaProductoReal(linea);
-    const unidadesValidation = validateUnidadesInventario({
-      producto,
-      cantidad: toNumber(item.cantidadAceptada),
-      unidades: item.unidades || [],
-    });
-
-    if (unidadesValidation) {
-      return `${producto?.codigo || producto?.nombre || "Producto"}: ${unidadesValidation}`;
-    }
-  }
+  const unidadesValidation = validateRecepcionUnidadesSeleccionadas(
+    selectedItems,
+    ordenCompra,
+  );
+  if (unidadesValidation) return unidadesValidation;
 
   const payloadItems = getRecepcionPayloadItems(draftItems, ordenCompra);
   if (!payloadItems.length) {

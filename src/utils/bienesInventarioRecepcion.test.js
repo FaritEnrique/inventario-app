@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildUnidadesInventarioPayload,
   getUnidadInventarioDuplicateFields,
+  getUnidadInventarioDuplicateGroups,
   sincronizarUnidadesInventario,
   validateUnidadesInventario,
 } from "./bienesInventarioRecepcion";
@@ -54,6 +55,32 @@ describe("bienesInventarioRecepcion", () => {
       { numeroSerie: true, codigoPatrimonial: true },
       { numeroSerie: true, codigoPatrimonial: true },
     ]);
+  });
+
+
+  it("mantiene el código patrimonial opcional durante la recepción", () => {
+    expect(
+      validateUnidadesInventario({
+        producto: productoIndividual,
+        cantidad: 1,
+        unidades: [
+          { numeroSerie: "SER-001", codigoPatrimonial: "" },
+        ],
+      }),
+    ).toBe("");
+  });
+
+  it("informa las filas exactas de una serie repetida", () => {
+    const groups = getUnidadInventarioDuplicateGroups([
+      { numeroSerie: "TV-001", codigoPatrimonial: "" },
+      { numeroSerie: "TV-002", codigoPatrimonial: "" },
+      { numeroSerie: " tv-001 ", codigoPatrimonial: "" },
+    ]);
+
+    expect(groups.numeroSerie).toEqual([
+      { valor: "TV-001", indices: [0, 2] },
+    ]);
+    expect(groups.codigoPatrimonial).toEqual([]);
   });
 
   it("genera payload sin ids de interfaz", () => {

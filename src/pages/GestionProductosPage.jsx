@@ -235,9 +235,7 @@ const GestionProductosPage = () => {
         ...prevProductoActual,
         tipoControlInventario,
         requiereNumeroSerie:
-          tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL
-            ? prevProductoActual.requiereNumeroSerie
-            : false,
+          tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL,
         requiereCodigoPatrimonial:
           tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL
             ? prevProductoActual.requiereCodigoPatrimonial
@@ -923,7 +921,7 @@ const GestionProductosPage = () => {
               TIPOS_CONTROL_INVENTARIO.INDIVIDUAL && (
               <div className="mt-4">
                 <p className="mb-2 text-sm font-medium text-gray-700">
-                  Identificadores obligatorios por unidad
+                  Identificación y control por unidad
                 </p>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <label
@@ -934,13 +932,13 @@ const GestionProductosPage = () => {
                       type="checkbox"
                       id="requiereNumeroSerie"
                       name="requiereNumeroSerie"
-                      checked={productoActual.requiereNumeroSerie}
-                      onChange={handleChange}
-                      className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      checked
+                      disabled
+                      className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-100"
                     />
                     <span>
                       <span className="block text-sm font-semibold text-gray-800">
-                        Requiere número de serie
+                        Número de serie obligatorio
                       </span>
                       <span className="block text-xs text-gray-500">
                         Cada unidad debe registrarse con su serie única.
@@ -962,18 +960,16 @@ const GestionProductosPage = () => {
                     />
                     <span>
                       <span className="block text-sm font-semibold text-gray-800">
-                        Requiere código patrimonial
+                        Gestiona código patrimonial
                       </span>
                       <span className="block text-xs text-gray-500">
-                        Cada unidad debe vincularse con su código patrimonial.
+                        El código puede registrarse en la recepción o asignarse posteriormente por Patrimonio.
                       </span>
                     </span>
                   </label>
                 </div>
                 <p className="mt-2 text-xs text-amber-700">
-                  Debe seleccionar al menos uno de los dos identificadores.
-                  Las unidades se registrarán posteriormente desde una nota de
-                  ingreso.
+                  El control individual siempre exige una serie única por unidad. El código patrimonial nunca bloqueará la recepción y podrá asignarse posteriormente.
                 </p>
               </div>
             )}

@@ -50,33 +50,41 @@ export const buildUnidadesInventarioPayload = (unidades = []) =>
     observaciones: normalizeText(unidad.observaciones) || undefined,
   }));
 
-export const getUnidadInventarioDuplicateFields = (unidades = []) => {
-  const seriesCount = new Map();
-  const patrimonialesCount = new Map();
+const buildDuplicateGroups = (unidades, field) => {
+  const groups = new Map();
 
-  unidades.forEach((unidad) => {
-    const serie = normalizarIdentificadorBien(unidad.numeroSerie);
-    const patrimonial = normalizarIdentificadorBien(
-      unidad.codigoPatrimonial,
-    );
+  unidades.forEach((unidad, index) => {
+    const normalized = normalizarIdentificadorBien(unidad?.[field]);
+    if (!normalized) return;
 
-    if (serie) seriesCount.set(serie, (seriesCount.get(serie) || 0) + 1);
-    if (patrimonial) {
-      patrimonialesCount.set(
-        patrimonial,
-        (patrimonialesCount.get(patrimonial) || 0) + 1,
-      );
-    }
+    const current = groups.get(normalized) || {
+      valor: normalizeText(unidad?.[field]),
+      indices: [],
+    };
+    current.indices.push(index);
+    groups.set(normalized, current);
   });
 
-  return unidades.map((unidad) => ({
-    numeroSerie:
-      (seriesCount.get(normalizarIdentificadorBien(unidad.numeroSerie)) || 0) >
-      1,
-    codigoPatrimonial:
-      (patrimonialesCount.get(
-        normalizarIdentificadorBien(unidad.codigoPatrimonial),
-      ) || 0) > 1,
+  return [...groups.values()].filter((group) => group.indices.length > 1);
+};
+
+export const getUnidadInventarioDuplicateGroups = (unidades = []) => ({
+  numeroSerie: buildDuplicateGroups(unidades, "numeroSerie"),
+  codigoPatrimonial: buildDuplicateGroups(unidades, "codigoPatrimonial"),
+});
+
+export const getUnidadInventarioDuplicateFields = (unidades = []) => {
+  const duplicateGroups = getUnidadInventarioDuplicateGroups(unidades);
+  const seriesDuplicadas = new Set(
+    duplicateGroups.numeroSerie.flatMap((group) => group.indices),
+  );
+  const patrimonialesDuplicados = new Set(
+    duplicateGroups.codigoPatrimonial.flatMap((group) => group.indices),
+  );
+
+  return unidades.map((_unidad, index) => ({
+    numeroSerie: seriesDuplicadas.has(index),
+    codigoPatrimonial: patrimonialesDuplicados.has(index),
   }));
 };
 
@@ -109,16 +117,6 @@ export const validateUnidadesInventario = ({
 
   if (missingSerieIndex >= 0) {
     return `La unidad ${missingSerieIndex + 1} requiere número de serie.`;
-  }
-
-  const missingPatrimonialIndex = unidades.findIndex(
-    (unidad) =>
-      producto.requiereCodigoPatrimonial &&
-      !normalizarIdentificadorBien(unidad.codigoPatrimonial),
-  );
-
-  if (missingPatrimonialIndex >= 0) {
-    return `La unidad ${missingPatrimonialIndex + 1} requiere código patrimonial.`;
   }
 
   const duplicateFields = getUnidadInventarioDuplicateFields(unidades);

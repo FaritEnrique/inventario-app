@@ -9,6 +9,7 @@ import ProductoSearchField from "../components/ProductoSearchField";
 import useAreas from "../hooks/useAreas";
 import useInventario from "../hooks/useInventario";
 import { useAuth } from "../context/authContext";
+import { esProductoControlIndividual } from "../utils/productoControlInventario";
 
 const operationOptions = [
   { value: "cargaInicial", label: "Carga inicial" },
@@ -56,6 +57,8 @@ const InventarioOperacionesPage = () => {
 
   const canOperate = canOperateInventoryEffective(user);
   const canAdjust = canAdjustInventoryEffective(user);
+  const requiereUnidadesFisicas =
+    modo !== "liberarReserva" && esProductoControlIndividual(selectedProduct);
   const availableOperationOptions = useMemo(
     () =>
       operationOptions.filter(
@@ -103,6 +106,14 @@ const InventarioOperacionesPage = () => {
     try {
       let response = null;
       const payload = buildCommonPayload();
+
+      if (requiereUnidadesFisicas) {
+        throw new Error(
+          modo === "entrada" || modo === "cargaInicial"
+            ? "Registra este ingreso desde Recepciones como Ingreso simple (sin O/C) o recepción de Orden de Compra, incluyendo sus unidades físicas."
+            : "Esta operación requiere seleccionar las unidades físicas concretas del producto.",
+        );
+      }
 
       switch (modo) {
         case "cargaInicial":
@@ -223,6 +234,33 @@ const InventarioOperacionesPage = () => {
               selectedProduct={selectedProduct}
               onSelect={setSelectedProduct}
             />
+          )}
+
+          {requiereUnidadesFisicas && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
+              <p className="font-semibold">
+                La cantidad sigue siendo la base del movimiento, pero este producto también requiere identificar sus unidades físicas.
+              </p>
+              {modo === "entrada" || modo === "cargaInicial" ? (
+                <p className="mt-1">
+                  El ingreso puede provenir de O/C, donación, compra directa, carga inicial u otro sustento. Regístralo en{" "}
+                  <Link to="/modulo-almacen/recepcion-oc" className="font-semibold underline">
+                    Recepciones / Ingreso simple
+                  </Link>{" "}
+                  para ingresar la cantidad y sus series en una sola Nota de Ingreso.
+                </p>
+              ) : (
+                <p className="mt-1">
+                  Selecciona las unidades concretas desde{" "}
+                  <Link to="/modulo-almacen/bienes-individualizados" className="font-semibold underline">
+                    Bienes individualizados
+                  </Link>
+                  {modo === "salida"
+                    ? " o atiende la salida desde la bandeja de Almacén."
+                    : "."}
+                </p>
+              )}
+            </div>
           )}
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -367,10 +405,14 @@ const InventarioOperacionesPage = () => {
 
           <button
             type="submit"
-            disabled={inventario.loading}
-            className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
+            disabled={inventario.loading || requiereUnidadesFisicas}
+            className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
-            {inventario.loading ? "Procesando…" : "Registrar operación"}
+            {inventario.loading
+              ? "Procesando…"
+              : requiereUnidadesFisicas
+                ? "Completa las unidades físicas"
+                : "Registrar operación"}
           </button>
         </form>
       )}

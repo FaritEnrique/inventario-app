@@ -88,6 +88,27 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  registrarDevolucionBienInventario: (id, payload) =>
+    apiFetch(`inventario/bienes-inventario/${id}/devoluciones`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  registrarTransferenciaBienInventario: (id, payload) =>
+    apiFetch(`inventario/bienes-inventario/${id}/transferencias`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  registrarBajaBienInventario: (id, payload) =>
+    apiFetch(`inventario/bienes-inventario/${id}/bajas`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
   obtenerNotasIngreso: (params = {}) =>
     apiFetch(`inventario/notas-ingreso${buildQuery(params)}`, {
       sessionActivity: "interactive",

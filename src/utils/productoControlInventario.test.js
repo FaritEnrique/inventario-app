@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  esProductoControlIndividual,
   getControlInventarioLabel,
   getControlInventarioRequisitosLabel,
   normalizarControlInventarioProducto,
@@ -44,12 +45,21 @@ describe("productoControlInventario", () => {
     });
   });
 
-  it("rechaza un control individual sin identificador requerido", () => {
-    expect(
-      validarControlInventarioProducto({
-        tipoControlInventario: "INDIVIDUAL",
-      }),
-    ).toContain("número de serie");
+  it("fuerza el número de serie como identificador del control individual", () => {
+    const producto = {
+      tipoControlInventario: "INDIVIDUAL",
+      requiereNumeroSerie: false,
+      requiereCodigoPatrimonial: false,
+    };
+
+    expect(normalizarControlInventarioProducto(producto)).toEqual({
+      tipoControlInventario: TIPOS_CONTROL_INVENTARIO.INDIVIDUAL,
+      requiereNumeroSerie: true,
+      requiereCodigoPatrimonial: false,
+    });
+    expect(validarControlInventarioProducto(producto)).toContain(
+      "debe requerir número de serie",
+    );
   });
 
   it("genera etiquetas legibles para la tabla y el detalle", () => {
@@ -63,7 +73,16 @@ describe("productoControlInventario", () => {
       "Individual",
     );
     expect(getControlInventarioRequisitosLabel(producto)).toBe(
-      "Serie y código patrimonial",
+      "Serie obligatoria; gestiona patrimonio opcional",
     );
+  });
+
+  it("identifica productos que requieren unidades físicas", () => {
+    expect(
+      esProductoControlIndividual({ tipoControlInventario: "individual" }),
+    ).toBe(true);
+    expect(
+      esProductoControlIndividual({ tipoControlInventario: "CANTIDAD" }),
+    ).toBe(false);
   });
 });

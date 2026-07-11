@@ -15,6 +15,10 @@ export const normalizarTipoControlInventario = (value) => {
     : TIPOS_CONTROL_INVENTARIO.CANTIDAD;
 };
 
+export const esProductoControlIndividual = (producto = {}) =>
+  normalizarTipoControlInventario(producto?.tipoControlInventario) ===
+  TIPOS_CONTROL_INVENTARIO.INDIVIDUAL;
+
 export const normalizarControlInventarioProducto = (producto = {}) => {
   const tipoControlInventario = normalizarTipoControlInventario(
     producto.tipoControlInventario,
@@ -24,9 +28,7 @@ export const normalizarControlInventarioProducto = (producto = {}) => {
 
   return {
     tipoControlInventario,
-    requiereNumeroSerie: esControlIndividual
-      ? Boolean(producto.requiereNumeroSerie)
-      : false,
+    requiereNumeroSerie: esControlIndividual ? true : false,
     requiereCodigoPatrimonial: esControlIndividual
       ? Boolean(producto.requiereCodigoPatrimonial)
       : false,
@@ -34,14 +36,15 @@ export const normalizarControlInventarioProducto = (producto = {}) => {
 };
 
 export const validarControlInventarioProducto = (producto = {}) => {
-  const control = normalizarControlInventarioProducto(producto);
+  const tipoControlInventario = normalizarTipoControlInventario(
+    producto.tipoControlInventario,
+  );
 
   if (
-    control.tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL &&
-    !control.requiereNumeroSerie &&
-    !control.requiereCodigoPatrimonial
+    tipoControlInventario === TIPOS_CONTROL_INVENTARIO.INDIVIDUAL &&
+    producto.requiereNumeroSerie !== true
   ) {
-    return "Un producto de control individual debe requerir número de serie, código patrimonial o ambos.";
+    return "Un producto de control individual debe requerir número de serie. El código patrimonial es opcional y puede asignarse posteriormente.";
   }
 
   return null;
@@ -60,12 +63,7 @@ export const getControlInventarioRequisitosLabel = (producto = {}) => {
     return "Sin identificación unitaria";
   }
 
-  if (control.requiereNumeroSerie && control.requiereCodigoPatrimonial) {
-    return "Serie y código patrimonial";
-  }
-
-  if (control.requiereNumeroSerie) return "Número de serie";
-  if (control.requiereCodigoPatrimonial) return "Código patrimonial";
-
-  return "Sin requisito configurado";
+  return control.requiereCodigoPatrimonial
+    ? "Serie obligatoria; gestiona patrimonio opcional"
+    : "Número de serie obligatorio";
 };

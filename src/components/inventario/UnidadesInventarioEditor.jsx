@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   esProductoIndividual,
   getUnidadInventarioDuplicateFields,
+  getUnidadInventarioDuplicateGroups,
 } from "../../utils/bienesInventarioRecepcion";
 
 const inputClass =
@@ -18,6 +19,13 @@ const UnidadesInventarioEditor = ({
     () => getUnidadInventarioDuplicateFields(unidades),
     [unidades],
   );
+  const duplicateGroups = useMemo(
+    () => getUnidadInventarioDuplicateGroups(unidades),
+    [unidades],
+  );
+  const hasDuplicates =
+    duplicateGroups.numeroSerie.length > 0 ||
+    duplicateGroups.codigoPatrimonial.length > 0;
 
   if (!esProductoIndividual(producto)) return null;
 
@@ -41,14 +49,31 @@ const UnidadesInventarioEditor = ({
             Unidades individualizadas
           </h4>
           <p className="mt-1 text-xs leading-relaxed text-cyan-800">
-            Registra una fila por cada unidad aceptada. Los identificadores se
-            validarán también contra el inventario existente.
+            Registra una fila por cada unidad aceptada. El número de serie es
+            obligatorio cuando el producto lo exige. El código patrimonial es
+            opcional y puede asignarse posteriormente por el área competente.
           </p>
         </div>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-800 shadow-sm">
           {unidades.length} / {validIntegerQuantity ? requiredCount : "-"}
         </span>
       </div>
+
+      {hasDuplicates ? (
+        <div className="mt-3 rounded border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">
+          <p className="font-semibold">Corrige los identificadores repetidos antes de recepcionar.</p>
+          {duplicateGroups.numeroSerie.map((group) => (
+            <p key={`serie-${group.valor}`} className="mt-1">
+              La serie {group.valor} está repetida en las unidades {group.indices.map((index) => index + 1).join(", ")}.
+            </p>
+          ))}
+          {duplicateGroups.codigoPatrimonial.map((group) => (
+            <p key={`patrimonio-${group.valor}`} className="mt-1">
+              El código patrimonial {group.valor} está repetido en las unidades {group.indices.map((index) => index + 1).join(", ")}.
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       {!validIntegerQuantity ? (
         <div className="mt-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -95,10 +120,7 @@ const UnidadesInventarioEditor = ({
                 </label>
 
                 <label className="text-xs font-medium text-slate-700">
-                  Código patrimonial
-                  {producto.requiereCodigoPatrimonial
-                    ? " *"
-                    : " (opcional)"}
+                  Código patrimonial (opcional)
                   <input
                     type="text"
                     value={unidad.codigoPatrimonial}
@@ -115,7 +137,7 @@ const UnidadesInventarioEditor = ({
                         ? "border-rose-400"
                         : ""
                     }`}
-                    placeholder="Ejemplo: PAT-001"
+                    placeholder="Puede asignarse posteriormente"
                   />
                   {duplicateFields[index]?.codigoPatrimonial ? (
                     <span className="mt-1 block text-rose-600">
