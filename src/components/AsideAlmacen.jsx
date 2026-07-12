@@ -269,26 +269,31 @@ const AsideAlmacen = ({ onNavigate }) => {
         {
           name: "Operaciones",
           icon: Warehouse,
-          visible: puedeAjustarInventario,
+          visible: puedeOperarInventario,
           subItems: [
+            {
+              name: "Notas de Transferencia",
+              to: `${baseUrl}/transferencias`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
             {
               name: "Ajustes de Inventario",
               to: `${baseUrl}/ajustes-inventario`,
               exact: true,
-              visible: puedeAjustarInventario,
+              visible: puedeOperarInventario,
             },
             {
-              name: "Operaciones de Inventario",
+              name: "Mapa de operaciones",
               to: `${baseUrl}/operaciones`,
               exact: true,
-              visible: puedeAjustarInventario,
+              visible: puedeOperarInventario,
             },
           ],
         },
       ]),
     [
       puedeAccederModuloAlmacen,
-      puedeAjustarInventario,
       puedeGestionarCatalogos,
       puedeOperarInventario,
       puedeVerBandejaAlmacen,

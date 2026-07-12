@@ -167,8 +167,9 @@ const NotasPedidoPage = () => {
       </div>
 
       <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        Una nota pendiente de aprobacion aun no reserva stock. La reserva nace
-        cuando la nota queda aprobada.
+        La reserva de stock nace junto con la Nota de Pedido, incluso cuando
+        queda pendiente de aprobación. Se libera automáticamente si la nota es
+        rechazada, anulada o vence el plazo configurado.
       </div>
 
       <form

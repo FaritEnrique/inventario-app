@@ -1,45 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { canOperateInventoryEffective } from "../accessRules";
-import Loader from "../components/Loader";
 import ReservaEstadoBadge from "../components/ReservaEstadoBadge";
 import InventarioReservaDetalleSkeleton from "../components/ui/skeletons/InventarioReservaDetalleSkeleton";
-import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
-
-const actionableStates = new Set(["ACTIVA", "PARCIAL"]);
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
 const InventarioReservaDetallePage = () => {
   const { id } = useParams();
-  const { user } = useAuth();
-  const {
-    loading,
-    error,
-    obtenerReservaPorId,
-    liberarReserva,
-  } = useInventario();
+  const { loading, error, obtenerReservaPorId } = useInventario();
   const [reserva, setReserva] = useState(null);
-  const [submittingAction, setSubmittingAction] = useState(false);
-  const [actionForm, setActionForm] = useState({
-    cantidad: "",
-    observaciones: "",
-  });
-  const [actionFeedback, setActionFeedback] = useState({
-    type: "",
-    message: "",
-  });
-
-  const canOperate = canOperateInventoryEffective(user);
-  const pendingAmount = Number(reserva?.cantidadPendiente || 0);
-  const canMutate =
-    canOperate &&
-    reserva &&
-    actionableStates.has(reserva.estado) &&
-    pendingAmount > 0;
 
   const cargarReserva = useCallback(async () => {
     const data = await obtenerReservaPorId(id);
@@ -47,44 +19,11 @@ const InventarioReservaDetallePage = () => {
   }, [id, obtenerReservaPorId]);
 
   useEffect(() => {
-    setActionFeedback({ type: "", message: "" });
     cargarReserva().catch((loadError) => {
       toast.error(loadError.message || "No se pudo cargar la reserva.");
       setReserva(null);
     });
   }, [cargarReserva]);
-
-  const runAction = async (operation, successMessage) => {
-    setSubmittingAction(true);
-    try {
-      setActionFeedback({ type: "", message: "" });
-      await operation();
-      await cargarReserva();
-      setActionForm({ cantidad: "", observaciones: "" });
-      setActionFeedback({ type: "success", message: successMessage });
-      toast.success(successMessage);
-    } catch (actionError) {
-      const message =
-        actionError.message || "No se pudo completar la accion sobre la reserva.";
-      setActionFeedback({ type: "error", message });
-      toast.error(message);
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  const buildPayload = () => ({
-    cantidad: actionForm.cantidad ? Number(actionForm.cantidad) : undefined,
-    observaciones: actionForm.observaciones || undefined,
-  });
-
-  const handleLiberar = async () => {
-    await runAction(
-      () => liberarReserva(reserva.id, buildPayload()),
-      "Reserva liberada correctamente."
-    );
-  };
-
 
 
   if (loading && !reserva) return <InventarioReservaDetalleSkeleton />;
@@ -253,93 +192,23 @@ const InventarioReservaDetallePage = () => {
           </div>
         </div>
 
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Acciones disponibles
-            </h2>
-            {submittingAction ? <Loader size="sm" /> : null}
-          </div>
-
-          {actionFeedback.message ? (
-            <div
-              className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
-                actionFeedback.type === "error"
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
-              }`}
-            >
-              {actionFeedback.message}
-            </div>
-          ) : null}
-
-          <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 p-4">
-              <p className="text-sm font-medium text-slate-900">
-                Parametros de accion
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                La cantidad es opcional. Si la dejas vacia, el backend liberara la
-                totalidad del saldo pendiente.
-              </p>
-              <div className="mt-3 grid gap-3">
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={actionForm.cantidad}
-                  name="inventario-reserva-detalle-page-input-298"
-                  onChange={(event) =>
-                    setActionForm((prev) => ({
-                      ...prev,
-                      cantidad: event.target.value,
-                    }))
-                  }
-                  className="rounded border border-slate-300 px-3 py-2"
-                  placeholder="Cantidad a liberar"
-                  disabled={!canMutate || submittingAction}
-                />
-                <textarea
-                  value={actionForm.observaciones}
-                  name="inventario-reserva-detalle-page-textarea-313"
-                  onChange={(event) =>
-                    setActionForm((prev) => ({
-                      ...prev,
-                      observaciones: event.target.value,
-                    }))
-                  }
-                  rows="3"
-                  className="rounded border border-slate-300 px-3 py-2"
-                  placeholder="Observaciones de la accion"
-                  disabled={!canMutate || submittingAction}
-                />
-              </div>
-            </div>
-
-            {canMutate ? (
-              <div className="rounded-lg border border-slate-200 p-4">
-                <p className="text-sm font-medium text-slate-900">
-                  La reserva tiene saldo operativo disponible para liberación administrativa.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleLiberar}
-                    disabled={submittingAction}
-                    className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                  >
-                    Liberar reserva
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                No hay acciones operativas habilitadas para tu perfil o para el estado
-                actual de esta reserva.
-              </div>
-            )}
-
-
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-blue-950">
+            Gestión automática de la reserva
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-blue-900">
+            La reserva fue generada por el documento de origen. El sistema la
+            consume al aprobar la Nota de Salida y libera automáticamente el
+            saldo por vencimiento, rechazo o cancelación. No corresponde una
+            liberación manual desde esta ficha.
+          </p>
+          <div className="mt-4 rounded-lg bg-white/80 p-4 text-sm text-blue-950">
+            <p>
+              <strong>Saldo pendiente:</strong> {reserva.cantidadPendiente}
+            </p>
+            <p className="mt-1">
+              <strong>Vencimiento:</strong> {formatDateTime(reserva.expiresAt)}
+            </p>
           </div>
         </div>
       </div>

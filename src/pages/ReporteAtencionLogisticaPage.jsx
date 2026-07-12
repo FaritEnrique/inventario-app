@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { canAdjustInventoryEffective } from "../accessRules";
 import configuracionEmpresaApi from "../api/configuracionEmpresaApi";
+import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 import usePedidosInternos from "../hooks/usePedidosInternos";
 import {
@@ -30,15 +32,19 @@ const openBlobResponse = ({ blob }) => {
 
 const ReporteAtencionLogisticaPage = ({ alcance = "PEDIDO_INTERNO" }) => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const canApproveActa = canAdjustInventoryEffective(user);
   const { obtenerReporteAtencionPedido } = usePedidosInternos();
   const {
     obtenerReporteAtencionNotaSalida,
     obtenerActaRegularizacionPdfBlob,
     obtenerSustentoActaRegularizacionBlob,
+    decidirActaRegularizacionSalidaTemporal,
   } = useInventario();
   const [reporte, setReporte] = useState(null);
   const [loading, setLoading] = useState(true);
   const [configuracionEmpresa, setConfiguracionEmpresa] = useState(null);
+  const [decisionId, setDecisionId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,30 +62,68 @@ const ReporteAtencionLogisticaPage = ({ alcance = "PEDIDO_INTERNO" }) => {
     };
   }, []);
 
+  const cargarReporte = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data =
+        alcance === "NOTA_SALIDA"
+          ? await obtenerReporteAtencionNotaSalida(id)
+          : await obtenerReporteAtencionPedido(id);
+      setReporte(data);
+      return data;
+    } catch (error) {
+      setReporte(null);
+      toast.error(error.message || "No se pudo generar el reporte.");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    alcance,
+    id,
+    obtenerReporteAtencionNotaSalida,
+    obtenerReporteAtencionPedido,
+  ]);
+
   useEffect(() => {
-    let cancelled = false;
-    const cargar = async () => {
-      setLoading(true);
-      try {
-        const data =
-          alcance === "NOTA_SALIDA"
-            ? await obtenerReporteAtencionNotaSalida(id)
-            : await obtenerReporteAtencionPedido(id);
-        if (!cancelled) setReporte(data);
-      } catch (error) {
-        if (!cancelled) {
-          setReporte(null);
-          toast.error(error.message || "No se pudo generar el reporte.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    cargarReporte();
+  }, [cargarReporte]);
+
+  const decidirActa = async (acta, accion) => {
+    let comentario;
+    if (accion === "RECHAZAR") {
+      comentario = window.prompt("Motivo del rechazo del Acta:");
+      if (comentario === null) return;
+      if (comentario.trim().length < 3) {
+        toast.error("Debe indicar un motivo de rechazo.");
+        return;
       }
-    };
-    cargar();
-    return () => {
-      cancelled = true;
-    };
-  }, [alcance, id, obtenerReporteAtencionNotaSalida, obtenerReporteAtencionPedido]);
+    } else if (
+      !window.confirm(
+        `¿Aprobar ${acta.codigo}? La regularización quedará cerrada e inmutable.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDecisionId(acta.id);
+      await decidirActaRegularizacionSalidaTemporal(acta.id, {
+        accion,
+        comentario: comentario?.trim() || undefined,
+      });
+      toast.success(
+        accion === "APROBAR"
+          ? `${acta.codigo} fue aprobada.`
+          : `${acta.codigo} fue rechazada.`,
+      );
+      await cargarReporte();
+    } catch (error) {
+      toast.error(error.message || "No se pudo registrar la decisión del Acta.");
+    } finally {
+      setDecisionId(null);
+    }
+  };
 
   const pedido = reporte?.pedidoInterno;
   const salidas = useMemo(
@@ -360,26 +404,39 @@ const ReporteAtencionLogisticaPage = ({ alcance = "PEDIDO_INTERNO" }) => {
                     <div className="mt-2 space-y-2">
                       {salida.actasRegularizacion.map((acta) => (
                         <div key={acta.id} className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                          <div>
-                            <strong>{acta.codigo}</strong> · {formatDateTime(acta.fechaEmision)} · {acta.motivoOtro || acta.motivo}
-                            <span className="ml-2">Regularizado: {formatNumber(acta.totalRegularizado)}</span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <strong>{acta.codigo}</strong>
+                            <span>· {formatDateTime(acta.fechaEmision)}</span>
+                            <span>· {acta.motivoOtro || acta.motivo}</span>
+                            <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-semibold">
+                              {acta.estado === "PENDIENTE_APROBACION"
+                                ? "Pendiente de aprobación"
+                                : acta.estado === "EMITIDO"
+                                  ? "Emitida"
+                                  : "Rechazada"}
+                            </span>
+                            <span>
+                              Regularizado: {formatNumber(acta.totalRegularizado)}
+                            </span>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-3 print:hidden">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  openBlobResponse(
-                                    await obtenerActaRegularizacionPdfBlob(acta.id),
-                                  );
-                                } catch (error) {
-                                  toast.error(error.message || "No se pudo abrir el PDF del Acta.");
-                                }
-                              }}
-                              className="font-semibold text-amber-800 underline"
-                            >
-                              Ver Acta PDF
-                            </button>
+                            {acta.estado === "EMITIDO" ? (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    openBlobResponse(
+                                      await obtenerActaRegularizacionPdfBlob(acta.id),
+                                    );
+                                  } catch (error) {
+                                    toast.error(error.message || "No se pudo abrir el PDF del Acta.");
+                                  }
+                                }}
+                                className="font-semibold text-amber-800 underline"
+                              >
+                                Ver Acta PDF
+                              </button>
+                            ) : null}
                             <button
                               type="button"
                               onClick={async () => {
@@ -395,6 +452,27 @@ const ReporteAtencionLogisticaPage = ({ alcance = "PEDIDO_INTERNO" }) => {
                             >
                               Ver sustento
                             </button>
+                            {canApproveActa &&
+                            acta.estado === "PENDIENTE_APROBACION" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={decisionId === acta.id}
+                                  onClick={() => decidirActa(acta, "APROBAR")}
+                                  className="font-semibold text-emerald-800 underline disabled:opacity-50"
+                                >
+                                  Aprobar
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={decisionId === acta.id}
+                                  onClick={() => decidirActa(acta, "RECHAZAR")}
+                                  className="font-semibold text-rose-800 underline disabled:opacity-50"
+                                >
+                                  Rechazar
+                                </button>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       ))}

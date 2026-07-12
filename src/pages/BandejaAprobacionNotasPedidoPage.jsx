@@ -47,7 +47,7 @@ const BandejaAprobacionNotasPedidoPage = () => {
       });
       toast.success(
         accion === "APROBAR"
-          ? "La nota de pedido fue aprobada y ya puede reservar stock." 
+          ? "La nota de pedido fue aprobada; la reserva creada con la nota continúa vigente."
           : "La nota de pedido fue rechazada correctamente."
       );
       await cargarBandeja();

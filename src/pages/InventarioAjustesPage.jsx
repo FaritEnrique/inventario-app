@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileDown, Plus, RefreshCw, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  FileDown,
+  Plus,
+  RefreshCw,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "react-toastify";
+import { canAdjustInventoryEffective } from "../accessRules";
 import ProductoSearchField from "../components/ProductoSearchField";
+import { useAuth } from "../context/authContext";
 import useAlmacenes from "../hooks/useAlmacenes";
 import useInventario from "../hooks/useInventario";
 import { getBienInventarioLabel } from "../utils/bienesInventarioDespacho";
@@ -25,6 +34,18 @@ const CAUSALES = [
   ["OTRO", "Otro"],
 ];
 
+const ESTADO_LABELS = {
+  PENDIENTE_APROBACION: "Pendiente de aprobación",
+  EMITIDO: "Emitido",
+  RECHAZADO: "Rechazado",
+};
+
+const ESTADO_CLASSES = {
+  PENDIENTE_APROBACION: "bg-amber-100 text-amber-800",
+  EMITIDO: "bg-emerald-100 text-emerald-800",
+  RECHAZADO: "bg-rose-100 text-rose-800",
+};
+
 const todayInput = () => new Date().toISOString().slice(0, 10);
 
 const openBlob = ({ blob }) => {
@@ -34,9 +55,12 @@ const openBlob = ({ blob }) => {
 };
 
 const InventarioAjustesPage = () => {
+  const { user } = useAuth();
+  const canApprove = canAdjustInventoryEffective(user);
   const {
     loading,
     emitirAjusteInventario,
+    decidirAjusteInventario,
     obtenerAjustesInventario,
     obtenerBienesInventario,
     obtenerAjusteInventarioPdfBlob,
@@ -56,13 +80,14 @@ const InventarioAjustesPage = () => {
   const [observaciones, setObservaciones] = useState("");
   const [detalles, setDetalles] = useState([]);
   const [ajustes, setAjustes] = useState([]);
+  const [decisionId, setDecisionId] = useState(null);
 
   const cargarAjustes = useCallback(async () => {
     try {
-      const response = await obtenerAjustesInventario({ page: 1, limit: 20 });
+      const response = await obtenerAjustesInventario({ page: 1, limit: 50 });
       setAjustes(Array.isArray(response?.data) ? response.data : []);
     } catch (error) {
-      toast.error(error.message || "No se pudieron cargar los ajustes emitidos.");
+      toast.error(error.message || "No se pudieron cargar los ajustes.");
     }
   }, [obtenerAjustesInventario]);
 
@@ -94,16 +119,35 @@ const InventarioAjustesPage = () => {
     [detalles],
   );
 
+  const resetForm = () => {
+    setDetalles([]);
+    setSelectedProduct(null);
+    setDescripcionHechos("");
+    setCausalOtro("");
+    setTipoDocumentoSustento("");
+    setNumeroDocumentoSustento("");
+    setFechaDocumentoSustento(todayInput());
+    setDocumentoSustento(null);
+    setObservaciones("");
+  };
+
   const addProduct = () => {
     if (!selectedProduct?.id) {
       toast.info("Selecciona un producto.");
       return;
     }
-    if (detalles.some((item) => Number(item.producto.id) === Number(selectedProduct.id))) {
+    if (
+      detalles.some(
+        (item) => Number(item.producto.id) === Number(selectedProduct.id),
+      )
+    ) {
       toast.info("El producto ya fue agregado.");
       return;
     }
-    if (tipoAjuste === "POSITIVO" && esProductoControlIndividual(selectedProduct)) {
+    if (
+      tipoAjuste === "POSITIVO" &&
+      esProductoControlIndividual(selectedProduct)
+    ) {
       toast.info(
         "El incremento de un producto individualizado se registra mediante Nota de Ingreso de regularización con sus series.",
       );
@@ -152,7 +196,9 @@ const InventarioAjustesPage = () => {
       });
     } catch (error) {
       updateDetail(index, { loadingUnidades: false, unidadesDisponibles: [] });
-      toast.error(error.message || "No se pudieron cargar las unidades disponibles.");
+      toast.error(
+        error.message || "No se pudieron cargar las unidades disponibles.",
+      );
     }
   };
 
@@ -168,7 +214,7 @@ const InventarioAjustesPage = () => {
 
   const validate = () => {
     if (!almacenId) return "Selecciona el almacén.";
-    if (!descripcionHechos.trim() || descripcionHechos.trim().length < 10) {
+    if (descripcionHechos.trim().length < 10) {
       return "Describe detalladamente los hechos.";
     }
     if (causal === "OTRO" && causalOtro.trim().length < 3) {
@@ -179,7 +225,9 @@ const InventarioAjustesPage = () => {
     if (!documentoSustento) return "Adjunta el documento sustentatorio.";
     for (const detalle of detalles) {
       const cantidad = Number(detalle.cantidad || 0);
-      if (!(cantidad > 0)) return `Indica la cantidad de ${detalle.producto.nombre}.`;
+      if (!(cantidad > 0)) {
+        return `Indica la cantidad de ${detalle.producto.nombre}.`;
+      }
       if (
         tipoAjuste === "NEGATIVO" &&
         esProductoControlIndividual(detalle.producto) &&
@@ -217,23 +265,57 @@ const InventarioAjustesPage = () => {
           observaciones: detalle.observaciones.trim() || undefined,
         })),
       });
-      toast.success(`Se emitió el Ajuste de Inventario ${ajuste.codigo}.`);
-      setDetalles([]);
-      setDescripcionHechos("");
-      setCausalOtro("");
-      setTipoDocumentoSustento("");
-      setNumeroDocumentoSustento("");
-      setDocumentoSustento(null);
-      setObservaciones("");
+      toast.success(
+        `${ajuste.codigo} fue enviado a la jefatura para aprobación. El stock aún no cambió.`,
+      );
+      resetForm();
+      await cargarAjustes();
+    } catch (submitError) {
+      toast.error(
+        submitError.message || "No se pudo registrar el Ajuste de Inventario.",
+      );
+    }
+  };
+
+  const decidir = async (ajuste, accion) => {
+    let comentario;
+    if (accion === "RECHAZAR") {
+      comentario = window.prompt("Motivo del rechazo:");
+      if (comentario === null) return;
+      if (comentario.trim().length < 3) {
+        toast.error("Debe indicar un motivo de rechazo.");
+        return;
+      }
+    } else if (
+      !window.confirm(
+        `¿Aprobar ${ajuste.codigo}? Esta acción modificará el stock y el documento quedará inmutable.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDecisionId(ajuste.id);
+      await decidirAjusteInventario(ajuste.id, {
+        accion,
+        comentario: comentario?.trim() || undefined,
+      });
+      toast.success(
+        accion === "APROBAR"
+          ? `${ajuste.codigo} fue aprobado y aplicado al stock.`
+          : `${ajuste.codigo} fue rechazado.`,
+      );
       await cargarAjustes();
     } catch (error) {
-      toast.error(error.message || "No se pudo emitir el Ajuste de Inventario.");
+      toast.error(error.message || "No se pudo registrar la decisión.");
+    } finally {
+      setDecisionId(null);
     }
   };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
-      <div>
+      <header>
         <h1 className="text-3xl font-semibold text-slate-900">
           Ajustes de Inventario
         </h1>
@@ -241,18 +323,23 @@ const InventarioAjustesPage = () => {
           Documento formal para diferencias o incidencias sobre bienes que aún
           permanecen bajo custodia del almacén.
         </p>
-      </div>
+      </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-xl bg-white p-5 shadow-sm">
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          El stock se modificará únicamente al emitir este documento. Para
-          productos individualizados, un ajuste positivo debe registrarse como
-          Nota de Ingreso de regularización con sus series.
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-xl bg-white p-5 shadow-sm"
+      >
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">
+          El operador elabora el ajuste y adjunta su sustento. El stock se
+          modifica únicamente cuando la jefatura del almacén lo aprueba. Una vez
+          aprobado, el documento no puede editarse, eliminarse ni anularse.
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <label>
-            <span className="mb-1 block text-sm font-medium text-slate-700">Almacén *</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              Almacén *
+            </span>
             <select
               value={almacenId}
               onChange={(event) => {
@@ -279,8 +366,11 @@ const InventarioAjustesPage = () => {
               ))}
             </select>
           </label>
+
           <label>
-            <span className="mb-1 block text-sm font-medium text-slate-700">Tipo *</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              Tipo *
+            </span>
             <select
               value={tipoAjuste}
               onChange={(event) => {
@@ -293,8 +383,11 @@ const InventarioAjustesPage = () => {
               <option value="POSITIVO">Ajuste positivo</option>
             </select>
           </label>
+
           <label>
-            <span className="mb-1 block text-sm font-medium text-slate-700">Causal *</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              Causal *
+            </span>
             <select
               value={causal}
               onChange={(event) => setCausal(event.target.value)}
@@ -373,22 +466,30 @@ const InventarioAjustesPage = () => {
               detalles.map((detalle, index) => {
                 const individual = esProductoControlIndividual(detalle.producto);
                 return (
-                  <div key={detalle.producto.id} className="rounded-lg border border-slate-200 p-4">
+                  <div
+                    key={detalle.producto.id}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-slate-900">
                           {detalle.producto.codigo} - {detalle.producto.nombre}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {individual ? "Control individual" : "Control por cantidad"}
+                          {individual
+                            ? "Control individual"
+                            : "Control por cantidad"}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() =>
-                          setDetalles((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                          setDetalles((current) =>
+                            current.filter((_, itemIndex) => itemIndex !== index),
+                          )
                         }
                         className="rounded p-2 text-red-600 hover:bg-red-50"
+                        aria-label={`Retirar ${detalle.producto.nombre}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -405,7 +506,9 @@ const InventarioAjustesPage = () => {
                           step={individual ? "1" : "0.01"}
                           value={detalle.cantidad}
                           readOnly={individual && tipoAjuste === "NEGATIVO"}
-                          onChange={(event) => updateDetail(index, { cantidad: event.target.value })}
+                          onChange={(event) =>
+                            updateDetail(index, { cantidad: event.target.value })
+                          }
                           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-right"
                         />
                       </label>
@@ -415,7 +518,11 @@ const InventarioAjustesPage = () => {
                         </span>
                         <input
                           value={detalle.observaciones}
-                          onChange={(event) => updateDetail(index, { observaciones: event.target.value })}
+                          onChange={(event) =>
+                            updateDetail(index, {
+                              observaciones: event.target.value,
+                            })
+                          }
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
                           maxLength={500}
                         />
@@ -431,16 +538,22 @@ const InventarioAjustesPage = () => {
                           className="inline-flex items-center gap-2 rounded-lg border border-violet-300 px-3 py-2 text-sm font-medium text-violet-700 disabled:opacity-50"
                         >
                           <RefreshCw className="h-4 w-4" />
-                          {detalle.loadingUnidades ? "Consultando..." : "Cargar unidades disponibles"}
+                          {detalle.loadingUnidades
+                            ? "Consultando..."
+                            : "Cargar unidades disponibles"}
                         </button>
                         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                           {detalle.unidadesDisponibles.map((bien) => {
-                            const checked = detalle.bienInventarioIds.includes(bien.id);
+                            const checked = detalle.bienInventarioIds.includes(
+                              bien.id,
+                            );
                             return (
                               <label
                                 key={bien.id}
                                 className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${
-                                  checked ? "border-violet-400 bg-violet-50" : "border-slate-200"
+                                  checked
+                                    ? "border-violet-400 bg-violet-50"
+                                    : "border-slate-200"
                                 }`}
                               >
                                 <input
@@ -464,32 +577,46 @@ const InventarioAjustesPage = () => {
         </section>
 
         <section className="rounded-xl border border-slate-200 p-4">
-          <h2 className="font-semibold text-slate-900">Documento sustentatorio</h2>
+          <h2 className="font-semibold text-slate-900">
+            Documento sustentatorio
+          </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <label>
-              <span className="mb-1 block text-sm font-medium text-slate-700">Tipo *</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">
+                Tipo *
+              </span>
               <input
                 value={tipoDocumentoSustento}
-                onChange={(event) => setTipoDocumentoSustento(event.target.value)}
+                onChange={(event) =>
+                  setTipoDocumentoSustento(event.target.value)
+                }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
                 placeholder="Acta, denuncia, informe..."
                 required
               />
             </label>
             <label>
-              <span className="mb-1 block text-sm font-medium text-slate-700">Número o código</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">
+                Número o código
+              </span>
               <input
                 value={numeroDocumentoSustento}
-                onChange={(event) => setNumeroDocumentoSustento(event.target.value)}
+                onChange={(event) =>
+                  setNumeroDocumentoSustento(event.target.value)
+                }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
               />
             </label>
             <label>
-              <span className="mb-1 block text-sm font-medium text-slate-700">Fecha *</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">
+                Fecha *
+              </span>
               <input
                 type="date"
                 value={fechaDocumentoSustento}
-                onChange={(event) => setFechaDocumentoSustento(event.target.value)}
+                onChange={(event) =>
+                  setFechaDocumentoSustento(event.target.value)
+                }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
                 required
               />
@@ -498,14 +625,18 @@ const InventarioAjustesPage = () => {
           <input
             type="file"
             accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
-            onChange={(event) => setDocumentoSustento(event.target.files?.[0] || null)}
+            onChange={(event) =>
+              setDocumentoSustento(event.target.files?.[0] || null)
+            }
             className="mt-4 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             required
           />
         </section>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Observaciones generales</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">
+            Observaciones generales
+          </span>
           <textarea
             value={observaciones}
             onChange={(event) => setObservaciones(event.target.value)}
@@ -515,13 +646,15 @@ const InventarioAjustesPage = () => {
         </label>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-          <p className="text-sm text-slate-600">Cantidad total del documento: <strong>{total}</strong></p>
+          <p className="text-sm text-slate-600">
+            Cantidad total del documento: <strong>{total}</strong>
+          </p>
           <button
             type="submit"
             disabled={loading}
             className="rounded-lg bg-indigo-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {loading ? "Emitiendo..." : "Emitir Ajuste de Inventario"}
+            {loading ? "Registrando..." : "Enviar a aprobación"}
           </button>
         </div>
       </form>
@@ -529,13 +662,23 @@ const InventarioAjustesPage = () => {
       <section className="rounded-xl bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Ajustes emitidos</h2>
-            <p className="mt-1 text-sm text-slate-600">Documentos recientes y sus sustentos.</p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Ajustes registrados
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              El PDF definitivo está disponible únicamente después de la
+              aprobación.
+            </p>
           </div>
-          <button type="button" onClick={cargarAjustes} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <button
+            type="button"
+            onClick={cargarAjustes}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
             Actualizar
           </button>
         </div>
+
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-900 text-white">
@@ -543,31 +686,96 @@ const InventarioAjustesPage = () => {
                 <th className="px-4 py-3 text-left">Documento</th>
                 <th className="px-4 py-3 text-left">Almacén</th>
                 <th className="px-4 py-3 text-left">Tipo / causal</th>
+                <th className="px-4 py-3 text-left">Estado</th>
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {ajustes.length === 0 ? (
-                <tr><td colSpan="5" className="px-4 py-8 text-center text-slate-500">No hay ajustes emitidos.</td></tr>
-              ) : ajustes.map((ajuste) => (
-                <tr key={ajuste.id} className="border-t border-slate-200">
-                  <td className="px-4 py-3 font-semibold">{ajuste.codigo}</td>
-                  <td className="px-4 py-3">{ajuste.almacen?.nombre || "-"}</td>
-                  <td className="px-4 py-3">{ajuste.tipoAjuste} · {ajuste.causal}</td>
-                  <td className="px-4 py-3">{new Date(ajuste.fechaEmision).toLocaleString()}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={async () => openBlob(await obtenerAjusteInventarioPdfBlob(ajuste.id))} className="inline-flex items-center gap-1 text-indigo-700">
-                        <FileDown className="h-4 w-4" /> PDF
-                      </button>
-                      <button type="button" onClick={async () => openBlob(await obtenerSustentoAjusteInventarioBlob(ajuste.id))} className="text-emerald-700">
-                        Sustento
-                      </button>
-                    </div>
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-4 py-8 text-center text-slate-500"
+                  >
+                    No hay ajustes registrados.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                ajustes.map((ajuste) => (
+                  <tr key={ajuste.id} className="border-t border-slate-200">
+                    <td className="px-4 py-3 font-semibold">{ajuste.codigo}</td>
+                    <td className="px-4 py-3">
+                      {ajuste.almacen?.nombre || "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {ajuste.tipoAjuste} · {ajuste.causal}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          ESTADO_CLASSES[ajuste.estado] ||
+                          "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {ESTADO_LABELS[ajuste.estado] || ajuste.estado}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {new Date(ajuste.fechaEmision).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        {ajuste.estado === "EMITIDO" ? (
+                          <button
+                            type="button"
+                            onClick={async () =>
+                              openBlob(
+                                await obtenerAjusteInventarioPdfBlob(ajuste.id),
+                              )
+                            }
+                            className="inline-flex items-center gap-1 text-indigo-700"
+                          >
+                            <FileDown className="h-4 w-4" /> PDF
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={async () =>
+                            openBlob(
+                              await obtenerSustentoAjusteInventarioBlob(ajuste.id),
+                            )
+                          }
+                          className="text-emerald-700"
+                        >
+                          Sustento
+                        </button>
+                        {canApprove &&
+                        ajuste.estado === "PENDIENTE_APROBACION" ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={decisionId === ajuste.id}
+                              onClick={() => decidir(ajuste, "APROBAR")}
+                              className="inline-flex items-center gap-1 font-medium text-emerald-700 disabled:opacity-50"
+                            >
+                              <CheckCircle2 className="h-4 w-4" /> Aprobar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={decisionId === ajuste.id}
+                              onClick={() => decidir(ajuste, "RECHAZAR")}
+                              className="inline-flex items-center gap-1 font-medium text-rose-700 disabled:opacity-50"
+                            >
+                              <XCircle className="h-4 w-4" /> Rechazar
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -197,8 +197,8 @@ const InventarioStockPage = () => {
       </div>
 
       <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        El stock disponible ya descuenta las reservas activas de notas de pedido
-        aprobadas. La reserva solo es garantía temporal de atención; la salida
+        El stock disponible ya descuenta las reservas activas generadas al
+        crear las notas de pedido. La reserva solo es garantía temporal de atención; la salida
         real ocurre cuando almacén atiende la nota de pedido y genera la nota de
         salida.
       </div>

@@ -112,6 +112,9 @@ const InventarioOperacionesPage = lazy(
 const InventarioAjustesPage = lazy(
   () => import("./pages/InventarioAjustesPage"),
 );
+const InventarioTransferenciasPage = lazy(
+  () => import("./pages/InventarioTransferenciasPage"),
+);
 const InventarioReservaDetallePage = lazy(
   () => import("./pages/InventarioReservaDetallePage"),
 );
@@ -771,15 +774,23 @@ const AppRoutes = () => {
               <Route
                 path="operaciones"
                 element={
-                  <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
                     <InventarioOperacionesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="transferencias"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioTransferenciasPage />
                   </RoutePermissionGuard>
                 }
               />
               <Route
                 path="ajustes-inventario"
                 element={
-                  <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
                     <InventarioAjustesPage />
                   </RoutePermissionGuard>
                 }
@@ -944,7 +955,7 @@ const AppRoutes = () => {
             <Route
               path="inventario-ajustes"
               element={
-                <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                <RoutePermissionGuard allow={canOperateInventoryEffective}>
                   <InventarioAjustesPage />
                 </RoutePermissionGuard>
               }

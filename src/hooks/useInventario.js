@@ -40,13 +40,6 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerBienInventarioPorId(id)),
       [execute],
     ),
-    registrarTransferenciaBienInventario: useCallback(
-      (id, payload) =>
-        execute(() =>
-          inventarioApi.registrarTransferenciaBienInventario(id, payload),
-        ),
-      [execute],
-    ),
     obtenerNotasIngreso: useCallback(
       (params = {}) => execute(() => inventarioApi.obtenerNotasIngreso(params)),
       [execute],
@@ -149,6 +142,13 @@ const useInventario = () => {
         execute(() => inventarioApi.obtenerActaRegularizacionSalidaTemporal(id)),
       [execute],
     ),
+    decidirActaRegularizacionSalidaTemporal: useCallback(
+      (id, payload) =>
+        execute(() =>
+          inventarioApi.decidirActaRegularizacionSalidaTemporal(id, payload),
+        ),
+      [execute],
+    ),
     obtenerActaRegularizacionPdfBlob: useCallback(
       (id) => execute(() => inventarioApi.obtenerActaRegularizacionPdfBlob(id)),
       [execute],
@@ -204,6 +204,11 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerAjusteInventario(id)),
       [execute],
     ),
+    decidirAjusteInventario: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.decidirAjusteInventario(id, payload)),
+      [execute],
+    ),
     obtenerAjusteInventarioPdfBlob: useCallback(
       (id) => execute(() => inventarioApi.obtenerAjusteInventarioPdfBlob(id)),
       [execute],
@@ -213,12 +218,53 @@ const useInventario = () => {
         execute(() => inventarioApi.obtenerSustentoAjusteInventarioBlob(id)),
       [execute],
     ),
-    registrarTransferencia: useCallback(
-      (payload) => execute(() => inventarioApi.registrarTransferencia(payload)),
+    crearNotaTransferenciaInventario: useCallback(
+      (payload) =>
+        execute(() => inventarioApi.crearNotaTransferenciaInventario(payload)),
       [execute],
     ),
-    liberarReserva: useCallback(
-      (id, payload) => execute(() => inventarioApi.liberarReserva(id, payload)),
+    listarNotasTransferenciaInventario: useCallback(
+      (params = {}) =>
+        execute(() => inventarioApi.listarNotasTransferenciaInventario(params)),
+      [execute],
+    ),
+    obtenerNotaTransferenciaInventario: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerNotaTransferenciaInventario(id)),
+      [execute],
+    ),
+    decidirNotaTransferenciaInventario: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.decidirNotaTransferenciaInventario(id, payload)),
+      [execute],
+    ),
+    prepararDespachoTransferencia: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.prepararDespachoTransferencia(id, payload)),
+      [execute],
+    ),
+    decidirDespachoTransferencia: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.decidirDespachoTransferencia(id, payload)),
+      [execute],
+    ),
+    prepararRecepcionTransferencia: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.prepararRecepcionTransferencia(id, payload)),
+      [execute],
+    ),
+    decidirRecepcionTransferencia: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.decidirRecepcionTransferencia(id, payload)),
+      [execute],
+    ),
+    obtenerNotaTransferenciaPdfBlob: useCallback(
+      (id) => execute(() => inventarioApi.obtenerNotaTransferenciaPdfBlob(id)),
+      [execute],
+    ),
+    obtenerSustentoNotaTransferenciaBlob: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerSustentoNotaTransferenciaBlob(id)),
       [execute],
     ),
   };

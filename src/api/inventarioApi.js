@@ -100,14 +100,6 @@ const inventarioApi = {
     }),
 
 
-  registrarTransferenciaBienInventario: (id, payload) =>
-    apiFetch(`inventario/bienes-inventario/${id}/transferencias`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
-
-
   obtenerNotasIngreso: (params = {}) =>
     apiFetch(`inventario/notas-ingreso${buildQuery(params)}`, {
       sessionActivity: "interactive",
@@ -221,6 +213,13 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  decidirActaRegularizacionSalidaTemporal: (id, payload) =>
+    apiFetch(`inventario/regularizaciones-salida-temporal/${id}/decision`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
   obtenerActaRegularizacionPdfBlob: (id) =>
     apiFetchBlob(`inventario/regularizaciones-salida-temporal/${id}/pdf`, {
       sessionActivity: "interactive",
@@ -290,6 +289,13 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  decidirAjusteInventario: (id, payload) =>
+    apiFetch(`inventario/ajustes-inventario/${id}/decision`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
   obtenerAjusteInventarioPdfBlob: (id) =>
     apiFetchBlob(`inventario/ajustes-inventario/${id}/pdf`, {
       sessionActivity: "interactive",
@@ -300,18 +306,65 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarTransferencia: (payload) =>
-    apiFetch("inventario/transferencias", {
+  crearNotaTransferenciaInventario: (payload) =>
+    apiFetch("inventario/notas-transferencia", {
+      method: "POST",
+      body: buildDocumentoInventarioFormalFormData(payload),
+      sessionActivity: "interactive",
+    }),
+
+  listarNotasTransferenciaInventario: (params = {}) =>
+    apiFetch(`inventario/notas-transferencia${buildQuery(params)}`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerNotaTransferenciaInventario: (id) =>
+    apiFetch(`inventario/notas-transferencia/${id}`, {
+      sessionActivity: "interactive",
+    }),
+
+  decidirNotaTransferenciaInventario: (id, payload) =>
+    apiFetch(`inventario/notas-transferencia/${id}/decision`, {
       method: "POST",
       body: JSON.stringify(payload),
       sessionActivity: "interactive",
     }),
 
-
-  liberarReserva: (id, payload = {}) =>
-    apiFetch(`inventario/reservas/${id}/liberar`, {
+  prepararDespachoTransferencia: (id, payload) =>
+    apiFetch(`inventario/notas-transferencia/${id}/despacho`, {
       method: "POST",
       body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  decidirDespachoTransferencia: (id, payload) =>
+    apiFetch(`inventario/notas-transferencia/${id}/despacho/decision`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  prepararRecepcionTransferencia: (id, payload) =>
+    apiFetch(`inventario/notas-transferencia/${id}/recepcion`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  decidirRecepcionTransferencia: (id, payload) =>
+    apiFetch(`inventario/notas-transferencia/${id}/recepcion/decision`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  obtenerNotaTransferenciaPdfBlob: (id) =>
+    apiFetchBlob(`inventario/notas-transferencia/${id}/pdf`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerSustentoNotaTransferenciaBlob: (id) =>
+    apiFetchBlob(`inventario/notas-transferencia/${id}/sustento`, {
       sessionActivity: "interactive",
     }),
 

@@ -19,12 +19,6 @@ import {
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
 
-const openBlobResponse = ({ blob }) => {
-  const url = URL.createObjectURL(blob);
-  window.open(url, "_blank", "noopener,noreferrer");
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-};
-
 const formalLevelLabels = {
   APROBACION_ALMACEN: "Aprobacion de almacen",
   CONFORMIDAD_GERENCIA: "Conformidad de gerencia",
@@ -42,7 +36,6 @@ const InventarioNotaSalidaDetallePage = () => {
     obtenerReporteAtencionNotaSalida,
     registrarDevolucionPrestamo,
     emitirActaRegularizacionSalidaTemporal,
-    obtenerActaRegularizacionPdfBlob,
   } = useInventario();
   const [nota, setNota] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -156,24 +149,16 @@ const InventarioNotaSalidaDetallePage = () => {
     setRegularizationSubmitting(true);
     try {
       const acta = await emitirActaRegularizacionSalidaTemporal(id, payload);
-      toast.success(`Se emitió el Acta ${acta?.codigo || "de regularización"}.`);
+      toast.success(
+        `${acta?.codigo || "El Acta"} fue enviada a la jefatura para aprobación.`,
+      );
       const updated = await obtenerNotaSalidaPorId(id);
       setNota(updated);
       setRegularizationModalOpen(false);
       setSalidaReporte(null);
-      try {
-        openBlobResponse(
-          await obtenerActaRegularizacionPdfBlob(acta.id),
-        );
-      } catch (pdfError) {
-        toast.info(
-          pdfError.message ||
-            "El Acta fue emitida, pero no se pudo abrir su PDF automáticamente.",
-        );
-      }
     } catch (regularizationError) {
       toast.error(
-        regularizationError.message || "No se pudo emitir el Acta de Regularización.",
+        regularizationError.message || "No se pudo registrar el Acta de Regularización.",
       );
     } finally {
       setRegularizationSubmitting(false);

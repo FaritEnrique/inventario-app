@@ -243,7 +243,7 @@ const CrearNotaPedidoPage = () => {
       const estado = response?.estadoFlujo;
       if (estado === "PENDIENTE_APROBACION") {
         toast.success(
-          "La nota de pedido fue creada. Aun no reserva stock porque queda pendiente de aprobacion."
+          "La nota de pedido fue creada, quedó pendiente de aprobación y el stock ya fue reservado temporalmente."
         );
       } else {
         toast.success(
@@ -307,8 +307,9 @@ const CrearNotaPedidoPage = () => {
       </div>
 
       <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        Si la nota la crea un operador, quedara pendiente de aprobacion y aun no
-        reservara stock. Si la crea un jefe o gerente, puede quedar aprobada de forma inmediata segun el backend.
+        Al crear la Nota de Pedido, el sistema valida el almacén seleccionado y
+        reserva inmediatamente las cantidades solicitadas. Si la nota es rechazada,
+        anulada o vence, el saldo reservado se libera automáticamente.
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

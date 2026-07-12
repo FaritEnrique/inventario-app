@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
-  ArrowLeftRight,
   Building2,
   CalendarClock,
   ClipboardCheck,
@@ -13,16 +12,8 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { canOperateInventoryEffective } from "../accessRules";
-import BienInventarioNovedadModal from "../components/inventario/BienInventarioNovedadModal";
 import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
-import { useAuth } from "../context/authContext";
-import useAlmacenes from "../hooks/useAlmacenes";
 import useInventario from "../hooks/useInventario";
-import {
-  BIEN_INVENTARIO_NOVEDAD_TIPOS,
-  getBienInventarioAccionesDisponibles,
-} from "../utils/bienInventarioNovedades";
 import {
   getBienInventarioDocumentPath,
   getBienInventarioEstadoMeta,
@@ -68,21 +59,6 @@ const SectionCard = ({ title, icon: Icon, children }) => {
   );
 };
 
-const ActionButton = ({ icon: Icon, label, className, onClick }) => {
-  const iconNode = Icon ? <Icon className="h-4 w-4" /> : null;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition ${className}`}
-    >
-      {iconNode}
-      {label}
-    </button>
-  );
-};
-
 const getUbicacionActualLabel = (bien) => {
   const ubicacion = bien?.ubicacionActual;
   if (ubicacion?.tipo === "AREA") {
@@ -121,15 +97,8 @@ const getEventoUbicacion = (evento) => {
 
 const InventarioBienDetallePage = () => {
   const { id } = useParams();
-  const { user } = useAuth();
-  const {
-    loading,
-    obtenerBienInventarioPorId,
-    registrarTransferenciaBienInventario,
-  } = useInventario();
-  const { almacenes, obtenerAlmacenes } = useAlmacenes();
+  const { loading, obtenerBienInventarioPorId } = useInventario();
   const [bien, setBien] = useState(null);
-  const [novedadTipo, setNovedadTipo] = useState(null);
 
   const cargarDetalle = useCallback(async () => {
     try {
@@ -147,41 +116,7 @@ const InventarioBienDetallePage = () => {
 
   useEffect(() => {
     cargarDetalle();
-    obtenerAlmacenes({ estado: "activos" }).catch(() => {});
-  }, [cargarDetalle, obtenerAlmacenes]);
-
-  const accionesDisponibles = useMemo(
-    () =>
-      getBienInventarioAccionesDisponibles({
-        estado: bien?.estado,
-        puedeOperar: canOperateInventoryEffective(user),
-      }),
-    [bien?.estado, user],
-  );
-
-  const handleRegistrarNovedad = async (tipo, payload) => {
-    const operations = {
-      [BIEN_INVENTARIO_NOVEDAD_TIPOS.TRANSFERENCIA]: {
-        execute: registrarTransferenciaBienInventario,
-        success: "Transferencia registrada correctamente.",
-      },
-    };
-    const operation = operations[tipo];
-
-    if (!operation) {
-      throw new Error("La novedad seleccionada no es válida.");
-    }
-
-    try {
-      await operation.execute(id, payload);
-      setNovedadTipo(null);
-      toast.success(operation.success);
-      await cargarDetalle();
-    } catch (error) {
-      toast.error(error.message || "No se pudo registrar la novedad.");
-      throw error;
-    }
-  };
+  }, [cargarDetalle]);
 
   if (loading && !bien) {
     return <InventarioDocumentoDetalleSkeleton />;
@@ -247,20 +182,8 @@ const InventarioBienDetallePage = () => {
             </span>
           </div>
 
-          {accionesDisponibles.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-indigo-500/40 pt-4">
-              {accionesDisponibles.includes("TRANSFERENCIA") && (
-                <ActionButton
-                  icon={ArrowLeftRight}
-                  label="Transferir almacén"
-                  onClick={() => setNovedadTipo("TRANSFERENCIA")}
-                  className="bg-white text-indigo-800 hover:bg-indigo-50"
-                />
-              )}
-            </div>
-          )}
+           </div>
         </div>
-      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <SectionCard title="Identificación y ubicación" icon={PackageCheck}>
@@ -421,18 +344,8 @@ const InventarioBienDetallePage = () => {
       </section>
 
       <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">
-        Las reservas siguen siendo temporales y cuantitativas: nunca asignan una serie. Desde esta ficha solo puede transferirse una unidad disponible. Las devoluciones temporales se registran mediante Nota de Ingreso y los retiros bajo custodia mediante Ajuste de Inventario.
+        Las reservas siguen siendo temporales y cuantitativas: nunca asignan una serie. Las transferencias se tramitan exclusivamente mediante una Nota de Transferencia de Inventarios; las devoluciones temporales, mediante Nota de Ingreso; y los retiros bajo custodia, mediante Ajuste de Inventario.
       </div>
-
-      <BienInventarioNovedadModal
-        isOpen={Boolean(novedadTipo)}
-        tipo={novedadTipo}
-        bien={bien}
-        almacenes={almacenes}
-        loading={loading}
-        onClose={() => setNovedadTipo(null)}
-        onSubmit={handleRegistrarNovedad}
-      />
     </div>
   );
 };

@@ -73,7 +73,8 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
             </div>
             {pedido.estadoFlujo === "PENDIENTE_APROBACION" && (
               <p className="text-sm text-amber-700">
-                Esta nota aun no reserva stock. La reserva nace cuando la nota queda aprobada.
+                Esta nota ya conserva la reserva automática creada al registrarse,
+                mientras espera la decisión correspondiente.
               </p>
             )}
             {["APROBADO", "PARCIALMENTE_ATENDIDO", "EN_ATENCION"].includes(

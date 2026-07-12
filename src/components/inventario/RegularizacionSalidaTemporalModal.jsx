@@ -132,9 +132,10 @@ const RegularizacionSalidaTemporalModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-6 p-5">
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            El Acta cierra documentalmente bienes que ya salieron en préstamo y
-            no retornarán. No genera un segundo descuento de stock y exige un
-            sustento adjunto antes de su emisión.
+            El Acta documenta bienes que ya salieron en préstamo y no retornarán.
+            El operador la elabora con sustento y la jefatura del almacén debe
+            aprobarla para cerrar la obligación. No genera un segundo descuento
+            de stock.
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -366,7 +367,7 @@ const RegularizacionSalidaTemporalModal = ({
                 disabled={submitting || lineas.length === 0}
                 className="rounded-lg bg-amber-700 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
               >
-                {submitting ? "Emitiendo..." : "Emitir Acta"}
+                {submitting ? "Registrando..." : "Enviar a aprobación"}
               </button>
             </div>
           </div>

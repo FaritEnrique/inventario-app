@@ -520,9 +520,10 @@ const GestionAreasPage = () => {
             Es area de Almacen
           </span>
           <span className="text-xs text-amber-600">
-            Activa esta opcion para que los usuarios con rol JEFE_AREA u
-            OPERADOR en esta unidad puedan acceder al modulo de inventario y
-            almacen.
+            Al guardar, el sistema crea o sincroniza un almacén físico con el
+            mismo nombre. Los usuarios con asignación activa como JEFE_AREA u
+            OPERADOR podrán actuar en ese almacén; una encargatura vigente se
+            gestiona desde las asignaciones del usuario.
           </span>
         </label>
 
