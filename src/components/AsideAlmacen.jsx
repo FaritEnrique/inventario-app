@@ -253,6 +253,12 @@ const AsideAlmacen = ({ onNavigate }) => {
               visible: puedeOperarInventario,
             },
             {
+              name: "Préstamos y devoluciones",
+              to: `${baseUrl}/prestamos`,
+              exact: true,
+              visible: puedeOperarInventario,
+            },
+            {
               name: "Reservas de Stock",
               to: `${baseUrl}/reservas`,
               exact: false,
@@ -265,6 +271,12 @@ const AsideAlmacen = ({ onNavigate }) => {
           icon: Warehouse,
           visible: puedeAjustarInventario,
           subItems: [
+            {
+              name: "Ajustes de Inventario",
+              to: `${baseUrl}/ajustes-inventario`,
+              exact: true,
+              visible: puedeAjustarInventario,
+            },
             {
               name: "Operaciones de Inventario",
               to: `${baseUrl}/operaciones`,

@@ -7,6 +7,7 @@ import BienesInventarioDespachoSelector from "../components/inventario/BienesInv
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
+import { getModalidadSalidaLabel } from "../utils/prestamosInventario";
 import {
   buildAtencionItem,
   buildSeleccionInicialBienesDespacho,
@@ -370,6 +371,13 @@ const BandejaAlmacenNotasPedidoPage = () => {
                       <PedidoInternoEstadoBadge
                         estadoFlujo={pedido.estadoFlujo}
                       />
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        pedido.modalidadSalida === "TEMPORAL"
+                          ? "bg-violet-100 text-violet-800"
+                          : "bg-slate-100 text-slate-700"
+                      }`}>
+                        {getModalidadSalidaLabel(pedido.modalidadSalida)}
+                      </span>
                     </div>
                     <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                       <p>
@@ -396,6 +404,11 @@ const BandejaAlmacenNotasPedidoPage = () => {
                         </span>{" "}
                         {pedido.almacen?.codigo || "-"}
                       </p>
+                      {pedido.modalidadSalida === "TEMPORAL" ? (
+                        <p className="md:col-span-2 rounded bg-violet-50 px-3 py-2 text-violet-800">
+                          <strong>Préstamo temporal.</strong> Devolución prevista: {formatDate(pedido.fechaPrevistaDevolucion)}. {pedido.finalidadPrestamo || ""}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 

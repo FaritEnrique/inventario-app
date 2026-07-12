@@ -2,6 +2,8 @@ export const BIEN_INVENTARIO_ESTADOS = Object.freeze({
   PENDIENTE_POSTEO: "PENDIENTE_POSTEO",
   DISPONIBLE: "DISPONIBLE",
   ENTREGADO: "ENTREGADO",
+  PRESTADO: "PRESTADO",
+  REGULARIZADO_NO_DEVUELTO: "REGULARIZADO_NO_DEVUELTO",
   BAJA: "BAJA",
 });
 
@@ -22,8 +24,16 @@ const ESTADO_META = Object.freeze({
     label: "Entregado",
     className: "border-slate-300 bg-slate-100 text-slate-800",
   },
+  PRESTADO: {
+    label: "Prestado",
+    className: "border-violet-200 bg-violet-50 text-violet-800",
+  },
+  REGULARIZADO_NO_DEVUELTO: {
+    label: "Regularizado no devuelto",
+    className: "border-amber-300 bg-amber-50 text-amber-900",
+  },
   BAJA: {
-    label: "Baja",
+    label: "Retirado por ajuste",
     className: "border-red-200 bg-red-50 text-red-800",
   },
 });

@@ -94,6 +94,12 @@ const InventarioNotaSalidaDetallePage = lazy(
 const InventarioMovimientosPage = lazy(
   () => import("./pages/InventarioMovimientosPage"),
 );
+const InventarioPrestamosPage = lazy(
+  () => import("./pages/InventarioPrestamosPage"),
+);
+const ReporteAtencionLogisticaPage = lazy(
+  () => import("./pages/ReporteAtencionLogisticaPage"),
+);
 const InventarioNotasIngresoPage = lazy(
   () => import("./pages/InventarioNotasIngresoPage"),
 );
@@ -102,6 +108,9 @@ const InventarioNotasSalidaPage = lazy(
 );
 const InventarioOperacionesPage = lazy(
   () => import("./pages/InventarioOperacionesPage"),
+);
+const InventarioAjustesPage = lazy(
+  () => import("./pages/InventarioAjustesPage"),
 );
 const InventarioReservaDetallePage = lazy(
   () => import("./pages/InventarioReservaDetallePage"),
@@ -720,6 +729,22 @@ const AppRoutes = () => {
                 }
               />
               <Route
+                path="prestamos"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <InventarioPrestamosPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="notas-salida/:id/reporte-atencion"
+                element={
+                  <RoutePermissionGuard allow={canOperateInventoryEffective}>
+                    <ReporteAtencionLogisticaPage alcance="NOTA_SALIDA" />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
                 path="notas-salida/:id"
                 element={
                   <RoutePermissionGuard allow={canOperateInventoryEffective}>
@@ -748,6 +773,14 @@ const AppRoutes = () => {
                 element={
                   <RoutePermissionGuard allow={canAdjustInventoryEffective}>
                     <InventarioOperacionesPage />
+                  </RoutePermissionGuard>
+                }
+              />
+              <Route
+                path="ajustes-inventario"
+                element={
+                  <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                    <InventarioAjustesPage />
                   </RoutePermissionGuard>
                 }
               />
@@ -803,6 +836,10 @@ const AppRoutes = () => {
                   <BandejaAlmacenNotasPedidoPage />
                 </RoutePermissionGuard>
               }
+            />
+            <Route
+              path="notas-pedido/:id/reporte-atencion"
+              element={<ReporteAtencionLogisticaPage alcance="PEDIDO_INTERNO" />}
             />
             <Route
               path="notas-pedido/:id"
@@ -901,6 +938,14 @@ const AppRoutes = () => {
               element={
                 <RoutePermissionGuard allow={canOperateInventoryEffective}>
                   <InventarioOperacionesPage />
+                </RoutePermissionGuard>
+              }
+            />
+            <Route
+              path="inventario-ajustes"
+              element={
+                <RoutePermissionGuard allow={canAdjustInventoryEffective}>
+                  <InventarioAjustesPage />
                 </RoutePermissionGuard>
               }
             />

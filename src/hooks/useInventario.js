@@ -40,23 +40,11 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerBienInventarioPorId(id)),
       [execute],
     ),
-    registrarDevolucionBienInventario: useCallback(
-      (id, payload) =>
-        execute(() =>
-          inventarioApi.registrarDevolucionBienInventario(id, payload),
-        ),
-      [execute],
-    ),
     registrarTransferenciaBienInventario: useCallback(
       (id, payload) =>
         execute(() =>
           inventarioApi.registrarTransferenciaBienInventario(id, payload),
         ),
-      [execute],
-    ),
-    registrarBajaBienInventario: useCallback(
-      (id, payload) =>
-        execute(() => inventarioApi.registrarBajaBienInventario(id, payload)),
       [execute],
     ),
     obtenerNotasIngreso: useCallback(
@@ -134,6 +122,42 @@ const useInventario = () => {
       (id) => execute(() => inventarioApi.obtenerNotaSalidaPorId(id)),
       [execute],
     ),
+
+    obtenerPrestamos: useCallback(
+      (params = {}) => execute(() => inventarioApi.obtenerPrestamos(params)),
+      [execute],
+    ),
+    obtenerReporteAtencionNotaSalida: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerReporteAtencionNotaSalida(id)),
+      [execute],
+    ),
+    registrarDevolucionPrestamo: useCallback(
+      (id, payload) =>
+        execute(() => inventarioApi.registrarDevolucionPrestamo(id, payload)),
+      [execute],
+    ),
+    emitirActaRegularizacionSalidaTemporal: useCallback(
+      (id, payload) =>
+        execute(() =>
+          inventarioApi.emitirActaRegularizacionSalidaTemporal(id, payload),
+        ),
+      [execute],
+    ),
+    obtenerActaRegularizacionSalidaTemporal: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerActaRegularizacionSalidaTemporal(id)),
+      [execute],
+    ),
+    obtenerActaRegularizacionPdfBlob: useCallback(
+      (id) => execute(() => inventarioApi.obtenerActaRegularizacionPdfBlob(id)),
+      [execute],
+    ),
+    obtenerSustentoActaRegularizacionBlob: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerSustentoActaRegularizacionBlob(id)),
+      [execute],
+    ),
     actualizarAprobacionDocumentalNotaSalida: useCallback(
       (id, payload) =>
         execute(() =>
@@ -162,25 +186,31 @@ const useInventario = () => {
         execute(() => inventarioApi.obtenerKardex(productoId, params)),
       [execute],
     ),
-    registrarEntrada: useCallback(
-      (payload) => execute(() => inventarioApi.registrarEntrada(payload)),
-      [execute],
-    ),
     registrarIngresoPorNota: useCallback(
       (payload) =>
         execute(() => inventarioApi.registrarIngresoPorNota(payload)),
       [execute],
     ),
-    registrarSalida: useCallback(
-      (payload) => execute(() => inventarioApi.registrarSalida(payload)),
+    emitirAjusteInventario: useCallback(
+      (payload) => execute(() => inventarioApi.emitirAjusteInventario(payload)),
       [execute],
     ),
-    registrarAjuste: useCallback(
-      (payload) => execute(() => inventarioApi.registrarAjuste(payload)),
+    obtenerAjustesInventario: useCallback(
+      (params = {}) =>
+        execute(() => inventarioApi.obtenerAjustesInventario(params)),
       [execute],
     ),
-    registrarCargaInicial: useCallback(
-      (payload) => execute(() => inventarioApi.registrarCargaInicial(payload)),
+    obtenerAjusteInventario: useCallback(
+      (id) => execute(() => inventarioApi.obtenerAjusteInventario(id)),
+      [execute],
+    ),
+    obtenerAjusteInventarioPdfBlob: useCallback(
+      (id) => execute(() => inventarioApi.obtenerAjusteInventarioPdfBlob(id)),
+      [execute],
+    ),
+    obtenerSustentoAjusteInventarioBlob: useCallback(
+      (id) =>
+        execute(() => inventarioApi.obtenerSustentoAjusteInventarioBlob(id)),
       [execute],
     ),
     registrarTransferencia: useCallback(

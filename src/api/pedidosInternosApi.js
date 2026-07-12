@@ -29,6 +29,11 @@ const pedidosInternosApi = {
       sessionActivity: "interactive",
     }),
 
+  obtenerReporteAtencionPedido: (id) =>
+    apiFetch(`pedidos-internos/${id}/reporte-atencion`, {
+      sessionActivity: "interactive",
+    }),
+
   obtenerReceptoresPedido: (id) =>
     apiFetch(`pedidos-internos/${id}/receptores`, {
       sessionActivity: "interactive",

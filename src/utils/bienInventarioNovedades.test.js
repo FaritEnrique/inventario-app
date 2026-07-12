@@ -2,50 +2,40 @@ import { describe, expect, it, vi } from "vitest";
 import {
   BIEN_INVENTARIO_NOVEDAD_TIPOS,
   buildBienInventarioNovedadPayload,
-  formatDateTimeLocal,
   getBienInventarioAccionesDisponibles,
 } from "./bienInventarioNovedades";
 
 describe("bienInventarioNovedades", () => {
-  it("solo permite devolver bienes entregados y transferir bienes disponibles", () => {
-    expect(
-      getBienInventarioAccionesDisponibles({
-        estado: "ENTREGADO",
-        puedeOperar: true,
-        puedeDarBaja: false,
-      }),
-    ).toEqual([BIEN_INVENTARIO_NOVEDAD_TIPOS.DEVOLUCION]);
-
+  it("solo permite transferencia directa para unidades disponibles", () => {
     expect(
       getBienInventarioAccionesDisponibles({
         estado: "DISPONIBLE",
         puedeOperar: true,
-        puedeDarBaja: true,
       }),
-    ).toEqual([
-      BIEN_INVENTARIO_NOVEDAD_TIPOS.TRANSFERENCIA,
-      BIEN_INVENTARIO_NOVEDAD_TIPOS.BAJA,
-    ]);
-  });
+    ).toEqual([BIEN_INVENTARIO_NOVEDAD_TIPOS.TRANSFERENCIA]);
 
-  it("bloquea acciones incompatibles para un bien dado de baja", () => {
     expect(
       getBienInventarioAccionesDisponibles({
-        estado: "BAJA",
+        estado: "ENTREGADO",
         puedeOperar: true,
-        puedeDarBaja: true,
+      }),
+    ).toEqual([]);
+    expect(
+      getBienInventarioAccionesDisponibles({
+        estado: "PRESTADO",
+        puedeOperar: true,
       }),
     ).toEqual([]);
   });
 
-  it("construye una devolución con almacén y sustento formal", () => {
+  it("construye una transferencia con almacén y sustento formal", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-10T15:00:00.000Z"));
 
-    const payload = buildBienInventarioNovedadPayload("DEVOLUCION", {
+    const payload = buildBienInventarioNovedadPayload("TRANSFERENCIA", {
       almacenDestinoId: "3",
       fechaEvento: "2026-07-10T09:30",
-      motivo: "Retorno del área usuaria",
+      motivo: "Traslado autorizado",
       referenciaTipo: "ACTA",
       referenciaCodigo: "ACTA-021-2026",
       observaciones: "Equipo completo",
@@ -53,25 +43,21 @@ describe("bienInventarioNovedades", () => {
 
     expect(payload).toMatchObject({
       almacenDestinoId: 3,
-      motivo: "Retorno del área usuaria",
+      motivo: "Traslado autorizado",
       referenciaTipo: "ACTA",
       referenciaCodigo: "ACTA-021-2026",
       observaciones: "Equipo completo",
     });
-    expect(payload.fechaEvento).toBe(new Date("2026-07-10T09:30").toISOString());
-
     vi.useRealTimers();
   });
 
-  it("exige causal en la baja", () => {
+  it("rechaza devoluciones o bajas directas desde la ficha del bien", () => {
     expect(() =>
-      buildBienInventarioNovedadPayload("BAJA", {
-        fechaEvento: formatDateTimeLocal(new Date()),
-        motivo: "Deterioro definitivo",
-        referenciaTipo: "INFORME",
-        referenciaCodigo: "INF-010-2026",
-      }),
-    ).toThrow("La causal de baja es obligatorio.");
+      buildBienInventarioNovedadPayload("DEVOLUCION", {}),
+    ).toThrow("única operación directa");
+    expect(() => buildBienInventarioNovedadPayload("BAJA", {})).toThrow(
+      "única operación directa",
+    );
   });
 
   it("rechaza fechas futuras", () => {

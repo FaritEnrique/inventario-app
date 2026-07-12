@@ -40,7 +40,8 @@ describe("bienInventarioTrazabilidad", () => {
     ).toBe("/modulo-almacen/notas-salida/20");
   });
 
-  it("devuelve una etiqueta legible para el estado", () => {
+  it("devuelve etiquetas legibles para estados disponibles y prestados", () => {
     expect(getBienInventarioEstadoMeta("DISPONIBLE").label).toBe("Disponible");
+    expect(getBienInventarioEstadoMeta("PRESTADO").label).toBe("Prestado");
   });
 });

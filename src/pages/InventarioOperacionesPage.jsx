@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -12,23 +12,16 @@ import { useAuth } from "../context/authContext";
 import { esProductoControlIndividual } from "../utils/productoControlInventario";
 
 const operationOptions = [
-  { value: "cargaInicial", label: "Carga inicial" },
-  { value: "ajuste", label: "Ajuste manual" },
-  { value: "entrada", label: "Entrada manual" },
-  { value: "salida", label: "Salida manual" },
-  { value: "transferencia", label: "Transferencia" },
+  { value: "transferencia", label: "Transferencia entre almacenes" },
   { value: "liberarReserva", label: "Liberar reserva" },
 ];
 
 const initialForm = {
   cantidad: "",
-  almacenId: "",
   almacenOrigenId: "",
   almacenDestinoId: "",
   areaId: "",
   fechaMovimiento: "",
-  fechaDocumento: "",
-  direccionAjuste: "INCREMENTO",
   subtipoMovimiento: "",
   referenciaTipo: "",
   referenciaId: "",
@@ -38,10 +31,6 @@ const initialForm = {
 };
 
 const operationLabels = {
-  cargaInicial: "carga inicial",
-  ajuste: "ajuste",
-  entrada: "entrada",
-  salida: "salida",
   transferencia: "transferencia",
   liberarReserva: "liberación de reserva",
 };
@@ -50,7 +39,7 @@ const InventarioOperacionesPage = () => {
   const { user } = useAuth();
   const { areas } = useAreas();
   const inventario = useInventario();
-  const [modo, setModo] = useState("cargaInicial");
+  const [modo, setModo] = useState("transferencia");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [resultado, setResultado] = useState(null);
@@ -58,41 +47,18 @@ const InventarioOperacionesPage = () => {
   const canOperate = canOperateInventoryEffective(user);
   const canAdjust = canAdjustInventoryEffective(user);
   const requiereUnidadesFisicas =
-    modo !== "liberarReserva" && esProductoControlIndividual(selectedProduct);
-  const availableOperationOptions = useMemo(
-    () =>
-      operationOptions.filter(
-        (option) =>
-          !["cargaInicial", "ajuste"].includes(option.value) || canAdjust,
-      ),
-    [canAdjust],
-  );
+    modo === "transferencia" && esProductoControlIndividual(selectedProduct);
 
-  const canSubmit = useMemo(() => {
-    if (["cargaInicial", "ajuste"].includes(modo)) {
-      return canAdjust;
-    }
-    return canOperate;
-  }, [canAdjust, canOperate, modo]);
-
-  useEffect(() => {
-    if (availableOperationOptions.some((option) => option.value === modo)) {
-      return;
-    }
-
-    setModo(availableOperationOptions[0]?.value || "entrada");
-    setResultado(null);
-  }, [availableOperationOptions, modo]);
+  const canSubmit = useMemo(() => canOperate, [canOperate]);
 
   const setField = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((previous) => ({ ...previous, [name]: value }));
   };
 
   const buildCommonPayload = () => ({
     cantidad: form.cantidad ? Number(form.cantidad) : undefined,
     areaId: form.areaId || undefined,
     fechaMovimiento: form.fechaMovimiento || undefined,
-    fechaDocumento: form.fechaDocumento || undefined,
     subtipoMovimiento: form.subtipoMovimiento || undefined,
     referenciaTipo: form.referenciaTipo || undefined,
     referenciaId: form.referenciaId || undefined,
@@ -104,69 +70,35 @@ const InventarioOperacionesPage = () => {
     event.preventDefault();
 
     try {
-      let response = null;
+      let response;
       const payload = buildCommonPayload();
 
       if (requiereUnidadesFisicas) {
         throw new Error(
-          modo === "entrada" || modo === "cargaInicial"
-            ? "Registra este ingreso desde Recepciones como Ingreso simple (sin O/C) o recepción de Orden de Compra, incluyendo sus unidades físicas."
-            : "Esta operación requiere seleccionar las unidades físicas concretas del producto.",
+          "Transfiere los bienes individualizados desde su ficha para seleccionar las unidades físicas concretas.",
         );
       }
 
-      switch (modo) {
-        case "cargaInicial":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarCargaInicial({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenId: form.almacenId || undefined,
-          });
-          break;
-        case "ajuste":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarAjuste({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenId: form.almacenId || undefined,
-            direccionAjuste: form.direccionAjuste,
-          });
-          break;
-        case "entrada":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarEntrada({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenDestinoId: form.almacenDestinoId || undefined,
-          });
-          break;
-        case "salida":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarSalida({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenOrigenId: form.almacenOrigenId || undefined,
-          });
-          break;
-        case "transferencia":
-          if (!selectedProduct?.id) throw new Error("Debes seleccionar un producto.");
-          response = await inventario.registrarTransferencia({
-            ...payload,
-            productoId: selectedProduct.id,
-            almacenOrigenId: form.almacenOrigenId || undefined,
-            almacenDestinoId: form.almacenDestinoId || undefined,
-          });
-          break;
-        case "liberarReserva":
-          if (!form.reservaId) throw new Error("Debes indicar el ID de la reserva.");
-          response = await inventario.liberarReserva(form.reservaId, {
-            cantidad: form.cantidad ? Number(form.cantidad) : undefined,
-            observaciones: form.observaciones || undefined,
-          });
-          break;
-        default:
-          throw new Error("Operación no soportada.");
+      if (modo === "transferencia") {
+        if (!selectedProduct?.id) {
+          throw new Error("Debes seleccionar un producto.");
+        }
+        response = await inventario.registrarTransferencia({
+          ...payload,
+          productoId: selectedProduct.id,
+          almacenOrigenId: form.almacenOrigenId || undefined,
+          almacenDestinoId: form.almacenDestinoId || undefined,
+        });
+      } else if (modo === "liberarReserva") {
+        if (!form.reservaId) {
+          throw new Error("Debes indicar el ID de la reserva.");
+        }
+        response = await inventario.liberarReserva(form.reservaId, {
+          cantidad: form.cantidad ? Number(form.cantidad) : undefined,
+          observaciones: form.observaciones || undefined,
+        });
+      } else {
+        throw new Error("Operación no soportada.");
       }
 
       setResultado(response);
@@ -180,166 +112,155 @@ const InventarioOperacionesPage = () => {
 
   return (
     <div className="mx-auto max-w-6xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">
-            Operaciones de inventario
+            Operaciones complementarias de inventario
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Exposición operativa mínima de carga inicial, ajustes, movimientos manuales y transferencias.
+          <p className="mt-1 max-w-3xl text-sm text-gray-600">
+            Las entradas se formalizan con Nota de Ingreso; las entregas,
+            definitivas o temporales, nacen de una Nota de Pedido y generan su
+            Nota de Salida. Esta página conserva únicamente transferencias y
+            liberaciones de reserva.
           </p>
         </div>
-        <Link
-          to="/dashboard"
-          className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Dashboard
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/modulo-almacen/recepcion-oc"
+            className="rounded border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+          >
+            Notas de Ingreso
+          </Link>
+          <Link
+            to="/modulo-almacen/prestamos"
+            className="rounded border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
+          >
+            Préstamos
+          </Link>
+          {canAdjust ? (
+            <Link
+              to="/modulo-almacen/ajustes-inventario"
+              className="rounded border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            >
+              Ajustes de Inventario
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {!canSubmit ? (
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-          Tu usuario no tiene autorización operativa para ejecutar movimientos de inventario.
+          Tu usuario no tiene autorización operativa para ejecutar movimientos
+          de inventario.
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg bg-white p-4 shadow">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-lg bg-white p-4 shadow"
+        >
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="inventario-operacion-tipo" className="mb-1 block text-sm font-medium text-gray-700">
+            <label>
+              <span className="mb-1 block text-sm font-medium text-gray-700">
                 Tipo de operación
-              </label>
+              </span>
               <select
-                id="inventario-operacion-tipo"
                 value={modo}
-                name="inventario-operaciones-page-select-208" onChange={(event) => {
+                onChange={(event) => {
                   setModo(event.target.value);
                   setResultado(null);
+                  setSelectedProduct(null);
                 }}
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
-                {availableOperationOptions.map((option) => (
+                {operationOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
             <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-              Si dejas vacío un almacén opcional, el backend usará <strong>ALMACÉN PRINCIPAL</strong>.
+              Una transferencia cambia la ubicación del stock: disminuye el
+              almacén de origen y aumenta el de destino, sin alterar el total
+              institucional.
             </div>
           </div>
 
-          {modo !== "liberarReserva" && (
+          {modo === "transferencia" ? (
             <ProductoSearchField
               selectedProduct={selectedProduct}
               onSelect={setSelectedProduct}
             />
-          )}
+          ) : null}
 
-          {requiereUnidadesFisicas && (
+          {requiereUnidadesFisicas ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
-              <p className="font-semibold">
-                La cantidad sigue siendo la base del movimiento, pero este producto también requiere identificar sus unidades físicas.
-              </p>
-              {modo === "entrada" || modo === "cargaInicial" ? (
-                <p className="mt-1">
-                  El ingreso puede provenir de O/C, donación, compra directa, carga inicial u otro sustento. Regístralo en{" "}
-                  <Link to="/modulo-almacen/recepcion-oc" className="font-semibold underline">
-                    Recepciones / Ingreso simple
-                  </Link>{" "}
-                  para ingresar la cantidad y sus series en una sola Nota de Ingreso.
-                </p>
-              ) : (
-                <p className="mt-1">
-                  Selecciona las unidades concretas desde{" "}
-                  <Link to="/modulo-almacen/bienes-individualizados" className="font-semibold underline">
-                    Bienes individualizados
-                  </Link>
-                  {modo === "salida"
-                    ? " o atiende la salida desde la bandeja de Almacén."
-                    : "."}
-                </p>
-              )}
+              Este producto requiere seleccionar las series concretas. Realiza
+              la transferencia desde{" "}
+              <Link
+                to="/modulo-almacen/bienes-individualizados"
+                className="font-semibold underline"
+              >
+                Bienes individualizados
+              </Link>
+              .
             </div>
-          )}
+          ) : null}
 
           <div className="grid gap-4 md:grid-cols-3">
-            {modo !== "liberarReserva" && (
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={form.cantidad}
-                name="inventario-operaciones-page-input-237" onChange={(event) => setField("cantidad", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-                placeholder="Cantidad"
-                required
-              />
-            )}
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.cantidad}
+              onChange={(event) => setField("cantidad", event.target.value)}
+              className="rounded border border-gray-300 px-3 py-2"
+              placeholder={
+                modo === "liberarReserva" ? "Cantidad (opcional)" : "Cantidad"
+              }
+              required={modo === "transferencia"}
+            />
 
-            {["cargaInicial", "ajuste"].includes(modo) && (
-              <input
-                type="number"
-                min="1"
-                value={form.almacenId}
-                name="inventario-operaciones-page-input-250" onChange={(event) => setField("almacenId", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-                placeholder="Almacén ID"
-              />
-            )}
-
-            {["entrada", "transferencia"].includes(modo) && (
-              <input
-                type="number"
-                min="1"
-                value={form.almacenDestinoId}
-                name="inventario-operaciones-page-input-261" onChange={(event) => setField("almacenDestinoId", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-                placeholder="Almacén destino ID"
-                required={modo === "transferencia"}
-              />
-            )}
-
-            {["salida", "transferencia"].includes(modo) && (
-              <input
-                type="number"
-                min="1"
-                value={form.almacenOrigenId}
-                name="inventario-operaciones-page-input-273" onChange={(event) => setField("almacenOrigenId", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-                placeholder="Almacén origen ID"
-                required
-              />
-            )}
-
-            {modo === "ajuste" && (
-              <select
-                value={form.direccionAjuste}
-                name="inventario-operaciones-page-select-285" onChange={(event) => setField("direccionAjuste", event.target.value)}
-                className="rounded border border-gray-300 px-3 py-2"
-              >
-                <option value="INCREMENTO">INCREMENTO</option>
-                <option value="DECREMENTO">DECREMENTO</option>
-              </select>
-            )}
-
-            {modo === "liberarReserva" && (
+            {modo === "transferencia" ? (
+              <>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.almacenOrigenId}
+                  onChange={(event) =>
+                    setField("almacenOrigenId", event.target.value)
+                  }
+                  className="rounded border border-gray-300 px-3 py-2"
+                  placeholder="Almacén origen ID"
+                  required
+                />
+                <input
+                  type="number"
+                  min="1"
+                  value={form.almacenDestinoId}
+                  onChange={(event) =>
+                    setField("almacenDestinoId", event.target.value)
+                  }
+                  className="rounded border border-gray-300 px-3 py-2"
+                  placeholder="Almacén destino ID"
+                  required
+                />
+              </>
+            ) : (
               <input
                 type="number"
                 min="1"
                 value={form.reservaId}
-                name="inventario-operaciones-page-input-296" onChange={(event) => setField("reservaId", event.target.value)}
+                onChange={(event) => setField("reservaId", event.target.value)}
                 className="rounded border border-gray-300 px-3 py-2"
                 placeholder="Reserva ID"
                 required
               />
             )}
 
-
-
             <select
               value={form.areaId}
-              name="inventario-operaciones-page-select-317" onChange={(event) => setField("areaId", event.target.value)}
+              onChange={(event) => setField("areaId", event.target.value)}
               className="rounded border border-gray-300 px-3 py-2"
             >
               <option value="">Área (opcional)</option>
@@ -353,43 +274,24 @@ const InventarioOperacionesPage = () => {
             <input
               type="date"
               value={form.fechaMovimiento}
-              name="inventario-operaciones-page-input-330" onChange={(event) => setField("fechaMovimiento", event.target.value)}
+              onChange={(event) =>
+                setField("fechaMovimiento", event.target.value)
+              }
               className="rounded border border-gray-300 px-3 py-2"
-            />
-
-            <input
-              type="date"
-              value={form.fechaDocumento}
-              name="inventario-operaciones-page-input-337" onChange={(event) => setField("fechaDocumento", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2"
-            />
-
-            <input
-              type="text"
-              value={form.subtipoMovimiento}
-              name="inventario-operaciones-page-input-344" onChange={(event) => setField("subtipoMovimiento", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2"
-              placeholder="Subtipo movimiento (opcional)"
             />
             <input
               type="text"
               value={form.referenciaTipo}
-              name="inventario-operaciones-page-input-351" onChange={(event) => setField("referenciaTipo", event.target.value)}
+              onChange={(event) => setField("referenciaTipo", event.target.value)}
               className="rounded border border-gray-300 px-3 py-2"
               placeholder="Referencia tipo"
             />
             <input
-              type="number"
-              min="1"
-              value={form.referenciaId}
-              name="inventario-operaciones-page-input-358" onChange={(event) => setField("referenciaId", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2"
-              placeholder="Referencia ID"
-            />
-            <input
               type="text"
               value={form.referenciaCodigo}
-              name="inventario-operaciones-page-input-366" onChange={(event) => setField("referenciaCodigo", event.target.value)}
+              onChange={(event) =>
+                setField("referenciaCodigo", event.target.value)
+              }
               className="rounded border border-gray-300 px-3 py-2"
               placeholder="Referencia código"
             />
@@ -397,7 +299,7 @@ const InventarioOperacionesPage = () => {
 
           <textarea
             value={form.observaciones}
-            name="inventario-operaciones-page-textarea-375" onChange={(event) => setField("observaciones", event.target.value)}
+            onChange={(event) => setField("observaciones", event.target.value)}
             rows="3"
             className="w-full rounded border border-gray-300 px-3 py-2"
             placeholder="Observaciones"
@@ -411,40 +313,28 @@ const InventarioOperacionesPage = () => {
             {inventario.loading
               ? "Procesando…"
               : requiereUnidadesFisicas
-                ? "Completa las unidades físicas"
+                ? "Selecciona las unidades físicas"
                 : "Registrar operación"}
           </button>
         </form>
       )}
 
-      {resultado && (
+      {resultado ? (
         <div className="mt-6 rounded-lg bg-white p-4 shadow">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">
-            Resultado
-          </h2>
-          <div className="mb-4 flex flex-wrap gap-3 text-sm">
-            {resultado.reserva?.id ? (
-              <Link
-                to={`/inventario-reservas/${resultado.reserva.id}`}
-                className="font-medium text-blue-600 hover:text-blue-700"
-              >
-                Abrir reserva
-              </Link>
-            ) : null}
-            {resultado.notaSalida?.id ? (
-              <Link
-                to={`/inventario-notas-salida/${resultado.notaSalida.id}`}
-                className="font-medium text-slate-600 hover:text-slate-700"
-              >
-                Abrir nota de salida
-              </Link>
-            ) : null}
-          </div>
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Resultado</h2>
+          {resultado.reserva?.id ? (
+            <Link
+              to={`/inventario-reservas/${resultado.reserva.id}`}
+              className="mb-4 inline-block font-medium text-blue-600 hover:text-blue-700"
+            >
+              Abrir reserva
+            </Link>
+          ) : null}
           <pre className="overflow-x-auto rounded bg-gray-50 p-4 text-xs text-gray-700">
             {JSON.stringify(resultado, null, 2)}
           </pre>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

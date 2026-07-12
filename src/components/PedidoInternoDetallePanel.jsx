@@ -1,6 +1,7 @@
 import PedidoInternoEstadoBadge from "./PedidoInternoEstadoBadge";
 
 import { Link } from "react-router-dom";
+import { getModalidadSalidaLabel } from "../utils/prestamosInventario";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -57,6 +58,19 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
               estadoDocumento={pedido.estadoDocumento}
               showDocument
             />
+            <div className={`rounded-md border px-3 py-2 text-sm ${
+              pedido.modalidadSalida === "TEMPORAL"
+                ? "border-violet-200 bg-violet-50 text-violet-900"
+                : "border-slate-200 bg-slate-50 text-slate-700"
+            }`}>
+              <strong>{getModalidadSalidaLabel(pedido.modalidadSalida)}</strong>
+              {pedido.modalidadSalida === "TEMPORAL" ? (
+                <span className="ml-2">
+                  · Devolución prevista: {formatDate(pedido.fechaPrevistaDevolucion)}
+                  {pedido.finalidadPrestamo ? ` · ${pedido.finalidadPrestamo}` : ""}
+                </span>
+              ) : null}
+            </div>
             {pedido.estadoFlujo === "PENDIENTE_APROBACION" && (
               <p className="text-sm text-amber-700">
                 Esta nota aun no reserva stock. La reserva nace cuando la nota queda aprobada.
@@ -103,7 +117,14 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
             </div>
           </div>
 
-          <div className="grid min-w-[240px] grid-cols-2 gap-3 text-sm">
+          <div className="space-y-3">
+            <Link
+              to={`/notas-pedido/${pedido.id}/reporte-atencion`}
+              className="block rounded-lg border border-violet-300 px-4 py-2 text-center text-sm font-semibold text-violet-700 hover:bg-violet-50"
+            >
+              Emitir reporte de atención
+            </Link>
+            <div className="grid min-w-[240px] grid-cols-2 gap-3 text-sm">
             <div className="rounded-md bg-slate-50 p-3">
               <span className="block text-slate-500">Solicitado</span>
               <strong className="text-slate-900">
@@ -131,6 +152,7 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
                 {totalReservadoVigente} pendiente
               </span>
             </div>
+          </div>
           </div>
         </div>
 
@@ -268,6 +290,7 @@ const PedidoInternoDetallePanel = ({ pedido }) => {
                     <p>Responsable de almacen: {nota.responsable?.nombre || "-"}</p>
                     <p>Receptor: {nota.receptor?.nombre || "-"}</p>
                     <p>Area destino: {nota.areaDestino?.nombre || "-"}</p>
+                    <p>Modalidad: {getModalidadSalidaLabel(nota.modalidadSalida || pedido.modalidadSalida)}</p>
                   </div>
                   <div className="mt-2 overflow-x-auto">
                     <table className="min-w-full text-xs">

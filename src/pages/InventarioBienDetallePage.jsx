@@ -8,17 +8,12 @@ import {
   FileInput,
   FileOutput,
   PackageCheck,
-  RotateCcw,
-  ShieldAlert,
   UserRound,
   Warehouse,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import {
-  canAdjustInventoryEffective,
-  canOperateInventoryEffective,
-} from "../accessRules";
+import { canOperateInventoryEffective } from "../accessRules";
 import BienInventarioNovedadModal from "../components/inventario/BienInventarioNovedadModal";
 import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
@@ -26,7 +21,6 @@ import useAlmacenes from "../hooks/useAlmacenes";
 import useInventario from "../hooks/useInventario";
 import {
   BIEN_INVENTARIO_NOVEDAD_TIPOS,
-  CAUSALES_BAJA_BIEN,
   getBienInventarioAccionesDisponibles,
 } from "../utils/bienInventarioNovedades";
 import {
@@ -48,8 +42,6 @@ const formatDateTime = (value) => {
     : "-";
 };
 
-const getCausalBajaLabel = (value) =>
-  CAUSALES_BAJA_BIEN.find((item) => item.value === value)?.label || value || "-";
 
 const DetailItem = ({ label, value, children }) => (
   <div>
@@ -133,8 +125,6 @@ const InventarioBienDetallePage = () => {
   const {
     loading,
     obtenerBienInventarioPorId,
-    registrarBajaBienInventario,
-    registrarDevolucionBienInventario,
     registrarTransferenciaBienInventario,
   } = useInventario();
   const { almacenes, obtenerAlmacenes } = useAlmacenes();
@@ -165,24 +155,15 @@ const InventarioBienDetallePage = () => {
       getBienInventarioAccionesDisponibles({
         estado: bien?.estado,
         puedeOperar: canOperateInventoryEffective(user),
-        puedeDarBaja: canAdjustInventoryEffective(user),
       }),
     [bien?.estado, user],
   );
 
   const handleRegistrarNovedad = async (tipo, payload) => {
     const operations = {
-      [BIEN_INVENTARIO_NOVEDAD_TIPOS.DEVOLUCION]: {
-        execute: registrarDevolucionBienInventario,
-        success: "Devolución registrada. La unidad vuelve a estar disponible.",
-      },
       [BIEN_INVENTARIO_NOVEDAD_TIPOS.TRANSFERENCIA]: {
         execute: registrarTransferenciaBienInventario,
         success: "Transferencia registrada correctamente.",
-      },
-      [BIEN_INVENTARIO_NOVEDAD_TIPOS.BAJA]: {
-        execute: registrarBajaBienInventario,
-        success: "Baja registrada. La unidad salió del ciclo operativo.",
       },
     };
     const operation = operations[tipo];
@@ -268,28 +249,12 @@ const InventarioBienDetallePage = () => {
 
           {accionesDisponibles.length > 0 && (
             <div className="mt-5 flex flex-wrap gap-2 border-t border-indigo-500/40 pt-4">
-              {accionesDisponibles.includes("DEVOLUCION") && (
-                <ActionButton
-                  icon={RotateCcw}
-                  label="Registrar devolución"
-                  onClick={() => setNovedadTipo("DEVOLUCION")}
-                  className="bg-emerald-500 text-white hover:bg-emerald-400"
-                />
-              )}
               {accionesDisponibles.includes("TRANSFERENCIA") && (
                 <ActionButton
                   icon={ArrowLeftRight}
                   label="Transferir almacén"
                   onClick={() => setNovedadTipo("TRANSFERENCIA")}
                   className="bg-white text-indigo-800 hover:bg-indigo-50"
-                />
-              )}
-              {accionesDisponibles.includes("BAJA") && (
-                <ActionButton
-                  icon={ShieldAlert}
-                  label="Registrar baja"
-                  onClick={() => setNovedadTipo("BAJA")}
-                  className="bg-red-500 text-white hover:bg-red-400"
                 />
               )}
             </div>
@@ -432,7 +397,7 @@ const InventarioBienDetallePage = () => {
                   <div className="mt-2 grid gap-x-6 gap-y-1 text-xs text-gray-600 sm:grid-cols-2">
                     {ubicacion && <span><strong>Ubicación:</strong> {ubicacion}</span>}
                     {evento.actor?.nombre && <span><strong>Registrado por:</strong> {evento.actor.nombre}</span>}
-                    {evento.causalBaja && <span><strong>Causal:</strong> {getCausalBajaLabel(evento.causalBaja)}</span>}
+                    {evento.causalBaja && <span><strong>Causal histórica:</strong> {evento.causalBaja}</span>}
                     {evento.referenciaCodigo && <span><strong>Sustento:</strong> {evento.referenciaTipo} {evento.referenciaCodigo}</span>}
                     {evento.observaciones && <span className="sm:col-span-2"><strong>Observaciones:</strong> {evento.observaciones}</span>}
                   </div>
@@ -456,7 +421,7 @@ const InventarioBienDetallePage = () => {
       </section>
 
       <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">
-        Las reservas siguen siendo temporales y cuantitativas: nunca asignan una serie. Las novedades de esta pantalla modifican una unidad física únicamente mediante una operación transaccional y trazable.
+        Las reservas siguen siendo temporales y cuantitativas: nunca asignan una serie. Desde esta ficha solo puede transferirse una unidad disponible. Las devoluciones temporales se registran mediante Nota de Ingreso y los retiros bajo custodia mediante Ajuste de Inventario.
       </div>
 
       <BienInventarioNovedadModal

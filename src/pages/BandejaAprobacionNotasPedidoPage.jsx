@@ -6,6 +6,7 @@ import PedidoInternoEstadoBadge from "../components/PedidoInternoEstadoBadge";
 import SkeletonSection from "../components/ui/skeletons/SkeletonSection";
 import { useAuth } from "../context/authContext";
 import usePedidosInternos from "../hooks/usePedidosInternos";
+import { getModalidadSalidaLabel } from "../utils/prestamosInventario";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString() : "-";
@@ -140,6 +141,13 @@ const BandejaAprobacionNotasPedidoPage = () => {
                       {pedido.codigo}
                     </h2>
                     <PedidoInternoEstadoBadge estadoFlujo={pedido.estadoFlujo} />
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      pedido.modalidadSalida === "TEMPORAL"
+                        ? "bg-violet-100 text-violet-800"
+                        : "bg-slate-100 text-slate-700"
+                    }`}>
+                      {getModalidadSalidaLabel(pedido.modalidadSalida)}
+                    </span>
                   </div>
                   <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                     <p>
@@ -160,6 +168,12 @@ const BandejaAprobacionNotasPedidoPage = () => {
                       <span className="font-medium text-slate-800">Lineas:</span>{" "}
                       {pedido.detalles?.length || 0}
                     </p>
+                    {pedido.modalidadSalida === "TEMPORAL" ? (
+                      <p className="md:col-span-2 text-violet-700">
+                        <span className="font-medium">Devolución prevista:</span>{" "}
+                        {formatDate(pedido.fechaPrevistaDevolucion)} · {pedido.finalidadPrestamo || "Sin finalidad"}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 

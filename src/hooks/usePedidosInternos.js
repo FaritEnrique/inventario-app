@@ -34,6 +34,12 @@ const usePedidosInternos = () => {
       (id) => execute(() => pedidosInternosApi.obtenerPedidoPdfBlob(id)),
       [execute]
     ),
+
+    obtenerReporteAtencionPedido: useCallback(
+      (id) =>
+        execute(() => pedidosInternosApi.obtenerReporteAtencionPedido(id)),
+      [execute]
+    ),
     obtenerReceptoresPedido: useCallback(
       (id) => execute(() => pedidosInternosApi.obtenerReceptoresPedido(id)),
       [execute]

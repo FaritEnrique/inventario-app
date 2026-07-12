@@ -67,6 +67,17 @@ const buildDocumentoNotaIngresoFormData = (payload = {}) => {
   return formData;
 };
 
+
+const buildDocumentoInventarioFormalFormData = (payload = {}) => {
+  const { documentoSustento, ...payloadSinArchivo } = payload;
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payloadSinArchivo));
+  if (documentoSustento) {
+    formData.append("documentoSustento", documentoSustento);
+  }
+  return formData;
+};
+
 const inventarioApi = {
   obtenerStock: (params = {}) =>
     apiFetch(`inventario/stock${buildQuery(params)}`, {
@@ -88,12 +99,6 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarDevolucionBienInventario: (id, payload) =>
-    apiFetch(`inventario/bienes-inventario/${id}/devoluciones`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
 
   registrarTransferenciaBienInventario: (id, payload) =>
     apiFetch(`inventario/bienes-inventario/${id}/transferencias`, {
@@ -102,12 +107,6 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarBajaBienInventario: (id, payload) =>
-    apiFetch(`inventario/bienes-inventario/${id}/bajas`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
 
   obtenerNotasIngreso: (params = {}) =>
     apiFetch(`inventario/notas-ingreso${buildQuery(params)}`, {
@@ -193,6 +192,45 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
+  obtenerPrestamos: (params = {}) =>
+    apiFetch(`inventario/prestamos${buildQuery(params)}`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerReporteAtencionNotaSalida: (id) =>
+    apiFetch(`inventario/notas-salida/${id}/reporte-atencion`, {
+      sessionActivity: "interactive",
+    }),
+
+  registrarDevolucionPrestamo: (id, payload) =>
+    apiFetch(`inventario/notas-salida/${id}/devoluciones`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      sessionActivity: "interactive",
+    }),
+
+  emitirActaRegularizacionSalidaTemporal: (id, payload) =>
+    apiFetch(`inventario/notas-salida/${id}/regularizaciones`, {
+      method: "POST",
+      body: buildDocumentoInventarioFormalFormData(payload),
+      sessionActivity: "interactive",
+    }),
+
+  obtenerActaRegularizacionSalidaTemporal: (id) =>
+    apiFetch(`inventario/regularizaciones-salida-temporal/${id}`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerActaRegularizacionPdfBlob: (id) =>
+    apiFetchBlob(`inventario/regularizaciones-salida-temporal/${id}/pdf`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerSustentoActaRegularizacionBlob: (id) =>
+    apiFetchBlob(`inventario/regularizaciones-salida-temporal/${id}/sustento`, {
+      sessionActivity: "interactive",
+    }),
+
   actualizarAprobacionDocumentalNotaSalida: (id, payload) =>
     apiFetch(`inventario/notas-salida/${id}/aprobacion-documental`, {
       method: "PATCH",
@@ -225,13 +263,6 @@ const inventarioApi = {
       sessionActivity: "interactive",
     }),
 
-  registrarEntrada: (payload) =>
-    apiFetch("inventario/entradas", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      sessionActivity: "interactive",
-    }),
-
   registrarIngresoPorNota: (payload) => {
     const formData = buildNotaIngresoFormData(payload);
 
@@ -242,24 +273,30 @@ const inventarioApi = {
     });
   },
 
-  registrarSalida: (payload) =>
-    apiFetch("inventario/salidas", {
+  emitirAjusteInventario: (payload) =>
+    apiFetch("inventario/ajustes-inventario", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: buildDocumentoInventarioFormalFormData(payload),
       sessionActivity: "interactive",
     }),
 
-  registrarAjuste: (payload) =>
-    apiFetch("inventario/ajustes", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  obtenerAjustesInventario: (params = {}) =>
+    apiFetch(`inventario/ajustes-inventario${buildQuery(params)}`, {
       sessionActivity: "interactive",
     }),
 
-  registrarCargaInicial: (payload) =>
-    apiFetch("inventario/carga-inicial", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  obtenerAjusteInventario: (id) =>
+    apiFetch(`inventario/ajustes-inventario/${id}`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerAjusteInventarioPdfBlob: (id) =>
+    apiFetchBlob(`inventario/ajustes-inventario/${id}/pdf`, {
+      sessionActivity: "interactive",
+    }),
+
+  obtenerSustentoAjusteInventarioBlob: (id) =>
+    apiFetchBlob(`inventario/ajustes-inventario/${id}/sustento`, {
       sessionActivity: "interactive",
     }),
 

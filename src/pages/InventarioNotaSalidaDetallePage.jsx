@@ -4,14 +4,26 @@ import { toast } from "react-toastify";
 import { canActOnNoteDocument } from "../accessRules";
 import DocumentoAlmacenEstadoBadge from "../components/DocumentoAlmacenEstadoBadge";
 import DocumentoFormalEstadoBadge from "../components/DocumentoFormalEstadoBadge";
+import DevolucionPrestamoModal from "../components/inventario/DevolucionPrestamoModal";
+import RegularizacionSalidaTemporalModal from "../components/inventario/RegularizacionSalidaTemporalModal";
 import InventarioDocumentoDetalleSkeleton from "../components/ui/skeletons/InventarioDocumentoDetalleSkeleton";
 import { useAuth } from "../context/authContext";
 import useAppDialog from "../hooks/useAppDialog";
 import useInventario from "../hooks/useInventario";
 import { getBienInventarioLabel } from "../utils/bienesInventarioDespacho";
+import {
+  getModalidadSalidaLabel,
+  getSalidaReporte,
+} from "../utils/prestamosInventario";
 
 const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString() : "-";
+
+const openBlobResponse = ({ blob }) => {
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener,noreferrer");
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
 
 const formalLevelLabels = {
   APROBACION_ALMACEN: "Aprobacion de almacen",
@@ -27,9 +39,18 @@ const InventarioNotaSalidaDetallePage = () => {
     error,
     obtenerNotaSalidaPorId,
     actualizarAprobacionDocumentalNotaSalida,
+    obtenerReporteAtencionNotaSalida,
+    registrarDevolucionPrestamo,
+    emitirActaRegularizacionSalidaTemporal,
+    obtenerActaRegularizacionPdfBlob,
   } = useInventario();
   const [nota, setNota] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [salidaReporte, setSalidaReporte] = useState(null);
+  const [regularizationSubmitting, setRegularizationSubmitting] = useState(false);
+  const [regularizationModalOpen, setRegularizationModalOpen] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
@@ -45,7 +66,7 @@ const InventarioNotaSalidaDetallePage = () => {
     cargar();
   }, [id, obtenerNotaSalidaPorId]);
 
-  const documentoFormal = nota.documentoFormal || {};
+  const documentoFormal = nota?.documentoFormal || {};
   const canAct = canActOnNoteDocument(user, documentoFormal);
 
   const handleDecision = async (accion) => {
@@ -80,6 +101,82 @@ const InventarioNotaSalidaDetallePage = () => {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenReturn = async () => {
+    try {
+      const reporte = await obtenerReporteAtencionNotaSalida(id);
+      const salida = getSalidaReporte(reporte);
+      if (!salida || Number(salida.totalPendienteDevolucion || 0) <= 0) {
+        toast.info("Esta salida temporal no tiene bienes pendientes de devolución.");
+        return;
+      }
+      setSalidaReporte(salida);
+      setReturnModalOpen(true);
+    } catch (loadError) {
+      toast.error(loadError.message || "No se pudo preparar la devolución.");
+    }
+  };
+
+  const handleReturnSubmit = async (payload) => {
+    setReturnSubmitting(true);
+    try {
+      const result = await registrarDevolucionPrestamo(id, payload);
+      toast.success(
+        `Se creó la Nota de Ingreso ${result?.notaIngreso?.codigo || "de devolución"}.`,
+      );
+      const updated = await obtenerNotaSalidaPorId(id);
+      setNota(updated);
+      setReturnModalOpen(false);
+      setSalidaReporte(null);
+    } catch (returnError) {
+      toast.error(returnError.message || "No se pudo registrar la devolución.");
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
+
+  const handleOpenRegularization = async () => {
+    try {
+      const reporte = await obtenerReporteAtencionNotaSalida(id);
+      const salida = getSalidaReporte(reporte);
+      if (!salida || Number(salida.totalPendienteDevolucion || 0) <= 0) {
+        toast.info("Esta salida temporal no tiene bienes pendientes por regularizar.");
+        return;
+      }
+      setSalidaReporte(salida);
+      setRegularizationModalOpen(true);
+    } catch (loadError) {
+      toast.error(loadError.message || "No se pudo preparar el Acta.");
+    }
+  };
+
+  const handleRegularizationSubmit = async (payload) => {
+    setRegularizationSubmitting(true);
+    try {
+      const acta = await emitirActaRegularizacionSalidaTemporal(id, payload);
+      toast.success(`Se emitió el Acta ${acta?.codigo || "de regularización"}.`);
+      const updated = await obtenerNotaSalidaPorId(id);
+      setNota(updated);
+      setRegularizationModalOpen(false);
+      setSalidaReporte(null);
+      try {
+        openBlobResponse(
+          await obtenerActaRegularizacionPdfBlob(acta.id),
+        );
+      } catch (pdfError) {
+        toast.info(
+          pdfError.message ||
+            "El Acta fue emitida, pero no se pudo abrir su PDF automáticamente.",
+        );
+      }
+    } catch (regularizationError) {
+      toast.error(
+        regularizationError.message || "No se pudo emitir el Acta de Regularización.",
+      );
+    } finally {
+      setRegularizationSubmitting(false);
     }
   };
 
@@ -120,10 +217,36 @@ const InventarioNotaSalidaDetallePage = () => {
           >
             Bandeja de almacen
           </Link>
+          {nota?.id ? (
+            <Link
+              to={`/modulo-almacen/notas-salida/${nota.id}/reporte-atencion`}
+              className="rounded border border-violet-300 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
+            >
+              Emitir reporte
+            </Link>
+          ) : null}
+          {nota?.modalidadSalida === "TEMPORAL" ? (
+            <button
+              type="button"
+              onClick={handleOpenReturn}
+              className="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Registrar devolución
+            </button>
+          ) : null}
+          {nota?.modalidadSalida === "TEMPORAL" ? (
+            <button
+              type="button"
+              onClick={handleOpenRegularization}
+              className="rounded bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800"
+            >
+              Regularizar no devueltos
+            </button>
+          ) : null}
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Estado operativo
@@ -149,6 +272,19 @@ const InventarioNotaSalidaDetallePage = () => {
           <p className="mt-2 text-lg font-semibold text-slate-900">
             {formatDateTime(nota.fechaSalida)}
           </p>
+        </div>
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Modalidad
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-900">
+            {getModalidadSalidaLabel(nota.modalidadSalida)}
+          </p>
+          {nota.modalidadSalida === "TEMPORAL" ? (
+            <p className="mt-1 text-xs text-violet-700">
+              Retorno previsto: {formatDateTime(nota.fechaPrevistaDevolucion)}
+            </p>
+          ) : null}
         </div>
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -200,6 +336,36 @@ const InventarioNotaSalidaDetallePage = () => {
                 {nota.areaDestino?.nombre || "-"}
               </p>
             </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Nota de Pedido origen
+              </p>
+              {nota.pedidoInterno ? (
+                <Link
+                  to={`/notas-pedido/${nota.pedidoInterno.id}`}
+                  className="mt-1 block text-sm font-medium text-blue-700"
+                >
+                  {nota.pedidoInterno.codigo}
+                </Link>
+              ) : (
+                <p className="mt-1 text-sm text-slate-700">-</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Tipo de salida
+              </p>
+              <p className="mt-1 text-sm text-slate-700">
+                {getModalidadSalidaLabel(nota.modalidadSalida)}
+              </p>
+            </div>
+            {nota.modalidadSalida === "TEMPORAL" ? (
+              <div className="md:col-span-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+                <strong>Finalidad:</strong> {nota.finalidadPrestamo || "-"}<br />
+                <strong>Fecha prevista de devolución:</strong>{" "}
+                {formatDateTime(nota.fechaPrevistaDevolucion)}
+              </div>
+            ) : null}
             <div className="md:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Observaciones
@@ -390,6 +556,53 @@ const InventarioNotaSalidaDetallePage = () => {
         </div>
       </div>
 
+      {nota.modalidadSalida === "TEMPORAL" ? (
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Documentos relacionados de devolución
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Cada retorno físico se registra mediante una Nota de Ingreso asociada a esta salida.
+              </p>
+            </div>
+            <Link
+              to={`/modulo-almacen/notas-salida/${nota.id}/reporte-atencion`}
+              className="text-sm font-semibold text-violet-700"
+            >
+              Ver consolidado
+            </Link>
+          </div>
+          <div className="mt-4 space-y-3">
+            {(nota.notasIngresoDevolucion || []).length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                Todavía no existen Notas de Ingreso por devolución vinculadas.
+              </div>
+            ) : (
+              nota.notasIngresoDevolucion.map((ingreso) => (
+                <div key={ingreso.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 p-4 text-sm">
+                  <div>
+                    <Link
+                      to={`/inventario-notas-ingreso/${ingreso.id}`}
+                      className="font-semibold text-emerald-700"
+                    >
+                      {ingreso.codigo}
+                    </Link>
+                    <p className="mt-1 text-slate-600">
+                      {formatDateTime(ingreso.fechaRecepcion)} · {ingreso.personaEntrega || "Sin persona registrada"}
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-slate-600">
+                    {ingreso.inventarioPosteadoAt ? "Posteada a stock" : ingreso.estadoDocumentalFormal || "Pendiente"}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-xl bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">
           Historial documental
@@ -419,6 +632,24 @@ const InventarioNotaSalidaDetallePage = () => {
           )}
         </div>
       </div>
+      <DevolucionPrestamoModal
+        open={returnModalOpen}
+        salida={salidaReporte}
+        submitting={returnSubmitting}
+        onClose={() => {
+          if (!returnSubmitting) setReturnModalOpen(false);
+        }}
+        onSubmit={handleReturnSubmit}
+      />
+      <RegularizacionSalidaTemporalModal
+        open={regularizationModalOpen}
+        salida={salidaReporte}
+        submitting={regularizationSubmitting}
+        onClose={() => {
+          if (!regularizationSubmitting) setRegularizationModalOpen(false);
+        }}
+        onSubmit={handleRegularizationSubmit}
+      />
     </div>
   );
 };

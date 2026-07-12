@@ -9,10 +9,17 @@ import {
 import { useAuth } from "../context/authContext";
 import useInventario from "../hooks/useInventario";
 import usePedidosInternos from "../hooks/usePedidosInternos";
+import {
+  buildLimaNoonIso,
+  getLimaDateInput,
+} from "../utils/prestamosInventario";
 
 const initialState = {
   almacenId: "",
   observaciones: "",
+  modalidadSalida: "DEFINITIVA",
+  fechaPrevistaDevolucion: "",
+  finalidadPrestamo: "",
   lineaCantidad: "",
   lineaObservaciones: "",
   lineas: [],
@@ -21,6 +28,14 @@ const initialState = {
 const reducer = (state, action) => {
   switch (action.type) {
     case "setField":
+      if (action.field === "modalidadSalida" && action.value === "DEFINITIVA") {
+        return {
+          ...state,
+          modalidadSalida: action.value,
+          fechaPrevistaDevolucion: "",
+          finalidadPrestamo: "",
+        };
+      }
       return { ...state, [action.field]: action.value };
     case "addLine":
       return {
@@ -190,9 +205,33 @@ const CrearNotaPedidoPage = () => {
       return;
     }
 
+    if (state.modalidadSalida === "TEMPORAL") {
+      if (!state.fechaPrevistaDevolucion) {
+        toast.error("Indica la fecha prevista de devolución del préstamo.");
+        return;
+      }
+      if (state.fechaPrevistaDevolucion <= getLimaDateInput()) {
+        toast.error("La fecha prevista de devolución debe ser posterior a hoy.");
+        return;
+      }
+      if (state.finalidadPrestamo.trim().length < 3) {
+        toast.error("Describe la finalidad del préstamo temporal.");
+        return;
+      }
+    }
+
     try {
       const response = await crearPedido({
         almacenId: Number(state.almacenId),
+        modalidadSalida: state.modalidadSalida,
+        fechaPrevistaDevolucion:
+          state.modalidadSalida === "TEMPORAL"
+            ? buildLimaNoonIso(state.fechaPrevistaDevolucion)
+            : undefined,
+        finalidadPrestamo:
+          state.modalidadSalida === "TEMPORAL"
+            ? state.finalidadPrestamo.trim()
+            : undefined,
         observaciones: state.observaciones || undefined,
         items: state.lineas.map((linea) => ({
           productoId: linea.productoId,
@@ -321,6 +360,93 @@ const CrearNotaPedidoPage = () => {
                 placeholder="Uso interno del area, destino o comentario"
               />
             </div>
+          </div>
+
+          <div className="mt-5 border-t border-slate-200 pt-5">
+            <p className="text-sm font-semibold text-slate-900">Modalidad de salida</p>
+            <p className="mt-1 text-xs text-slate-500">
+              La modalidad quedará aprobada en la Nota de Pedido y se copiará a cada Nota de Salida.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {[
+                ["DEFINITIVA", "Salida definitiva", "El bien se entrega sin obligación de retorno."],
+                ["TEMPORAL", "Préstamo temporal", "El retorno se documentará mediante una Nota de Ingreso vinculada."],
+              ].map(([value, title, description]) => (
+                <label
+                  key={value}
+                  className={`cursor-pointer rounded-lg border p-4 ${
+                    state.modalidadSalida === value
+                      ? "border-violet-400 bg-violet-50"
+                      : "border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="modalidadSalida"
+                      value={value}
+                      checked={state.modalidadSalida === value}
+                      onChange={(event) =>
+                        dispatch({
+                          type: "setField",
+                          field: "modalidadSalida",
+                          value: event.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-slate-900">{title}</span>
+                      <span className="mt-1 block text-xs text-slate-600">{description}</span>
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {state.modalidadSalida === "TEMPORAL" ? (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Fecha prevista de devolución *
+                  </label>
+                  <input
+                    type="date"
+                    value={state.fechaPrevistaDevolucion}
+                    min={getLimaDateInput(new Date(Date.now() + 86400000))}
+                    onChange={(event) =>
+                      dispatch({
+                        type: "setField",
+                        field: "fechaPrevistaDevolucion",
+                        value: event.target.value,
+                      })
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Finalidad del préstamo *
+                  </label>
+                  <input
+                    type="text"
+                    value={state.finalidadPrestamo}
+                    onChange={(event) =>
+                      dispatch({
+                        type: "setField",
+                        field: "finalidadPrestamo",
+                        value: event.target.value,
+                      })
+                    }
+                    className="w-full rounded border border-slate-300 px-3 py-2"
+                    placeholder="Actividad, evento o uso temporal"
+                    maxLength={1000}
+                    required
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 

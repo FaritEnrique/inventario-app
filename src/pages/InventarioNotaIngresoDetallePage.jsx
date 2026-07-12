@@ -35,10 +35,25 @@ const bienInventarioEstadoLabels = {
   DISPONIBLE: "Disponible",
   RESERVADO: "Reservado",
   ENTREGADO: "Entregado",
+  PRESTADO: "Prestado",
   BAJA: "De baja",
 };
 
-const BienesInventarioList = ({ bienes = [], compact = false }) => {
+const getDetalleBienes = (detalle = {}) => {
+  if (Array.isArray(detalle.bienesInventario) && detalle.bienesInventario.length) {
+    return detalle.bienesInventario;
+  }
+
+  return Array.isArray(detalle.bienesDevolucionSnapshot)
+    ? detalle.bienesDevolucionSnapshot
+    : [];
+};
+
+const BienesInventarioList = ({
+  bienes = [],
+  compact = false,
+  estadoLabel = null,
+}) => {
   if (!bienes.length) return null;
 
   return (
@@ -63,7 +78,8 @@ const BienesInventarioList = ({ bienes = [], compact = false }) => {
             </div>
           ) : null}
           <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-cyan-700">
-            {bienInventarioEstadoLabels[bien.estado] ||
+            {estadoLabel ||
+              bienInventarioEstadoLabels[bien.estado] ||
               bien.estado ||
               "Pendiente de posteo"}
           </div>
@@ -422,6 +438,37 @@ const InventarioNotaIngresoDetallePage = () => {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Tipo de ingreso
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-700">
+                {nota.tipoIngreso === "DEVOLUCION_PRESTAMO"
+                  ? "Devolución de préstamo"
+                  : "Recepción"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Documento de origen
+              </p>
+              {nota.notaSalidaOrigen ? (
+                <Link
+                  to={`/inventario-notas-salida/${nota.notaSalidaOrigen.id}`}
+                  className="mt-1 block text-sm font-medium text-blue-700"
+                >
+                  {nota.notaSalidaOrigen.codigo}
+                </Link>
+              ) : (
+                <p className="mt-1 text-sm text-slate-700">-</p>
+              )}
+            </div>
+            {nota.tipoIngreso === "DEVOLUCION_PRESTAMO" ? (
+              <div className="md:col-span-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                Esta Nota de Ingreso acredita el retorno físico asociado a la Nota de Salida temporal {nota.notaSalidaOrigen?.codigo || "-"}.
+                {nota.personaEntrega ? ` Entrega: ${nota.personaEntrega}.` : ""}
+              </div>
+            ) : null}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Referencia tipo
               </p>
               <p className="mt-1 text-sm text-slate-700">
@@ -565,7 +612,12 @@ const InventarioNotaIngresoDetallePage = () => {
                 <p>Pendiente: {detalle.cantidadPendiente}</p>
               </div>
               <BienesInventarioList
-                bienes={detalle.bienesInventario || []}
+                bienes={getDetalleBienes(detalle)}
+                estadoLabel={
+                  nota.tipoIngreso === "DEVOLUCION_PRESTAMO"
+                    ? "Devuelto mediante esta nota"
+                    : null
+                }
               />
             </div>
           ))
@@ -628,10 +680,15 @@ const InventarioNotaIngresoDetallePage = () => {
                       {detalle.estadoRecepcion || "-"}
                     </td>
                     <td className="min-w-56 px-4 py-3 align-top">
-                      {(detalle.bienesInventario || []).length > 0 ? (
+                      {getDetalleBienes(detalle).length > 0 ? (
                         <BienesInventarioList
-                          bienes={detalle.bienesInventario}
+                          bienes={getDetalleBienes(detalle)}
                           compact
+                          estadoLabel={
+                            nota.tipoIngreso === "DEVOLUCION_PRESTAMO"
+                              ? "Devuelto mediante esta nota"
+                              : null
+                          }
                         />
                       ) : (
                         <span className="text-xs text-slate-500">
