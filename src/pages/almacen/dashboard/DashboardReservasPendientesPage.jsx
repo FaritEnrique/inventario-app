@@ -77,10 +77,10 @@ const DashboardReservasPendientesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [producto, setProducto] = useState(searchParams.get("producto") || "");
-  const [estado, setEstado] = useState(searchParams.get("estado") || "");
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
+  const [producto, setProducto] = useState(() => searchParams.get("producto") || "");
+  const [estado, setEstado] = useState(() => searchParams.get("estado") || "");
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
   const cargarReservas = useCallback(async () => {
     setLoading(true);

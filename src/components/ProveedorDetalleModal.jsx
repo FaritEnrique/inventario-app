@@ -29,17 +29,17 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
-const Tag = ({ children, tone = "slate" }) => {
-  const toneClasses = {
-    slate: "bg-slate-100 text-slate-700",
-    amber: "bg-amber-100 text-amber-800",
-    green: "bg-green-100 text-green-800",
-    red: "bg-red-100 text-red-800",
-  };
+const TONE_CLASSES = Object.freeze({
+  slate: "bg-slate-100 text-slate-700",
+  amber: "bg-amber-100 text-amber-800",
+  green: "bg-green-100 text-green-800",
+  red: "bg-red-100 text-red-800",
+});
 
+const Tag = ({ children, tone = "slate" }) => {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${toneClasses[tone]}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${TONE_CLASSES[tone]}`}
     >
       {children}
     </span>

@@ -36,7 +36,7 @@ const ValidarProductoTemporalModal = ({
   const [selectedProductoId, setSelectedProductoId] = useState("");
   const [tiposProducto, setTiposProducto] = useState([]);
   const [marcas, setMarcas] = useState([]);
-  const [form, setForm] = useState(initialCreateForm(productoTemporal));
+  const [form, setForm] = useState(() => initialCreateForm(productoTemporal));
   const [loading, setLoading] = useState(false);
   const [loadingCatalogs, setLoadingCatalogs] = useState(false);
   const [loadingProductos, setLoadingProductos] = useState(false);

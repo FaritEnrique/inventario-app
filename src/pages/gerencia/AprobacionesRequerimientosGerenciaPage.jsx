@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../../context/authContext";
 import { hasRole } from "../../utils/userRoles";
@@ -23,15 +23,12 @@ const resolveNivelInicial = (user) => {
 const AprobacionesRequerimientosGerenciaPage = () => {
   const { user } = useAuth();
   const isAdmin = hasRole(user, "ADMINISTRADOR_SISTEMA");
-  const [nivel, setNivel] = useState(resolveNivelInicial(user));
+  const [nivel, setNivel] = useState(() => resolveNivelInicial(user));
 
-  const titulo = useMemo(
-    () =>
-      nivel === "gerencia-general"
-        ? "Aprobación de Requerimientos - Gerencia General"
-        : "Aprobación de Requerimientos - Gerencia de Administración",
-    [nivel],
-  );
+  const titulo =
+    nivel === "gerencia-general"
+      ? "Aprobación de Requerimientos - Gerencia General"
+      : "Aprobación de Requerimientos - Gerencia de Administración";
 
   return (
     <section className="space-y-5">

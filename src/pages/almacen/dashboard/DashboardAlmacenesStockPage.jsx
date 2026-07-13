@@ -75,8 +75,8 @@ const DashboardAlmacenesStockPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [stockRows, setStockRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [almacen, setAlmacen] = useState(searchParams.get("almacen") || "");
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [almacen, setAlmacen] = useState(() => searchParams.get("almacen") || "");
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
   const cargarStock = useCallback(async () => {
     setLoading(true);

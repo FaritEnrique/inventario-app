@@ -46,6 +46,23 @@ const parseNullableFloat = (value) => {
 };
 
 const roundMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+const moneyFormatters = new Map();
+
+const getMoneyFormatter = (currency) => {
+  if (!moneyFormatters.has(currency)) {
+    moneyFormatters.set(
+      currency,
+      new Intl.NumberFormat("es-PE", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    );
+  }
+
+  return moneyFormatters.get(currency);
+};
 
 export const calculateSolicitudTotals = (formData = {}) => {
   const subtotal = (Array.isArray(formData.items) ? formData.items : []).reduce(
@@ -83,12 +100,8 @@ export const formatSolicitudMoney = (value, formData = {}) => {
       ? String(formData.codigoMonedaOtra || "").trim().toUpperCase()
       : formData.moneda;
 
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: /^[A-Z]{3}$/.test(currency) ? currency : "PEN",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+  const normalizedCurrency = /^[A-Z]{3}$/.test(currency) ? currency : "PEN";
+  return getMoneyFormatter(normalizedCurrency).format(Number(value || 0));
 };
 
 export const clearTipoCompraRelatedErrors = (prevErrors = {}) => ({

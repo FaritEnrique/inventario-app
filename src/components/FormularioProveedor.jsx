@@ -410,7 +410,7 @@ const FormularioProveedor = ({
     fetchTiposProducto,
   } = useTipoProductos();
 
-  const [formData, setFormData] = useState(getInitialFormData());
+  const [formData, setFormData] = useState(() => getInitialFormData());
   const [loading, setLoading] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [showTiposModal, setShowTiposModal] = useState(false);

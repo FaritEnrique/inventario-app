@@ -73,8 +73,8 @@ const DashboardStockDisponiblePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [codigo, setCodigo] = useState(searchParams.get("codigo") || "");
-  const [producto, setProducto] = useState(searchParams.get("producto") || "");
+  const [codigo, setCodigo] = useState(() => searchParams.get("codigo") || "");
+  const [producto, setProducto] = useState(() => searchParams.get("producto") || "");
   const [almacenId, setAlmacenId] = useState(
     searchParams.get("almacenId") || "",
   );
@@ -84,7 +84,7 @@ const DashboardStockDisponiblePage = () => {
   const [soloSinDisponibilidad, setSoloSinDisponibilidad] = useState(
     searchParams.get("soloSinDisponibilidad") === "1",
   );
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
   const cargarStock = useCallback(async () => {
     setLoading(true);

@@ -54,7 +54,7 @@ const InventarioTransferenciasPage = () => {
   const [tipoSustento, setTipoSustento] = useState("");
   const [sustentoOtro, setSustentoOtro] = useState("");
   const [numeroDocumentoSustento, setNumeroDocumentoSustento] = useState("");
-  const [fechaDocumentoSustento, setFechaDocumentoSustento] = useState(todayInput());
+  const [fechaDocumentoSustento, setFechaDocumentoSustento] = useState(() => todayInput());
   const [documentoSustento, setDocumentoSustento] = useState(null);
   const [observaciones, setObservaciones] = useState("");
   const [stockRows, setStockRows] = useState([]);

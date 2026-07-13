@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../../context/authContext";
@@ -45,7 +45,7 @@ const niveles = [
 const AprobacionesOrdenesCompraGerenciaPage = () => {
   const { user } = useAuth();
   const isAdmin = hasRole(user, "ADMINISTRADOR_SISTEMA");
-  const [nivel, setNivel] = useState(resolveNivel(user));
+  const [nivel, setNivel] = useState(() => resolveNivel(user));
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,13 +73,10 @@ const AprobacionesOrdenesCompraGerenciaPage = () => {
     cargarOrdenes();
   }, [cargarOrdenes]);
 
-  const titulo = useMemo(
-    () =>
-      nivel === "GERENCIA_GENERAL"
-        ? "Aprobación de O/C - Gerencia General"
-        : "Aprobación de O/C - Gerencia de Administración",
-    [nivel],
-  );
+  const titulo =
+    nivel === "GERENCIA_GENERAL"
+      ? "Aprobación de O/C - Gerencia General"
+      : "Aprobación de O/C - Gerencia de Administración";
 
   return (
     <section className="space-y-5">

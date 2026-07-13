@@ -22,7 +22,7 @@ const RegularizacionSalidaTemporalModal = ({
   const [descripcionHechos, setDescripcionHechos] = useState("");
   const [tipoDocumentoSustento, setTipoDocumentoSustento] = useState("");
   const [numeroDocumentoSustento, setNumeroDocumentoSustento] = useState("");
-  const [fechaDocumentoSustento, setFechaDocumentoSustento] = useState(todayInput());
+  const [fechaDocumentoSustento, setFechaDocumentoSustento] = useState(() => todayInput());
   const [documentoSustento, setDocumentoSustento] = useState(null);
   const [observaciones, setObservaciones] = useState("");
   const [lineas, setLineas] = useState([]);

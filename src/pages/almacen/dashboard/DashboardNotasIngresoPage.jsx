@@ -73,14 +73,14 @@ const DashboardNotasIngresoPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
   const [fechaDesde, setFechaDesde] = useState(
     searchParams.get("fechaDesde") || "",
   );
   const [fechaHasta, setFechaHasta] = useState(
     searchParams.get("fechaHasta") || "",
   );
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
   const cargarNotas = useCallback(async () => {
     setLoading(true);

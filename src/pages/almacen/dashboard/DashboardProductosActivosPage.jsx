@@ -93,7 +93,7 @@ const DashboardProductosActivosPage = () => {
   const [producto, setProducto] = useState(() =>
     getInitialProductoFilter(searchParams),
   );
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
   const cargarProductos = useCallback(async () => {
     setLoading(true);

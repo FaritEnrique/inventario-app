@@ -406,7 +406,7 @@ const InventarioRecepcionesPage = () => {
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [simpleForm, setSimpleForm] = useState(createEmptySimpleForm);
-  const [ocForm, setOcForm] = useState(createEmptyOcForm());
+  const [ocForm, setOcForm] = useState(() => createEmptyOcForm());
   const [resultado, setResultado] = useState(null);
   const [ordenesCompraDisponibles, setOrdenesCompraDisponibles] = useState([]);
   const [selectedOrdenCompra, setSelectedOrdenCompra] = useState(null);

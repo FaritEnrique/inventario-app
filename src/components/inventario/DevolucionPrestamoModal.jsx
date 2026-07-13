@@ -17,7 +17,7 @@ const DevolucionPrestamoModal = ({
   onSubmit,
 }) => {
   const [personaEntrega, setPersonaEntrega] = useState("");
-  const [fechaRecepcion, setFechaRecepcion] = useState(getLimaDateInput());
+  const [fechaRecepcion, setFechaRecepcion] = useState(() => getLimaDateInput());
   const [observaciones, setObservaciones] = useState("");
   const [lineas, setLineas] = useState([]);
   const [error, setError] = useState(null);

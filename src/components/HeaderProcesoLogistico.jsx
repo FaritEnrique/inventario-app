@@ -11,6 +11,17 @@ const linkClasses = ({ isActive }) =>
       : "bg-white text-indigo-500 border border-indigo-500 hover:bg-indigo-50"
   }`;
 
+const renderNavLabel = (item) => (
+  <span className="inline-flex items-center gap-2">
+    {item.label}
+    {item.badge > 0 ? (
+      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+        {item.badge}
+      </span>
+    ) : null}
+  </span>
+);
+
 const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
   const basePath = `/cotizaciones/proceso/${id}`;
   const alertasCount = getAlertasSeguimientoCount(detalleGlobal);
@@ -43,17 +54,6 @@ const HeaderProcesoLogistico = ({ id, detalleGlobal }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMobileMenuOpen]);
-
-  const renderNavLabel = (item) => (
-    <span className="inline-flex items-center gap-2">
-      {item.label}
-      {item.badge > 0 ? (
-        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-          {item.badge}
-        </span>
-      ) : null}
-    </span>
-  );
 
   return (
     <header className="p-3 border border-indigo-500 rounded-lg bg-slate-200 sm:p-4">
