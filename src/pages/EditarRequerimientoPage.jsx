@@ -22,7 +22,7 @@ const EditarRequerimientoPage = () => {
   const [loading, setLoading] = useState(true);
   const [requerimiento, setRequerimiento] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const requestedReturnTo = new URLSearchParams(location.search).get("returnTo");
+  const requestedReturnTo = location.state?.returnTo;
   const safeReturnTo = isSafeInternalPath(requestedReturnTo)
     ? requestedReturnTo
     : null;

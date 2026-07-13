@@ -3,6 +3,7 @@ import {
   buildInstitutionalLetterheadPrintHtml,
   escapeHtml as escapeInstitutionalHtml,
 } from "./configuracionEmpresaLetterhead";
+import { printHtmlInNewWindow } from "./printWindow";
 
 const normalizeReportValue = (value) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -412,9 +413,6 @@ export const printTableReport = ({
   columns = [],
   documentData = null,
 }) => {
-  const printWindow = window.open("", "_blank", "width=1100,height=750");
-
-  if (!printWindow) return;
 
   const headerHtml = columns
     .map(
@@ -572,21 +570,7 @@ export const printTableReport = ({
     repeatHeaderFooterPerPage: true,
   });
 
-  printWindow.document.write(html);
-  printWindow.document.close();
-
-  let printed = false;
-
-  const triggerPrint = () => {
-    if (printed) return;
-    printed = true;
-    printWindow.focus();
-    printWindow.print();
-  };
-
-  printWindow.onload = () => {
-    window.setTimeout(triggerPrint, 350);
-  };
-
-  window.setTimeout(triggerPrint, 900);
+  return printHtmlInNewWindow(html, {
+    features: "width=1100,height=750",
+  }).catch(() => null);
 };

@@ -613,6 +613,8 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
             <iframe
               title={getDocumentoNombre(viewerDocumento)}
               src={viewerUrl}
+              sandbox="allow-same-origin"
+              referrerPolicy="no-referrer"
               className="h-[65vh] w-full rounded border border-slate-200"
             />
           ) : null}

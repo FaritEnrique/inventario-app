@@ -1,6 +1,38 @@
 const PRINT_WINDOW_LOAD_TIMEOUT_MS = 4000;
 const PRINT_WINDOW_RESOURCE_TIMEOUT_MS = 4000;
 
+const BLOCKED_PRINTABLE_HTML_PATTERNS = [
+  /<\s*(?:script|iframe|object|embed|base|form|input|button|textarea|select)\b/i,
+  /<\s*meta\b[^>]*http-equiv\s*=/i,
+  /\son[a-z]+\s*=/i,
+  /\bsrcdoc\s*=/i,
+  /\b(?:href|src|xlink:href|action|formaction)\s*=\s*["']?\s*javascript:/i,
+  /url\s*\(\s*["']?\s*javascript:/i,
+  /expression\s*\(/i,
+];
+
+const assertPrintableHtmlIsSafe = (htmlContent) => {
+  const normalizedHtml = String(htmlContent ?? "");
+
+  if (!normalizedHtml.trim()) {
+    throw new Error("El documento de impresion esta vacio.");
+  }
+
+  if (BLOCKED_PRINTABLE_HTML_PATTERNS.some((pattern) => pattern.test(normalizedHtml))) {
+    throw new Error("El documento de impresion contiene contenido activo no permitido.");
+  }
+
+  return normalizedHtml;
+};
+
+const createPrintableHtmlUrl = (htmlContent) => {
+  const safeHtmlContent = assertPrintableHtmlIsSafe(htmlContent);
+  const blob = new Blob([safeHtmlContent], {
+    type: "text/html;charset=utf-8",
+  });
+
+  return URL.createObjectURL(blob);
+};
 const wait = (timeoutMs) =>
   new Promise((resolve) => {
     setTimeout(resolve, timeoutMs);
@@ -124,27 +156,29 @@ export const printHtmlInNewWindow = async (
     throw new Error("La impresion en ventana no esta disponible.");
   }
 
+  const printableUrl = createPrintableHtmlUrl(htmlContent);
   const printWindow = features
-    ? window.open("", target, features)
-    : window.open("", target);
+    ? window.open(printableUrl, target, features)
+    : window.open(printableUrl, target);
 
   if (!printWindow) {
+    URL.revokeObjectURL(printableUrl);
     throw new Error("No se pudo abrir la ventana de impresion.");
   }
 
-  const loadPromise = waitForWindowLoad(printWindow);
+  printWindow.opener = null;
 
-  printWindow.document.open();
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+  try {
+    await waitForWindowLoad(printWindow);
+    await waitForDocumentFonts(printWindow.document);
+    await waitForDocumentImages(printWindow.document);
+    await waitForStablePaint(printWindow);
 
-  await loadPromise;
-  await waitForDocumentFonts(printWindow.document);
-  await waitForDocumentImages(printWindow.document);
-  await waitForStablePaint(printWindow);
+    printWindow.focus?.();
+    printWindow.print?.();
 
-  printWindow.focus?.();
-  printWindow.print?.();
-
-  return printWindow;
+    return printWindow;
+  } finally {
+    URL.revokeObjectURL(printableUrl);
+  }
 };

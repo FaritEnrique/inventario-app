@@ -24,16 +24,9 @@ describe("printWindow utilities", () => {
     expect(markup).toContain(".demo");
   });
 
-  it("abre, escribe y dispara print de forma deterministica", async () => {
-    let loadHandler = null;
+  it("abre una URL temporal segura y dispara print de forma deterministica", async () => {
     const documentRef = {
-      readyState: "loading",
-      open: vi.fn(),
-      write: vi.fn(() => {
-        documentRef.readyState = "complete";
-        loadHandler?.();
-      }),
-      close: vi.fn(),
+      readyState: "complete",
       images: [],
       fonts: {
         ready: Promise.resolve(),
@@ -41,11 +34,7 @@ describe("printWindow utilities", () => {
     };
     const printWindow = {
       document: documentRef,
-      addEventListener: vi.fn((eventName, handler) => {
-        if (eventName === "load") {
-          loadHandler = handler;
-        }
-      }),
+      addEventListener: vi.fn(),
       requestAnimationFrame: vi.fn((handler) => {
         handler();
         return 1;
@@ -54,28 +43,47 @@ describe("printWindow utilities", () => {
       print: vi.fn(),
     };
     const open = vi.fn(() => printWindow);
+    const createObjectURL = vi.fn(() => "blob:printable-document");
+    const revokeObjectURL = vi.fn();
 
     vi.stubGlobal("window", { open });
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
 
     await printHtmlInNewWindow("<html><body>demo</body></html>");
 
-    expect(open).toHaveBeenCalledWith("", "_blank");
-    expect(documentRef.open).toHaveBeenCalledTimes(1);
-    expect(documentRef.write).toHaveBeenCalledWith(
-      "<html><body>demo</body></html>",
-    );
-    expect(documentRef.close).toHaveBeenCalledTimes(1);
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith("blob:printable-document", "_blank");
+    expect(printWindow.opener).toBeNull();
     expect(printWindow.focus).toHaveBeenCalledTimes(1);
     expect(printWindow.print).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:printable-document");
+  });
+
+  it("rechaza contenido activo antes de abrir la ventana", async () => {
+    vi.stubGlobal("window", { open: vi.fn() });
+
+    await expect(
+      printHtmlInNewWindow('<html><body><img src="x" onerror="alert(1)"></body></html>'),
+    ).rejects.toThrow("contenido activo no permitido");
+
+    expect(window.open).not.toHaveBeenCalled();
   });
 
   it("falla con un error claro cuando el navegador bloquea el popup", async () => {
+    const revokeObjectURL = vi.fn();
+
     vi.stubGlobal("window", {
       open: vi.fn(() => null),
+    });
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => "blob:blocked-document"),
+      revokeObjectURL,
     });
 
     await expect(
       printHtmlInNewWindow("<html><body>demo</body></html>"),
     ).rejects.toThrow("No se pudo abrir la ventana de impresion.");
+
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:blocked-document");
   });
 });

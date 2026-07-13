@@ -314,9 +314,10 @@ const RequerimientosBandejaPage = ({ nivel }) => {
                   {canEditFromTray &&
                   canEditRequerimientoEffective(user, req) ? (
                     <Link
-                      to={`/requerimientos/${req.id}/editar?returnTo=${encodeURIComponent(
-                        `/requerimientos/bandeja/${nivel}`,
-                      )}`}
+                      to={`/requerimientos/${req.id}/editar`}
+                      state={{
+                        returnTo: `/requerimientos/bandeja/${nivel}`,
+                      }}
                       className="text-sm font-medium text-emerald-700 hover:underline"
                     >
                       Editar para completar
