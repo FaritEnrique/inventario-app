@@ -111,10 +111,14 @@ const DevolucionPrestamoModal = ({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="devolucion-persona-entrega"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
                 Persona que entrega *
               </label>
               <input
+                id="devolucion-persona-entrega"
                 value={personaEntrega}
                 onChange={(event) => setPersonaEntrega(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -124,10 +128,14 @@ const DevolucionPrestamoModal = ({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="devolucion-fecha-recepcion"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
                 Fecha de devolución *
               </label>
               <input
+                id="devolucion-fecha-recepcion"
                 type="date"
                 value={fechaRecepcion}
                 max={getLimaDateInput()}
@@ -168,6 +176,11 @@ const DevolucionPrestamoModal = ({
                         </span>
                       ) : (
                         <input
+                          aria-label={`Cantidad devuelta de ${
+                            linea.producto?.codigo ||
+                            linea.producto?.nombre ||
+                            "producto"
+                          }`}
                           type="number"
                           min="0"
                           max={linea.cantidadPendiente}
@@ -211,6 +224,11 @@ const DevolucionPrestamoModal = ({
                     ) : null}
 
                     <textarea
+                      aria-label={`Observación de devolución de ${
+                        linea.producto?.codigo ||
+                        linea.producto?.nombre ||
+                        "producto"
+                      }`}
                       value={linea.observaciones}
                       onChange={(event) =>
                         updateLinea(linea.notaSalidaDetalleId, {
@@ -228,10 +246,14 @@ const DevolucionPrestamoModal = ({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="devolucion-observaciones-generales"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Observaciones generales
             </label>
             <textarea
+              id="devolucion-observaciones-generales"
               value={observaciones}
               onChange={(event) => setObservaciones(event.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"

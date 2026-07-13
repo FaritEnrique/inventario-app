@@ -283,6 +283,7 @@ const DashboardRecepcionesPendientesPage = () => {
         className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.2fr_1fr_auto]"
       >
         <input
+          aria-label="Buscar recepción pendiente por código de orden de compra"
           value={codigo}
           onChange={(event) => setCodigo(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
@@ -290,6 +291,7 @@ const DashboardRecepcionesPendientesPage = () => {
         />
 
         <input
+          aria-label="Buscar recepción pendiente por proveedor o RUC"
           value={proveedor}
           onChange={(event) => setProveedor(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
@@ -297,6 +299,7 @@ const DashboardRecepcionesPendientesPage = () => {
         />
 
         <select
+          aria-label="Filtrar recepciones pendientes por estado"
           value={estadoRecepcion}
           onChange={(event) => setEstadoRecepcion(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"

@@ -140,10 +140,14 @@ const RegularizacionSalidaTemporalModal = ({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="regularizacion-motivo"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
                 Motivo *
               </label>
               <select
+                id="regularizacion-motivo"
                 value={motivo}
                 onChange={(event) => setMotivo(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -157,10 +161,14 @@ const RegularizacionSalidaTemporalModal = ({
             </div>
             {motivo === "OTRO" ? (
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="regularizacion-motivo-otro"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Especifique el motivo *
                 </label>
                 <input
+                  id="regularizacion-motivo-otro"
                   value={motivoOtro}
                   onChange={(event) => setMotivoOtro(event.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -172,10 +180,14 @@ const RegularizacionSalidaTemporalModal = ({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="regularizacion-descripcion-hechos"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Descripción detallada de los hechos *
             </label>
             <textarea
+              id="regularizacion-descripcion-hechos"
               value={descripcionHechos}
               onChange={(event) => setDescripcionHechos(event.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -215,6 +227,11 @@ const RegularizacionSalidaTemporalModal = ({
                         </span>
                       ) : (
                         <input
+                          aria-label={`Cantidad a regularizar de ${
+                            linea.producto?.codigo ||
+                            linea.producto?.nombre ||
+                            "producto"
+                          }`}
                           type="number"
                           min="0"
                           max={linea.cantidadPendiente}
@@ -258,6 +275,11 @@ const RegularizacionSalidaTemporalModal = ({
                     ) : null}
 
                     <textarea
+                      aria-label={`Observación de regularización de ${
+                        linea.producto?.codigo ||
+                        linea.producto?.nombre ||
+                        "producto"
+                      }`}
                       value={linea.observaciones}
                       onChange={(event) =>
                         updateLinea(linea.notaSalidaDetalleId, {
@@ -278,10 +300,14 @@ const RegularizacionSalidaTemporalModal = ({
             <h3 className="font-semibold text-slate-900">Documento sustentatorio</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="regularizacion-tipo-documento"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Tipo de documento *
                 </label>
                 <input
+                  id="regularizacion-tipo-documento"
                   value={tipoDocumentoSustento}
                   onChange={(event) => setTipoDocumentoSustento(event.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -290,10 +316,14 @@ const RegularizacionSalidaTemporalModal = ({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="regularizacion-numero-documento"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Número o código
                 </label>
                 <input
+                  id="regularizacion-numero-documento"
                   value={numeroDocumentoSustento}
                   onChange={(event) => setNumeroDocumentoSustento(event.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -301,10 +331,14 @@ const RegularizacionSalidaTemporalModal = ({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="regularizacion-fecha-documento"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
                   Fecha del documento *
                 </label>
                 <input
+                  id="regularizacion-fecha-documento"
                   type="date"
                   value={fechaDocumentoSustento}
                   onChange={(event) => setFechaDocumentoSustento(event.target.value)}
@@ -314,10 +348,14 @@ const RegularizacionSalidaTemporalModal = ({
               </div>
             </div>
             <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="regularizacion-archivo-sustento"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
                 Archivo de sustento *
               </label>
               <input
+                id="regularizacion-archivo-sustento"
                 type="file"
                 accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 onChange={(event) => setDocumentoSustento(event.target.files?.[0] || null)}
@@ -331,10 +369,14 @@ const RegularizacionSalidaTemporalModal = ({
           </section>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="regularizacion-observaciones-generales"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
               Observaciones generales
             </label>
             <textarea
+              id="regularizacion-observaciones-generales"
               value={observaciones}
               onChange={(event) => setObservaciones(event.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"

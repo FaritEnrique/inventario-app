@@ -235,6 +235,7 @@ return (
     className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1.4fr_1fr_1fr_auto]"
   >
     <input
+      aria-label="Buscar notas de salida"
       value={search}
       onChange={(event) => setSearch(event.target.value)}
       className="px-3 py-2 text-sm border outline-none rounded-xl border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
@@ -242,6 +243,7 @@ return (
     />
 
     <input
+      aria-label="Fecha inicial de notas de salida"
       type="date"
       value={fechaDesde}
       onChange={(event) => setFechaDesde(event.target.value)}
@@ -249,6 +251,7 @@ return (
     />
 
     <input
+      aria-label="Fecha final de notas de salida"
       type="date"
       value={fechaHasta}
       onChange={(event) => setFechaHasta(event.target.value)}

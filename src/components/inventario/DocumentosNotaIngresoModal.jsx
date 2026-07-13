@@ -414,6 +414,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
 
           <div className="grid gap-3 md:grid-cols-4">
             <select
+              aria-label="Tipo de documento sustentatorio"
               value={form.tipoDocumento}
               onChange={(event) =>
                 setFormField("tipoDocumento", event.target.value)
@@ -428,6 +429,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
             </select>
 
             <input
+              aria-label="Número de documento sustentatorio"
               type="text"
               value={form.numeroDocumento}
               onChange={(event) =>
@@ -438,6 +440,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
             />
 
             <input
+              aria-label="Fecha del documento sustentatorio"
               type="date"
               value={form.fechaDocumento}
               onChange={(event) =>
@@ -448,6 +451,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
 
             {formMode === "create" ? (
               <input
+                aria-label="Archivo del documento sustentatorio"
                 type="file"
                 accept=".pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 onChange={(event) =>
@@ -463,6 +467,7 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
           </div>
 
           <textarea
+            aria-label="Observaciones del documento sustentatorio"
             value={form.observaciones}
             onChange={(event) =>
               setFormField("observaciones", event.target.value)

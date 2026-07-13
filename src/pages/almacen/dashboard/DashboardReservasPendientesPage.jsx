@@ -259,6 +259,7 @@ const DashboardReservasPendientesPage = () => {
         className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.2fr_1fr_auto]"
       >
         <input
+          aria-label="Buscar reserva pendiente por nota de pedido o área"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
@@ -266,6 +267,7 @@ const DashboardReservasPendientesPage = () => {
         />
 
         <input
+          aria-label="Buscar reserva pendiente por producto"
           value={producto}
           onChange={(event) => setProducto(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
@@ -273,6 +275,7 @@ const DashboardReservasPendientesPage = () => {
         />
 
         <select
+          aria-label="Filtrar reservas pendientes por estado"
           value={estado}
           onChange={(event) => setEstado(event.target.value)}
           className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"

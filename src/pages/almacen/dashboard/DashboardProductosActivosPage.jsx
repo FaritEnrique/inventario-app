@@ -289,6 +289,7 @@ const DashboardProductosActivosPage = () => {
         className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_1.2fr_auto]"
       >
         <input
+          aria-label="Buscar producto activo por código"
           type="text"
           value={codigo}
           onChange={(event) => setCodigo(event.target.value)}
@@ -297,6 +298,7 @@ const DashboardProductosActivosPage = () => {
         />
 
         <input
+          aria-label="Buscar producto activo por nombre"
           type="text"
           value={producto}
           onChange={(event) => setProducto(event.target.value)}
