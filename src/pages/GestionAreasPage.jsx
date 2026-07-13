@@ -329,7 +329,7 @@ const GestionAreasPage = () => {
           </p>
         </div>
 
-        <button
+        <button type="button"
           onClick={() => setIsDarkModeLocal((prev) => !prev)}
           className="p-2 transition-colors duration-200 bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={
@@ -711,14 +711,14 @@ const GestionAreasPage = () => {
                       </div>
                     </td>
                     <td className="p-4 space-x-3 text-sm font-medium text-center">
-                      <button
+                      <button type="button"
                         onClick={() => handleEditIntent(area)}
                         className="font-bold text-blue-600 transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                         aria-label={`Editar ${area.nombre}`}
                       >
                         Editar
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => handleDelete(area.id, area.nombre)}
                         className="font-bold text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         aria-label={`Desactivar ${area.nombre}`}

@@ -189,5 +189,3 @@ export const buildComparativoFlujoViewModel = (comparativo = {}) => {
     resumen,
   };
 };
-
-export default buildComparativoFlujoViewModel;

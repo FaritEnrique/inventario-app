@@ -134,7 +134,7 @@ const LoginPage = () => {
           acceder a la plataforma usuarios autorizados.
         </p>
         <div className="flex justify-end mt-4">
-          <button
+          <button type="button"
             onClick={() => setIsErrorModalOpen(false)}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
           >

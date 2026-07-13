@@ -32,7 +32,7 @@ const ProtectedRoute = () => {
           Solo los usuarios activos y autorizados pueden ingresar a la plataforma.
         </p>
         <div className="mt-4 flex justify-end">
-          <button
+          <button type="button"
             onClick={() => navigate("/login")}
             className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >

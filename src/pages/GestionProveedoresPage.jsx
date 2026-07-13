@@ -663,7 +663,7 @@ const GestionProveedoresPage = () => {
 
           <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex flex-wrap gap-3">
-              <button
+              <button type="button"
                 onClick={handleCreateNew}
                 className="rounded-md bg-purple-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-purple-700"
               >
@@ -891,19 +891,19 @@ const GestionProveedoresPage = () => {
                       </span>
                     </td>
                     <td className="flex gap-3 border-b px-5 py-4 text-sm">
-                      <button
+                      <button type="button"
                         onClick={() => setDetailProveedor(proveedor)}
                         className="font-medium text-slate-700 hover:text-slate-900"
                       >
                         Ver
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => handleEdit(proveedor)}
                         className="font-medium text-indigo-600 hover:text-indigo-900"
                       >
                         Editar
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => handleDeactivate(proveedor.id)}
                         className="font-medium text-red-600 hover:text-red-900"
                       >

@@ -7,6 +7,12 @@ import { useAuth } from "../context/authContext";
 import useRequerimientos from "../hooks/useRequerimientos";
 import { canEditRequerimientoEffective } from "../accessRules";
 
+const isSafeInternalPath = (value) =>
+  typeof value === "string" &&
+  value.startsWith("/") &&
+  !value.startsWith("//") &&
+  !value.startsWith("/\\");
+
 const EditarRequerimientoPage = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -17,8 +23,9 @@ const EditarRequerimientoPage = () => {
   const [requerimiento, setRequerimiento] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const requestedReturnTo = new URLSearchParams(location.search).get("returnTo");
-  const safeReturnTo =
-    requestedReturnTo && requestedReturnTo.startsWith("/") ? requestedReturnTo : null;
+  const safeReturnTo = isSafeInternalPath(requestedReturnTo)
+    ? requestedReturnTo
+    : null;
   const fixedAreaLabel = requerimiento?.area?.branchDescription
     ? `${requerimiento.area.nombre} - ${requerimiento.area.branchDescription}`
     : requerimiento?.area?.nombre || requerimiento?.areaNombreSnapshot || "Area no disponible";

@@ -1342,14 +1342,14 @@ const GestionProductosPage = () => {
             </p>
           </div>
           <div className="flex w-full gap-2 sm:w-auto">
-            <button
+            <button type="button"
               disabled={page <= 1}
               onClick={() => handlePageChange(page - 1)}
               className="flex-1 px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300 sm:flex-none"
             >
               Anterior
             </button>
-            <button
+            <button type="button"
               disabled={hasta >= total}
               onClick={() => handlePageChange(page + 1)}
               className="flex-1 px-3 py-1 text-white bg-indigo-600 rounded disabled:bg-gray-300 sm:flex-none"
@@ -1451,7 +1451,7 @@ const GestionProductosPage = () => {
                 {formatDisplayDate(productoEnDetalle.updatedAt)}
               </p>
             </div>
-            <button
+            <button type="button"
               onClick={closeModal}
               className="px-6 py-2 mt-6 font-semibold text-white transition duration-200 ease-in-out bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >

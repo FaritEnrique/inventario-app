@@ -304,5 +304,3 @@ export const AlertasSeguimientoModal = ({
     </Modal>
   );
 };
-
-export default AlertasSeguimientoCards;

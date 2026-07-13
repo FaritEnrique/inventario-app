@@ -372,14 +372,14 @@ const GestionTipoProductosPage = () => {
                 </span>
               </span>
               <div className="flex justify-end w-full gap-3 mt-2 sm:mt-0 sm:w-auto">
-                <button
+                <button type="button"
                   onClick={() => handleEditar(t.id)}
                   disabled={cargando}
                   className="px-4 py-2 font-semibold text-white transition duration-200 ease-in-out bg-yellow-500 rounded-md shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Editar
                 </button>
-                <button
+                <button type="button"
                   onClick={() => handleDeleteClick(t.id)}
                   disabled={cargando}
                   className="px-4 py-2 font-semibold text-white transition duration-200 ease-in-out bg-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"

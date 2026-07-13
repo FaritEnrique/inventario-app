@@ -366,7 +366,7 @@ const GestionUsuariosPage = () => {
                   {canEdit || canToggleStatus ? (
                     <div className="mt-3 flex gap-2 md:mt-0">
                       {canEdit ? (
-                        <button
+                        <button type="button"
                           onClick={() => handleEditClick(user)}
                           className="rounded bg-green-500 px-4 py-2 text-white"
                         >
@@ -375,7 +375,7 @@ const GestionUsuariosPage = () => {
                       ) : null}
                       {canToggleStatus ? (
                         user.activo ? (
-                          <button
+                          <button type="button"
                             onClick={() =>
                               handleDeactivate(
                                 user.id,
@@ -387,7 +387,7 @@ const GestionUsuariosPage = () => {
                             Desactivar
                           </button>
                         ) : (
-                          <button
+                          <button type="button"
                             onClick={() =>
                               handleReactivate(
                                 user.id,
@@ -408,7 +408,7 @@ const GestionUsuariosPage = () => {
           </ul>
 
           <div className="mt-6 flex items-center justify-between">
-            <button
+            <button type="button"
               onClick={() => setPage((prev) => prev - 1)}
               disabled={page <= 1}
               className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
@@ -418,7 +418,7 @@ const GestionUsuariosPage = () => {
             <span>
               Pagina {page} de {totalPages}
             </span>
-            <button
+            <button type="button"
               onClick={() => setPage((prev) => prev + 1)}
               disabled={page >= totalPages}
               className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
