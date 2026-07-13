@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import cotizacionesApi from "../api/cotizacionesApi";
 
+const obtenerCotizacionPdfUrl = (id) => cotizacionesApi.obtenerPdfUrl(id);
+
 const useCotizaciones = ({ autoLoad = true } = {}) => {
   const [cotizaciones, setCotizaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -143,7 +145,6 @@ const useCotizaciones = ({ autoLoad = true } = {}) => {
     }
   };
 
-  const obtenerCotizacionPdfUrl = (id) => cotizacionesApi.obtenerPdfUrl(id);
 
   return {
     cotizaciones,

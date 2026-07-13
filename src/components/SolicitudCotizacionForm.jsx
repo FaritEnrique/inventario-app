@@ -477,6 +477,11 @@ const SolicitudCotizacionForm = ({
     [requerimientoDetalle?.items],
   );
 
+  const selectedItemIds = useMemo(
+    () => new Set(formData.itemIds),
+    [formData.itemIds],
+  );
+
   const filteredProveedores = useMemo(() => {
     const normalizedSearch = proveedorSearch.trim().toLowerCase();
     const tipoProductoId = tipoProductoFiltroId
@@ -2199,7 +2204,7 @@ const SolicitudCotizacionForm = ({
               <span>Cantidad</span>
             </div>
             {availableItems.map((item, index) => {
-              const checked = formData.itemIds.includes(String(item.id));
+              const checked = selectedItemIds.has(String(item.id));
               const itemName =
                 item.producto?.nombre ||
                 item.productoTemporal?.nombre ||

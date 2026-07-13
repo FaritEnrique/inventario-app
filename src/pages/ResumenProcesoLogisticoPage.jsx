@@ -19,6 +19,15 @@ import {
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "No disponible";
 
+const formatDateTime = (value) =>
+  value ? new Date(value).toLocaleString() : "No disponible";
+
+const formatApprovalResult = (entry) => {
+  if (entry.aprobado === true) return "Aprobado";
+  if (entry.aprobado === false) return "Rechazado";
+  return entry.accion || "Registrado";
+};
+
 const ResumenProcesoLogisticoPage = () => {
   const { user } = useAuth();
   const { id, detalleGlobal, recargarDetalle, loading } = useOutletContext();
@@ -46,14 +55,6 @@ const ResumenProcesoLogisticoPage = () => {
     }
   }, [id, cargarHistorial]);
 
-  const formatDateTime = (value) =>
-    value ? new Date(value).toLocaleString() : "No disponible";
-
-  const formatApprovalResult = (entry) => {
-    if (entry.aprobado === true) return "Aprobado";
-    if (entry.aprobado === false) return "Rechazado";
-    return entry.accion || "Registrado";
-  };
 
   if (loading && !detalleGlobal) {
     return <ResumenProcesoLogisticoSkeleton />;

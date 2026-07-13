@@ -165,7 +165,10 @@ const OfficialTypesSection = ({
   tiposFiltrados,
   selectedIds,
   onToggle,
-}) => (
+}) => {
+  const selectedIdSet = new Set(selectedIds);
+
+  return (
   <div className="rounded-lg border border-gray-200">
     <div className="border-b border-gray-200 px-4 py-3">
       <p className="text-sm font-medium text-gray-700">
@@ -184,7 +187,7 @@ const OfficialTypesSection = ({
           <OfficialTypeOption
             key={tipoProducto.id}
             tipoProducto={tipoProducto}
-            checked={selectedIds.includes(tipoProducto.id)}
+            checked={selectedIdSet.has(tipoProducto.id)}
             onToggle={onToggle}
           />
         ))}
@@ -193,7 +196,8 @@ const OfficialTypesSection = ({
       <EmptyMessage>No hay coincidencias en el catalogo oficial.</EmptyMessage>
     )}
   </div>
-);
+  );
+};
 
 const TemporaryTypeOption = ({ solicitud, checked, onToggle }) => {
   const inputId = `solicitud-tipo-producto-${solicitud.id}`;
@@ -226,14 +230,16 @@ const TemporaryTypeOption = ({ solicitud, checked, onToggle }) => {
   );
 };
 
-const TemporaryTypesList = ({ solicitudes, selectedIds, onToggle }) =>
-  solicitudes.length > 0 ? (
+const TemporaryTypesList = ({ solicitudes, selectedIds, onToggle }) => {
+  const selectedIdSet = new Set(selectedIds);
+
+  return solicitudes.length > 0 ? (
     <div className="mt-4 space-y-2">
       {solicitudes.map((solicitud) => (
         <TemporaryTypeOption
           key={solicitud.id}
           solicitud={solicitud}
-          checked={selectedIds.includes(solicitud.id)}
+          checked={selectedIdSet.has(solicitud.id)}
           onToggle={onToggle}
         />
       ))}
@@ -243,6 +249,7 @@ const TemporaryTypesList = ({ solicitudes, selectedIds, onToggle }) =>
       Aun no hay tipos temporales pendientes disponibles para marcar.
     </EmptyMessage>
   );
+};
 
 const CreateSolicitudForm = ({
   nombreSolicitud,

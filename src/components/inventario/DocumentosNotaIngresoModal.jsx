@@ -52,6 +52,35 @@ const validateForm = (form, formMode) => {
 const getDocumentoNombre = (documento) =>
   documento?.nombreOriginal || documento?.nombreArchivo || "Documento";
 
+const printBlobUrl = (url) => {
+  const iframe = document.createElement("iframe");
+
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.src = url;
+
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        toast.error("No se pudo enviar el documento a impresión.");
+      }
+    }, 300);
+  };
+
+  document.body.appendChild(iframe);
+
+  setTimeout(() => {
+    iframe.remove();
+  }, 60_000);
+};
+
 const DocumentoActions = ({
   documento,
   submitting,
@@ -292,34 +321,6 @@ const DocumentosNotaIngresoModal = ({ onDocumentosChange }) => {
     }
   };
 
-  const printBlobUrl = (url) => {
-    const iframe = document.createElement("iframe");
-
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.src = url;
-
-    iframe.onload = () => {
-      setTimeout(() => {
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch {
-          toast.error("No se pudo enviar el documento a impresión.");
-        }
-      }, 300);
-    };
-
-    document.body.appendChild(iframe);
-
-    setTimeout(() => {
-      iframe.remove();
-    }, 60_000);
-  };
 
   const handlePrint = async (documento) => {
     try {

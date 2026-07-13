@@ -81,6 +81,57 @@ const createEmptyOcForm = () => ({
   items: [],
 });
 
+const updateDocumentosEntrega = (setForm) => (index, field, value) => {
+  setForm((prev) => ({
+    ...prev,
+    documentosEntrega: prev.documentosEntrega.map(
+      (documento, documentoIndex) =>
+        documentoIndex === index
+          ? {
+              ...documento,
+              [field]: value,
+            }
+          : documento,
+    ),
+  }));
+};
+
+const addDocumentoEntrega = (setForm) => {
+  setForm((prev) => {
+    if (prev.documentosEntrega.length >= MAX_DOCUMENTOS_ENTREGA) {
+      toast.info(
+        `Solo puedes adjuntar hasta ${MAX_DOCUMENTOS_ENTREGA} documentos sustentatorios.`,
+      );
+      return prev;
+    }
+
+    return {
+      ...prev,
+      documentosEntrega: [
+        ...prev.documentosEntrega,
+        createEmptyDocumentoEntrega(),
+      ],
+    };
+  });
+};
+
+const removeDocumentoEntrega =
+  (setForm, { required = false } = {}) =>
+  (index) => {
+    setForm((prev) => {
+      if (required && prev.documentosEntrega.length <= 1) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        documentosEntrega: prev.documentosEntrega.filter(
+          (_documento, documentoIndex) => documentoIndex !== index,
+        ),
+      };
+    });
+  };
+
 const normalizeText = (value) =>
   String(value || "")
     .trim()
@@ -466,56 +517,6 @@ const InventarioRecepcionesPage = () => {
     }));
   };
 
-  const updateDocumentosEntrega = (setForm) => (index, field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      documentosEntrega: prev.documentosEntrega.map(
-        (documento, documentoIndex) =>
-          documentoIndex === index
-            ? {
-                ...documento,
-                [field]: value,
-              }
-            : documento,
-      ),
-    }));
-  };
-
-  const addDocumentoEntrega = (setForm) => {
-    setForm((prev) => {
-      if (prev.documentosEntrega.length >= MAX_DOCUMENTOS_ENTREGA) {
-        toast.info(
-          `Solo puedes adjuntar hasta ${MAX_DOCUMENTOS_ENTREGA} documentos sustentatorios.`,
-        );
-        return prev;
-      }
-
-      return {
-        ...prev,
-        documentosEntrega: [
-          ...prev.documentosEntrega,
-          createEmptyDocumentoEntrega(),
-        ],
-      };
-    });
-  };
-
-  const removeDocumentoEntrega =
-    (setForm, { required = false } = {}) =>
-    (index) => {
-      setForm((prev) => {
-        if (required && prev.documentosEntrega.length <= 1) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          documentosEntrega: prev.documentosEntrega.filter(
-            (_documento, documentoIndex) => documentoIndex !== index,
-          ),
-        };
-      });
-    };
 
   const recepcionablesOrdenesCompra = useMemo(
     () =>

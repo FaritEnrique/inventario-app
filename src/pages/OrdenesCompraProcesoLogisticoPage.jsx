@@ -227,9 +227,9 @@ const OrdenesCompraProcesoLogisticoPage = () => {
 
       {alertasOrdenCompra.length > 0 ? (
         <div className="space-y-2">
-          {alertasOrdenCompra.map((alerta, index) => (
+          {alertasOrdenCompra.map((alerta) => (
             <div
-              key={`${alerta.tipo}-${index}`}
+              key={`${alerta.tipo}-${alerta.label}-${alerta.message}`}
               className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
             >
               <p className="font-semibold">{alerta.label}</p>

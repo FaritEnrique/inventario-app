@@ -75,10 +75,10 @@ const DashboardNotasIngresoPage = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(() => searchParams.get("search") || "");
   const [fechaDesde, setFechaDesde] = useState(
-    searchParams.get("fechaDesde") || "",
+    () => searchParams.get("fechaDesde") || "",
   );
   const [fechaHasta, setFechaHasta] = useState(
-    searchParams.get("fechaHasta") || "",
+    () => searchParams.get("fechaHasta") || "",
   );
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 

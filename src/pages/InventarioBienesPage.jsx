@@ -51,7 +51,7 @@ const InventarioBienesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFiltersRef = useRef(buildInitialFilters(searchParams));
   const [filters, setFilters] = useState(initialFiltersRef.current);
-  const [result, setResult] = useState(
+  const [result, setResult] = useState(() =>
     normalizeBienInventarioListResponse(null),
   );
   const { loading, obtenerBienesInventario } = useInventario();

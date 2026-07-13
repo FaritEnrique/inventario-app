@@ -193,6 +193,8 @@ const RegularizacionSalidaTemporalModal = ({
             ) : (
               lineas.map((linea) => {
                 const individual = isLineaIndividual(linea);
+                const selectedBienIds = new Set(linea.bienInventarioIds || []);
+
                 return (
                   <section
                     key={linea.notaSalidaDetalleId}
@@ -232,9 +234,7 @@ const RegularizacionSalidaTemporalModal = ({
                     {individual ? (
                       <div className="mt-4 grid gap-2 sm:grid-cols-2">
                         {linea.bienesPendientes.map((bien) => {
-                          const checked = (linea.bienInventarioIds || []).includes(
-                            bien.id,
-                          );
+                          const checked = selectedBienIds.has(bien.id);
                           return (
                             <label
                               key={bien.id}

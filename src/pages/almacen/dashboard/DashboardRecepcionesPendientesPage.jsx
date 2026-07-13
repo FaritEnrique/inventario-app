@@ -91,10 +91,10 @@ const DashboardRecepcionesPendientesPage = () => {
   const [loading, setLoading] = useState(false);
   const [codigo, setCodigo] = useState(() => searchParams.get("codigo") || "");
   const [proveedor, setProveedor] = useState(
-    searchParams.get("proveedor") || "",
+    () => searchParams.get("proveedor") || "",
   );
   const [estadoRecepcion, setEstadoRecepcion] = useState(
-    searchParams.get("estadoRecepcion") || "",
+    () => searchParams.get("estadoRecepcion") || "",
   );
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 

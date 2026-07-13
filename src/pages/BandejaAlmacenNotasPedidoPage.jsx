@@ -208,19 +208,22 @@ const BandejaAlmacenNotasPedidoPage = () => {
 
     let items;
     try {
-      items = (pedido.detalles || [])
-        .map((detalle) =>
-          buildAtencionItem({
-            detalle,
-            cantidad: draft.cantidades[detalle.id],
-            bienInventarioIds: draft.bienesSeleccionados[detalle.id] || [],
-          }),
-        )
-        .filter(
-          (detalle) =>
-            Number.isFinite(detalle.cantidadEntregada) &&
-            detalle.cantidadEntregada > 0,
-        );
+      items = (pedido.detalles || []).reduce((result, detalle) => {
+        const item = buildAtencionItem({
+          detalle,
+          cantidad: draft.cantidades[detalle.id],
+          bienInventarioIds: draft.bienesSeleccionados[detalle.id] || [],
+        });
+
+        if (
+          Number.isFinite(item.cantidadEntregada) &&
+          item.cantidadEntregada > 0
+        ) {
+          result.push(item);
+        }
+
+        return result;
+      }, []);
     } catch (error) {
       toast.error(error.message);
       return;
@@ -231,10 +234,12 @@ const BandejaAlmacenNotasPedidoPage = () => {
       return;
     }
 
+    const detallesById = new Map(
+      (pedido.detalles || []).map((detalle) => [detalle.id, detalle]),
+    );
+
     for (const item of items) {
-      const detalle = pedido.detalles.find(
-        (linea) => linea.id === item.pedidoInternoDetalleId,
-      );
+      const detalle = detallesById.get(item.pedidoInternoDetalleId);
       if (item.cantidadEntregada > Number(detalle?.cantidadPendiente || 0)) {
         toast.error(
           "No puedes entregar mas que el saldo pendiente de una linea.",

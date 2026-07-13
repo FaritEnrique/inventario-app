@@ -10,6 +10,7 @@ const BienesInventarioDespachoSelector = ({
   const candidatos = Array.isArray(linea?.bienesDisponibles)
     ? linea.bienesDisponibles
     : [];
+  const seleccionIds = new Set(seleccion);
 
   if (!linea) {
     return (
@@ -49,7 +50,7 @@ const BienesInventarioDespachoSelector = ({
 
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {candidatos.map((bien) => {
-          const checked = seleccion.includes(bien.id);
+          const checked = seleccionIds.has(bien.id);
 
           return (
             <label

@@ -153,12 +153,13 @@ const GestionAreasPage = () => {
 
     const allowedParentTypes =
       allowedParentTypesByUnit[formData.tipoUnidad] || [];
+    const allowedParentTypeSet = new Set(allowedParentTypes);
 
     return areasActivas.filter(
       (area) =>
         area.id !== editingId &&
-        (allowedParentTypes.length === 0 ||
-          allowedParentTypes.includes(area.tipoUnidad)),
+        (allowedParentTypeSet.size === 0 ||
+          allowedParentTypeSet.has(area.tipoUnidad)),
     );
   }, [areasActivas, editingId, formData.tipoUnidad]);
 

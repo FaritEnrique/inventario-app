@@ -76,13 +76,13 @@ const DashboardStockDisponiblePage = () => {
   const [codigo, setCodigo] = useState(() => searchParams.get("codigo") || "");
   const [producto, setProducto] = useState(() => searchParams.get("producto") || "");
   const [almacenId, setAlmacenId] = useState(
-    searchParams.get("almacenId") || "",
+    () => searchParams.get("almacenId") || "",
   );
   const [soloConStock, setSoloConStock] = useState(
-    searchParams.get("soloConStock") === "1",
+    () => searchParams.get("soloConStock") === "1",
   );
   const [soloSinDisponibilidad, setSoloSinDisponibilidad] = useState(
-    searchParams.get("soloSinDisponibilidad") === "1",
+    () => searchParams.get("soloSinDisponibilidad") === "1",
   );
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
 
