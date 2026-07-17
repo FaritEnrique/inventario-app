@@ -138,6 +138,7 @@ const InventarioMovimientosPage = () => {
           placeholder="Almacén ID"
         />
         <select
+          aria-label="Tipo de movimiento"
           value={filters.tipoMovimiento}
           name="inventario-movimientos-page-select-117"
           onChange={(event) =>
@@ -184,6 +185,7 @@ const InventarioMovimientosPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha desde"
           value={filters.fechaDesde}
           name="inventario-movimientos-page-input-158"
           onChange={(event) =>
@@ -193,6 +195,7 @@ const InventarioMovimientosPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha hasta"
           value={filters.fechaHasta}
           name="inventario-movimientos-page-input-166"
           onChange={(event) =>

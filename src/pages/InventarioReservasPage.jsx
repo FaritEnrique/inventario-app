@@ -163,6 +163,7 @@ const InventarioReservasPage = () => {
           placeholder="Buscar por ID, referencia, pedido o producto"
         />
         <select
+          aria-label="Almacén de la reserva"
           value={filters.almacenId}
           name="inventario-reservas-almacen"
           onChange={(event) =>
@@ -179,6 +180,7 @@ const InventarioReservasPage = () => {
           ))}
         </select>
         <select
+          aria-label="Área solicitante"
           value={filters.areaId}
           name="inventario-reservas-area"
           onChange={(event) =>
@@ -194,6 +196,7 @@ const InventarioReservasPage = () => {
           ))}
         </select>
         <select
+          aria-label="Vigencia de la reserva"
           value={filters.soloVigentes}
           name="inventario-reservas-vigentes"
           onChange={(event) =>
@@ -205,6 +208,7 @@ const InventarioReservasPage = () => {
           <option value="true">Solo vigentes</option>
         </select>
         <select
+          aria-label="Próximo vencimiento de la reserva"
           value={filters.vencenEnHoras}
           name="inventario-reservas-vencimiento"
           onChange={(event) =>
@@ -219,6 +223,7 @@ const InventarioReservasPage = () => {
           <option value="48">Vencen en 48 horas</option>
         </select>
         <select
+          aria-label="Estado de la reserva"
           value={filters.estado}
           name="inventario-reservas-estado"
           onChange={(event) =>
@@ -257,6 +262,7 @@ const InventarioReservasPage = () => {
         </div>
         <input
           type="date"
+          aria-label="Fecha de reserva desde"
           value={filters.fechaDesde}
           name="inventario-reservas-fecha-desde"
           onChange={(event) =>
@@ -266,6 +272,7 @@ const InventarioReservasPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha de reserva hasta"
           value={filters.fechaHasta}
           name="inventario-reservas-fecha-hasta"
           onChange={(event) =>

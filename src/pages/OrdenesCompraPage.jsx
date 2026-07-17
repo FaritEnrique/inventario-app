@@ -304,6 +304,7 @@ const OrdenesCompraPage = () => {
         {currentView === "listado" ? (
           <>
             <select
+              aria-label="Estado de aprobación"
               value={filters.estadoAprobacion}
               onChange={(event) =>
                 handleFilterChange("estadoAprobacion", event.target.value)
@@ -317,6 +318,7 @@ const OrdenesCompraPage = () => {
               <option value="ANULADA">Anulada</option>
             </select>
             <select
+              aria-label="Estado de recepción"
               value={filters.estadoRecepcion}
               onChange={(event) =>
                 handleFilterChange("estadoRecepcion", event.target.value)
@@ -338,6 +340,7 @@ const OrdenesCompraPage = () => {
           </>
         ) : (
           <select
+            aria-label="Nivel de aprobación"
             value={filters.nivel || ""}
             onChange={(event) =>
               handleFilterChange("nivel", event.target.value)

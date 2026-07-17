@@ -103,6 +103,7 @@ const RequerimientosPage = () => {
         />
         {canSelectArea ? (
           <select
+            aria-label="Área del requerimiento"
             value={filters.areaId}
             name="requerimientos-page-select-80"
             onChange={(event) =>
@@ -125,6 +126,7 @@ const RequerimientosPage = () => {
           </div>
         )}
         <select
+          aria-label="Prioridad del requerimiento"
           value={filters.prioridad}
           name="requerimientos-page-select-101"
           onChange={(event) =>
@@ -140,6 +142,7 @@ const RequerimientosPage = () => {
           ))}
         </select>
         <select
+          aria-label="Estado del flujo"
           value={filters.estadoFlujo}
           name="requerimientos-page-select-115"
           onChange={(event) =>
@@ -155,6 +158,7 @@ const RequerimientosPage = () => {
           <option value="APROBADO_GERENCIA_GENERAL">Aprobado Gerencia General</option>
         </select>
         <select
+          aria-label="Estado del documento"
           value={filters.estadoDocumento}
           name="requerimientos-page-select-129"
           onChange={(event) =>
@@ -170,6 +174,7 @@ const RequerimientosPage = () => {
         </select>
         <input
           type="date"
+          aria-label="Fecha de requerimiento desde"
           value={filters.fechaDesde}
           name="requerimientos-page-input-142"
           onChange={(event) =>
@@ -179,6 +184,7 @@ const RequerimientosPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha de requerimiento hasta"
           value={filters.fechaHasta}
           name="requerimientos-page-input-150"
           onChange={(event) =>

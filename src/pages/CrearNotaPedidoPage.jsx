@@ -408,10 +408,14 @@ const CrearNotaPedidoPage = () => {
             {state.modalidadSalida === "TEMPORAL" ? (
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                  <label
+                    htmlFor="fecha-prevista-devolucion"
+                    className="mb-1 block text-sm font-medium text-slate-700"
+                  >
                     Fecha prevista de devolución *
                   </label>
                   <input
+                    id="fecha-prevista-devolucion"
                     type="date"
                     value={state.fechaPrevistaDevolucion}
                     min={getLimaDateInput(new Date(Date.now() + 86400000))}
@@ -427,10 +431,14 @@ const CrearNotaPedidoPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                  <label
+                    htmlFor="finalidad-prestamo"
+                    className="mb-1 block text-sm font-medium text-slate-700"
+                  >
                     Finalidad del préstamo *
                   </label>
                   <input
+                    id="finalidad-prestamo"
                     type="text"
                     value={state.finalidadPrestamo}
                     onChange={(event) =>

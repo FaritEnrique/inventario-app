@@ -187,6 +187,7 @@ const NotasPedidoPage = () => {
           placeholder="Buscar por codigo, area o solicitante"
         />
         <select
+          aria-label="Estado de la nota de pedido"
           value={filters.estadoFlujo}
           name="notas-pedido-estado-flujo"
           onChange={(event) =>
@@ -202,6 +203,7 @@ const NotasPedidoPage = () => {
           <option value="RECHAZADO">Rechazado</option>
         </select>
         <select
+          aria-label="Almacén de la nota de pedido"
           value={filters.almacenId}
           name="notas-pedido-almacen"
           onChange={(event) =>
@@ -218,6 +220,7 @@ const NotasPedidoPage = () => {
           ))}
         </select>
         <select
+          aria-label="Área solicitante"
           value={filters.areaId}
           name="notas-pedido-area"
           onChange={(event) =>
@@ -233,6 +236,7 @@ const NotasPedidoPage = () => {
           ))}
         </select>
         <select
+          aria-label="Estado de la reserva"
           value={filters.estadoReserva}
           name="notas-pedido-estado-reserva"
           onChange={(event) =>
@@ -245,6 +249,7 @@ const NotasPedidoPage = () => {
           <option value="SIN_RESERVA_VIGENTE">Sin reserva vigente</option>
         </select>
         <select
+          aria-label="Modo de atención"
           value={filters.modoAtencion}
           name="notas-pedido-modo-atencion"
           onChange={(event) =>
@@ -258,6 +263,7 @@ const NotasPedidoPage = () => {
         </select>
         <input
           type="date"
+          aria-label="Fecha exacta de emisión"
           value={filters.fechaEmision}
           name="notas-pedido-fecha-emision"
           onChange={(event) =>
@@ -268,6 +274,7 @@ const NotasPedidoPage = () => {
         />
         <input
           type="month"
+          aria-label="Periodo de emisión"
           value={filters.periodoEmision}
           name="notas-pedido-periodo-emision"
           onChange={(event) =>
@@ -281,6 +288,7 @@ const NotasPedidoPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha de emisión desde"
           value={filters.fechaEmisionDesde}
           name="notas-pedido-fecha-emision-desde"
           onChange={(event) =>
@@ -294,6 +302,7 @@ const NotasPedidoPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha de emisión hasta"
           value={filters.fechaEmisionHasta}
           name="notas-pedido-fecha-emision-hasta"
           onChange={(event) =>
@@ -306,6 +315,7 @@ const NotasPedidoPage = () => {
           title="Fecha de emision hasta"
         />
         <select
+          aria-label="Visibilidad de notas de pedido"
           value={filters.soloMios}
           name="notas-pedido-solo-mios"
           onChange={(event) =>

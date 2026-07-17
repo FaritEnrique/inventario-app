@@ -71,6 +71,7 @@ const InventarioPrestamosPage = () => {
           placeholder="Buscar por Nota de Salida, Nota de Pedido o receptor"
         />
         <select
+          aria-label="Estado del préstamo"
           value={estado}
           onChange={(event) => updateParams({ estado: event.target.value, page: "" })}
           className="rounded-lg border border-slate-300 px-3 py-2"

@@ -164,6 +164,7 @@ const InventarioNotasIngresoPage = () => {
         </div>
         <input
           type="date"
+          aria-label="Fecha de ingreso desde"
           value={filters.fechaDesde}
           name="inventario-notas-ingreso-page-input-156"
           onChange={(event) =>
@@ -173,6 +174,7 @@ const InventarioNotasIngresoPage = () => {
         />
         <input
           type="date"
+          aria-label="Fecha de ingreso hasta"
           value={filters.fechaHasta}
           name="inventario-notas-ingreso-page-input-164"
           onChange={(event) =>
